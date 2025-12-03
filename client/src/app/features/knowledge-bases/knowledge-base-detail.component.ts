@@ -196,7 +196,30 @@ import { HlmButtonDirective } from '../../ui/button';
         <!-- Documents List -->
         <div class="mt-8">
           <h2 class="text-lg font-semibold">Documents</h2>
-          @if (service.documents().length === 0) {
+          @if (importing()) {
+            <!-- Skeleton loader while importing -->
+            <div class="mt-4 space-y-2">
+              @for (i of [1, 2, 3, 4]; track i) {
+                <div class="flex items-center justify-between rounded-lg border bg-card p-4 animate-pulse">
+                  <div class="flex items-center gap-3">
+                    <div class="h-5 w-5 rounded bg-muted"></div>
+                    <div class="space-y-2">
+                      <div class="h-4 w-32 rounded bg-muted"></div>
+                      <div class="h-3 w-48 rounded bg-muted"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="h-6 w-20 rounded-full bg-muted"></div>
+                    <div class="h-8 w-8 rounded bg-muted"></div>
+                  </div>
+                </div>
+              }
+              <p class="text-center text-sm text-muted-foreground mt-4">
+                <ng-icon name="lucideLoader2" class="inline h-4 w-4 animate-spin mr-2" />
+                Importing repository files...
+              </p>
+            </div>
+          } @else if (service.documents().length === 0) {
             <div class="mt-4 rounded-lg border border-dashed bg-muted/50 p-8 text-center">
               <ng-icon name="lucideFileText" class="mx-auto h-10 w-10 text-muted-foreground" />
               <p class="mt-2 text-muted-foreground">
