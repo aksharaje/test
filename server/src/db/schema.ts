@@ -431,3 +431,92 @@ export type ExecutionMetadata = {
   completionTokens?: number;
   responseTimeMs?: number;
 };
+
+// ===================
+// PRD GENERATOR
+// ===================
+
+// PRD Generator Templates
+export const prdTemplates = pgTable('prd_templates', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  isDefault: integer('is_default').notNull().default(0), // 1 for default template
+  isCustom: integer('is_custom').notNull().default(0), // 1 for user-uploaded templates
+  systemPrompt: text('system_prompt').notNull(),
+  jsonSchema: jsonb('json_schema').$type<PrdJsonSchema>(),
+  userId: integer('user_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Generated PRDs
+export const generatedPrds = pgTable('generated_prds', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  title: text('title').notNull(),
+  content: text('content').notNull(), // JSON string of structured PRD content
+  // Input context
+  concept: text('concept').notNull(), // Main concept text
+  targetProject: text('target_project'),
+  targetPersona: text('target_persona'),
+  industryContext: text('industry_context'),
+  primaryMetric: text('primary_metric'),
+  // Optional user story input
+  userStoryRole: text('user_story_role'),
+  userStoryGoal: text('user_story_goal'),
+  userStoryBenefit: text('user_story_benefit'),
+  // Knowledge bases and files used
+  knowledgeBaseIds: jsonb('knowledge_base_ids').$type<number[]>().default([]),
+  inputFiles: jsonb('input_files').$type<GeneratedArtifactFile[]>().default([]),
+  // Template used
+  templateId: integer('template_id').references(() => prdTemplates.id),
+  // Generation metadata
+  status: text('status').$type<'draft' | 'final'>().notNull().default('draft'),
+  generationMetadata: jsonb('generation_metadata').$type<PrdGenerationMetadata>(),
+  // Citations from KB sources
+  citations: jsonb('citations').$type<PrdCitation[]>().default([]),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('generated_prds_user_idx').on(table.userId),
+  index('generated_prds_template_idx').on(table.templateId),
+]);
+
+// PRD Generator Types
+export type PrdJsonSchema = {
+  sections: PrdSectionSchema[];
+};
+
+export type PrdSectionSchema = {
+  key: string;
+  title: string;
+  description?: string;
+  required?: boolean;
+};
+
+export type PrdGenerationMetadata = {
+  model: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  generationTimeMs?: number;
+  refineHistory?: PrdRefineEntry[];
+};
+
+export type PrdRefineEntry = {
+  prompt: string;
+  timestamp: string;
+};
+
+export type PrdCitation = {
+  id: number; // Citation number [1], [2], etc.
+  type: 'knowledge_base' | 'file' | 'inferred';
+  source: string; // KB name or file name
+  documentId?: number;
+  documentName?: string;
+  filePath?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  content: string; // Relevant excerpt
+  similarity?: number;
+};

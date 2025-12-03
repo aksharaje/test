@@ -13,6 +13,8 @@ import {
   lucideHistory,
   lucideChevronRight,
   lucideTrash2,
+  lucideSearch,
+  lucideCheck,
 } from '@ng-icons/lucide';
 import { StoryGeneratorService } from './story-generator.service';
 import type { ArtifactType, InputConfig, GeneratedArtifact } from './story-generator.types';
@@ -35,6 +37,8 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideHistory,
       lucideChevronRight,
       lucideTrash2,
+      lucideSearch,
+      lucideCheck,
     }),
   ],
   template: `
@@ -100,26 +104,105 @@ import { HlmButtonDirective } from '../../ui/button';
             <p class="text-xs text-muted-foreground mt-1">
               Select knowledge bases to provide context for generation
             </p>
-            <div class="mt-2 flex flex-wrap gap-2">
-              @for (kb of service.knowledgeBases(); track kb.id) {
-                <button
-                  type="button"
-                  class="rounded-full px-3 py-1 text-sm border transition-colors flex items-center gap-1"
-                  [class.bg-primary]="selectedKbIds().includes(kb.id)"
-                  [class.text-primary-foreground]="selectedKbIds().includes(kb.id)"
-                  [class.border-primary]="selectedKbIds().includes(kb.id)"
-                  (click)="toggleKnowledgeBase(kb.id)"
-                >
-                  {{ kb.name }}
-                  @if (selectedKbIds().includes(kb.id)) {
-                    <ng-icon name="lucideX" class="h-3 w-3" />
+
+            <!-- Dropdown trigger -->
+            <div class="relative mt-2">
+              <button
+                type="button"
+                class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+                (click)="toggleKbDropdown()"
+              >
+                <span class="truncate text-left">
+                  @if (selectedKbIds().length === 0) {
+                    <span class="text-muted-foreground">Select knowledge bases...</span>
+                  } @else if (selectedKbIds().length === 1) {
+                    {{ selectedKnowledgeBases()[0]?.name }}
+                  } @else {
+                    {{ selectedKbIds().length }} knowledge bases selected
                   }
-                </button>
-              }
-              @if (service.knowledgeBases().length === 0) {
-                <span class="text-sm text-muted-foreground">No knowledge bases available</span>
+                </span>
+                <ng-icon
+                  name="lucideChevronDown"
+                  class="h-4 w-4 text-muted-foreground transition-transform"
+                  [class.rotate-180]="kbDropdownOpen()"
+                />
+              </button>
+
+              <!-- Dropdown panel -->
+              @if (kbDropdownOpen()) {
+                <!-- Backdrop to close on outside click -->
+                <div
+                  class="fixed inset-0 z-40"
+                  (click)="closeKbDropdown()"
+                ></div>
+
+                <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                  <!-- Search input -->
+                  <div class="p-2 border-b">
+                    <div class="relative">
+                      <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Filter knowledge bases..."
+                        class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        [value]="kbSearchFilter()"
+                        (input)="onKbSearchInput($event)"
+                        (click)="$event.stopPropagation()"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Options list -->
+                  <div class="max-h-48 overflow-y-auto p-1">
+                    @for (kb of filteredKnowledgeBases(); track kb.id) {
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+                        [class.bg-primary/10]="selectedKbIds().includes(kb.id)"
+                        (click)="toggleKnowledgeBase(kb.id); $event.stopPropagation()"
+                      >
+                        <div
+                          class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
+                          [class.bg-primary]="selectedKbIds().includes(kb.id)"
+                          [class.border-primary]="selectedKbIds().includes(kb.id)"
+                        >
+                          @if (selectedKbIds().includes(kb.id)) {
+                            <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
+                          }
+                        </div>
+                        <span class="truncate">{{ kb.name }}</span>
+                      </button>
+                    } @empty {
+                      <p class="px-2 py-4 text-sm text-muted-foreground text-center">
+                        @if (kbSearchFilter()) {
+                          No knowledge bases match "{{ kbSearchFilter() }}"
+                        } @else {
+                          No knowledge bases available
+                        }
+                      </p>
+                    }
+                  </div>
+                </div>
               }
             </div>
+
+            <!-- Selected tags -->
+            @if (selectedKbIds().length > 0) {
+              <div class="flex flex-wrap gap-1 mt-2">
+                @for (kb of selectedKnowledgeBases(); track kb.id) {
+                  <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {{ kb.name }}
+                    <button
+                      type="button"
+                      class="hover:text-primary/70"
+                      (click)="toggleKnowledgeBase(kb.id)"
+                    >
+                      <ng-icon name="lucideX" class="h-3 w-3" />
+                    </button>
+                  </span>
+                }
+              </div>
+            }
           </div>
 
           <!-- File Upload -->
@@ -336,6 +419,8 @@ export class StoryGeneratorComponent implements OnInit {
   protected selectedFiles = signal<File[]>([]);
   protected selectedKbIds = signal<number[]>([]);
   protected isDragging = signal(false);
+  protected kbDropdownOpen = signal(false);
+  protected kbSearchFilter = signal('');
 
   // Input config based on type
   protected inputConfig = signal<InputConfig>({
@@ -346,6 +431,18 @@ export class StoryGeneratorComponent implements OnInit {
   // Computed
   protected canGenerate = computed(() => {
     return this.title().trim().length > 0 && this.description().trim().length > 0;
+  });
+
+  protected filteredKnowledgeBases = computed(() => {
+    const filter = this.kbSearchFilter().toLowerCase().trim();
+    const kbs = this.service.knowledgeBases();
+    if (!filter) return kbs;
+    return kbs.filter(kb => kb.name.toLowerCase().includes(filter));
+  });
+
+  protected selectedKnowledgeBases = computed(() => {
+    const selectedIds = this.selectedKbIds();
+    return this.service.knowledgeBases().filter(kb => selectedIds.includes(kb.id));
   });
 
   ngOnInit(): void {
@@ -382,6 +479,23 @@ export class StoryGeneratorComponent implements OnInit {
         return [...ids, id];
       }
     });
+  }
+
+  protected toggleKbDropdown(): void {
+    this.kbDropdownOpen.update(v => !v);
+    if (!this.kbDropdownOpen()) {
+      this.kbSearchFilter.set('');
+    }
+  }
+
+  protected closeKbDropdown(): void {
+    this.kbDropdownOpen.set(false);
+    this.kbSearchFilter.set('');
+  }
+
+  protected onKbSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.kbSearchFilter.set(input.value);
   }
 
   protected onDragOver(event: DragEvent): void {

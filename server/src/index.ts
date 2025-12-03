@@ -6,6 +6,7 @@ import flowRoutes from './routes/flows.js';
 import knowledgeBaseRoutes from './routes/knowledgeBases.js';
 import storyGeneratorRoutes from './routes/storyGenerator.js';
 import storyGeneratorFeedbackRoutes from './routes/storyGeneratorFeedback.js';
+import prdGeneratorRoutes from './routes/prdGenerator.js';
 import codeChatRoutes from './routes/codeChat.js';
 import feedbackRoutes from './routes/feedback.js';
 import splitTestRoutes from './routes/splitTests.js';
@@ -31,6 +32,7 @@ app.use('/api/flows', flowRoutes);
 app.use('/api/knowledge-bases', knowledgeBaseRoutes);
 app.use('/api/story-generator', storyGeneratorRoutes);
 app.use('/api/story-generator', storyGeneratorFeedbackRoutes);
+app.use('/api/prd-generator', prdGeneratorRoutes);
 app.use('/api/code-chat', codeChatRoutes);
 app.use('/api', feedbackRoutes);
 app.use('/api', splitTestRoutes);
@@ -53,6 +55,10 @@ agentService.registerTool('calculate', async (args) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+if (process.env['VERCEL'] !== '1') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;

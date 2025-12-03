@@ -47,6 +47,7 @@ export class AuthenticatedShellComponent {
       path: '/design',
       icon: 'lucidePalette',
       children: [
+        { label: 'PRD Generator', path: '/prd-generator', icon: 'lucideFileText' },
         { label: 'Epic/Feature/Story Creator', path: '/story-generator', icon: 'lucideLayoutList' },
       ],
     },

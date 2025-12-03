@@ -46,6 +46,22 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'prd-generator',
+        title: 'PRD Generator | Product Studio',
+        loadComponent: () =>
+          import('./features/prd-generator/prd-generator.component').then(
+            (m) => m.PrdGeneratorComponent
+          ),
+      },
+      {
+        path: 'prd-generator/output/:id',
+        title: 'PRD Output | Product Studio',
+        loadComponent: () =>
+          import('./features/prd-generator/prd-generator-output.component').then(
+            (m) => m.PrdGeneratorOutputComponent
+          ),
+      },
+      {
         path: 'story-generator',
         title: 'Epic/Feature/Story Creator | Product Studio',
         loadComponent: () =>

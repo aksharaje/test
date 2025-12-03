@@ -13,6 +13,7 @@ import {
   lucideLightbulb,
   lucideFlaskConical,
   lucideActivity,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { UserMenuComponent, type User } from '../../components/user-menu';
 
@@ -46,6 +47,7 @@ export interface NavItem {
       lucideLightbulb,
       lucideFlaskConical,
       lucideActivity,
+      lucideFileText,
     }),
   ],
   template: `

@@ -141,7 +141,7 @@ import { HlmButtonDirective } from '../../ui/button';
                         <p class="whitespace-pre-wrap">{{ structured()!.epic!.vision }}</p>
                       </div>
 
-                      @if (structured()!.epic!.goals?.length) {
+                      @if (structured()!.epic!.goals.length) {
                         <div>
                           <h4 class="font-semibold text-muted-foreground uppercase text-xs mb-1">Goals</h4>
                           <ul class="list-disc list-inside space-y-1">
@@ -152,7 +152,7 @@ import { HlmButtonDirective } from '../../ui/button';
                         </div>
                       }
 
-                      @if (structured()!.epic!.successMetrics?.length) {
+                      @if (structured()!.epic!.successMetrics.length) {
                         <div>
                           <h4 class="font-semibold text-muted-foreground uppercase text-xs mb-1">Success Metrics</h4>
                           <ul class="list-disc list-inside space-y-1">
@@ -179,7 +179,7 @@ import { HlmButtonDirective } from '../../ui/button';
                 </div>
 
                 <!-- Features nested inside Epic -->
-                @if (structured()!.epic!.features?.length) {
+                @if (structured()!.epic!.features.length) {
                   <div class="ml-6 mr-4 mb-4 space-y-3">
                     @for (feature of structured()!.epic!.features; track $index; let i = $index) {
                       <ng-container *ngTemplateOutlet="featureCard; context: { feature, index: i, prefix: 'epic' }"></ng-container>

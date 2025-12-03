@@ -216,7 +216,7 @@ import { HlmButtonDirective } from '../../ui/button';
                       <p class="font-medium">{{ doc.name }}</p>
                       <p class="text-sm text-muted-foreground">
                         {{ doc.chunkCount }} chunks
-                        @if (doc.sourceMetadata?.path) {
+                        @if (doc.sourceMetadata.path) {
                           · {{ doc.sourceMetadata.path }}
                         }
                       </p>

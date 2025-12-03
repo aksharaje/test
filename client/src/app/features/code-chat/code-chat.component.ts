@@ -465,36 +465,192 @@ import { HlmButtonDirective } from '../../ui/button';
       height: 100%;
     }
 
-    .prose {
+    /* Base prose styling for better readability */
+    /* Use ::ng-deep to pierce view encapsulation for markdown-rendered content */
+    :host ::ng-deep .prose {
       max-width: 100%;
       overflow-wrap: break-word;
       word-wrap: break-word;
       word-break: break-word;
+      line-height: 1.7;
+      font-size: 0.9375rem;
     }
 
-    .prose pre {
-      @apply bg-muted rounded-lg p-3 overflow-x-auto;
+    /* Paragraph spacing */
+    :host ::ng-deep .prose p {
+      margin-bottom: 1rem;
+    }
+
+    :host ::ng-deep .prose p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Headers */
+    :host ::ng-deep .prose h1,
+    :host ::ng-deep .prose h2,
+    :host ::ng-deep .prose h3,
+    :host ::ng-deep .prose h4,
+    :host ::ng-deep .prose h5,
+    :host ::ng-deep .prose h6 {
+      font-weight: 600;
+      line-height: 1.3;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    :host ::ng-deep .prose h1:first-child,
+    :host ::ng-deep .prose h2:first-child,
+    :host ::ng-deep .prose h3:first-child {
+      margin-top: 0;
+    }
+
+    :host ::ng-deep .prose h1 {
+      font-size: 1.5rem;
+      border-bottom: 1px solid hsl(var(--border));
+      padding-bottom: 0.5rem;
+    }
+
+    :host ::ng-deep .prose h2 {
+      font-size: 1.25rem;
+      border-bottom: 1px solid hsl(var(--border));
+      padding-bottom: 0.375rem;
+    }
+
+    :host ::ng-deep .prose h3 {
+      font-size: 1.125rem;
+    }
+
+    :host ::ng-deep .prose h4 {
+      font-size: 1rem;
+    }
+
+    /* Lists */
+    :host ::ng-deep .prose ul,
+    :host ::ng-deep .prose ol {
+      margin-top: 0.75rem;
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    :host ::ng-deep .prose ul {
+      list-style-type: disc;
+    }
+
+    :host ::ng-deep .prose ol {
+      list-style-type: decimal;
+    }
+
+    :host ::ng-deep .prose li {
+      margin-bottom: 0.375rem;
+      padding-left: 0.25rem;
+    }
+
+    :host ::ng-deep .prose li::marker {
+      color: hsl(var(--muted-foreground));
+    }
+
+    :host ::ng-deep .prose li > ul,
+    :host ::ng-deep .prose li > ol {
+      margin-top: 0.375rem;
+      margin-bottom: 0.375rem;
+    }
+
+    /* Code blocks */
+    :host ::ng-deep .prose pre {
+      background-color: hsl(var(--muted));
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1rem 0;
       white-space: pre-wrap;
       word-break: break-all;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      border: 1px solid hsl(var(--border));
     }
 
-    .prose code {
-      @apply bg-muted px-1 py-0.5 rounded text-sm;
+    /* Inline code */
+    :host ::ng-deep .prose code {
+      background-color: hsl(var(--muted));
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
       word-break: break-all;
+      font-weight: 500;
+      color: hsl(var(--primary));
     }
 
-    .prose pre code {
-      @apply bg-transparent p-0;
+    :host ::ng-deep .prose pre code {
+      background-color: transparent;
+      padding: 0;
+      color: inherit;
+      font-weight: normal;
     }
 
-    .prose table {
-      @apply w-full text-sm;
+    /* Tables */
+    :host ::ng-deep .prose table {
+      width: 100%;
+      font-size: 0.875rem;
       display: block;
       overflow-x: auto;
+      margin: 1rem 0;
+      border-collapse: collapse;
     }
 
-    .prose th, .prose td {
-      @apply border px-2 py-1;
+    :host ::ng-deep .prose thead {
+      background-color: hsl(var(--muted));
+    }
+
+    :host ::ng-deep .prose th {
+      border: 1px solid hsl(var(--border));
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    :host ::ng-deep .prose td {
+      border: 1px solid hsl(var(--border));
+      padding: 0.5rem 0.75rem;
+    }
+
+    :host ::ng-deep .prose tbody tr:nth-child(even) {
+      background-color: hsl(var(--muted) / 0.3);
+    }
+
+    /* Blockquotes */
+    :host ::ng-deep .prose blockquote {
+      border-left: 4px solid hsl(var(--primary));
+      padding-left: 1rem;
+      margin: 1rem 0;
+      font-style: italic;
+      color: hsl(var(--muted-foreground));
+    }
+
+    /* Horizontal rules */
+    :host ::ng-deep .prose hr {
+      border: none;
+      border-top: 1px solid hsl(var(--border));
+      margin: 1.5rem 0;
+    }
+
+    /* Strong and emphasis */
+    :host ::ng-deep .prose strong {
+      font-weight: 600;
+    }
+
+    :host ::ng-deep .prose em {
+      font-style: italic;
+    }
+
+    /* Links */
+    :host ::ng-deep .prose a {
+      color: hsl(var(--primary));
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    :host ::ng-deep .prose a:hover {
+      opacity: 0.8;
     }
   `,
 })
