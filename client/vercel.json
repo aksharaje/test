@@ -6,7 +6,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://<YOUR_SERVER_URL>/api/$1"
+            "destination": "https://ps-protoype.onrender.com/api/$1"
         },
         {
             "source": "/(.*)",
