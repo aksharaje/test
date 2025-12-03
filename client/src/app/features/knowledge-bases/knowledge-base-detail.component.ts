@@ -265,13 +265,13 @@ import { HlmButtonDirective } from '../../ui/button';
                       }
                       {{ doc.status }}
                     </span>
-                    @if (doc.status === 'error') {
+                    @if (doc.status === 'error' || doc.status === 'pending') {
                       <button
                         hlmBtn
                         variant="ghost"
                         size="icon"
                         (click)="reprocessDocument(doc)"
-                        title="Retry"
+                        [title]="doc.status === 'error' ? 'Retry' : 'Reprocess'"
                       >
                         <ng-icon name="lucideRefreshCw" class="h-4 w-4 text-primary" />
                       </button>
