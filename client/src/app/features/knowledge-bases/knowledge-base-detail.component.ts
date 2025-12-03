@@ -8,11 +8,11 @@ import {
   lucideFileText,
   lucideLoader2,
   lucideTrash2,
-  lucideSearch,
   lucideCheck,
   lucideX,
   lucideAlertCircle,
   lucideClock,
+  lucidePencil,
 } from '@ng-icons/lucide';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import type { Document, KnowledgeBase } from './knowledge-base.types';
@@ -30,11 +30,11 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideFileText,
       lucideLoader2,
       lucideTrash2,
-      lucideSearch,
       lucideCheck,
       lucideX,
       lucideAlertCircle,
       lucideClock,
+      lucidePencil,
     }),
   ],
   template: `
@@ -46,16 +46,61 @@ import { HlmButtonDirective } from '../../ui/button';
         </button>
         <div class="flex-1">
           @if (kb()) {
-            <h1 class="text-2xl font-bold text-foreground">{{ kb()!.name }}</h1>
+            @if (isEditing()) {
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  [value]="editName()"
+                  (input)="onNameInput($event)"
+                  (keydown.enter)="saveName()"
+                  (keydown.escape)="cancelEdit()"
+                  class="text-2xl font-bold bg-background border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                  #nameInput
+                />
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="icon"
+                  (click)="saveName()"
+                  title="Save"
+                  [disabled]="saving()"
+                >
+                  @if (saving()) {
+                    <ng-icon name="lucideLoader2" class="h-4 w-4 animate-spin" />
+                  } @else {
+                    <ng-icon name="lucideCheck" class="h-4 w-4 text-green-600" />
+                  }
+                </button>
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="icon"
+                  (click)="cancelEdit()"
+                  title="Cancel"
+                >
+                  <ng-icon name="lucideX" class="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            } @else {
+              <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-bold text-foreground">{{ kb()!.name }}</h1>
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  (click)="startEdit()"
+                  title="Rename"
+                >
+                  <ng-icon name="lucidePencil" class="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            }
             @if (kb()!.description) {
               <p class="mt-1 text-muted-foreground">{{ kb()!.description }}</p>
             }
           }
         </div>
-        <button hlmBtn variant="outline" (click)="navigateToSearch()">
-          <ng-icon name="lucideSearch" class="mr-2 h-4 w-4" />
-          Search
-        </button>
       </div>
 
       @if (service.loading() && !kb()) {
@@ -224,6 +269,9 @@ export class KnowledgeBaseDetailComponent implements OnInit {
   protected githubUrl = signal('');
   protected githubToken = signal('');
   protected importing = signal(false);
+  protected isEditing = signal(false);
+  protected editName = signal('');
+  protected saving = signal(false);
 
   ngOnInit(): void {
     const id = parseInt(this.route.snapshot.params['id']);
@@ -242,9 +290,42 @@ export class KnowledgeBaseDetailComponent implements OnInit {
     this.router.navigate(['/knowledge-bases']);
   }
 
-  protected navigateToSearch(): void {
+  protected startEdit(): void {
     if (this.kb()) {
-      this.router.navigate(['/knowledge-bases', this.kb()!.id, 'search']);
+      this.editName.set(this.kb()!.name);
+      this.isEditing.set(true);
+    }
+  }
+
+  protected cancelEdit(): void {
+    this.isEditing.set(false);
+    this.editName.set('');
+  }
+
+  protected onNameInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.editName.set(input.value);
+  }
+
+  protected async saveName(): Promise<void> {
+    if (!this.kb() || !this.editName().trim()) return;
+
+    const newName = this.editName().trim();
+    if (newName === this.kb()!.name) {
+      this.cancelEdit();
+      return;
+    }
+
+    this.saving.set(true);
+    try {
+      const updated = await this.service.updateKnowledgeBase(this.kb()!.id, { name: newName });
+      if (updated) {
+        this.kb.set(updated);
+      }
+      this.isEditing.set(false);
+      this.editName.set('');
+    } finally {
+      this.saving.set(false);
     }
   }
 

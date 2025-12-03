@@ -16,6 +16,8 @@ import {
   lucideExternalLink,
   lucideCopy,
   lucideCheck,
+  lucideChevronDown,
+  lucideSearch,
 } from '@ng-icons/lucide';
 import { MarkdownComponent } from 'ngx-markdown';
 import { CodeChatService } from './code-chat.service';
@@ -42,54 +44,133 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideExternalLink,
       lucideCopy,
       lucideCheck,
+      lucideChevronDown,
+      lucideSearch,
     }),
   ],
   template: `
     <div class="flex h-full">
       <!-- Left Sidebar: Sessions List -->
       <div class="w-72 border-r flex flex-col bg-muted/30">
+        <!-- Knowledge Base Selection Dropdown -->
+        <div class="p-4 border-b">
+          <div class="flex items-center gap-2 mb-2">
+            <ng-icon name="lucideDatabase" class="h-4 w-4 text-muted-foreground" />
+            <span class="text-sm font-medium">Code Repositories</span>
+          </div>
+
+          <!-- Dropdown trigger -->
+          <div class="relative">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+              (click)="toggleKbDropdown()"
+            >
+              <span class="truncate text-left">
+                @if (service.selectedKbIds().length === 0) {
+                  <span class="text-muted-foreground">Select repositories...</span>
+                } @else if (service.selectedKbIds().length === 1) {
+                  {{ service.selectedKnowledgeBases()[0]?.name }}
+                } @else {
+                  {{ service.selectedKbIds().length }} repositories selected
+                }
+              </span>
+              <ng-icon
+                name="lucideChevronDown"
+                class="h-4 w-4 text-muted-foreground transition-transform"
+                [class.rotate-180]="kbDropdownOpen()"
+              />
+            </button>
+
+            <!-- Dropdown panel -->
+            @if (kbDropdownOpen()) {
+              <!-- Backdrop to close on outside click -->
+              <div
+                class="fixed inset-0 z-40"
+                (click)="closeKbDropdown()"
+              ></div>
+
+              <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                <!-- Search input -->
+                <div class="p-2 border-b">
+                  <div class="relative">
+                    <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Filter repositories..."
+                      class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      [value]="kbSearchFilter()"
+                      (input)="onKbSearchInput($event)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </div>
+                </div>
+
+                <!-- Options list -->
+                <div class="max-h-48 overflow-y-auto p-1">
+                  @for (kb of filteredKnowledgeBases(); track kb.id) {
+                    <button
+                      type="button"
+                      class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+                      [class.bg-primary/10]="service.selectedKbIds().includes(kb.id)"
+                      (click)="service.toggleKnowledgeBase(kb.id); $event.stopPropagation()"
+                    >
+                      <div
+                        class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
+                        [class.bg-primary]="service.selectedKbIds().includes(kb.id)"
+                        [class.border-primary]="service.selectedKbIds().includes(kb.id)"
+                      >
+                        @if (service.selectedKbIds().includes(kb.id)) {
+                          <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
+                        }
+                      </div>
+                      <span class="truncate">{{ kb.name }}</span>
+                    </button>
+                  } @empty {
+                    <p class="px-2 py-4 text-sm text-muted-foreground text-center">
+                      @if (kbSearchFilter()) {
+                        No repositories match "{{ kbSearchFilter() }}"
+                      } @else {
+                        No code repositories available
+                      }
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Selected tags -->
+          @if (service.selectedKbIds().length > 0) {
+            <div class="flex flex-wrap gap-1 mt-2">
+              @for (kb of service.selectedKnowledgeBases(); track kb.id) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {{ kb.name }}
+                  <button
+                    type="button"
+                    class="hover:text-primary/70"
+                    (click)="service.toggleKnowledgeBase(kb.id)"
+                  >
+                    <ng-icon name="lucideX" class="h-3 w-3" />
+                  </button>
+                </span>
+              }
+            </div>
+          }
+        </div>
+
         <!-- New Chat Button -->
         <div class="p-4 border-b">
           <button
             hlmBtn
             class="w-full"
             [disabled]="!service.hasSelectedKbs()"
+            [title]="!service.hasSelectedKbs() ? 'Please select at least one code repository first' : ''"
             (click)="startNewChat()"
           >
             <ng-icon name="lucidePlus" class="mr-2 h-4 w-4" />
             New Chat
           </button>
-        </div>
-
-        <!-- Knowledge Base Selection -->
-        <div class="p-4 border-b">
-          <div class="flex items-center gap-2 mb-2">
-            <ng-icon name="lucideDatabase" class="h-4 w-4 text-muted-foreground" />
-            <span class="text-sm font-medium">Code Repositories</span>
-          </div>
-          <p class="text-xs text-muted-foreground mb-2">
-            Select at least one to start chatting
-          </p>
-          <div class="space-y-1 max-h-40 overflow-y-auto">
-            @for (kb of service.knowledgeBases(); track kb.id) {
-              <button
-                type="button"
-                class="w-full flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
-                [class.bg-primary/10]="service.selectedKbIds().includes(kb.id)"
-                [class.text-primary]="service.selectedKbIds().includes(kb.id)"
-                (click)="service.toggleKnowledgeBase(kb.id)"
-              >
-                <span class="truncate">{{ kb.name }}</span>
-                @if (service.selectedKbIds().includes(kb.id)) {
-                  <ng-icon name="lucideX" class="h-3 w-3 flex-shrink-0" />
-                }
-              </button>
-            } @empty {
-              <p class="text-xs text-muted-foreground italic">
-                No code repositories available
-              </p>
-            }
-          </div>
         </div>
 
         <!-- Sessions List -->
@@ -428,6 +509,15 @@ export class CodeChatComponent implements OnInit, AfterViewChecked {
   protected showWelcome = signal(false);
   protected expandedCitations = signal<Record<string, boolean>>({});
   protected copiedMessageId = signal<number | null>(null);
+  protected kbDropdownOpen = signal(false);
+  protected kbSearchFilter = signal('');
+
+  protected filteredKnowledgeBases = computed(() => {
+    const filter = this.kbSearchFilter().toLowerCase().trim();
+    const kbs = this.service.knowledgeBases();
+    if (!filter) return kbs;
+    return kbs.filter(kb => kb.name.toLowerCase().includes(filter));
+  });
 
   private shouldScrollToBottom = false;
 
@@ -516,6 +606,23 @@ export class CodeChatComponent implements OnInit, AfterViewChecked {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  }
+
+  protected toggleKbDropdown(): void {
+    this.kbDropdownOpen.update(v => !v);
+    if (!this.kbDropdownOpen()) {
+      this.kbSearchFilter.set('');
+    }
+  }
+
+  protected onKbSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.kbSearchFilter.set(input.value);
+  }
+
+  protected closeKbDropdown(): void {
+    this.kbDropdownOpen.set(false);
+    this.kbSearchFilter.set('');
   }
 
   private scrollToBottom(): void {

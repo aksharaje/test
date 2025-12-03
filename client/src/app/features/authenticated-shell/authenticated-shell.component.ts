@@ -35,6 +35,14 @@ export class AuthenticatedShellComponent {
   navItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard', icon: 'lucideHome' },
     {
+      label: 'Ideate',
+      path: '/ideate',
+      icon: 'lucideLightbulb',
+      children: [
+        { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
+      ],
+    },
+    {
       label: 'Design',
       path: '/design',
       icon: 'lucidePalette',
@@ -42,11 +50,15 @@ export class AuthenticatedShellComponent {
         { label: 'Epic/Feature/Story Creator', path: '/story-generator', icon: 'lucideLayoutList' },
       ],
     },
-    { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
-    { label: 'Agent Optimization', path: '/optimize', icon: 'lucideFlaskConical' },
-    { label: 'Users', path: '/users', icon: 'lucideUsers' },
+    {
+      label: 'Optimize',
+      path: '/optimize-section',
+      icon: 'lucideFlaskConical',
+      children: [
+        { label: 'Agent Optimization', path: '/optimize', icon: 'lucideActivity' },
+      ],
+    },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
-    { label: 'Settings', path: '/settings', icon: 'lucideSettings' },
   ];
 
   handleProfile(): void {

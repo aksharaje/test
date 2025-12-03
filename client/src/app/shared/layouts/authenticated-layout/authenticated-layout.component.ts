@@ -10,6 +10,9 @@ import {
   lucideBookOpen,
   lucideLayoutList,
   lucideMessageSquareCode,
+  lucideLightbulb,
+  lucideFlaskConical,
+  lucideActivity,
 } from '@ng-icons/lucide';
 import { UserMenuComponent, type User } from '../../components/user-menu';
 
@@ -40,6 +43,9 @@ export interface NavItem {
       lucideBookOpen,
       lucideLayoutList,
       lucideMessageSquareCode,
+      lucideLightbulb,
+      lucideFlaskConical,
+      lucideActivity,
     }),
   ],
   template: `

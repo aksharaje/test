@@ -12,6 +12,7 @@ import {
   lucideLayoutList,
   lucideZap,
   lucideBeaker,
+  lucideEye,
 } from '@ng-icons/lucide';
 import { OptimizeService } from './optimize.service';
 import { HlmButtonDirective } from '../../ui/button';
@@ -33,6 +34,7 @@ import type { FlowItem } from './optimize.types';
       lucideLayoutList,
       lucideZap,
       lucideBeaker,
+      lucideEye,
     }),
   ],
   template: `
@@ -149,6 +151,16 @@ import type { FlowItem } from './optimize.types';
                         <ng-icon name="lucideTrendingDown" class="h-3 w-3" />
                         {{ flow.feedbackStats.negative }}
                       </span>
+                      <button
+                        hlmBtn
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 w-7 p-0"
+                        (click)="navigateToFeedback(flow); $event.stopPropagation()"
+                        [title]="flow.feedbackStats.total > 0 ? 'View feedback' : 'No feedback yet'"
+                      >
+                        <ng-icon name="lucideEye" class="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                   <td class="px-4 py-3">
@@ -189,6 +201,11 @@ export class OptimizeListComponent implements OnInit {
     // Encode the flow ID for the URL
     const encodedId = encodeURIComponent(flow.id);
     this.router.navigate(['/optimize', encodedId]);
+  }
+
+  navigateToFeedback(flow: FlowItem): void {
+    const encodedId = encodeURIComponent(flow.id);
+    this.router.navigate(['/optimize', encodedId, 'feedback']);
   }
 
   getTotalFeedback(): number {

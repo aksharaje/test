@@ -15,6 +15,7 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
+        title: 'Dashboard | Product Studio',
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then(
             (m) => m.DashboardComponent
@@ -22,6 +23,7 @@ export const routes: Routes = [
       },
       {
         path: 'knowledge-bases',
+        title: 'Knowledge Bases | Product Studio',
         loadComponent: () =>
           import('./features/knowledge-bases/knowledge-bases-list.component').then(
             (m) => m.KnowledgeBasesListComponent
@@ -29,6 +31,7 @@ export const routes: Routes = [
       },
       {
         path: 'knowledge-bases/:id',
+        title: 'Knowledge Base | Product Studio',
         loadComponent: () =>
           import('./features/knowledge-bases/knowledge-base-detail.component').then(
             (m) => m.KnowledgeBaseDetailComponent
@@ -36,6 +39,7 @@ export const routes: Routes = [
       },
       {
         path: 'knowledge-bases/:id/search',
+        title: 'Search Knowledge Base | Product Studio',
         loadComponent: () =>
           import('./features/knowledge-bases/knowledge-base-search.component').then(
             (m) => m.KnowledgeBaseSearchComponent
@@ -43,6 +47,7 @@ export const routes: Routes = [
       },
       {
         path: 'story-generator',
+        title: 'Epic/Feature/Story Creator | Product Studio',
         loadComponent: () =>
           import('./features/story-generator/story-generator.component').then(
             (m) => m.StoryGeneratorComponent
@@ -50,6 +55,7 @@ export const routes: Routes = [
       },
       {
         path: 'story-generator/output/:id',
+        title: 'Story Output | Product Studio',
         loadComponent: () =>
           import('./features/story-generator/story-generator-output.component').then(
             (m) => m.StoryGeneratorOutputComponent
@@ -57,6 +63,7 @@ export const routes: Routes = [
       },
       {
         path: 'code-chat',
+        title: 'Code Chat | Product Studio',
         loadComponent: () =>
           import('./features/code-chat/code-chat.component').then(
             (m) => m.CodeChatComponent
@@ -64,6 +71,7 @@ export const routes: Routes = [
       },
       {
         path: 'optimize',
+        title: 'Agent Optimization | Product Studio',
         loadComponent: () =>
           import('./features/agent-optimize/optimize-list.component').then(
             (m) => m.OptimizeListComponent
@@ -71,9 +79,18 @@ export const routes: Routes = [
       },
       {
         path: 'optimize/:flowId',
+        title: 'Optimization Details | Product Studio',
         loadComponent: () =>
           import('./features/agent-optimize/optimize-detail.component').then(
             (m) => m.OptimizeDetailComponent
+          ),
+      },
+      {
+        path: 'optimize/:flowId/feedback',
+        title: 'Feedback | Product Studio',
+        loadComponent: () =>
+          import('./features/agent-optimize/feedback-page.component').then(
+            (m) => m.FeedbackPageComponent
           ),
       },
     ],
