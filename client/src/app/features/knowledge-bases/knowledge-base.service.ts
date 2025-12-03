@@ -227,6 +227,35 @@ export class KnowledgeBaseService {
     }
   }
 
+  async reprocessDocument(knowledgeBaseId: number, documentId: number): Promise<boolean> {
+    this._error.set(null);
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ message: string; document: Document }>(
+          `${this.baseUrl}/${knowledgeBaseId}/documents/${documentId}/reprocess`,
+          {}
+        )
+      );
+      // Update the document in the list
+      this._documents.update((docs) =>
+        docs.map((d) => (d.id === documentId ? response.document : d))
+      );
+      return true;
+    } catch (err) {
+      this._error.set('Failed to reprocess document');
+      console.error(err);
+      return false;
+    }
+  }
+
+  // Check if any documents are still processing
+  hasProcessingDocuments(): boolean {
+    return this._documents().some(
+      (d) => d.status === 'pending' || d.status === 'processing'
+    );
+  }
+
   // Search
   async search(
     knowledgeBaseId: number,

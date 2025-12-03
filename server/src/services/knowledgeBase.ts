@@ -461,6 +461,47 @@ async function addFactAsDocument(
   return doc;
 }
 
+// Reprocess a single document (clear chunks and re-index)
+async function reprocessDocument(
+  knowledgeBaseId: number,
+  documentId: number
+): Promise<Document | null> {
+  // Get document
+  const [doc] = await db
+    .select()
+    .from(documents)
+    .where(
+      and(eq(documents.id, documentId), eq(documents.knowledgeBaseId, knowledgeBaseId))
+    );
+
+  if (!doc) {
+    return null;
+  }
+
+  // Delete existing chunks for this document
+  await db.delete(documentChunks).where(eq(documentChunks.documentId, documentId));
+
+  // Reset document status
+  await db
+    .update(documents)
+    .set({
+      status: 'pending',
+      error: null,
+      chunkCount: 0,
+      updatedAt: new Date(),
+    })
+    .where(eq(documents.id, documentId));
+
+  // Re-index in background
+  indexDocument(documentId).catch((err) => {
+    console.error(`Error reprocessing document ${documentId}:`, err);
+  });
+
+  // Return updated document
+  const [updated] = await db.select().from(documents).where(eq(documents.id, documentId));
+  return updated as Document;
+}
+
 export const knowledgeBaseService = {
   // CRUD
   create: createKnowledgeBase,
@@ -473,6 +514,7 @@ export const knowledgeBaseService = {
   addDocument,
   getDocuments,
   deleteDocument,
+  reprocessDocument,
 
   // Indexing
   indexDocument,

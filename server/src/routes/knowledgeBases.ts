@@ -222,6 +222,28 @@ router.delete('/:id/documents/:docId', async (req, res) => {
   }
 });
 
+// Reprocess a single document
+router.post('/:id/documents/:docId/reprocess', async (req, res) => {
+  try {
+    const kbId = parseInt(req.params.id);
+    const docId = parseInt(req.params.docId);
+
+    const document = await knowledgeBaseService.reprocessDocument(kbId, docId);
+
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    res.json({
+      message: 'Document reprocessing started',
+      document,
+    });
+  } catch (error) {
+    console.error('Error reprocessing document:', error);
+    res.status(500).json({ error: 'Failed to reprocess document' });
+  }
+});
+
 // Semantic search / RAG query
 router.post('/:id/query', async (req, res) => {
   try {

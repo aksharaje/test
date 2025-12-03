@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -13,6 +13,7 @@ import {
   lucideAlertCircle,
   lucideClock,
   lucidePencil,
+  lucideRefreshCw,
 } from '@ng-icons/lucide';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import type { Document, KnowledgeBase } from './knowledge-base.types';
@@ -35,6 +36,7 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideAlertCircle,
       lucideClock,
       lucidePencil,
+      lucideRefreshCw,
     }),
   ],
   template: `
@@ -263,6 +265,17 @@ import { HlmButtonDirective } from '../../ui/button';
                       }
                       {{ doc.status }}
                     </span>
+                    @if (doc.status === 'error') {
+                      <button
+                        hlmBtn
+                        variant="ghost"
+                        size="icon"
+                        (click)="reprocessDocument(doc)"
+                        title="Retry"
+                      >
+                        <ng-icon name="lucideRefreshCw" class="h-4 w-4 text-primary" />
+                      </button>
+                    }
                     <button
                       hlmBtn
                       variant="ghost"
@@ -282,7 +295,7 @@ import { HlmButtonDirective } from '../../ui/button';
     </div>
   `,
 })
-export class KnowledgeBaseDetailComponent implements OnInit {
+export class KnowledgeBaseDetailComponent implements OnInit, OnDestroy {
   protected service = inject(KnowledgeBaseService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -296,9 +309,44 @@ export class KnowledgeBaseDetailComponent implements OnInit {
   protected editName = signal('');
   protected saving = signal(false);
 
+  private pollingInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly POLL_INTERVAL_MS = 3000;
+
   ngOnInit(): void {
     const id = parseInt(this.route.snapshot.params['id']);
     this.loadKnowledgeBase(id);
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
+  }
+
+  private startPolling(): void {
+    if (this.pollingInterval) return;
+
+    this.pollingInterval = setInterval(async () => {
+      if (this.kb() && this.service.hasProcessingDocuments()) {
+        await this.service.loadDocuments(this.kb()!.id);
+        // Also refresh KB stats
+        const updated = await this.service.getKnowledgeBase(this.kb()!.id);
+        if (updated) this.kb.set(updated);
+      } else {
+        this.stopPolling();
+      }
+    }, this.POLL_INTERVAL_MS);
+  }
+
+  private stopPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  private checkAndStartPolling(): void {
+    if (this.service.hasProcessingDocuments()) {
+      this.startPolling();
+    }
   }
 
   private async loadKnowledgeBase(id: number): Promise<void> {
@@ -306,6 +354,7 @@ export class KnowledgeBaseDetailComponent implements OnInit {
     this.kb.set(kb);
     if (kb) {
       await this.service.loadDocuments(kb.id);
+      this.checkAndStartPolling();
     }
   }
 
@@ -406,6 +455,12 @@ export class KnowledgeBaseDetailComponent implements OnInit {
       await this.service.deleteDocument(this.kb()!.id, doc.id);
       await this.loadKnowledgeBase(this.kb()!.id);
     }
+  }
+
+  protected async reprocessDocument(doc: Document): Promise<void> {
+    if (!this.kb()) return;
+    await this.service.reprocessDocument(this.kb()!.id, doc.id);
+    this.checkAndStartPolling();
   }
 
   protected getStatusClasses(status: string): string {
