@@ -3,12 +3,14 @@ import {
   generatedArtifacts,
   knowledgeBases,
   documentChunks,
+  promptTemplates,
   type GeneratedArtifactFile,
   type GenerationMetadata,
 } from '../db/schema.js';
 import { eq, desc, inArray, sql } from 'drizzle-orm';
 import { cosineDistance, gt } from 'drizzle-orm';
 import { embeddingService } from './embedding.js';
+import { storyGeneratorSplitTestService } from './storyGeneratorSplitTest.js';
 import OpenAI from 'openai';
 
 // Types
@@ -81,6 +83,8 @@ export interface GeneratedArtifact {
   inputDescription: string;
   inputFiles: GeneratedArtifactFile[];
   knowledgeBaseIds: number[];
+  promptTemplateId: number | null;
+  splitTestId: number | null;
   status: 'draft' | 'final';
   generationMetadata: GenerationMetadata | null;
   createdAt: Date;
@@ -424,7 +428,40 @@ function parseJsonResponse(response: string, type: ArtifactType): StructuredCont
 // Main generation function
 async function generate(request: GenerateRequest): Promise<GeneratedArtifact> {
   const startTime = Date.now();
-  const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-sonnet-4';
+  let model = process.env.OPENROUTER_MODEL || 'anthropic/claude-sonnet-4';
+  let systemPrompt: string;
+  let promptTemplateId: number | null = null;
+  let splitTestId: number | null = null;
+
+  // Check for active A/B test and select a template
+  const activeTest = await storyGeneratorSplitTestService.getActiveSplitTest(request.type);
+
+  if (activeTest) {
+    // Select a random template from the active test
+    const selectedTemplateId = await storyGeneratorSplitTestService.selectTemplateForGeneration(request.type);
+
+    if (selectedTemplateId) {
+      const template = await storyGeneratorSplitTestService.getPromptTemplate(selectedTemplateId);
+
+      if (template) {
+        // Use the template's prompt and model
+        systemPrompt = template.systemPrompt;
+        model = template.model;
+        promptTemplateId = template.id;
+        splitTestId = activeTest.id;
+        console.log(`Using A/B test template: ${template.name} (v${template.version})`);
+      } else {
+        // Fall back to default prompt
+        systemPrompt = getSystemPrompt(request.type, request.title || request.description.slice(0, 50));
+      }
+    } else {
+      // Fall back to default prompt
+      systemPrompt = getSystemPrompt(request.type, request.title || request.description.slice(0, 50));
+    }
+  } else {
+    // No active A/B test, use default prompt
+    systemPrompt = getSystemPrompt(request.type, request.title || request.description.slice(0, 50));
+  }
 
   // Get KB context if knowledge bases are selected
   const kbContext = await getKnowledgeBaseContext(
@@ -433,7 +470,6 @@ async function generate(request: GenerateRequest): Promise<GeneratedArtifact> {
   );
 
   // Build messages
-  const systemPrompt = getSystemPrompt(request.type, request.title || request.description.slice(0, 50));
   const messageContent = buildMessageContent(
     request.description,
     request.files || [],
@@ -466,7 +502,7 @@ async function generate(request: GenerateRequest): Promise<GeneratedArtifact> {
   const title = request.title || extractTitle(generatedContent, request.type);
   const generationTimeMs = Date.now() - startTime;
 
-  // Save to database
+  // Save to database with A/B test tracking
   const [artifact] = await db
     .insert(generatedArtifacts)
     .values({
@@ -477,6 +513,8 @@ async function generate(request: GenerateRequest): Promise<GeneratedArtifact> {
       inputDescription: request.description,
       inputFiles: request.files || [],
       knowledgeBaseIds: request.knowledgeBaseIds || [],
+      promptTemplateId,
+      splitTestId,
       status: 'draft',
       generationMetadata: {
         model,

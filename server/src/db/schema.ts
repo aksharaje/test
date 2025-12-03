@@ -196,6 +196,37 @@ export type ChunkMetadata = {
 // STORY GENERATOR
 // ===================
 
+// Prompt Templates - versioned templates for Story Generator A/B testing
+export const promptTemplates = pgTable('prompt_templates', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').$type<'epic' | 'feature' | 'user_story'>().notNull(),
+  version: integer('version').notNull(),
+  systemPrompt: text('system_prompt').notNull(),
+  model: text('model').notNull().default('google/gemini-2.0-flash-001'),
+  status: text('status').$type<PromptTemplateStatus>().notNull().default('draft'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('prompt_templates_type_idx').on(table.type),
+  index('prompt_templates_status_idx').on(table.status),
+]);
+
+// Story Generator Split Tests - A/B test configurations for prompt templates
+export const storyGeneratorSplitTests = pgTable('story_generator_split_tests', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  artifactType: text('artifact_type').$type<'epic' | 'feature' | 'user_story'>().notNull(),
+  promptTemplateIds: jsonb('prompt_template_ids').$type<number[]>().notNull(),
+  status: text('status').$type<SplitTestStatus>().notNull().default('active'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('sg_split_tests_type_idx').on(table.artifactType),
+  index('sg_split_tests_status_idx').on(table.status),
+]);
+
 // Generated artifacts (epics, features, user stories)
 export const generatedArtifacts = pgTable('generated_artifacts', {
   id: serial('id').primaryKey(),
@@ -203,17 +234,23 @@ export const generatedArtifacts = pgTable('generated_artifacts', {
   type: text('type').$type<'epic' | 'feature' | 'user_story'>().notNull(),
   title: text('title').notNull(),
   content: text('content').notNull(), // Markdown content
-  parentId: integer('parent_id').references((): ReturnType<typeof pgTable> => generatedArtifacts.id),
+  parentId: integer('parent_id'),
   // Generation context
   inputDescription: text('input_description').notNull(),
   inputFiles: jsonb('input_files').$type<GeneratedArtifactFile[]>().default([]),
   knowledgeBaseIds: jsonb('knowledge_base_ids').$type<number[]>().default([]),
+  // A/B Testing - track which prompt template was used
+  promptTemplateId: integer('prompt_template_id').references(() => promptTemplates.id, { onDelete: 'set null' }),
+  splitTestId: integer('split_test_id').references(() => storyGeneratorSplitTests.id, { onDelete: 'set null' }),
   // Metadata
   status: text('status').$type<'draft' | 'final'>().notNull().default('draft'),
   generationMetadata: jsonb('generation_metadata').$type<GenerationMetadata>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('generated_artifacts_template_idx').on(table.promptTemplateId),
+  index('generated_artifacts_split_test_idx').on(table.splitTestId),
+]);
 
 // Types for story generator
 export type GeneratedArtifactFile = {
@@ -232,6 +269,35 @@ export type GenerationMetadata = {
   generationTimeMs?: number;
   regeneratePrompt?: string;
 };
+
+// Story Generator Feedback - user feedback on generated artifacts
+export const generationFeedback = pgTable('generation_feedback', {
+  id: serial('id').primaryKey(),
+  artifactId: integer('artifact_id').references(() => generatedArtifacts.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id),
+  sentiment: text('sentiment').$type<FeedbackSentiment>().notNull(),
+  text: text('text'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('generation_feedback_artifact_idx').on(table.artifactId),
+  index('generation_feedback_sentiment_idx').on(table.sentiment),
+]);
+
+// Story Generator Extracted Facts - facts detected in feedback
+export const generationExtractedFacts = pgTable('generation_extracted_facts', {
+  id: serial('id').primaryKey(),
+  feedbackId: integer('feedback_id').references(() => generationFeedback.id, { onDelete: 'cascade' }).notNull(),
+  content: text('content').notNull(),
+  knowledgeBaseId: integer('knowledge_base_id').references(() => knowledgeBases.id, { onDelete: 'set null' }),
+  status: text('status').$type<ExtractedFactStatus>().notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('gen_extracted_facts_feedback_idx').on(table.feedbackId),
+  index('gen_extracted_facts_status_idx').on(table.status),
+]);
+
+// Story Generator Types
+export type PromptTemplateStatus = 'draft' | 'active' | 'archived';
 
 // ===================
 // CODE CHAT
@@ -275,4 +341,93 @@ export type CodeChatMessageMetadata = {
   completionTokens?: number;
   responseTimeMs?: number;
   chunksSearched?: number;
+};
+
+// ===================
+// AGENT FEEDBACK & A/B TESTING
+// ===================
+
+// Prompt Versions - different versions of agent prompts for A/B testing
+export const promptVersions = pgTable('prompt_versions', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').references(() => agents.id, { onDelete: 'cascade' }).notNull(),
+  version: integer('version').notNull(),
+  systemPrompt: text('system_prompt').notNull(),
+  model: text('model').notNull(),
+  status: text('status').$type<PromptVersionStatus>().notNull().default('draft'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('prompt_versions_agent_idx').on(table.agentId),
+]);
+
+// Split Tests - A/B test configurations
+export const splitTests = pgTable('split_tests', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').references(() => agents.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  promptVersionIds: jsonb('prompt_version_ids').$type<number[]>().notNull(),
+  status: text('status').$type<SplitTestStatus>().notNull().default('active'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('split_tests_agent_idx').on(table.agentId),
+  index('split_tests_status_idx').on(table.status),
+]);
+
+// Agent Executions - tracks each agent execution with version info for A/B correlation
+export const agentExecutions = pgTable('agent_executions', {
+  id: serial('id').primaryKey(),
+  agentId: integer('agent_id').references(() => agents.id, { onDelete: 'cascade' }).notNull(),
+  splitTestId: integer('split_test_id').references(() => splitTests.id, { onDelete: 'set null' }),
+  promptVersionId: integer('prompt_version_id').references(() => promptVersions.id, { onDelete: 'set null' }),
+  conversationId: integer('conversation_id').references(() => conversations.id, { onDelete: 'set null' }),
+  inputPrompt: text('input_prompt').notNull(),
+  response: text('response').notNull(),
+  metadata: jsonb('metadata').$type<ExecutionMetadata>(),
+  executedAt: timestamp('executed_at').defaultNow().notNull(),
+}, (table) => [
+  index('agent_executions_agent_idx').on(table.agentId),
+  index('agent_executions_split_test_idx').on(table.splitTestId),
+  index('agent_executions_version_idx').on(table.promptVersionId),
+]);
+
+// Feedback - user feedback on agent executions
+export const feedback = pgTable('feedback', {
+  id: serial('id').primaryKey(),
+  executionId: integer('execution_id').references(() => agentExecutions.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id),
+  sentiment: text('sentiment').$type<FeedbackSentiment>().notNull(),
+  text: text('text'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('feedback_execution_idx').on(table.executionId),
+  index('feedback_sentiment_idx').on(table.sentiment),
+]);
+
+// Extracted Facts - facts detected in feedback to be added to Knowledge Base
+export const extractedFacts = pgTable('extracted_facts', {
+  id: serial('id').primaryKey(),
+  feedbackId: integer('feedback_id').references(() => feedback.id, { onDelete: 'cascade' }).notNull(),
+  content: text('content').notNull(),
+  knowledgeBaseId: integer('knowledge_base_id').references(() => knowledgeBases.id, { onDelete: 'set null' }),
+  status: text('status').$type<ExtractedFactStatus>().notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('extracted_facts_feedback_idx').on(table.feedbackId),
+  index('extracted_facts_status_idx').on(table.status),
+]);
+
+// Feedback Loop Types
+export type PromptVersionStatus = 'draft' | 'active' | 'archived';
+export type SplitTestStatus = 'active' | 'completed' | 'paused';
+export type FeedbackSentiment = 'positive' | 'negative';
+export type ExtractedFactStatus = 'pending' | 'approved' | 'rejected';
+
+export type ExecutionMetadata = {
+  model: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  responseTimeMs?: number;
 };

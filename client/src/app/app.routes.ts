@@ -62,6 +62,20 @@ export const routes: Routes = [
             (m) => m.CodeChatComponent
           ),
       },
+      {
+        path: 'optimize',
+        loadComponent: () =>
+          import('./features/agent-optimize/optimize-list.component').then(
+            (m) => m.OptimizeListComponent
+          ),
+      },
+      {
+        path: 'optimize/:flowId',
+        loadComponent: () =>
+          import('./features/agent-optimize/optimize-detail.component').then(
+            (m) => m.OptimizeDetailComponent
+          ),
+      },
     ],
   },
 ];

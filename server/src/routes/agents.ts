@@ -101,4 +101,40 @@ router.post('/conversations/:conversationId/messages', async (req, res) => {
   }
 });
 
+// Execute an agent (with A/B test support)
+router.post('/:id/execute', async (req, res) => {
+  try {
+    const agentId = parseInt(req.params.id);
+    const { prompt } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'prompt is required' });
+    }
+
+    const result = await agentService.executeAgent(agentId, prompt);
+    res.json(result);
+  } catch (error) {
+    console.error('Error executing agent:', error);
+    const message = error instanceof Error ? error.message : 'Failed to execute agent';
+    res.status(500).json({ error: message });
+  }
+});
+
+// Get an execution by ID
+router.get('/executions/:executionId', async (req, res) => {
+  try {
+    const executionId = parseInt(req.params.executionId);
+    const execution = await agentService.getExecution(executionId);
+
+    if (!execution) {
+      return res.status(404).json({ error: 'Execution not found' });
+    }
+
+    res.json(execution);
+  } catch (error) {
+    console.error('Error getting execution:', error);
+    res.status(500).json({ error: 'Failed to get execution' });
+  }
+});
+
 export default router;

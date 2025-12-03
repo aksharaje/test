@@ -99,3 +99,35 @@ export interface KnowledgeBase {
   documentCount: number;
   totalChunks: number;
 }
+
+// ==================
+// FEEDBACK TYPES
+// ==================
+
+export type FeedbackSentiment = 'positive' | 'negative';
+export type ExtractedFactStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ExtractedFact {
+  id: number;
+  content: string;
+  status: ExtractedFactStatus;
+  knowledgeBaseId: number | null;
+}
+
+export interface ArtifactFeedback {
+  id: number;
+  artifactId: number;
+  userId: number | null;
+  sentiment: FeedbackSentiment;
+  text: string | null;
+  createdAt: string;
+  extractedFacts: ExtractedFact[];
+}
+
+export interface ArtifactFeedbackStats {
+  artifactId: number;
+  positive: number;
+  negative: number;
+  total: number;
+  positiveRate: number;
+}

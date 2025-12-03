@@ -6,6 +6,9 @@ import type {
   GeneratedArtifact,
   InputConfig,
   KnowledgeBase,
+  ArtifactFeedback,
+  ArtifactFeedbackStats,
+  FeedbackSentiment,
 } from './story-generator.types';
 
 @Injectable({
@@ -102,8 +105,8 @@ export class StoryGeneratorService {
       this._currentArtifact.set(artifact);
       this._artifacts.update((arr) => [artifact, ...arr]);
       return artifact;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Generation failed';
+    } catch (err: any) {
+      const message = err?.error?.error || err?.message || 'Generation failed';
       this._error.set(message);
       console.error('Generation error:', err);
       return null;
@@ -231,5 +234,55 @@ export class StoryGeneratorService {
   // Clear error
   clearError(): void {
     this._error.set(null);
+  }
+
+  // ==================
+  // FEEDBACK METHODS
+  // ==================
+
+  // Submit feedback for an artifact
+  async submitFeedback(
+    artifactId: number,
+    sentiment: FeedbackSentiment,
+    text?: string
+  ): Promise<ArtifactFeedback | null> {
+    try {
+      const feedback = await firstValueFrom(
+        this.http.post<ArtifactFeedback>(`${this.baseUrl}/${artifactId}/feedback`, {
+          sentiment,
+          text,
+        })
+      );
+      return feedback;
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+      return null;
+    }
+  }
+
+  // Get feedback stats for an artifact
+  async getFeedbackStats(artifactId: number): Promise<ArtifactFeedbackStats | null> {
+    try {
+      const stats = await firstValueFrom(
+        this.http.get<ArtifactFeedbackStats>(`${this.baseUrl}/${artifactId}/feedback/stats`)
+      );
+      return stats;
+    } catch (err) {
+      console.error('Failed to get feedback stats:', err);
+      return null;
+    }
+  }
+
+  // Get all feedback for an artifact
+  async getArtifactFeedback(artifactId: number): Promise<ArtifactFeedback[]> {
+    try {
+      const feedback = await firstValueFrom(
+        this.http.get<ArtifactFeedback[]>(`${this.baseUrl}/${artifactId}/feedback`)
+      );
+      return feedback;
+    } catch (err) {
+      console.error('Failed to get artifact feedback:', err);
+      return [];
+    }
   }
 }

@@ -19,6 +19,6 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
     if (!database) {
       database = drizzle(getPool(), { schema });
     }
-    return (database as Record<string | symbol, unknown>)[prop];
+    return (database as unknown as Record<string | symbol, unknown>)[prop];
   },
 });

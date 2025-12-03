@@ -447,14 +447,15 @@ export class StoryGeneratorComponent implements OnInit {
       this.selectedKbIds()
     );
 
-    if (artifact) {
+    if (artifact && artifact.id) {
       // Clear form after successful generation
       this.title.set('');
       this.description.set('');
       this.selectedFiles.set([]);
       this.selectedKbIds.set([]);
 
-      this.router.navigate(['/story-generator/output', artifact.id]);
+      // Navigate to the output page
+      await this.router.navigate(['/story-generator/output', artifact.id]);
     }
   }
 

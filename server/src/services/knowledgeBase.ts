@@ -432,6 +432,35 @@ async function uploadFiles(
   return addedDocs;
 }
 
+// Add a fact extracted from feedback as a document
+async function addFactAsDocument(
+  knowledgeBaseId: number,
+  factContent: string
+): Promise<Document> {
+  const kb = await getKnowledgeBase(knowledgeBaseId);
+  if (!kb) {
+    throw new Error('Knowledge base not found');
+  }
+
+  const timestamp = new Date().toISOString().split('T')[0];
+  const doc = await addDocument({
+    knowledgeBaseId,
+    name: `Feedback Fact - ${timestamp}`,
+    source: 'file_upload', // Using file_upload as the closest match
+    content: factContent,
+    sourceMetadata: {
+      fileName: `fact-${Date.now()}.txt`,
+      mimeType: 'text/plain',
+      fileSize: factContent.length,
+    },
+  });
+
+  // Immediately index the document since it's small
+  await indexDocument(doc.id);
+
+  return doc;
+}
+
 export const knowledgeBaseService = {
   // CRUD
   create: createKnowledgeBase,
@@ -455,4 +484,7 @@ export const knowledgeBaseService = {
   // Import
   importFromGitHub,
   uploadFiles,
+
+  // Feedback facts
+  addFactAsDocument,
 };

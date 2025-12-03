@@ -3,8 +3,6 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideHome,
-  lucideUsers,
-  lucideSettings,
   lucideMenu,
   lucideX,
   lucideChevronDown,
@@ -35,8 +33,6 @@ export interface NavItem {
   viewProviders: [
     provideIcons({
       lucideHome,
-      lucideUsers,
-      lucideSettings,
       lucideMenu,
       lucideX,
       lucideChevronDown,
@@ -69,10 +65,12 @@ export interface NavItem {
     >
       <div class="flex h-full flex-col">
         <!-- Logo/Brand area -->
-        <div class="flex h-16 items-center border-b border-sidebar-border px-6">
-          <span class="text-lg font-semibold text-sidebar-foreground">
-            {{ brandName() }}
-          </span>
+        <div class="flex h-16 items-center border-b border-sidebar-border px-4">
+          <img
+            src="logo.png"
+            alt="Moodys NWC"
+            class="h-14 w-auto"
+          />
         </div>
 
         <!-- Navigation -->
@@ -166,9 +164,7 @@ export class AuthenticatedLayoutComponent {
       ],
     },
     { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
-    { label: 'Users', path: '/users', icon: 'lucideUsers' },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
-    { label: 'Settings', path: '/settings', icon: 'lucideSettings' },
   ]);
 
   onProfile = output<void>();

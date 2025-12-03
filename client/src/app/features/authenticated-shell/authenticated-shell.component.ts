@@ -43,6 +43,7 @@ export class AuthenticatedShellComponent {
       ],
     },
     { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
+    { label: 'Agent Optimization', path: '/optimize', icon: 'lucideFlaskConical' },
     { label: 'Users', path: '/users', icon: 'lucideUsers' },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
     { label: 'Settings', path: '/settings', icon: 'lucideSettings' },

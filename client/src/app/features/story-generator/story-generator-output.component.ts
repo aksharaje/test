@@ -13,8 +13,13 @@ import {
   lucideDownload,
   lucideSparkles,
   lucideLoader2,
+  lucideThumbsUp,
+  lucideThumbsDown,
+  lucideSend,
+  lucideMessageSquare,
 } from '@ng-icons/lucide';
 import { StoryGeneratorService } from './story-generator.service';
+import { FormsModule } from '@angular/forms';
 import type {
   GeneratedArtifact,
   StructuredContent,
@@ -22,13 +27,15 @@ import type {
   FeatureNode,
   StoryNode,
   AcceptanceCriterion,
+  FeedbackSentiment,
+  ArtifactFeedbackStats,
 } from './story-generator.types';
 import { HlmButtonDirective } from '../../ui/button';
 
 @Component({
   selector: 'app-story-generator-output',
   standalone: true,
-  imports: [CommonModule, NgIcon, HlmButtonDirective, RouterLink],
+  imports: [CommonModule, NgIcon, HlmButtonDirective, RouterLink, FormsModule],
   viewProviders: [
     provideIcons({
       lucideChevronDown,
@@ -41,6 +48,10 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideDownload,
       lucideSparkles,
       lucideLoader2,
+      lucideThumbsUp,
+      lucideThumbsDown,
+      lucideSend,
+      lucideMessageSquare,
     }),
   ],
   template: `
@@ -199,6 +210,85 @@ import { HlmButtonDirective } from '../../ui/button';
               @for (story of structured()!.stories; track $index; let i = $index) {
                 <ng-container *ngTemplateOutlet="storyCard; context: { story, index: i, prefix: 'standalone' }"></ng-container>
               }
+            }
+          </div>
+
+          <!-- Feedback Section -->
+          <div class="mt-8 rounded-lg border bg-card p-6 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+              <ng-icon name="lucideMessageSquare" class="h-5 w-5 text-primary" />
+              <h3 class="font-semibold">How was this output?</h3>
+            </div>
+
+            @if (feedbackSubmitted()) {
+              <div class="flex items-center gap-3 text-sm">
+                <span class="text-green-600">Thanks for your feedback!</span>
+              </div>
+            } @else {
+              <div class="space-y-4">
+                <!-- Quick feedback buttons -->
+                <div class="flex items-center gap-3">
+                  <button
+                    hlmBtn
+                    [variant]="selectedSentiment() === 'positive' ? 'default' : 'outline'"
+                    size="sm"
+                    type="button"
+                    (click)="selectSentiment('positive')"
+                    class="flex items-center gap-2"
+                  >
+                    <ng-icon name="lucideThumbsUp" class="h-4 w-4" />
+                    Helpful
+                  </button>
+                  <button
+                    hlmBtn
+                    [variant]="selectedSentiment() === 'negative' ? 'default' : 'outline'"
+                    size="sm"
+                    type="button"
+                    (click)="selectSentiment('negative')"
+                    class="flex items-center gap-2"
+                  >
+                    <ng-icon name="lucideThumbsDown" class="h-4 w-4" />
+                    Not Helpful
+                  </button>
+                </div>
+
+                <!-- Feedback text area (shown when negative is selected) -->
+                @if (selectedSentiment() === 'negative') {
+                  <div class="space-y-2">
+                    <label class="text-sm text-muted-foreground">
+                      What was wrong or missing? (helps us improve)
+                    </label>
+                    <textarea
+                      [(ngModel)]="feedbackText"
+                      class="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      rows="3"
+                      placeholder="e.g., The acceptance criteria were too vague, or a specific business rule was incorrect..."
+                    ></textarea>
+                    <p class="text-xs text-muted-foreground">
+                      Tip: If you mention specific facts or business rules, we can extract them to improve future generations.
+                    </p>
+                  </div>
+                }
+
+                <!-- Submit button -->
+                @if (selectedSentiment()) {
+                  <button
+                    hlmBtn
+                    size="sm"
+                    type="button"
+                    (click)="submitFeedback()"
+                    [disabled]="submittingFeedback()"
+                    class="flex items-center gap-2"
+                  >
+                    @if (submittingFeedback()) {
+                      <ng-icon name="lucideLoader2" class="h-4 w-4 animate-spin" />
+                    } @else {
+                      <ng-icon name="lucideSend" class="h-4 w-4" />
+                    }
+                    Submit Feedback
+                  </button>
+                }
+              </div>
             }
           </div>
 
@@ -401,6 +491,13 @@ export class StoryGeneratorOutputComponent implements OnInit {
   protected expandedItems = signal<Set<string>>(new Set());
   protected copiedAll = signal(false);
   protected showExportMenu = signal(false);
+
+  // Feedback state
+  protected selectedSentiment = signal<FeedbackSentiment | null>(null);
+  protected feedbackText = '';
+  protected submittingFeedback = signal(false);
+  protected feedbackSubmitted = signal(false);
+  protected feedbackStats = signal<ArtifactFeedbackStats | null>(null);
 
   // Parse the JSON content into structured data
   protected structured = computed<StructuredContent | null>(() => {
@@ -646,5 +743,43 @@ export class StoryGeneratorOutputComponent implements OnInit {
       hour: 'numeric',
       minute: '2-digit',
     });
+  }
+
+  // Feedback methods
+  protected selectSentiment(sentiment: FeedbackSentiment): void {
+    this.selectedSentiment.set(sentiment);
+    // Clear feedback text when switching to positive
+    if (sentiment === 'positive') {
+      this.feedbackText = '';
+    }
+  }
+
+  protected async submitFeedback(): Promise<void> {
+    const artifact = this.artifact();
+    const sentiment = this.selectedSentiment();
+
+    if (!artifact || !sentiment) return;
+
+    this.submittingFeedback.set(true);
+
+    try {
+      const feedback = await this.service.submitFeedback(
+        artifact.id,
+        sentiment,
+        sentiment === 'negative' ? this.feedbackText : undefined
+      );
+
+      if (feedback) {
+        this.feedbackSubmitted.set(true);
+
+        // Load updated stats
+        const stats = await this.service.getFeedbackStats(artifact.id);
+        if (stats) {
+          this.feedbackStats.set(stats);
+        }
+      }
+    } finally {
+      this.submittingFeedback.set(false);
+    }
   }
 }

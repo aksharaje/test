@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { agents, conversations, messages, AgentTool, ToolCall } from '../db/schema.js';
+import { agents, conversations, messages, agentExecutions, promptVersions, AgentTool, ToolCall } from '../db/schema.js';
 import { openrouter, Message } from './openrouter.js';
+import { splitTestService } from './splitTest.js';
 
 // Tool handler type - implement these for your custom tools
 export type ToolHandler = (args: Record<string, unknown>) => Promise<string>;
@@ -212,6 +213,112 @@ export class AgentService {
     }
 
     throw new Error(`Agent exceeded maximum iterations (${maxIterations})`);
+  }
+
+  /**
+   * Execute an agent with A/B test support
+   * This method handles the prompt version selection for A/B testing
+   */
+  async executeAgent(
+    agentId: number,
+    inputPrompt: string
+  ): Promise<{
+    executionId: number;
+    response: string;
+    promptVersionId: number | null;
+    splitTestId: number | null;
+    metadata: {
+      model: string;
+      promptTokens?: number;
+      completionTokens?: number;
+      responseTimeMs: number;
+    };
+  }> {
+    const startTime = Date.now();
+
+    const agent = await this.getAgent(agentId);
+    if (!agent) {
+      throw new Error(`Agent with id ${agentId} not found`);
+    }
+
+    // Check for active split test and select a version
+    let systemPrompt = agent.systemPrompt;
+    let model = agent.model;
+    let promptVersionId: number | null = null;
+    let splitTestId: number | null = null;
+
+    const selectedVersionId = await splitTestService.selectVersionForExecution(agentId);
+    if (selectedVersionId) {
+      const version = await splitTestService.getPromptVersion(selectedVersionId);
+      if (version) {
+        systemPrompt = version.systemPrompt;
+        model = version.model;
+        promptVersionId = version.id;
+
+        // Get the active split test
+        const activeSplitTest = await splitTestService.getActiveSplitTest(agentId);
+        if (activeSplitTest) {
+          splitTestId = activeSplitTest.id;
+        }
+      }
+    }
+
+    // Execute the agent
+    const response = await openrouter.chat(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: inputPrompt },
+      ],
+      {
+        model,
+        tools: agent.tools || [],
+      }
+    );
+
+    const responseTimeMs = Date.now() - startTime;
+
+    // Record the execution
+    const [execution] = await db
+      .insert(agentExecutions)
+      .values({
+        agentId,
+        splitTestId,
+        promptVersionId,
+        inputPrompt,
+        response: response.content,
+        metadata: {
+          model,
+          promptTokens: response.usage.promptTokens,
+          completionTokens: response.usage.completionTokens,
+          responseTimeMs,
+        },
+      })
+      .returning();
+
+    return {
+      executionId: execution.id,
+      response: response.content,
+      promptVersionId,
+      splitTestId,
+      metadata: {
+        model,
+        promptTokens: response.usage.promptTokens,
+        completionTokens: response.usage.completionTokens,
+        responseTimeMs,
+      },
+    };
+  }
+
+  /**
+   * Get an execution by ID
+   */
+  async getExecution(executionId: number) {
+    const [execution] = await db
+      .select()
+      .from(agentExecutions)
+      .where(eq(agentExecutions.id, executionId));
+
+    return execution;
   }
 }
 
