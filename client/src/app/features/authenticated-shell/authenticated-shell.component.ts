@@ -1,0 +1,64 @@
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import {
+  AuthenticatedLayoutComponent,
+  type NavItem,
+} from '../../shared/layouts/authenticated-layout';
+import type { User } from '../../shared/components/user-menu';
+
+@Component({
+  selector: 'app-authenticated-shell',
+  standalone: true,
+  imports: [AuthenticatedLayoutComponent],
+  template: `
+    <app-authenticated-layout
+      [user]="currentUser()"
+      [navItems]="navItems"
+      brandName="My App"
+      (onProfile)="handleProfile()"
+      (onSettings)="handleSettings()"
+      (onLogout)="handleLogout()"
+    />
+  `,
+})
+export class AuthenticatedShellComponent {
+  private router = inject(Router);
+
+  // In a real app, this would come from an auth service
+  currentUser = signal<User>({
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    avatarUrl: undefined,
+  });
+
+  navItems: NavItem[] = [
+    { label: 'Dashboard', path: '/dashboard', icon: 'lucideHome' },
+    {
+      label: 'Design',
+      path: '/design',
+      icon: 'lucidePalette',
+      children: [
+        { label: 'Epic/Feature/Story Creator', path: '/story-generator', icon: 'lucideLayoutList' },
+      ],
+    },
+    { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
+    { label: 'Users', path: '/users', icon: 'lucideUsers' },
+    { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
+    { label: 'Settings', path: '/settings', icon: 'lucideSettings' },
+  ];
+
+  handleProfile(): void {
+    this.router.navigate(['/profile']);
+  }
+
+  handleSettings(): void {
+    this.router.navigate(['/settings']);
+  }
+
+  handleLogout(): void {
+    // In a real app, this would call an auth service to log out
+    console.log('Logging out...');
+    this.router.navigate(['/login']);
+  }
+}
