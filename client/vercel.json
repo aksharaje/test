@@ -1,6 +1,6 @@
 {
     "buildCommand": "npm install && npm run build",
-    "outputDirectory": "dist/client/browser",
+    "outputDirectory": "dist/browser",
     "installCommand": "npm install --include=dev",
     "framework": null,
     "rewrites": [
