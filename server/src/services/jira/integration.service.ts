@@ -383,7 +383,7 @@ const FIELD_PATTERNS: Record<
     // Must contain "story point" - avoid matching "points" alone or "time"
     namePatterns: ['story points', 'story point', 'story point estimate'],
     excludePatterns: ['time', 'spent', 'original', 'remaining'],
-    schemaMatch: (schema) => schema?.type === 'number' && schema?.custom?.includes('storypoint'),
+    schemaMatch: (schema) => schema?.type === 'number' && (schema?.custom?.includes('storypoint') ?? false),
   },
   sprint: {
     namePatterns: ['sprint'],

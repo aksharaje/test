@@ -135,10 +135,10 @@ export async function createIssue(request: CreateIssueRequest): Promise<CreatedI
 
   // Add parent (epic link)
   if (request.parentIssueKey) {
-    // Try epic link field first
-    const epicLinkField = mappingsMap.get('epic_link');
-    if (epicLinkField) {
-      fields[epicLinkField] = request.parentIssueKey;
+    // Try parent field mapping first
+    const parentField = mappingsMap.get('parent');
+    if (parentField) {
+      fields[parentField] = request.parentIssueKey;
     } else {
       // Use native parent for next-gen projects
       fields.parent = { key: request.parentIssueKey };
