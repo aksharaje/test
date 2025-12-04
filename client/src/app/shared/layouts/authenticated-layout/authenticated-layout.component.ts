@@ -14,13 +14,16 @@ import {
   lucideFlaskConical,
   lucideActivity,
   lucideFileText,
+  lucideRocket,
+  lucideSettings,
+  lucideCalendarDays,
 } from '@ng-icons/lucide';
 import { UserMenuComponent, type User } from '../../components/user-menu';
 
 export interface NavItem {
   label: string;
   path: string;
-  icon: string;
+  icon?: string;
   children?: NavItem[];
 }
 
@@ -48,6 +51,9 @@ export interface NavItem {
       lucideFlaskConical,
       lucideActivity,
       lucideFileText,
+      lucideRocket,
+      lucideSettings,
+      lucideCalendarDays,
     }),
   ],
   template: `
@@ -110,7 +116,9 @@ export interface NavItem {
                         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         (click)="closeMobileSidebar()"
                       >
-                        <ng-icon [name]="child.icon" class="h-4 w-4" />
+                        @if (child.icon) {
+                          <ng-icon [name]="child.icon" class="h-4 w-4" />
+                        }
                         {{ child.label }}
                       </a>
                     }
@@ -168,7 +176,7 @@ export class AuthenticatedLayoutComponent {
       path: '/design',
       icon: 'lucidePalette',
       children: [
-        { label: 'Epic/Feature/Story Creator', path: '/story-generator', icon: 'lucideLayoutList' },
+        { label: 'Epic/Feature/Story Creator', path: '/story-generator' },
       ],
     },
     { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },

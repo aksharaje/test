@@ -39,7 +39,7 @@ export class AuthenticatedShellComponent {
       path: '/ideate',
       icon: 'lucideLightbulb',
       children: [
-        { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
+        { label: 'Code Chat', path: '/code-chat' },
       ],
     },
     {
@@ -47,26 +47,39 @@ export class AuthenticatedShellComponent {
       path: '/design',
       icon: 'lucidePalette',
       children: [
-        { label: 'PRD Generator', path: '/prd-generator', icon: 'lucideFileText' },
-        { label: 'Epic/Feature/Story Creator', path: '/story-generator', icon: 'lucideLayoutList' },
+        { label: 'PRD Generator', path: '/prd-generator' },
+        { label: 'Epic/Feature/Story Creator', path: '/story-generator' },
       ],
+    },
+    {
+      label: 'Plan',
+      path: '/plan',
+      icon: 'lucideCalendarDays',
+      children: [
+        { label: 'PI Planning', path: '/pi-planning' },
+      ],
+    },
+    {
+      label: 'Deliver',
+      path: '/deliver',
+      icon: 'lucideRocket',
+      children: [],
     },
     {
       label: 'Optimize',
       path: '/optimize-section',
       icon: 'lucideFlaskConical',
       children: [
-        { label: 'Agent Optimization', path: '/optimize', icon: 'lucideActivity' },
+        { label: 'Agent Optimization', path: '/optimize' },
       ],
     },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
-    { label: 'PI Planning', path: '/pi-planning', icon: 'lucideCalendar' },
     {
       label: 'Settings',
       path: '/settings',
       icon: 'lucideSettings',
       children: [
-        { label: 'Integrations', path: '/settings/integrations', icon: 'lucideLink' },
+        { label: 'Integrations', path: '/settings/integrations' },
       ],
     },
   ];
