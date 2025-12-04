@@ -60,6 +60,15 @@ export class AuthenticatedShellComponent {
       ],
     },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
+    { label: 'PI Planning', path: '/pi-planning', icon: 'lucideCalendar' },
+    {
+      label: 'Settings',
+      path: '/settings',
+      icon: 'lucideSettings',
+      children: [
+        { label: 'Integrations', path: '/settings/integrations', icon: 'lucideLink' },
+      ],
+    },
   ];
 
   handleProfile(): void {
@@ -67,7 +76,7 @@ export class AuthenticatedShellComponent {
   }
 
   handleSettings(): void {
-    this.router.navigate(['/settings']);
+    this.router.navigate(['/settings/integrations']);
   }
 
   handleLogout(): void {

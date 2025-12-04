@@ -1,6 +1,6 @@
+import 'dotenv/config'; // Must be first!
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import agentRoutes from './routes/agents.js';
 import flowRoutes from './routes/flows.js';
 import knowledgeBaseRoutes from './routes/knowledgeBases.js';
@@ -12,9 +12,10 @@ import feedbackRoutes from './routes/feedback.js';
 import splitTestRoutes from './routes/splitTests.js';
 import optimizeRoutes from './routes/optimize.js';
 import flowOptimizeRoutes from './routes/flowOptimize.js';
+import integrationRoutes from './routes/integrations.js';
+import jiraRoutes from './routes/jira.js';
+import piPlanningRoutes from './routes/pi-planning.js';
 import { agentService } from './services/agent.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +39,9 @@ app.use('/api', feedbackRoutes);
 app.use('/api', splitTestRoutes);
 app.use('/api/optimize', optimizeRoutes);
 app.use('/api/optimize', flowOptimizeRoutes);
+app.use('/api/integrations', integrationRoutes);
+app.use('/api/jira', jiraRoutes);
+app.use('/api/pi-planning', piPlanningRoutes);
 
 // Register example tools (you can add more here)
 agentService.registerTool('get_current_time', async () => {

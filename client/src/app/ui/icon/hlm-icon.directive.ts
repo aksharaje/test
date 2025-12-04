@@ -2,7 +2,7 @@ import { computed, Directive, input } from '@angular/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { hlm } from '@spartan-ng/ui-core';
 
-export const iconVariants = cva('inline-flex', {
+export const iconVariants = cva('inline-flex items-center justify-center shrink-0', {
   variants: {
     size: {
       xs: 'h-3 w-3',

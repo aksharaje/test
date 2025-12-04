@@ -57,6 +57,20 @@
       "when": 1764792373394,
       "tag": "0007_dusty_corsair",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1764804305166,
+      "tag": "0008_shallow_kinsey_walden",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1764805242209,
+      "tag": "0009_early_nova",
+      "breakpoints": true
     }
   ]
 }

@@ -109,6 +109,38 @@ export const routes: Routes = [
             (m) => m.FeedbackPageComponent
           ),
       },
+      {
+        path: 'settings/integrations',
+        title: 'Integrations | Product Studio',
+        loadComponent: () =>
+          import('./features/settings/integrations.component').then(
+            (m) => m.IntegrationsComponent
+          ),
+      },
+      {
+        path: 'settings/integrations/:id/mappings',
+        title: 'Field Mappings | Product Studio',
+        loadComponent: () =>
+          import('./features/settings/field-mappings.component').then(
+            (m) => m.FieldMappingsComponent
+          ),
+      },
+      {
+        path: 'pi-planning',
+        title: 'PI Planning | Product Studio',
+        loadComponent: () =>
+          import('./features/pi-planning/pi-planning-list.component').then(
+            (m) => m.PiPlanningListComponent
+          ),
+      },
+      {
+        path: 'pi-planning/:integrationId/:sessionId',
+        title: 'PI Planning Board | Product Studio',
+        loadComponent: () =>
+          import('./features/pi-planning/pi-planning-board.component').then(
+            (m) => m.PiPlanningBoardComponent
+          ),
+      },
     ],
   },
 ];

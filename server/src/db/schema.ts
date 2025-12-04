@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, jsonb, integer, vector, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, jsonb, integer, vector, index, uniqueIndex } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -519,4 +519,241 @@ export type PrdCitation = {
   lineEnd?: number;
   content: string; // Relevant excerpt
   similarity?: number;
+};
+
+// ===================
+// JIRA INTEGRATION
+// ===================
+
+// Integration connections - stores OAuth/PAT credentials for external providers
+export const integrations = pgTable('integrations', {
+  id: serial('id').primaryKey(),
+  provider: text('provider').$type<IntegrationProvider>().notNull(),
+  name: text('name').notNull(), // User-friendly name
+  baseUrl: text('base_url').notNull(), // e.g., 'https://company.atlassian.net'
+  cloudId: text('cloud_id'), // For Jira Cloud
+  authType: text('auth_type').$type<'oauth' | 'pat'>().notNull(),
+  accessToken: text('access_token').notNull(), // Encrypted
+  refreshToken: text('refresh_token'), // For OAuth
+  tokenExpiresAt: timestamp('token_expires_at'),
+  scopes: jsonb('scopes').$type<string[]>().default([]),
+  status: text('status').$type<IntegrationStatus>().notNull().default('connected'),
+  lastSyncAt: timestamp('last_sync_at'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('integrations_provider_idx').on(table.provider),
+  index('integrations_status_idx').on(table.status),
+]);
+
+// Field mappings - maps our concepts to Jira/ADO fields
+export const fieldMappings = pgTable('field_mappings', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  ourField: text('our_field').$type<MappableField>().notNull(),
+  providerFieldId: text('provider_field_id').notNull(), // e.g., 'customfield_10001'
+  providerFieldName: text('provider_field_name').notNull(), // Human-readable
+  providerFieldType: text('provider_field_type'), // e.g., 'number', 'array'
+  confidence: integer('confidence').notNull().default(0), // 0-100
+  adminConfirmed: integer('admin_confirmed').notNull().default(0), // 0 or 1
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('field_mappings_integration_idx').on(table.integrationId),
+]);
+
+// Required fields per project/issue type
+export const requiredFields = pgTable('required_fields', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  projectId: text('project_id').notNull(),
+  projectKey: text('project_key').notNull(),
+  issueTypeId: text('issue_type_id').notNull(),
+  issueTypeName: text('issue_type_name').notNull(),
+  fields: jsonb('fields').$type<RequiredFieldInfo[]>().notNull().default([]),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('required_fields_integration_idx').on(table.integrationId),
+  index('required_fields_project_idx').on(table.projectId),
+  uniqueIndex('required_fields_unique').on(table.integrationId, table.projectId, table.issueTypeId),
+]);
+
+// Cached Jira projects
+export const jiraProjects = pgTable('jira_projects', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  jiraId: text('jira_id').notNull(),
+  key: text('key').notNull(),
+  name: text('name').notNull(),
+  projectType: text('project_type'),
+  avatarUrl: text('avatar_url'),
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('jira_projects_integration_idx').on(table.integrationId),
+  uniqueIndex('jira_projects_unique').on(table.integrationId, table.jiraId),
+]);
+
+// Cached Jira boards (Board = Team)
+export const jiraBoards = pgTable('jira_boards', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  jiraId: integer('jira_id').notNull(),
+  name: text('name').notNull(),
+  type: text('type').$type<'scrum' | 'kanban'>().notNull(),
+  projectId: text('project_id'),
+  projectKey: text('project_key'),
+  velocityAvg: integer('velocity_avg'), // Calculated average
+  velocityLastN: integer('velocity_last_n').default(5), // Sprints used for calc
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('jira_boards_integration_idx').on(table.integrationId),
+  uniqueIndex('jira_boards_unique').on(table.integrationId, table.jiraId),
+]);
+
+// Cached Jira sprints
+export const jiraSprints = pgTable('jira_sprints', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  boardId: integer('board_id').notNull(), // Jira board ID
+  jiraId: integer('jira_id').notNull(),
+  name: text('name').notNull(),
+  state: text('state').$type<'future' | 'active' | 'closed'>().notNull(),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  completedPoints: integer('completed_points'),
+  committedPoints: integer('committed_points'),
+  goal: text('goal'),
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('jira_sprints_integration_idx').on(table.integrationId),
+  index('jira_sprints_board_idx').on(table.boardId),
+  index('jira_sprints_state_idx').on(table.state),
+  uniqueIndex('jira_sprints_unique').on(table.integrationId, table.jiraId),
+]);
+
+// Cached Jira issues
+export const jiraIssues = pgTable('jira_issues', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  jiraId: text('jira_id').notNull(),
+  key: text('key').notNull(),
+  summary: text('summary').notNull(),
+  description: text('description'),
+  issueType: text('issue_type').notNull(),
+  issueTypeId: text('issue_type_id').notNull(),
+  status: text('status').notNull(),
+  statusCategory: text('status_category').$type<'todo' | 'in_progress' | 'done'>(),
+  priority: text('priority'),
+  assigneeId: text('assignee_id'),
+  assigneeName: text('assignee_name'),
+  reporterId: text('reporter_id'),
+  reporterName: text('reporter_name'),
+  storyPoints: integer('story_points'),
+  sprintId: integer('sprint_id'),
+  epicKey: text('epic_key'),
+  parentKey: text('parent_key'),
+  labels: jsonb('labels').$type<string[]>().default([]),
+  components: jsonb('components').$type<string[]>().default([]),
+  projectKey: text('project_key').notNull(),
+  createdDate: timestamp('created_date'),
+  updatedDate: timestamp('updated_date'),
+  resolutionDate: timestamp('resolution_date'),
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('jira_issues_integration_idx').on(table.integrationId),
+  index('jira_issues_key_idx').on(table.key),
+  index('jira_issues_epic_idx').on(table.epicKey),
+  index('jira_issues_sprint_idx').on(table.sprintId),
+  index('jira_issues_assignee_idx').on(table.assigneeId),
+  index('jira_issues_project_idx').on(table.projectKey),
+  uniqueIndex('jira_issues_unique').on(table.integrationId, table.jiraId),
+]);
+
+// PI Planning Sessions
+export const piPlanningSessions = pgTable('pi_planning_sessions', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  sprintCount: integer('sprint_count').default(5),
+  status: text('status').$type<PiSessionStatus>().notNull().default('draft'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('pi_sessions_integration_idx').on(table.integrationId),
+  index('pi_sessions_status_idx').on(table.status),
+]);
+
+// Boards participating in PI
+export const piSessionBoards = pgTable('pi_session_boards', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').references(() => piPlanningSessions.id, { onDelete: 'cascade' }).notNull(),
+  boardId: integer('board_id').notNull(), // Jira board ID
+  boardName: text('board_name').notNull(),
+  velocityOverride: integer('velocity_override'),
+  capacityAdjustment: integer('capacity_adjustment').default(100), // Percentage, e.g., 80 for 80%
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('pi_session_boards_session_idx').on(table.sessionId),
+]);
+
+// Planned items in PI
+export const piPlannedItems = pgTable('pi_planned_items', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').references(() => piPlanningSessions.id, { onDelete: 'cascade' }).notNull(),
+  jiraIssueId: text('jira_issue_id'),
+  jiraIssueKey: text('jira_issue_key'),
+  title: text('title').notNull(), // Can be custom if not from Jira
+  assignedBoardId: integer('assigned_board_id'),
+  targetSprintId: integer('target_sprint_id'),
+  sequenceOrder: integer('sequence_order'),
+  estimatedPoints: integer('estimated_points'),
+  confidence: integer('confidence'), // 0-100, AI confidence
+  dependencies: jsonb('dependencies').$type<string[]>().default([]), // Array of issue keys
+  notes: text('notes'),
+  aiSuggested: integer('ai_suggested').default(0), // 0 or 1
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('pi_planned_items_session_idx').on(table.sessionId),
+  index('pi_planned_items_board_idx').on(table.assignedBoardId),
+  index('pi_planned_items_sprint_idx').on(table.targetSprintId),
+]);
+
+// Links artifacts (PRDs, stories) to created Jira issues
+export const artifactJiraLinks = pgTable('artifact_jira_links', {
+  id: serial('id').primaryKey(),
+  artifactType: text('artifact_type').$type<'prd' | 'generated_artifact'>().notNull(),
+  artifactId: integer('artifact_id').notNull(),
+  integrationId: integer('integration_id').references(() => integrations.id, { onDelete: 'cascade' }).notNull(),
+  jiraIssueId: text('jira_issue_id').notNull(),
+  jiraIssueKey: text('jira_issue_key').notNull(),
+  jiraProjectKey: text('jira_project_key').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('artifact_jira_links_artifact_idx').on(table.artifactType, table.artifactId),
+  index('artifact_jira_links_integration_idx').on(table.integrationId),
+]);
+
+// Jira Integration Types
+export type IntegrationProvider = 'jira' | 'ado';
+export type IntegrationStatus = 'connected' | 'error' | 'needs_reauth';
+export type MappableField = 'story_points' | 'sprint' | 'parent' | 'team' | 'priority' | 'labels' | 'components';
+export type PiSessionStatus = 'draft' | 'active' | 'locked' | 'completed';
+
+export type RequiredFieldInfo = {
+  fieldId: string;
+  fieldName: string;
+  fieldType: string;
+  required: boolean;
+  allowedValues?: Array<{ id: string; name?: string; value?: string }>;
 };

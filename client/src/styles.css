@@ -76,4 +76,30 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Fix ng-icon alignment and color inheritance */
+  ng-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    color: inherit;
+  }
+
+  ng-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Lucide icons use stroke */
+  ng-icon svg[stroke] {
+    stroke: currentColor;
+    fill: none;
+  }
+
+  /* Some icons might use fill */
+  ng-icon svg:not([stroke]) {
+    fill: currentColor;
+  }
 }
