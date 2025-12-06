@@ -1,314 +1,220 @@
-# SDLC Agent System - Quick Start Guide
+# PS Prototype - Quick Start Guide
 
-This system provides a comprehensive set of Claude Code agents and commands to automate the software development lifecycle.
+## Prerequisites
 
-## Overview
+### Mac
 
+```bash
+# Install Homebrew (if not installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Node.js 20+
+brew install node
+
+# Install Python 3.11+
+brew install python@3.11
+
+# Install PostgreSQL
+brew install postgresql@15
+brew services start postgresql@15
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        SDLC AGENT SYSTEM                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  AGENTS (Specialized Expertise)                                 │
-│  ├── architect.md   - System design, schemas, API contracts    │
-│  ├── backend.md     - Express routes, services, controllers    │
-│  ├── frontend.md    - React components, hooks, styling         │
-│  ├── tester.md      - Unit, integration, E2E tests             │
-│  ├── deployer.md    - Build, deploy, infrastructure            │
-│  └── documenter.md  - README, API docs, code comments          │
-│                                                                 │
-│  COMMANDS (Orchestrated Workflows)                              │
-│  ├── /scaffold      - Initialize projects or modules           │
-│  ├── /build-feature - Complete feature implementation          │
-│  ├── /test          - Run comprehensive tests                  │
-│  ├── /deploy        - Build and deploy to production           │
-│  └── /full-cycle    - End-to-end SDLC execution                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+
+### Windows
+
+1. **Node.js 20+**: Download from https://nodejs.org/
+2. **Python 3.11+**: Download from https://www.python.org/downloads/
+3. **PostgreSQL 15+**: Download from https://www.postgresql.org/download/windows/
+
+Or use winget:
+```powershell
+winget install OpenJS.NodeJS
+winget install Python.Python.3.11
+winget install PostgreSQL.PostgreSQL
 ```
+
+---
+
+## Getting Started
+
+### 1. Clone and Install Dependencies
+
+```bash
+# Clone the repository
+git clone <repo-url>
+cd ps-prototype
+
+# Install frontend dependencies
+cd client
+npm install
+cd ..
+
+# Set up Python virtual environment
+cd server
+python3 -m venv venv
+
+# Activate virtual environment
+# Mac/Linux:
+source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+cd ..
+```
+
+### 2. Set Up Database
+
+```bash
+# Create the database
+createdb ps_prototype
+
+# Or on Windows (if psql is in PATH):
+# psql -U postgres -c "CREATE DATABASE ps_prototype;"
+```
+
+### 3. Configure Environment Variables
+
+Create `server/.env`:
+
+```bash
+# Database
+DATABASE_URL=postgresql://YOUR_USERNAME@localhost:5432/ps_prototype
+
+# AI (required for AI features)
+OPENROUTER_API_KEY=sk-or-v1-xxxxx
+
+# Jira Integration (optional)
+JIRA_CLIENT_ID=
+JIRA_CLIENT_SECRET=
+JIRA_REDIRECT_URI=http://localhost:8000/api/integrations/jira/oauth/callback
+```
+
+**Note:** Replace `YOUR_USERNAME` with your system username (Mac) or `postgres` (Windows default).
+
+### 4. Run Database Migrations
+
+```bash
+cd server
+source venv/bin/activate  # Mac/Linux
+# venv\Scripts\activate   # Windows
+
+alembic upgrade head
+cd ..
+```
+
+### 5. Start the Servers
+
+**Terminal 1 - Backend (Python):**
+```bash
+cd server
+source venv/bin/activate  # Mac/Linux
+# venv\Scripts\activate   # Windows
+
+uvicorn app.main:app --reload --port 8000
+```
+
+**Terminal 2 - Frontend (Angular):**
+```bash
+cd client
+npm start
+```
+
+### 6. Open the App
+
+- **Frontend:** http://localhost:4200
+- **API Docs:** http://localhost:8000/docs
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | Angular 17+, TypeScript, spartan/ui, Tailwind CSS |
-| Backend | Node.js 20, Express.js, TypeScript |
-| Database | SQLite (dev) / PostgreSQL (prod) with Prisma ORM |
-| Testing | Jest + Angular Testing Library (frontend), Vitest + Supertest (backend) |
-| Deployment | PM2, Nginx, rsync or GitHub Actions |
+| Frontend | Angular 21, TypeScript, spartan/ui, Tailwind CSS |
+| Backend | Python 3.11+, FastAPI, SQLModel, Pydantic |
+| Database | PostgreSQL with pgvector |
+| AI | OpenRouter API |
 
-**Primary Color:** `#006450` (Teal/Forest Green)
+---
 
-## Getting Started
+## Common Commands
 
-### 1. Copy Agent Files to Your Project
-
-Copy the `.claude` directory to your project root:
+### Frontend (client/)
 
 ```bash
-cp -r .claude /path/to/your/project/
-cp CLAUDE.md /path/to/your/project/
+npm start           # Start dev server (http://localhost:4200)
+npm run build       # Production build
+npm test            # Run tests
 ```
 
-### 2. Initialize a New Project
-
-Use the scaffold command:
-
-```
-/scaffold project my-app
-```
-
-This creates the full project structure with:
-- React frontend with shadcn/ui configured
-- Express backend with Prisma
-- Shared types directory
-- Test setup
-- Deployment scripts
-
-### 3. Build Your First Feature
-
-```
-/build-feature Create a user authentication system with:
-- User registration with email and password
-- Login with JWT tokens
-- Password reset via email
-- Profile management
-```
-
-Claude will:
-1. Design the User model and API
-2. Implement backend auth endpoints
-3. Build React login/register forms
-4. Write comprehensive tests
-5. Document everything
-
-### 4. Run Tests
-
-```
-/test all
-```
-
-Or for specific scopes:
-```
-/test unit
-/test integration
-/test coverage
-```
-
-### 5. Deploy
-
-Direct to server:
-```
-/deploy production
-```
-
-Or via GitHub:
-```
-/deploy github
-```
-
-## Command Reference
-
-### /scaffold
-
-Initialize new projects or modules.
-
-```
-/scaffold project my-app      # New full project
-/scaffold feature tasks       # New feature module
-/scaffold api comments        # New API resource
-/scaffold component UserCard  # New React component
-```
-
-### /build-feature
-
-Build a complete feature from description.
-
-```
-/build-feature [description of feature]
-
-Options:
-  --skip-tests      Skip test generation
-  --backend-only    Only generate backend
-  --frontend-only   Only generate frontend
-  --dry-run         Show plan without executing
-```
-
-### /test
-
-Run tests with various scopes.
-
-```
-/test all           # All tests
-/test unit          # Unit tests only
-/test integration   # Integration tests only
-/test coverage      # With coverage report
-/test [feature]     # Tests for specific feature
-/test watch         # Watch mode
-```
-
-### /deploy
-
-Deploy to production.
-
-```
-/deploy production  # Deploy to production server
-/deploy staging     # Deploy to staging
-/deploy preview     # Build only, no deploy
-/deploy github      # Push to trigger CI/CD
-```
-
-### /full-cycle
-
-Complete SDLC from scope to deployment.
-
-```
-/full-cycle [scope description]
-
-Options:
-  --skip-deploy     Skip deployment phase
-  --backend-only    Only architecture + backend
-  --no-checkpoints  Skip confirmation pauses
-  --resume [phase]  Resume from specific phase
-```
-
-## Project Structure
-
-After scaffolding, your project will have:
-
-```
-my-app/
-├── client/                    # Angular frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── core/         # Singleton services, guards, interceptors
-│   │   │   ├── shared/       # Shared components, directives, pipes
-│   │   │   ├── features/     # Feature modules (lazy-loaded)
-│   │   │   ├── ui/           # spartan/ui components
-│   │   │   ├── app.component.ts
-│   │   │   ├── app.config.ts
-│   │   │   └── app.routes.ts
-│   │   ├── environments/
-│   │   └── styles.css
-│   ├── angular.json
-│   ├── jest.config.js
-│   ├── tailwind.config.js
-│   └── package.json
-├── server/                    # Express backend
-│   ├── src/
-│   │   ├── routes/           # Route definitions
-│   │   ├── controllers/      # Request handlers
-│   │   ├── services/         # Business logic
-│   │   ├── middleware/       # Express middleware
-│   │   ├── validators/       # Zod schemas
-│   │   └── utils/            # Helpers
-│   ├── prisma/               # Database schema
-│   ├── tests/                # Backend tests
-│   └── package.json
-├── shared/                    # Shared types
-├── scripts/                   # Deploy scripts
-├── .claude/                   # Agent system
-│   ├── agents/
-│   └── commands/
-├── .github/workflows/         # CI/CD
-├── CLAUDE.md                  # Project conventions
-├── ecosystem.config.js        # PM2 config
-└── package.json               # Root workspace
-```
-
-## Deployment Setup
-
-### Option 1: Direct Deploy (Recommended for Prototyping)
-
-1. Configure your server in `.env`:
-   ```
-   DEPLOY_USER=deploy
-   DEPLOY_HOST=your-server.com
-   DEPLOY_PATH=/var/www/app
-   ```
-
-2. Set up your server (one-time):
-   ```bash
-   ssh your-server.com
-   # Run the setup script from deployer.md
-   ```
-
-3. Deploy:
-   ```bash
-   ./scripts/deploy.sh
-   ```
-
-### Option 2: GitHub Actions
-
-1. Add secrets to your GitHub repo:
-   - `SERVER_HOST`
-   - `SERVER_USER`
-   - `SSH_PRIVATE_KEY`
-
-2. Push to main branch to trigger deployment.
-
-## Customization
-
-### Changing the Primary Color
-
-Edit `client/src/styles.css`:
-
-```css
-:root {
-  --primary: 160 100% 20%;  /* HSL values */
-}
-```
-
-### Adding spartan/ui Components
+### Backend (server/)
 
 ```bash
-cd client
-npx @spartan-ng/cli@latest add [component-name]
+# Always activate venv first!
+source venv/bin/activate  # Mac/Linux
+# venv\Scripts\activate   # Windows
+
+uvicorn app.main:app --reload --port 8000   # Start dev server
+pytest                                        # Run tests
+alembic upgrade head                         # Run migrations
+alembic revision --autogenerate -m "msg"     # Create migration
 ```
 
-### Modifying Agent Behavior
-
-Edit the agent files in `.claude/agents/` to customize:
-- Code patterns and conventions
-- File structure preferences
-- Testing strategies
-- Documentation styles
-
-## Tips
-
-1. **Start with /full-cycle for new features** - It ensures nothing is missed.
-
-2. **Use checkpoints** - The system pauses for confirmation at key points. Use this to review before proceeding.
-
-3. **Commit frequently** - Each phase creates a logical commit point.
-
-4. **Read agent files** - Understanding the agents helps you provide better prompts.
-
-5. **Customize for your needs** - These are starting templates. Modify them to match your preferences.
+---
 
 ## Troubleshooting
 
-### Database Issues
+### "Database does not exist"
+
 ```bash
-cd server
-npx prisma migrate reset  # Reset and rerun migrations
-npx prisma generate       # Regenerate client
+createdb ps_prototype
 ```
 
-### Build Failures
+### "Permission denied" on Mac
+
 ```bash
-npm run lint              # Check for linting errors
-npm run typecheck         # Check TypeScript
+# If PostgreSQL user doesn't exist
+createuser -s $(whoami)
 ```
 
-### Deployment Issues
+### Python command not found
+
 ```bash
-ssh deploy@server "pm2 logs"    # Check application logs
-ssh deploy@server "pm2 status"  # Check process status
+# Mac - use python3 explicitly
+python3 -m venv venv
+
+# Windows - ensure Python is in PATH, or use:
+py -3.11 -m venv venv
 ```
 
-## Support
+### "Module not found" errors (Python)
 
-- Refer to individual agent files for detailed patterns
-- Check CLAUDE.md for project conventions
-- Review command files for workflow details
+```bash
+# Make sure venv is activated and dependencies installed
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Port already in use
+
+```bash
+# Find and kill process on port 8000 (Mac/Linux)
+lsof -ti:8000 | xargs kill -9
+
+# Windows
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+```
+
+---
+
+## Environment Variables Reference
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `OPENROUTER_API_KEY` | For AI features | OpenRouter API key |
+| `JIRA_CLIENT_ID` | For Jira | Jira OAuth client ID |
+| `JIRA_CLIENT_SECRET` | For Jira | Jira OAuth client secret |
+| `JIRA_REDIRECT_URI` | For Jira | OAuth callback URL |

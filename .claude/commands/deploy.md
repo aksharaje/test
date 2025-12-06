@@ -30,11 +30,12 @@ Before deploying, ensure:
 
 3. **Database Ready**
    - PostgreSQL running on server
-   - Migrations up to date
+   - Drizzle migrations up to date
 
 4. **All Tests Pass**
    ```bash
-   npm test
+   npm test                    # Frontend tests
+   cd server && pytest      # Backend tests
    ```
 
 ## Deployment Workflow
@@ -68,8 +69,8 @@ For quick deployments to your Linux server:
    ```bash
    # Build frontend
    cd client && npm run build
-   
-   # Build backend
+
+   # Build Node server (if needed)
    cd server && npm run build
    ```
 
@@ -77,14 +78,18 @@ For quick deployments to your Linux server:
    ```bash
    tar -czf deploy.tar.gz \
      --exclude='node_modules' \
+     --exclude='venv' \
+     --exclude='__pycache__' \
      --exclude='.git' \
      --exclude='*.log' \
      client/dist \
      server/dist \
-     server/prisma \
+     server/drizzle \
+     server/app \
+     server/requirements.txt \
      package.json \
      package-lock.json \
-     ecosystem.config.js
+     render.yaml
    ```
 
 4. **Upload to Server**
@@ -96,24 +101,32 @@ For quick deployments to your Linux server:
    ```bash
    ssh deploy@your-server.com << 'DEPLOY'
      cd /var/www/app
-     
+
      # Backup current
      [ -d "current" ] && mv current "backup-$(date +%Y%m%d-%H%M%S)"
-     
+
      # Extract new
      mkdir -p current
      tar -xzf /tmp/deploy.tar.gz -C current
      cd current
-     
-     # Install production dependencies
+
+     # Install Node.js dependencies
      npm ci --production
-     
+
+     # Set up Python virtual environment
+     cd server
+     python3 -m venv venv
+     source venv/bin/activate
+     pip install -r requirements.txt
+     cd ..
+
      # Run database migrations
-     cd server && npx prisma migrate deploy && cd ..
-     
-     # Restart with PM2
-     pm2 reload ecosystem.config.js --env production
-     
+     cd server && npm run db:push && cd ..
+
+     # Restart services
+     sudo systemctl restart api        # Python FastAPI
+     pm2 reload ecosystem.config.js --env production  # Node.js if needed
+
      # Cleanup
      rm /tmp/deploy.tar.gz
    DEPLOY
@@ -234,29 +247,38 @@ Reference: `.claude/agents/deployer.md`
 
 ```bash
 # On your Linux server
-# 1. Install Node.js 20
+# 1. Install Python 3.11
+sudo apt install -y python3.11 python3.11-venv python3-pip
+
+# 2. Install Node.js 20
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# 2. Install PM2
+# 3. Install PM2
 sudo npm install -g pm2
 
-# 3. Install Nginx
+# 4. Install Nginx
 sudo apt install -y nginx
 
-# 4. Install PostgreSQL
+# 5. Install PostgreSQL
 sudo apt install -y postgresql postgresql-contrib
 
-# 5. Create app directory
+# 6. Create app directory
 sudo mkdir -p /var/www/app
 sudo chown $USER:$USER /var/www/app
 
-# 6. Configure Nginx (see deployer.md for config)
+# 7. Create Python systemd service
+sudo nano /etc/systemd/system/api.service
+# (see deployer.md for service config)
+sudo systemctl daemon-reload
+sudo systemctl enable api
+
+# 8. Configure Nginx (see deployer.md for config)
 sudo nano /etc/nginx/sites-available/app
 sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
-# 7. Set up SSL
+# 9. Set up SSL
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.com
 ```
@@ -265,26 +287,37 @@ sudo certbot --nginx -d your-domain.com
 
 ```bash
 # Create production env file
-nano /var/www/app/.env.production
+nano /var/www/app/.env
 
 # Contents:
-NODE_ENV=production
-PORT=3001
+ENVIRONMENT=production
+PORT=8000
 DATABASE_URL=postgresql://user:password@localhost:5432/app_production
-CORS_ORIGIN=https://your-domain.com
+CORS_ORIGINS=["https://your-domain.com"]
+SPRINGBOARD_API_KEY=your-key
+
+# Node server (if needed)
+NODE_ENV=production
+NODE_PORT=3001
 ```
 
 ## Monitoring After Deploy
 
 ```bash
-# Watch logs in real-time
+# Watch Python API logs in real-time
+ssh deploy@your-server.com "sudo journalctl -u api -f"
+
+# Check PM2 logs (if using Node.js)
 ssh deploy@your-server.com "pm2 logs"
 
 # Check resource usage
 ssh deploy@your-server.com "pm2 monit"
 
 # Check Nginx access logs
-ssh deploy@your-server.com "tail -f /var/log/nginx/access.log"
+ssh deploy@your-server.com "sudo tail -f /var/log/nginx/access.log"
+
+# Check Python processes
+ssh deploy@your-server.com "ps aux | grep uvicorn"
 ```
 
 ## Output

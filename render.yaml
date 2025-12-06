@@ -1,13 +1,13 @@
 services:
   - type: web
     name: ps-prototype-server
-    runtime: node
+    runtime: python
     rootDir: server
-    buildCommand: npm install --include=dev && npm run build && npm run db:migrate
-    startCommand: npm start
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000
     envVars:
-      - key: NODE_ENV
-        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
         sync: false
       - key: OPENROUTER_API_KEY

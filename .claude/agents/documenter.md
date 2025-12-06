@@ -46,16 +46,17 @@ Brief one-line description of the project.
 
 ## Tech Stack
 
-- **Frontend:** React, TypeScript, Vite, shadcn/ui, Tailwind CSS
-- **Backend:** Node.js, Express, TypeScript
-- **Database:** PostgreSQL with Prisma ORM
-- **Deployment:** PM2, Nginx
+- **Frontend:** Angular 17+, TypeScript, spartan/ui, Tailwind CSS
+- **Backend:** Python, FastAPI, Springboard
+- **Database:** PostgreSQL with Drizzle ORM
+- **Deployment:** Render, uvicorn/gunicorn, Nginx
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 20+
+- Python 3.11+
 - PostgreSQL 15+
 - npm 9+
 
@@ -66,18 +67,26 @@ Brief one-line description of the project.
 git clone https://github.com/username/project.git
 cd project
 
-# Install dependencies
+# Install frontend dependencies
 npm install
+
+# Set up Python backend
+cd server
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+cd ..
 
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your values
 
 # Set up database
-npm run db:migrate
+npm run db:push
 
-# Start development server
-npm run dev
+# Start development servers
+npm run dev          # Frontend
+npm run dev:py       # Python backend
 \`\`\`
 
 ### Environment Variables
@@ -92,13 +101,16 @@ npm run dev
 
 \`\`\`bash
 # Run development servers
-npm run dev
+npm run dev          # Frontend
+npm run dev:py       # Python backend
 
 # Run tests
-npm test
+npm test             # Frontend tests
+cd server && pytest  # Backend tests
 
 # Run linting
-npm run lint
+npm run lint         # Frontend
+cd server && ruff check .  # Backend
 
 # Build for production
 npm run build
@@ -107,9 +119,9 @@ npm run build
 ## Project Structure
 
 \`\`\`
-├── client/          # React frontend
-├── server/          # Express backend
-├── shared/          # Shared types
+├── client/          # Angular frontend
+├── server/          # Node.js/Drizzle backend
+├── server/       # Python FastAPI backend
 ├── docs/            # Documentation
 └── scripts/         # Build/deploy scripts
 \`\`\`
@@ -417,51 +429,57 @@ export function TaskCard({ task, onEdit, onDelete, className }: TaskCardProps) {
 
 \`\`\`
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Browser   │────▶│   Nginx     │────▶│  React App  │
+│   Browser   │────▶│   Nginx     │────▶│ Angular App │
 │             │     │   (Proxy)   │     │  (Static)   │
 └─────────────┘     └──────┬──────┘     └─────────────┘
                           │
                           ▼
                    ┌─────────────┐     ┌─────────────┐
-                   │  Express    │────▶│ PostgreSQL  │
-                   │  API        │     │  Database   │
-                   └─────────────┘     └─────────────┘
+                   │  FastAPI    │────▶│ PostgreSQL  │
+                   │  (Python)   │     │  Database   │
+                   └──────┬──────┘     └─────────────┘
+                          │
+                          ▼
+                   ┌─────────────┐
+                   │ Springboard │
+                   │  (AI/Docs)  │
+                   └─────────────┘
 \`\`\`
 
 ## Components
 
 ### Frontend (client/)
 
-React single-page application built with Vite.
+Angular single-page application with standalone components.
 
 **Key Technologies:**
-- React 18 with TypeScript
-- React Query for server state
-- React Router for navigation
-- shadcn/ui for components
+- Angular 17+ with TypeScript
+- Signals for reactive state
+- Angular Router for navigation
+- spartan/ui for components
 - Tailwind CSS for styling
 
 **Directory Structure:**
-- `components/` - Reusable UI components
-- `pages/` - Route-level components
-- `hooks/` - Custom React hooks
-- `lib/` - Utilities and API client
+- `features/` - Feature modules (lazy-loaded)
+- `shared/` - Shared components, directives, pipes
+- `core/` - Singleton services, guards, interceptors
+- `ui/` - spartan/ui components
 
 ### Backend (server/)
 
-Express.js REST API with TypeScript.
+Python FastAPI REST API with Springboard integration.
 
 **Key Technologies:**
-- Express.js
-- Prisma ORM
-- Zod for validation
-- Winston for logging
+- FastAPI
+- Pydantic for validation
+- Springboard for AI/document processing
+- httpx for async HTTP
 
-**Architecture Pattern:** Controller → Service → Repository (Prisma)
+**Architecture Pattern:** Router → Service → External APIs
 
 ### Database
 
-PostgreSQL with Prisma ORM.
+PostgreSQL with Drizzle ORM.
 
 **Key Design Decisions:**
 - CUID for primary keys (sortable, URL-safe)
@@ -470,29 +488,28 @@ PostgreSQL with Prisma ORM.
 
 ## Data Flow
 
-1. User interacts with React component
-2. Component calls custom hook (useQuery/useMutation)
-3. Hook calls API client function
-4. API client makes HTTP request to Express
-5. Express routes to controller
-6. Controller validates and calls service
-7. Service executes business logic via Prisma
-8. Response flows back through the stack
+1. User interacts with Angular component
+2. Component calls service method
+3. Service makes HTTP request to FastAPI
+4. FastAPI routes to endpoint handler
+5. Handler validates with Pydantic and calls service
+6. Service executes business logic (may call Springboard)
+7. Response flows back through the stack
 
 ## Security
 
 - CORS configured for specific origins
-- Helmet.js security headers
-- Input validation with Zod
-- SQL injection prevention via Prisma
+- Input validation with Pydantic
+- SQL injection prevention via parameterized queries
 - Rate limiting on API endpoints
+- Environment variables for secrets
 
 ## Performance
 
-- Frontend code splitting with React.lazy
+- Frontend lazy loading with Angular Router
 - API response caching headers
 - Database query optimization with indexes
-- PM2 cluster mode for Node.js
+- uvicorn/gunicorn workers for Python
 - Nginx static file serving with caching
 ```
 

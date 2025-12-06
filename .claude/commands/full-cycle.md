@@ -108,27 +108,27 @@ This command orchestrates all agents and commands to take a feature from concept
 **Agent:** Backend (`.claude/agents/backend.md`)
 
 **Actions:**
-1. Update Prisma schema
+1. Update Drizzle schema
 2. Run database migration
-3. Create validators (Zod)
+3. Create Pydantic models
 4. Implement services
-5. Implement controllers
-6. Define routes
+5. Create FastAPI routers
+6. Add dependency injection
 7. Manual API verification
 
 **Commands:**
 ```bash
 # Run migration
-cd server && npx prisma migrate dev --name [feature]
+cd server && npm run db:push
 
-# Generate client
-npx prisma generate
-
-# Start server
-npm run dev:server
+# Start Python server
+cd server && uvicorn app.main:app --reload --port 8000
 
 # Verify endpoints
-curl http://localhost:3001/api/[resource]
+curl http://localhost:8000/api/[resource]
+
+# Or use interactive docs
+# Open http://localhost:8000/docs
 ```
 
 **Checkpoint:** API endpoints working ✓
@@ -155,8 +155,9 @@ curl http://localhost:3001/api/[resource]
 # Install any new spartan components
 npx @spartan-ng/cli@latest add [component]
 
-# Start dev server
-npm run dev
+# Start dev servers (frontend + backend)
+npm run dev          # Frontend at http://localhost:4200
+npm run dev:py       # Python backend at http://localhost:8000
 
 # Open browser
 # http://localhost:4200/[feature]
@@ -180,11 +181,13 @@ ATTEMPT = 1
 MAX_ATTEMPTS = 5
 
 WHILE ATTEMPT <= MAX_ATTEMPTS:
-    1. Run: npm test 2>&1 | tee test-output.txt
-    2. Run: npm run lint 2>&1 | tee lint-output.txt
-    3. If ALL PASS → proceed to Phase 6
-    4. If FAIL → analyze output, fix issues
-    5. ATTEMPT++
+    1. Run: cd server && pytest -v 2>&1 | tee test-output.txt
+    2. Run: cd client && npm test 2>&1 | tee test-output.txt
+    3. Run: cd client && npm run lint 2>&1 | tee lint-output.txt
+    4. Run: cd server && ruff check . 2>&1 | tee lint-output.txt
+    5. If ALL PASS → proceed to Phase 6
+    6. If FAIL → analyze output, fix issues
+    7. ATTEMPT++
 END
 
 If still failing: Report failures, request human help
@@ -199,14 +202,15 @@ If still failing: Report failures, request human help
 
 **Commands:**
 ```bash
-# Run all tests
-npm test
+# Run backend tests
+cd server && pytest -v
+
+# Run frontend tests
+cd client && npm test
 
 # With coverage
-npm test -- --coverage
-
-# Watch mode during development
-npm test -- --watch
+cd server && pytest --cov=app
+cd client && npm test -- --coverage
 ```
 
 **Quality Gates:**
@@ -384,12 +388,12 @@ Building TaskForm component with validation...
 None
 
 ### Files Modified
-- server/prisma/schema.prisma
-- server/src/services/task.service.ts
-- server/src/controllers/task.controller.ts
-- server/src/routes/task.routes.ts
-- client/src/components/features/tasks/TaskList.tsx
-- client/src/components/features/tasks/TaskCard.tsx
+- server/src/db/schema.ts
+- server/app/models/task.py
+- server/app/services/task.py
+- server/app/api/tasks.py
+- client/src/app/features/tasks/task-list.component.ts
+- client/src/app/features/tasks/task-card.component.ts
 ```
 
 ## Options

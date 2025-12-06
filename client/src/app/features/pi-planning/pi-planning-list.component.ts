@@ -13,16 +13,18 @@ import {
   lucideLock,
   lucideCheck,
   lucideTrash2,
+  lucideFileEdit,
 } from '@ng-icons/lucide';
 import { PiPlanningService } from './pi-planning.service';
 import { IntegrationService } from '../settings/integration.service';
-import type { PiSession } from './pi-planning.types';
+import { SessionWizardComponent } from './session-wizard.component';
+import type { PiSession, PlannableIssueType } from './pi-planning.types';
 import type { JiraBoard } from '../settings/integration.types';
 
 @Component({
   selector: 'app-pi-planning-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, HlmButtonDirective, HlmIconDirective, NgIcon],
+  imports: [CommonModule, FormsModule, HlmButtonDirective, HlmIconDirective, NgIcon, SessionWizardComponent],
   providers: [
     provideIcons({
       lucidePlus,
@@ -32,6 +34,7 @@ import type { JiraBoard } from '../settings/integration.types';
       lucideLock,
       lucideCheck,
       lucideTrash2,
+      lucideFileEdit,
     }),
   ],
   template: `
@@ -131,6 +134,10 @@ import type { JiraBoard } from '../settings/integration.types';
                       <ng-icon hlmIcon name="lucideCalendar" class="h-4 w-4" />
                       {{ session.sprintCount }} sprints
                     </span>
+                    <span class="flex items-center gap-1">
+                      <ng-icon hlmIcon name="lucideFileEdit" class="h-4 w-4" />
+                      {{ formatIssueType(session.plannableIssueType) }}
+                    </span>
                     @if (session.startDate) {
                       <span>
                         {{ formatDate(session.startDate) }}
@@ -167,106 +174,13 @@ import type { JiraBoard } from '../settings/integration.types';
         </div>
       }
 
-      <!-- Create Dialog -->
-      @if (showCreateDialog()) {
-        <div
-          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          (click)="showCreateDialog.set(false)"
-        >
-          <div
-            class="bg-card rounded-lg border shadow-lg w-full max-w-lg mx-4 p-6"
-            (click)="$event.stopPropagation()"
-          >
-            <h2 class="text-xl font-semibold mb-4">Create PI Planning Session</h2>
-
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium mb-1">Name *</label>
-                <input
-                  type="text"
-                  [(ngModel)]="createForm.name"
-                  placeholder="PI 2024.1"
-                  class="w-full px-3 py-2 border rounded-md bg-background"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  [(ngModel)]="createForm.description"
-                  placeholder="Q1 2024 Planning"
-                  rows="2"
-                  class="w-full px-3 py-2 border rounded-md bg-background"
-                ></textarea>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    [(ngModel)]="createForm.startDate"
-                    class="w-full px-3 py-2 border rounded-md bg-background"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium mb-1">End Date</label>
-                  <input
-                    type="date"
-                    [(ngModel)]="createForm.endDate"
-                    class="w-full px-3 py-2 border rounded-md bg-background"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-1">Sprint Count</label>
-                <input
-                  type="number"
-                  [(ngModel)]="createForm.sprintCount"
-                  min="1"
-                  max="12"
-                  class="w-full px-3 py-2 border rounded-md bg-background"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-1">Teams (Boards) *</label>
-                <div class="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
-                  @for (board of boards(); track board.jiraId) {
-                    <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-muted/50 rounded">
-                      <input
-                        type="checkbox"
-                        [checked]="createForm.boardIds.includes(board.jiraId)"
-                        (change)="toggleBoard(board.jiraId)"
-                        class="rounded"
-                      />
-                      <span>{{ board.name }}</span>
-                      <span class="text-xs text-muted-foreground">({{ board.type }})</span>
-                    </label>
-                  }
-                  @if (boards().length === 0) {
-                    <p class="text-sm text-muted-foreground p-2">No boards found. Sync your integration first.</p>
-                  }
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 flex justify-end gap-2">
-              <button hlmBtn variant="ghost" (click)="showCreateDialog.set(false)">
-                Cancel
-              </button>
-              <button
-                hlmBtn
-                variant="default"
-                (click)="createSession()"
-                [disabled]="!createForm.name || createForm.boardIds.length === 0 || service.loading()"
-              >
-                Create Session
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- Session Wizard -->
+      @if (showCreateDialog() && integrationId()) {
+        <app-session-wizard
+          [integrationId]="integrationId()!"
+          (onClose)="showCreateDialog.set(false)"
+          (onCreated)="onSessionCreated($event)"
+        />
       }
 
       <!-- Delete Confirmation -->
@@ -311,17 +225,7 @@ export class PiPlanningListComponent implements OnInit {
 
   showCreateDialog = signal(false);
   deleteCandidate = signal<PiSession | null>(null);
-  boards = signal<JiraBoard[]>([]);
   integrationId = signal<number | null>(null);
-
-  createForm = {
-    name: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    sprintCount: 5,
-    boardIds: [] as number[],
-  };
 
   async ngOnInit() {
     await this.integrationService.loadIntegrations();
@@ -331,8 +235,6 @@ export class PiPlanningListComponent implements OnInit {
       const integration = connected[0];
       this.integrationId.set(integration.id);
       await this.service.loadSessions(integration.id);
-      await this.integrationService.loadBoards(integration.id);
-      this.boards.set(this.integrationService.boards() as unknown as JiraBoard[]);
     }
   }
 
@@ -340,42 +242,9 @@ export class PiPlanningListComponent implements OnInit {
     return this.integrationId() !== null;
   }
 
-  toggleBoard(boardId: number): void {
-    const ids = [...this.createForm.boardIds];
-    const idx = ids.indexOf(boardId);
-    if (idx >= 0) {
-      ids.splice(idx, 1);
-    } else {
-      ids.push(boardId);
-    }
-    this.createForm.boardIds = ids;
-  }
-
-  async createSession(): Promise<void> {
-    const integrationId = this.integrationId();
-    if (!integrationId) return;
-
-    const session = await this.service.createSession(integrationId, {
-      name: this.createForm.name,
-      description: this.createForm.description || undefined,
-      startDate: this.createForm.startDate || undefined,
-      endDate: this.createForm.endDate || undefined,
-      sprintCount: this.createForm.sprintCount,
-      boardIds: this.createForm.boardIds,
-    });
-
-    if (session) {
-      this.showCreateDialog.set(false);
-      this.createForm = {
-        name: '',
-        description: '',
-        startDate: '',
-        endDate: '',
-        sprintCount: 5,
-        boardIds: [],
-      };
-      this.openSession(session);
-    }
+  onSessionCreated(session: PiSession): void {
+    this.showCreateDialog.set(false);
+    this.openSession(session);
   }
 
   openSession(session: PiSession): void {
@@ -409,5 +278,15 @@ export class PiPlanningListComponent implements OnInit {
       day: 'numeric',
       year: 'numeric',
     });
+  }
+
+  formatIssueType(type: PlannableIssueType): string {
+    const labels: Record<PlannableIssueType, string> = {
+      epic: 'Epics',
+      feature: 'Features',
+      story: 'Stories',
+      custom: 'Custom',
+    };
+    return labels[type] || type;
   }
 }

@@ -5,10 +5,11 @@
 This project uses a modern, simple stack optimized for rapid prototyping and easy deployment:
 
 - **Frontend:** Angular 17+ with standalone components, spartan/ui, Tailwind CSS
-- **Backend:** Node.js with Express.js
-- **Database:** SQLite (dev) / PostgreSQL (prod) via Prisma ORM
-- **Process Manager:** PM2
-- **Deployment:** Linux server via rsync or GitHub Actions
+- **Backend:** Python with FastAPI
+- **Database:** SQLite (dev) / PostgreSQL (prod) via Drizzle ORM
+- **AI/ML:** Springboard for document processing and AI workflows
+- **Process Manager:** PM2 (frontend) / uvicorn (backend)
+- **Deployment:** Render or Linux server via rsync or GitHub Actions
 
 ## Design System
 
@@ -45,25 +46,24 @@ project-root/
 │   │       └── styles.css
 │   ├── angular.json
 │   └── package.json
-├── server/                 # Express backend
-│   ├── src/
-│   │   ├── routes/
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── middleware/
-│   │   └── utils/
-│   ├── prisma/
-│   │   └── schema.prisma
-│   └── package.json
-├── shared/                 # Shared types/utilities
-│   └── types/
+├── server/                 # Python FastAPI backend
+│   ├── app/
+│   │   ├── api/           # API routes
+│   │   ├── models/        # Pydantic models
+│   │   ├── services/      # Business logic
+│   │   ├── core/          # Config, dependencies
+│   │   └── main.py        # FastAPI app entry
+│   ├── tests/
+│   ├── drizzle/           # Database migrations
+│   ├── requirements.txt
+│   └── pyproject.toml
 ├── .claude/
 │   ├── agents/
 │   └── commands/
 ├── scripts/
 │   ├── deploy.sh
 │   └── setup.sh
-├── ecosystem.config.js     # PM2 configuration
+├── render.yaml             # Render deployment config
 └── package.json            # Root workspace
 ```
 
@@ -74,7 +74,7 @@ This project uses specialized agents for different SDLC phases. Agents are locat
 ### Available Agents
 - **architect** - System design, database schema, API contracts
 - **frontend** - Angular components, services, styling
-- **backend** - Express routes, controllers, services
+- **backend** - Python FastAPI routes, services, Springboard integration
 - **tester** - Unit tests, integration tests, E2E tests
 - **deployer** - Build, deploy, infrastructure
 - **documenter** - README, API docs, inline comments
@@ -102,16 +102,19 @@ This project uses specialized agents for different SDLC phases. Agents are locat
 - Smart/dumb component pattern
 - Lazy-loaded feature routes
 
-### Express
-- Controller pattern for route handlers
+### Python/FastAPI
+- Router pattern for API endpoints
 - Service layer for business logic
-- Middleware for cross-cutting concerns
-- Consistent error handling with custom error classes
+- Dependency injection for cross-cutting concerns
+- Pydantic models for request/response validation
+- Consistent error handling with HTTPException
+- Springboard SDK for AI/document processing workflows
 
 ### Testing
-- Jest for unit tests
+- Jest for frontend unit tests
 - Angular Testing Library for component tests
-- Supertest for API tests
+- pytest for Python backend tests
+- httpx for async API tests
 - Playwright for E2E (when needed)
 
 ### Git
@@ -120,28 +123,36 @@ This project uses specialized agents for different SDLC phases. Agents are locat
 
 ## Error Handling Pattern
 
-```typescript
-// Backend: Custom error class
-class AppError extends Error {
-  constructor(
-    public statusCode: number,
-    public message: string,
-    public isOperational = true
-  ) {
-    super(message);
-  }
-}
+```python
+# Backend: FastAPI HTTPException
+from fastapi import HTTPException
 
+raise HTTPException(
+    status_code=404,
+    detail="Resource not found"
+)
+
+# Custom error handler
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": {"code": exc.code, "message": exc.message}}
+    )
+```
+
+```typescript
 // Frontend: Error interceptor + toast notifications via spartan/ui HlmToaster
 ```
 
 ## Environment Variables
 
 ```bash
-# Server
-NODE_ENV=development|production
-PORT=3001
+# Python Server
+ENVIRONMENT=development|production
+PORT=8000
 DATABASE_URL=
+SPRINGBOARD_API_KEY=
 
 # Client (Angular environments)
 # src/environments/environment.ts
@@ -151,8 +162,8 @@ DATABASE_URL=
 ## When Developing
 
 1. **Always check existing patterns** before creating new ones
-2. **Run tests** before committing: `npm test`
-3. **Lint and format**: `npm run lint && npm run format`
+2. **Run tests** before committing: `npm test` (frontend) and `pytest` (backend)
+3. **Lint and format**: `npm run lint` (frontend) and `ruff check` (backend)
 4. **Update documentation** when adding new features
 5. **Use the agent system** for complex features
 

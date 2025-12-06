@@ -148,7 +148,7 @@ When scaffolding a new project:
 6. **Create project structure:**
    ```
    [name]/
-   ├── client/                  # Move Angular app here or keep at root
+   ├── client/                  # Angular frontend
    │   ├── src/
    │   │   ├── app/
    │   │   │   ├── core/       # Singleton services, guards, interceptors
@@ -174,34 +174,31 @@ When scaffolding a new project:
    │   ├── setup-jest.ts
    │   ├── tailwind.config.js
    │   └── package.json
-   ├── server/                  # Express backend
-   │   ├── src/
-   │   │   ├── routes/
-   │   │   │   └── index.ts
-   │   │   ├── controllers/
+   ├── server/                  # Python FastAPI backend
+   │   ├── app/
+   │   │   ├── api/
+   │   │   │   ├── __init__.py
+   │   │   │   ├── router.py
+   │   │   │   └── [resource].py
+   │   │   ├── models/
+   │   │   │   ├── __init__.py
+   │   │   │   └── [resource].py
    │   │   ├── services/
-   │   │   ├── middleware/
-   │   │   │   ├── errorHandler.ts
-   │   │   │   └── validateRequest.ts
-   │   │   ├── validators/
-   │   │   ├── utils/
-   │   │   │   ├── AppError.ts
-   │   │   │   └── logger.ts
-   │   │   ├── lib/
-   │   │   │   └── prisma.ts
-   │   │   ├── types/
-   │   │   ├── app.ts
-   │   │   └── server.ts
-   │   ├── prisma/
-   │   │   └── schema.prisma
+   │   │   │   ├── __init__.py
+   │   │   │   └── [resource].py
+   │   │   ├── core/
+   │   │   │   ├── __init__.py
+   │   │   │   ├── config.py
+   │   │   │   ├── deps.py
+   │   │   │   └── exceptions.py
+   │   │   └── main.py
    │   ├── tests/
-   │   │   ├── setup.ts
-   │   │   └── fixtures/
-   │   ├── tsconfig.json
-   │   └── package.json
-   ├── shared/                  # Shared types
-   │   └── types/
-   │       └── index.ts
+   │   │   ├── __init__.py
+   │   │   ├── conftest.py
+   │   │   └── test_[resource].py
+   │   ├── requirements.txt
+   │   ├── pyproject.toml
+   │   └── pytest.ini
    ├── scripts/
    │   ├── deploy.sh
    │   └── setup.sh
@@ -209,7 +206,7 @@ When scaffolding a new project:
    │   ├── agents/
    │   └── commands/
    ├── CLAUDE.md
-   ├── ecosystem.config.js
+   ├── render.yaml
    ├── package.json
    ├── .env.example
    ├── .gitignore
@@ -221,19 +218,20 @@ When scaffolding a new project:
    {
      "name": "[project-name]",
      "private": true,
-     "workspaces": ["client", "server", "shared"],
+     "workspaces": ["client", "server"],
      "scripts": {
-       "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+       "dev": "concurrently \"npm run dev:client\" \"npm run dev:py\"",
        "dev:client": "npm run start --workspace=client",
        "dev:server": "npm run dev --workspace=server",
-       "build": "npm run build:client && npm run build:server",
+       "dev:py": "cd server && uvicorn app.main:app --reload --port 8000",
+       "build": "npm run build:client",
        "build:client": "npm run build --workspace=client",
-       "build:server": "npm run build --workspace=server",
-       "test": "npm run test --workspaces",
-       "lint": "npm run lint --workspaces",
-       "db:migrate": "npm run db:migrate --workspace=server",
+       "test": "npm run test --workspace=client",
+       "test:py": "cd server && pytest",
+       "lint": "npm run lint --workspace=client",
+       "lint:py": "cd server && ruff check .",
+       "db:push": "npm run db:push --workspace=server",
        "db:generate": "npm run db:generate --workspace=server",
-       "start": "pm2 start ecosystem.config.js",
        "deploy": "./scripts/deploy.sh"
      },
      "devDependencies": {
@@ -262,11 +260,16 @@ When scaffolding a new project:
 
    `.env.example`:
    ```
-   # Server
-   NODE_ENV=development
-   PORT=3001
+   # Python Server
+   ENVIRONMENT=development
+   PORT=8000
    DATABASE_URL=file:./dev.db
-   
+   SPRINGBOARD_API_KEY=
+
+   # Node Server (if needed)
+   NODE_ENV=development
+   NODE_PORT=3001
+
    # Production Database
    # DATABASE_URL=postgresql://user:password@localhost:5432/dbname
    ```
@@ -309,21 +312,18 @@ When scaffolding a feature:
    ├── [feature].service.ts
    ├── [feature].service.spec.ts
    └── index.ts
-   
-   server/src/routes/[feature].routes.ts
-   server/src/controllers/[feature].controller.ts
-   server/src/services/[feature].service.ts
-   server/src/validators/[feature].validator.ts
-   
-   server/tests/unit/[feature].service.test.ts
-   server/tests/integration/[feature].routes.test.ts
-   
-   shared/types/[feature].ts
+
+   server/app/api/[feature].py
+   server/app/models/[feature].py
+   server/app/services/[feature].py
+
+   server/tests/test_[feature].py
+   server/tests/fixtures/[feature]_fixtures.py
    ```
 
-2. **Add Prisma model to schema**
+2. **Add Drizzle model to schema** (server/src/db/schema.ts)
 
-3. **Wire up routes in server/src/routes/index.ts**
+3. **Wire up router in server/app/api/router.py**
 
 4. **Add route to client/src/app/app.routes.ts:**
    ```typescript
@@ -335,18 +335,18 @@ When scaffolding a feature:
    },
    ```
 
-### API Resource Scaffold
+### API Resource Scaffold (Python)
 
 When scaffolding an API resource:
 
-1. Create service with CRUD methods
-2. Create controller with route handlers
-3. Create validator schemas
-4. Create route file
-5. Add to routes index
+1. Create Pydantic models with request/response schemas
+2. Create service with CRUD methods
+3. Create router with FastAPI endpoints
+4. Add dependency injection in core/deps.py
+5. Register router in api/router.py
 6. Create test fixtures
 7. Create unit tests for service
-8. Create integration tests for routes
+8. Create integration tests for API endpoints
 
 ### Component Scaffold
 

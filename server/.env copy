@@ -1,0 +1,11 @@
+DATABASE_URL=postgresql://localhost:5432/ps_prototype
+PORT=3000
+
+# OpenRouter Configuration
+OPENROUTER_API_KEY=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
+OPENROUTER_MODEL=openai/gpt-oss-120b
+
+# Jira Oauth
+JIRA_CLIENT_ID=3EFMeKFDXDMdoTEp0pVTcoXVrCSSylCT
+JIRA_CLIENT_SECRET=ATOAReVRQNkg2fA0YeYzGJkopsh3y2FsXNSlaI_tcoClnqxT5I4xAyrFJf8N6tDNCPg_8B6D1FF7
+JIRA_REDIRECT_URI=http://localhost:3000/api/integrations/jira/oauth/callback

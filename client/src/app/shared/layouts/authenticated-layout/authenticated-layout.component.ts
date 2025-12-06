@@ -17,6 +17,18 @@ import {
   lucideRocket,
   lucideSettings,
   lucideCalendarDays,
+  lucideLibrary,
+  lucideTarget,
+  lucideBarChart2,
+  lucideScan,
+  lucideSearch,
+  lucideCheckCircle,
+  lucideMap,
+  lucideUsers,
+  lucideClipboardList,
+  lucideTimer,
+  lucideCode,
+  lucideTestTube2,
 } from '@ng-icons/lucide';
 import { UserMenuComponent, type User } from '../../components/user-menu';
 
@@ -54,6 +66,8 @@ export interface NavItem {
       lucideRocket,
       lucideSettings,
       lucideCalendarDays,
+      lucideLibrary,
+      lucideSearch,
     }),
   ],
   template: `
@@ -98,7 +112,9 @@ export interface NavItem {
                   class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   <div class="flex items-center gap-3">
-                    <ng-icon [name]="item.icon" class="h-5 w-5" />
+                    @if (item.icon) {
+                      <ng-icon [name]="item.icon" class="h-5 w-5" />
+                    }
                     {{ item.label }}
                   </div>
                   <ng-icon
@@ -134,7 +150,9 @@ export interface NavItem {
                 class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 (click)="closeMobileSidebar()"
               >
-                <ng-icon [name]="item.icon" class="h-5 w-5" />
+                @if (item.icon) {
+                  <ng-icon [name]="item.icon" class="h-5 w-5" />
+                }
                 {{ item.label }}
               </a>
             }

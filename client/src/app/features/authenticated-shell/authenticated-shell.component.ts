@@ -33,51 +33,52 @@ export class AuthenticatedShellComponent {
   });
 
   navItems: NavItem[] = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'lucideHome' },
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Goals', path: '/goals', children: [] },
+    { label: 'Measurements', path: '/measurements', children: [] },
+    { label: 'Scoping', path: '/scoping', children: [] },
     {
-      label: 'Ideate',
-      path: '/ideate',
-      icon: 'lucideLightbulb',
+      label: 'Research',
+      path: '/research',
       children: [
         { label: 'Code Chat', path: '/code-chat' },
       ],
     },
+    { label: 'Ideation', path: '/ideation', children: [] },
+    { label: 'Feasibility', path: '/feasibility', children: [] },
+    { label: 'Roadmapping', path: '/roadmapping', children: [] },
+    { label: 'Customer Experience', path: '/customer-experience', children: [] },
     {
-      label: 'Design',
-      path: '/design',
-      icon: 'lucidePalette',
+      label: 'Backlog Authoring',
+      path: '/backlog-authoring',
       children: [
         { label: 'PRD Generator', path: '/prd-generator' },
-        { label: 'Epic/Feature/Story Creator', path: '/story-generator' },
+        { label: 'Epic/Feature/Story Generator', path: '/story-generator' },
       ],
     },
     {
-      label: 'Plan',
-      path: '/plan',
-      icon: 'lucideCalendarDays',
+      label: 'PI Planning',
+      path: '/pi-planning-section',
       children: [
         { label: 'PI Planning', path: '/pi-planning' },
       ],
     },
-    {
-      label: 'Deliver',
-      path: '/deliver',
-      icon: 'lucideRocket',
-      children: [],
-    },
+    { label: 'Sprint Planning', path: '/sprint-planning', children: [] },
+    { label: 'Development', path: '/development', children: [] },
+    { label: 'Testing', path: '/testing', children: [] },
+    { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
     {
       label: 'Optimize',
       path: '/optimize-section',
-      icon: 'lucideFlaskConical',
       children: [
         { label: 'Agent Optimization', path: '/optimize' },
       ],
     },
-    { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
+    { label: 'Knowledge Bases', path: '/knowledge-bases' },
+    { label: 'Library', path: '/library' },
     {
       label: 'Settings',
       path: '/settings',
-      icon: 'lucideSettings',
       children: [
         { label: 'Integrations', path: '/settings/integrations' },
       ],

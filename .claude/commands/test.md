@@ -24,62 +24,65 @@ Run comprehensive tests with coverage reporting.
 Run all tests across the project:
 
 ```bash
-# From project root
-npm test
+# Frontend tests
+cd client && npm test
+
+# Backend tests (Python)
+cd server && pytest
 ```
 
 This runs:
-1. Server unit tests (`server/tests/unit/`)
-2. Server integration tests (`server/tests/integration/`)
-3. Client component tests (`client/src/**/*.test.tsx`)
-4. Client hook tests (`client/src/**/*.test.ts`)
+1. Python backend tests (`server/tests/`)
+2. Client component tests (`client/src/**/*.spec.ts`)
+3. Client service tests (`client/src/**/*.spec.ts`)
 
 ### Unit Tests Only
 
 ```bash
-# Server unit tests
-cd server && npm test -- --testPathPattern=unit
+# Python backend unit tests
+cd server && pytest tests/test_*_service.py -v
 
-# Or with filter
-npm test -- --testPathPattern="task.service"
+# Frontend unit tests
+cd client && npm test -- --testPathPattern="service"
 ```
 
 ### Integration Tests Only
 
 ```bash
-# Server integration tests
-cd server && npm test -- --testPathPattern=integration
+# Python backend API tests
+cd server && pytest tests/test_*_api.py -v
 ```
 
 ### Feature-Specific Tests
 
 ```bash
-# All tests for a feature
-npm test -- --testPathPattern="[feature]"
+# All backend tests for a feature
+cd server && pytest tests/test_[feature]*.py -v
 
-# Example: all task-related tests
-npm test -- --testPathPattern="task"
+# All frontend tests for a feature
+cd client && npm test -- --testPathPattern="[feature]"
 ```
 
 ### Coverage Report
 
 ```bash
-# Generate coverage
-npm test -- --coverage
+# Python backend coverage
+cd server && pytest --cov=app --cov-report=html
+# Open htmlcov/index.html in browser
 
-# With HTML report
-npm test -- --coverage --coverageReporters=html
+# Frontend coverage
+cd client && npm test -- --coverage
 # Open coverage/index.html in browser
 ```
 
 ### Watch Mode
 
 ```bash
-# Watch for changes
-npm test -- --watch
+# Frontend watch for changes
+cd client && npm test -- --watch
 
-# Watch specific files
-npm test -- --watch --testPathPattern="task"
+# Python watch (requires pytest-watch)
+cd server && ptw
 ```
 
 ## Test Verification Workflow
@@ -88,70 +91,67 @@ When `/test` is invoked:
 
 1. **Check Test Environment**
    ```bash
-   # Verify test database is available
-   cd server && npx prisma migrate status
-   
-   # Reset test database if needed
-   npx prisma migrate reset --force
+   # Verify database migrations are up to date
+   cd server && npm run db:push
+
+   # Ensure Python virtual environment is active
+   cd server && source venv/bin/activate
    ```
 
 2. **Run Linting First**
    ```bash
-   npm run lint
+   # Frontend linting
+   cd client && npm run lint
+
+   # Backend linting
+   cd server && ruff check .
    ```
    Fix any linting errors before proceeding.
 
-3. **Run Unit Tests**
+3. **Run Backend Tests**
    ```bash
-   npm test -- --testPathPattern=unit
+   cd server && pytest -v
    ```
-   
+
    Expected output:
    - All tests pass
    - No console errors
    - Fast execution (<30s)
 
-4. **Run Integration Tests**
-   ```bash
-   npm test -- --testPathPattern=integration
-   ```
-   
-   Expected output:
-   - All tests pass
-   - Database interactions work
-   - API contracts validated
-
-5. **Run Client Tests**
+4. **Run Frontend Tests**
    ```bash
    cd client && npm test
    ```
-   
+
    Expected output:
    - Components render correctly
    - User interactions work
    - Services handle API calls correctly
    - Signal state management works
 
-6. **Generate Coverage Report**
+5. **Generate Coverage Reports**
    ```bash
-   npm test -- --coverage
+   # Backend coverage
+   cd server && pytest --cov=app --cov-report=html
+
+   # Frontend coverage
+   cd client && npm test -- --coverage
    ```
-   
+
    Review coverage:
    - Services: Target 90%+
-   - Controllers: Target 80%+
-   - Components: Target 70%+
+   - Routers/Components: Target 80%+
    - Overall: Target 80%+
 
-7. **Identify Gaps**
-   
+6. **Identify Gaps**
+
    Look for:
    - Uncovered branches
    - Missing error case tests
    - Untested edge cases
 
-8. **Report Results**
-   
+7. **Report Results**
+
    Provide summary:
    - Total tests: X passed, Y failed
    - Coverage: X%
@@ -164,33 +164,43 @@ When `/test` is invoked:
 
 ```bash
 # 1. Create test files following patterns in tester.md
-# 2. Run feature tests
-npm test -- --testPathPattern="[feature]"
 
-# 3. Check coverage for feature
-npm test -- --coverage --collectCoverageFrom="**/[feature]/**"
+# 2. Run backend feature tests
+cd server && pytest tests/test_[feature]*.py -v
+
+# 3. Run frontend feature tests
+cd client && npm test -- --testPathPattern="[feature]"
+
+# 4. Check coverage for feature
+cd server && pytest tests/test_[feature]*.py --cov=app/services/[feature] --cov-report=term
 ```
 
 ### Debugging Failing Tests
 
 ```bash
-# Run single test with verbose output
-npm test -- --testNamePattern="creates a task" --verbose
+# Python: Run single test with verbose output
+cd server && pytest tests/test_tasks.py::test_create_task -v -s
 
-# Run with debugger
-node --inspect-brk node_modules/.bin/vitest run [test-file]
+# Python: Run with debugger (use pdb)
+cd server && pytest tests/test_tasks.py --pdb
+
+# Frontend: Run single test
+cd client && npm test -- --testNamePattern="creates a task" --verbose
 ```
 
 ### Testing API Endpoints
 
 ```bash
-# Start server in test mode
-NODE_ENV=test npm run dev:server
+# Start Python server in development mode
+cd server && uvicorn app.main:app --reload --port 8000
 
 # In another terminal, use curl or httpie
-curl -X POST http://localhost:3001/api/tasks \
+curl -X POST http://localhost:8000/api/tasks \
   -H "Content-Type: application/json" \
-  -d '{"title": "Test task", "projectId": "proj_123"}'
+  -d '{"title": "Test task", "project_id": "proj_123"}'
+
+# Or use FastAPI's interactive docs
+# Open http://localhost:8000/docs in browser
 ```
 
 ## Test Quality Checklist
@@ -213,15 +223,31 @@ Before marking tests complete:
 ### Database Connection Issues
 
 ```bash
-# Check DATABASE_URL in .env.test
+# Check DATABASE_URL in .env
 # Ensure test database exists
 createdb app_test
 
 # Reset migrations
-cd server && npx prisma migrate reset --force
+cd server && npm run db:push
 ```
 
-### HttpClient Testing Issues
+### Python Test Issues
+
+```python
+# Ensure virtual environment is activated
+source server/venv/bin/activate
+
+# Install test dependencies
+pip install pytest pytest-asyncio httpx pytest-cov
+
+# Check for async issues - use proper fixtures
+@pytest.fixture
+async def client():
+    async with AsyncClient(...) as ac:
+        yield ac
+```
+
+### HttpClient Testing Issues (Angular)
 
 ```typescript
 // Ensure HttpClientTestingModule is imported
@@ -244,20 +270,24 @@ it('slow test', async () => {
 
 // Or globally in jest.config.js
 testTimeout: 10000
+```
 
-// For backend (Vitest)
-// In vitest.config.ts
-testTimeout: 10000
+```python
+# For Python (pytest)
+# In pytest.ini
+[pytest]
+asyncio_mode = auto
+timeout = 30
 ```
 
 ### Import/Module Errors
 
 ```bash
 # Clear Jest cache (frontend)
-npm test -- --clearCache
+cd client && npm test -- --clearCache
 
-# Clear Vitest cache (backend)
-cd server && npm test -- --clearCache
+# Python import issues - check PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/server"
 
 # Check tsconfig paths match module aliases
 ```

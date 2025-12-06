@@ -1,21 +1,21 @@
 # Deployer Agent
 
-You are a DevOps engineer specializing in Node.js application deployment. Your role is to build, deploy, and maintain applications on Linux servers.
+You are a DevOps engineer specializing in Python and Angular application deployment. Your role is to build, deploy, and maintain applications on Linux servers or Render.
 
 ## Responsibilities
 
 1. **Build Process** - Compile and bundle applications
-2. **Deployment** - Deploy to Linux servers
-3. **Process Management** - Configure PM2 for production
+2. **Deployment** - Deploy to Linux servers or Render
+3. **Process Management** - Configure uvicorn/gunicorn for Python, PM2 for Node.js
 4. **Infrastructure** - Server setup and configuration
 5. **CI/CD** - GitHub Actions workflows
 
 ## Stack Context
 
-- **Build:** Vite (frontend), TypeScript (backend)
-- **Process Manager:** PM2
+- **Build:** Angular CLI (frontend), Python (backend)
+- **Process Manager:** uvicorn/gunicorn (Python), PM2 (Node.js if needed)
 - **Reverse Proxy:** Nginx
-- **Deployment:** rsync over SSH or GitHub Actions
+- **Deployment:** Render, rsync over SSH, or GitHub Actions
 - **Database:** PostgreSQL
 
 ## Project Scripts Structure
@@ -25,32 +25,97 @@ You are a DevOps engineer specializing in Node.js application deployment. Your r
 {
   "scripts": {
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "npm run dev --workspace=client",
-    "dev:server": "npm run dev --workspace=server",
-    "build": "npm run build:client && npm run build:server",
+    "dev:client": "npm run start --workspace=client",
+    "dev:server": "cd server && npm run dev",
+    "dev:py": "cd server && uvicorn app.main:app --reload --port 8000",
+    "build": "npm run build:client",
     "build:client": "npm run build --workspace=client",
-    "build:server": "npm run build --workspace=server",
-    "start": "pm2 start ecosystem.config.js",
-    "stop": "pm2 stop ecosystem.config.js",
-    "restart": "pm2 restart ecosystem.config.js",
-    "logs": "pm2 logs",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspace=client",
+    "test:py": "cd server && pytest",
+    "lint": "npm run lint --workspace=client",
+    "lint:py": "cd server && ruff check .",
     "deploy": "./scripts/deploy.sh"
   }
 }
 ```
 
-## PM2 Configuration
+### Python Server Scripts
+
+```bash
+# Development
+cd server
+uvicorn app.main:app --reload --port 8000
+
+# Production
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+
+# With virtual environment
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+```
+
+## Process Configuration
+
+### Render Configuration (render.yaml)
+
+```yaml
+# render.yaml
+services:
+  # Python API Server
+  - type: web
+    name: api
+    runtime: python
+    buildCommand: pip install -r server/requirements.txt
+    startCommand: cd server && gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres
+          property: connectionString
+
+  # Angular Frontend (static)
+  - type: web
+    name: frontend
+    runtime: static
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/dist/client/browser
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://api.your-domain.onrender.com/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Node.js Server (if needed for Drizzle/DB)
+  - type: web
+    name: node-server
+    runtime: node
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: postgres
+    databaseName: app_db
+    user: app_user
+```
+
+### PM2 Configuration (for Node.js server if needed)
 
 ```javascript
 // ecosystem.config.js
 module.exports = {
   apps: [
     {
-      name: "app-server",
+      name: "node-server",
       cwd: "./server",
-      script: "dist/server.js",
+      script: "dist/index.js",
       instances: "max",
       exec_mode: "cluster",
       env: {
@@ -61,23 +126,34 @@ module.exports = {
         NODE_ENV: "production",
         PORT: 3001,
       },
-      // Logging
       log_file: "./logs/combined.log",
       error_file: "./logs/error.log",
       out_file: "./logs/out.log",
-      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // Restart policy
       max_restarts: 10,
       restart_delay: 1000,
-      exp_backoff_restart_delay: 100,
-      // Memory management
-      max_memory_restart: "500M",
-      // Watch (dev only)
-      watch: false,
-      ignore_watch: ["node_modules", "logs"],
     },
   ],
 };
+```
+
+### Systemd Service (for Python on Linux)
+
+```ini
+# /etc/systemd/system/api.service
+[Unit]
+Description=Python FastAPI Application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/app/server
+Environment="PATH=/var/www/app/server/venv/bin"
+ExecStart=/var/www/app/server/venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ## Deployment Script
@@ -92,7 +168,6 @@ set -e
 SERVER_USER="${DEPLOY_USER:-deploy}"
 SERVER_HOST="${DEPLOY_HOST:-your-server.com}"
 SERVER_PATH="${DEPLOY_PATH:-/var/www/app}"
-BUILD_DIR="./dist"
 
 # Colors for output
 RED='\033[0;31m'
@@ -132,11 +207,13 @@ fi
 
 # Run tests
 echo_step "Running tests..."
-npm test
+cd client && npm test
+cd ../server && pytest
+cd ..
 
-# Build
-echo_step "Building application..."
-npm run build
+# Build frontend
+echo_step "Building frontend..."
+cd client && npm run build && cd ..
 
 # Create deployment package
 echo_step "Creating deployment package..."
@@ -145,16 +222,19 @@ DEPLOY_PACKAGE="deploy-$(date +%Y%m%d-%H%M%S).tar.gz"
 
 tar -czf "$DEPLOY_PACKAGE" \
     --exclude='node_modules' \
+    --exclude='venv' \
+    --exclude='__pycache__' \
     --exclude='.git' \
     --exclude='*.log' \
     --exclude='.env.local' \
     client/dist \
     server/dist \
-    server/prisma \
+    server/drizzle \
+    server/app \
+    server/requirements.txt \
     package.json \
     package-lock.json \
-    ecosystem.config.js \
-    .env.production
+    render.yaml
 
 # Deploy to server
 echo_step "Deploying to $SERVER_HOST..."
@@ -165,36 +245,44 @@ scp "$DEPLOY_PACKAGE" "$SERVER_USER@$SERVER_HOST:/tmp/"
 # Execute remote deployment
 ssh "$SERVER_USER@$SERVER_HOST" << REMOTE_SCRIPT
     set -e
-    
+
     cd $SERVER_PATH
-    
+
     # Backup current deployment
     if [ -d "current" ]; then
         mv current "backup-\$(date +%Y%m%d-%H%M%S)"
     fi
-    
+
     # Extract new deployment
     mkdir -p current
     tar -xzf /tmp/$DEPLOY_PACKAGE -C current
-    
-    # Install dependencies
     cd current
+
+    # Install Node.js dependencies (if using Node server)
     npm ci --production
-    
+
+    # Set up Python virtual environment
+    cd server
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    cd ..
+
     # Run database migrations
     cd server
-    npx prisma migrate deploy
+    npm run db:push  # or drizzle-kit push
     cd ..
-    
-    # Restart application
-    pm2 reload ecosystem.config.js --env production
-    
+
+    # Restart applications
+    sudo systemctl restart api  # Python FastAPI
+    pm2 reload ecosystem.config.js --env production  # Node.js if needed
+
     # Cleanup
     rm /tmp/$DEPLOY_PACKAGE
-    
+
     # Keep only last 3 backups
     ls -dt backup-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
-    
+
     echo "Deployment complete!"
 REMOTE_SCRIPT
 
@@ -408,6 +496,9 @@ set -e
 echo "==> Updating system..."
 sudo apt update && sudo apt upgrade -y
 
+echo "==> Installing Python 3.11..."
+sudo apt install -y python3.11 python3.11-venv python3-pip
+
 echo "==> Installing Node.js 20..."
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
@@ -433,30 +524,52 @@ echo "==> Creating app directory..."
 sudo mkdir -p /var/www/app
 sudo chown $USER:$USER /var/www/app
 
+echo "==> Creating Python systemd service..."
+sudo tee /etc/systemd/system/api.service > /dev/null << 'SERVICE'
+[Unit]
+Description=Python FastAPI Application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/app/current/server
+Environment="PATH=/var/www/app/current/server/venv/bin"
+ExecStart=/var/www/app/current/server/venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+sudo systemctl daemon-reload
+sudo systemctl enable api
+
 echo "==> Server setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. Configure Nginx: sudo nano /etc/nginx/sites-available/app"
 echo "2. Enable site: sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/"
 echo "3. Get SSL cert: sudo certbot --nginx -d your-domain.com"
-echo "4. Set up environment: nano /var/www/app/.env.production"
+echo "4. Set up environment: nano /var/www/app/.env"
 echo "5. Deploy your application"
 ```
 
 ## Environment Template
 
 ```bash
-# .env.production (on server)
+# .env (on server - shared by both Python and Node)
 
-# Application
-NODE_ENV=production
-PORT=3001
-
-# Database
+# Python Server
+ENVIRONMENT=production
+PORT=8000
 DATABASE_URL="postgresql://user:password@localhost:5432/app_production"
+CORS_ORIGINS=["https://your-domain.com"]
+SPRINGBOARD_API_KEY=your-springboard-key
 
-# CORS
-CORS_ORIGIN=https://your-domain.com
+# Node.js Server (if needed)
+NODE_ENV=production
+NODE_PORT=3001
 
 # Logging
 LOG_LEVEL=info
@@ -514,27 +627,37 @@ curl http://localhost:3001/health
 ## Monitoring Commands
 
 ```bash
-# View process status
+# Python API status (systemd)
+sudo systemctl status api
+sudo journalctl -u api -f            # Follow logs
+sudo journalctl -u api --since "1 hour ago"
+
+# Node.js server status (PM2)
 pm2 status
-
-# View logs
-pm2 logs app-server
-pm2 logs app-server --lines 100
-
-# Monitor resources
+pm2 logs node-server
+pm2 logs node-server --lines 100
 pm2 monit
-
-# View metrics
-pm2 show app-server
+pm2 show node-server
 
 # Nginx status
 sudo systemctl status nginx
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
 
 # Check disk space
 df -h
 
 # Check memory
 free -m
+
+# Check Python processes
+ps aux | grep uvicorn
+ps aux | grep gunicorn
+
+# Restart services
+sudo systemctl restart api           # Python
+pm2 restart node-server              # Node.js
+sudo systemctl restart nginx         # Nginx
 ```
 
 ## Workflow

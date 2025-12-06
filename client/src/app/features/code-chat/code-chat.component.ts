@@ -557,7 +557,8 @@ import { HlmButtonDirective } from '../../ui/button';
 
     /* Code blocks */
     :host ::ng-deep .prose pre {
-      background-color: hsl(var(--muted));
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
       border-radius: 0.5rem;
       padding: 1rem;
       overflow-x: auto;
@@ -566,7 +567,7 @@ import { HlmButtonDirective } from '../../ui/button';
       word-break: break-all;
       font-size: 0.8125rem;
       line-height: 1.6;
-      border: 1px solid hsl(var(--border));
+      border: 1px solid #334155;
     }
 
     /* Inline code */

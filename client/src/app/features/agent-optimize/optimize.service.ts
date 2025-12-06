@@ -98,7 +98,7 @@ export class OptimizeService {
     try {
       const encodedId = encodeURIComponent(flowId);
       const response = await firstValueFrom(
-        this.http.get<{ summary: string }>(`/api/optimize/flows/${encodedId}/feedback-summary`)
+        this.http.post<{ summary: string }>(`/api/optimize/flows/${encodedId}/feedback-summary`, {})
       );
       return response.summary;
     } catch (err) {

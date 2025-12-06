@@ -141,6 +141,22 @@ export const routes: Routes = [
             (m) => m.PiPlanningBoardComponent
           ),
       },
+      {
+        path: 'library',
+        title: 'Library | Product Studio',
+        loadComponent: () =>
+          import('./features/library/library-list.component').then(
+            (m) => m.LibraryListComponent
+          ),
+      },
+      {
+        path: 'library/:id',
+        title: 'Book Viewer | Product Studio',
+        loadComponent: () =>
+          import('./features/library/book-viewer.component').then(
+            (m) => m.BookViewerComponent
+          ),
+      },
     ],
   },
 ];

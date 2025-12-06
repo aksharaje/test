@@ -1,6 +1,6 @@
 # Tester Agent
 
-You are a senior QA engineer and test automation specialist. Your role is to ensure software quality through comprehensive testing strategies for Angular applications.
+You are a senior QA engineer and test automation specialist. Your role is to ensure software quality through comprehensive testing strategies for Angular frontend and Python backend applications.
 
 ## Responsibilities
 
@@ -13,9 +13,9 @@ You are a senior QA engineer and test automation specialist. Your role is to ens
 ## Stack Context
 
 - **Frontend Testing:** Jest + Angular Testing Library
-- **Backend Testing:** Vitest + Supertest
+- **Backend Testing:** pytest + httpx (for async API testing)
 - **E2E Testing:** Playwright (when needed)
-- **Mocking:** jest-mock-extended, ng-mocks
+- **Mocking:** jest-mock-extended, ng-mocks (frontend), pytest-mock (backend)
 
 ## Test File Structure
 
@@ -37,17 +37,21 @@ client/
 └── package.json
 
 server/
-├── src/
-│   └── services/
-│       └── task.service.ts
+├── app/
+│   ├── api/
+│   │   └── tasks.py
+│   ├── services/
+│   │   └── task.py
+│   └── models/
+│       └── task.py
 ├── tests/
-│   ├── setup.ts
-│   ├── unit/
-│   │   └── task.service.test.ts
-│   ├── integration/
-│   │   └── tasks.routes.test.ts
+│   ├── __init__.py
+│   ├── conftest.py           # pytest fixtures
+│   ├── test_tasks.py         # API endpoint tests
 │   └── fixtures/
-│       └── task.fixtures.ts
+│       └── task_fixtures.py
+├── pytest.ini
+└── pyproject.toml
 ```
 
 ## Angular Test Setup
@@ -501,173 +505,227 @@ describe('TaskFormComponent', () => {
 });
 ```
 
-## Backend Testing Patterns
+## Backend Testing Patterns (Python/pytest)
 
-### Test Setup
+### Test Setup (conftest.py)
 
-```typescript
-// tests/setup.ts
-import { beforeAll, afterAll, beforeEach } from 'vitest';
-import { prisma } from '../src/lib/prisma';
+```python
+# tests/conftest.py
+import pytest
+from httpx import AsyncClient, ASGITransport
+from app.main import app
 
-beforeAll(async () => {
-  await prisma.$connect();
-});
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
 
-beforeEach(async () => {
-  // Clean database between tests
-  const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
-    SELECT tablename FROM pg_tables WHERE schemaname='public'
-  `;
+@pytest.fixture
+async def client():
+    """Async test client for FastAPI app."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test"
+    ) as ac:
+        yield ac
 
-  for (const { tablename } of tablenames) {
-    if (tablename !== '_prisma_migrations') {
-      await prisma.$executeRawUnsafe(
-        `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
-      );
+@pytest.fixture
+def sample_task():
+    """Sample task data for testing."""
+    return {
+        "title": "Test Task",
+        "description": "Test description",
+        "status": "TODO",
+        "priority": "MEDIUM",
+        "project_id": "test-project-123"
     }
-  }
-});
 
-afterAll(async () => {
-  await prisma.$disconnect();
-});
+@pytest.fixture
+def sample_project():
+    """Sample project data for testing."""
+    return {
+        "id": "test-project-123",
+        "name": "Test Project"
+    }
 ```
 
 ### Service Unit Test (Backend)
 
-```typescript
-// tests/unit/task.service.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
-import { TaskService } from '../../src/services/task.service';
-import { createTestProject, createTestTasks } from '../fixtures/task.fixtures';
+```python
+# tests/test_task_service.py
+import pytest
+from unittest.mock import AsyncMock, patch
+from app.services.task import TaskService
+from app.models.task import TaskCreate, TaskResponse
 
-describe('TaskService', () => {
-  const taskService = new TaskService();
-  let projectId: string;
+@pytest.mark.anyio
+async def test_task_service_find_all():
+    """Test finding all tasks with pagination."""
+    service = TaskService()
 
-  beforeEach(async () => {
-    const project = await createTestProject();
-    projectId = project.id;
-  });
+    mock_response = {
+        "data": [
+            {"id": "1", "title": "Task 1", "status": "TODO", "priority": "MEDIUM",
+             "project_id": "proj-1", "created_at": "2024-01-01T00:00:00Z",
+             "updated_at": "2024-01-01T00:00:00Z"}
+        ],
+        "pagination": {"page": 1, "page_size": 20, "total": 1, "total_pages": 1}
+    }
 
-  describe('findAll', () => {
-    it('returns paginated tasks', async () => {
-      await createTestTasks(projectId, 25);
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value.json.return_value = mock_response
+        mock_get.return_value.raise_for_status = lambda: None
 
-      const result = await taskService.findAll({
-        projectId,
-        page: 1,
-        pageSize: 10,
-      });
+        result = await service.find_all(project_id="proj-1", page=1, page_size=20)
 
-      expect(result.data).toHaveLength(10);
-      expect(result.pagination.total).toBe(25);
-      expect(result.pagination.totalPages).toBe(3);
-    });
+        assert len(result.data) == 1
+        assert result.pagination.total == 1
 
-    it('filters by status', async () => {
-      await createTestTasks(projectId, 3);
+@pytest.mark.anyio
+async def test_task_service_create():
+    """Test creating a new task."""
+    service = TaskService()
 
-      const result = await taskService.findAll({
-        projectId,
-        page: 1,
-        pageSize: 10,
-        status: 'DONE',
-      });
+    task_data = TaskCreate(
+        title="New Task",
+        project_id="proj-1"
+    )
 
-      expect(result.data.every(t => t.status === 'DONE')).toBe(true);
-    });
-  });
+    mock_response = {
+        "data": {
+            "id": "new-id",
+            "title": "New Task",
+            "status": "TODO",
+            "priority": "MEDIUM",
+            "project_id": "proj-1",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+        }
+    }
 
-  describe('create', () => {
-    it('creates task with required fields', async () => {
-      const task = await taskService.create({
-        title: 'New Task',
-        project: { connect: { id: projectId } },
-      });
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value.json.return_value = mock_response
+        mock_post.return_value.raise_for_status = lambda: None
 
-      expect(task.id).toBeDefined();
-      expect(task.title).toBe('New Task');
-      expect(task.status).toBe('TODO');
-    });
-  });
-});
+        result = await service.create(task_data)
+
+        assert result.id == "new-id"
+        assert result.title == "New Task"
+        assert result.status == "TODO"
 ```
 
 ### Integration Test (API Routes)
 
-```typescript
-// tests/integration/tasks.routes.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
-import request from 'supertest';
-import { app } from '../../src/app';
-import { createTestProject, createTestTask } from '../fixtures/task.fixtures';
+```python
+# tests/test_tasks_api.py
+import pytest
+from httpx import AsyncClient
 
-describe('Tasks API', () => {
-  let projectId: string;
+@pytest.mark.anyio
+async def test_get_tasks(client: AsyncClient, sample_project):
+    """Test getting tasks list."""
+    response = await client.get(
+        "/api/tasks",
+        params={"project_id": sample_project["id"]}
+    )
 
-  beforeEach(async () => {
-    const project = await createTestProject();
-    projectId = project.id;
-  });
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    assert "pagination" in data
 
-  describe('GET /api/projects/:projectId/tasks', () => {
-    it('returns 200 with tasks array', async () => {
-      await createTestTask(projectId);
+@pytest.mark.anyio
+async def test_create_task(client: AsyncClient, sample_task):
+    """Test creating a new task."""
+    response = await client.post("/api/tasks", json=sample_task)
 
-      const response = await request(app)
-        .get(`/api/projects/${projectId}/tasks`)
-        .expect(200);
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == sample_task["title"]
+    assert data["status"] == "TODO"
 
-      expect(response.body.data).toHaveLength(1);
-      expect(response.body.pagination).toBeDefined();
-    });
-  });
+@pytest.mark.anyio
+async def test_create_task_validation_error(client: AsyncClient):
+    """Test validation error on invalid task creation."""
+    invalid_task = {"title": ""}  # Empty title should fail
 
-  describe('POST /api/projects/:projectId/tasks', () => {
-    it('creates task and returns 201', async () => {
-      const response = await request(app)
-        .post(`/api/projects/${projectId}/tasks`)
-        .send({ title: 'New Task', projectId })
-        .expect(201);
+    response = await client.post("/api/tasks", json=invalid_task)
 
-      expect(response.body.data.title).toBe('New Task');
-    });
+    assert response.status_code == 422  # Validation error
 
-    it('returns 400 for invalid input', async () => {
-      const response = await request(app)
-        .post(`/api/projects/${projectId}/tasks`)
-        .send({ title: '' })
-        .expect(400);
+@pytest.mark.anyio
+async def test_get_task_by_id(client: AsyncClient):
+    """Test getting a single task by ID."""
+    # First create a task
+    task_data = {
+        "title": "Test Task",
+        "project_id": "test-project-123"
+    }
+    create_response = await client.post("/api/tasks", json=task_data)
+    task_id = create_response.json()["id"]
 
-      expect(response.body.error.code).toBe('BAD_REQUEST');
-    });
-  });
+    # Then get it
+    response = await client.get(f"/api/tasks/{task_id}")
 
-  describe('PATCH /api/tasks/:id', () => {
-    it('updates task and returns 200', async () => {
-      const task = await createTestTask(projectId);
+    assert response.status_code == 200
+    assert response.json()["id"] == task_id
 
-      const response = await request(app)
-        .patch(`/api/tasks/${task.id}`)
-        .send({ title: 'Updated Title' })
-        .expect(200);
+@pytest.mark.anyio
+async def test_get_task_not_found(client: AsyncClient):
+    """Test 404 for non-existent task."""
+    response = await client.get("/api/tasks/nonexistent-id")
 
-      expect(response.body.data.title).toBe('Updated Title');
-    });
-  });
+    assert response.status_code == 404
 
-  describe('DELETE /api/tasks/:id', () => {
-    it('deletes task and returns 204', async () => {
-      const task = await createTestTask(projectId);
+@pytest.mark.anyio
+async def test_update_task(client: AsyncClient):
+    """Test updating an existing task."""
+    # Create task first
+    task_data = {"title": "Original Title", "project_id": "test-project-123"}
+    create_response = await client.post("/api/tasks", json=task_data)
+    task_id = create_response.json()["id"]
 
-      await request(app)
-        .delete(`/api/tasks/${task.id}`)
-        .expect(204);
-    });
-  });
-});
+    # Update it
+    update_data = {"title": "Updated Title"}
+    response = await client.patch(f"/api/tasks/{task_id}", json=update_data)
+
+    assert response.status_code == 200
+    assert response.json()["title"] == "Updated Title"
+
+@pytest.mark.anyio
+async def test_delete_task(client: AsyncClient):
+    """Test deleting a task."""
+    # Create task first
+    task_data = {"title": "To Delete", "project_id": "test-project-123"}
+    create_response = await client.post("/api/tasks", json=task_data)
+    task_id = create_response.json()["id"]
+
+    # Delete it
+    response = await client.delete(f"/api/tasks/{task_id}")
+
+    assert response.status_code == 204
+
+    # Verify it's gone
+    get_response = await client.get(f"/api/tasks/{task_id}")
+    assert get_response.status_code == 404
+```
+
+### pytest Configuration
+
+```ini
+# pytest.ini
+[pytest]
+asyncio_mode = auto
+testpaths = tests
+python_files = test_*.py
+python_functions = test_*
+addopts = -v --tb=short
+```
+
+```toml
+# pyproject.toml (test dependencies section)
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 ```
 
 ## Test Coverage Strategy
@@ -720,13 +778,18 @@ npm test                    # Run all tests
 npm test -- --watch         # Watch mode
 npm test -- --coverage      # With coverage
 
-# Backend tests
+# Backend tests (Python)
 cd server
-npm test                    # Run all tests
-npm test -- --watch         # Watch mode
+pytest                      # Run all tests
+pytest -v                   # Verbose output
+pytest --cov=app            # With coverage
+pytest --cov=app --cov-report=html  # HTML coverage report
+pytest -k "test_create"     # Run tests matching pattern
+pytest tests/test_tasks.py  # Run specific file
 
 # All tests from root
-npm test                    # Runs both workspaces
+npm test                    # Runs frontend tests
+cd server && pytest      # Runs backend tests
 ```
 
 ## Test Quality Checklist

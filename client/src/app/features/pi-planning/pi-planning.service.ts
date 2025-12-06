@@ -7,6 +7,15 @@ import type {
   PiPlannedItem,
   PiPlanningView,
   CreateSessionRequest,
+  HolidayConfig,
+  KanbanBoardView,
+  PiPlanVersion,
+  AddBoardRequest,
+  AssignFeatureRequest,
+  CreateVersionRequest,
+  PiFeature,
+  AiPlanningResult,
+  PlannedAssignment,
 } from './pi-planning.types';
 
 @Injectable({
@@ -20,6 +29,9 @@ export class PiPlanningService {
   private _sessions = signal<PiSession[]>([]);
   private _selectedSession = signal<PiSession | null>(null);
   private _planningView = signal<PiPlanningView | null>(null);
+  private _kanbanView = signal<KanbanBoardView | null>(null);
+  private _holidayConfigs = signal<HolidayConfig[]>([]);
+  private _versions = signal<PiPlanVersion[]>([]);
   private _loading = signal(false);
   private _error = signal<string | null>(null);
 
@@ -27,10 +39,39 @@ export class PiPlanningService {
   readonly sessions = this._sessions.asReadonly();
   readonly selectedSession = this._selectedSession.asReadonly();
   readonly planningView = this._planningView.asReadonly();
+  readonly kanbanView = this._kanbanView.asReadonly();
+  readonly holidayConfigs = this._holidayConfigs.asReadonly();
+  readonly versions = this._versions.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
 
   readonly hasSessions = computed(() => this._sessions().length > 0);
+
+  // ==================
+  // Holiday Configs
+  // ==================
+
+  async loadHolidayConfigs(): Promise<void> {
+    try {
+      const configs = await firstValueFrom(
+        this.http.get<HolidayConfig[]>(`${this.baseUrl}/holiday-configs`)
+      );
+      this._holidayConfigs.set(configs);
+    } catch (err) {
+      console.error('Failed to load holiday configs:', err);
+    }
+  }
+
+  async seedHolidayConfigs(): Promise<void> {
+    try {
+      const configs = await firstValueFrom(
+        this.http.post<HolidayConfig[]>(`${this.baseUrl}/holiday-configs/seed`, {})
+      );
+      this._holidayConfigs.set(configs);
+    } catch (err) {
+      console.error('Failed to seed holiday configs:', err);
+    }
+  }
 
   // ==================
   // Sessions
@@ -61,10 +102,14 @@ export class PiPlanningService {
     this._error.set(null);
 
     try {
-      const session = await firstValueFrom(
-        this.http.post<PiSession>(`${this.baseUrl}/${integrationId}/sessions`, request)
+      const result = await firstValueFrom(
+        this.http.post<{ id: number }>(`${this.baseUrl}/${integrationId}/sessions`, request)
       );
-      this._sessions.update((sessions) => [session, ...sessions]);
+      // Fetch the full session
+      const session = await this.getSession(integrationId, result.id);
+      if (session) {
+        this._sessions.update((sessions) => [session, ...sessions]);
+      }
       return session;
     } catch (err) {
       this._error.set('Failed to create PI session');
@@ -137,6 +182,7 @@ export class PiPlanningService {
       if (this._selectedSession()?.id === sessionId) {
         this._selectedSession.set(null);
         this._planningView.set(null);
+        this._kanbanView.set(null);
       }
       return true;
     } catch (err) {
@@ -149,7 +195,248 @@ export class PiPlanningService {
   }
 
   // ==================
-  // Planning View
+  // Boards
+  // ==================
+
+  async addBoard(
+    integrationId: number,
+    sessionId: number,
+    request: AddBoardRequest
+  ): Promise<{ id: number } | null> {
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ id: number }>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/boards`,
+          request
+        )
+      );
+      // Reload session to get updated boards
+      await this.getSession(integrationId, sessionId);
+      return result;
+    } catch (err) {
+      this._error.set('Failed to add board to session');
+      console.error(err);
+      return null;
+    }
+  }
+
+  async updateTeamCapabilities(
+    integrationId: number,
+    sessionId: number,
+    boardId: number,
+    capabilities: { canWorkOnAll: boolean; allowedFeatureKeys?: string[] }
+  ): Promise<void> {
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/boards/${boardId}/capabilities`,
+          capabilities
+        )
+      );
+    } catch (err) {
+      this._error.set('Failed to update team capabilities');
+      console.error(err);
+    }
+  }
+
+  // ==================
+  // Features
+  // ==================
+
+  async importFeatures(
+    integrationId: number,
+    sessionId: number,
+    options?: { jql?: string; projectKey?: string }
+  ): Promise<{ imported: number }> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ imported: number }>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/features/import`,
+          options || {}
+        )
+      );
+      // Reload session to get imported features
+      await this.getSession(integrationId, sessionId);
+      return result;
+    } catch (err) {
+      this._error.set('Failed to import features');
+      console.error(err);
+      return { imported: 0 };
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async updateFeature(
+    integrationId: number,
+    sessionId: number,
+    featureId: number,
+    updates: Partial<Pick<PiFeature, 'totalPoints' | 'estimatedSprints' | 'priorityOrder'>>
+  ): Promise<void> {
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/features/${featureId}`,
+          updates
+        )
+      );
+    } catch (err) {
+      this._error.set('Failed to update feature');
+      console.error(err);
+    }
+  }
+
+  // ==================
+  // Assignments
+  // ==================
+
+  async assignFeature(
+    integrationId: number,
+    sessionId: number,
+    request: AssignFeatureRequest
+  ): Promise<{ id: number } | null> {
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ id: number }>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/assignments`,
+          request
+        )
+      );
+      // Reload kanban view
+      await this.loadKanbanView(integrationId, sessionId);
+      return result;
+    } catch (err) {
+      this._error.set('Failed to assign feature');
+      console.error(err);
+      return null;
+    }
+  }
+
+  async unassignFeature(
+    integrationId: number,
+    sessionId: number,
+    featureId: number
+  ): Promise<boolean> {
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.delete(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/assignments/${featureId}`
+        )
+      );
+      // Reload kanban view
+      await this.loadKanbanView(integrationId, sessionId);
+      return true;
+    } catch (err) {
+      this._error.set('Failed to unassign feature');
+      console.error(err);
+      return false;
+    }
+  }
+
+  // ==================
+  // Kanban Board View
+  // ==================
+
+  async loadKanbanView(integrationId: number, sessionId: number): Promise<void> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const view = await firstValueFrom(
+        this.http.get<KanbanBoardView>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/board-view`
+        )
+      );
+      this._kanbanView.set(view);
+    } catch (err) {
+      this._error.set('Failed to load board view');
+      console.error(err);
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // ==================
+  // Versions
+  // ==================
+
+  async loadVersions(integrationId: number, sessionId: number): Promise<void> {
+    try {
+      const versions = await firstValueFrom(
+        this.http.get<PiPlanVersion[]>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/versions`
+        )
+      );
+      this._versions.set(versions);
+    } catch (err) {
+      console.error('Failed to load versions:', err);
+    }
+  }
+
+  async createVersion(
+    integrationId: number,
+    sessionId: number,
+    request: CreateVersionRequest
+  ): Promise<{ id: number } | null> {
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ id: number }>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/versions`,
+          request
+        )
+      );
+      await this.loadVersions(integrationId, sessionId);
+      return result;
+    } catch (err) {
+      this._error.set('Failed to create version');
+      console.error(err);
+      return null;
+    }
+  }
+
+  async restoreVersion(
+    integrationId: number,
+    sessionId: number,
+    versionId: number
+  ): Promise<boolean> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/versions/${versionId}/restore`,
+          {}
+        )
+      );
+      await this.loadKanbanView(integrationId, sessionId);
+      return true;
+    } catch (err) {
+      this._error.set('Failed to restore version');
+      console.error(err);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // ==================
+  // Legacy Planning View
   // ==================
 
   async loadPlanningView(integrationId: number, sessionId: number): Promise<void> {
@@ -173,7 +460,7 @@ export class PiPlanningService {
   }
 
   // ==================
-  // Items
+  // Legacy Items (for backwards compatibility)
   // ==================
 
   async addItem(
@@ -190,7 +477,6 @@ export class PiPlanningService {
           item
         )
       );
-      // Reload planning view to reflect changes
       await this.loadPlanningView(integrationId, sessionId);
       return created;
     } catch (err) {
@@ -215,7 +501,6 @@ export class PiPlanningService {
           updates
         )
       );
-      // Reload planning view to reflect changes
       await this.loadPlanningView(integrationId, sessionId);
       return updated;
     } catch (err) {
@@ -238,7 +523,6 @@ export class PiPlanningService {
           `${this.baseUrl}/${integrationId}/sessions/${sessionId}/items/${itemId}`
         )
       );
-      // Reload planning view to reflect changes
       await this.loadPlanningView(integrationId, sessionId);
       return true;
     } catch (err) {
@@ -247,10 +531,6 @@ export class PiPlanningService {
       return false;
     }
   }
-
-  // ==================
-  // Import
-  // ==================
 
   async importFromBacklog(
     integrationId: number,
@@ -268,7 +548,6 @@ export class PiPlanningService {
           { boardId, issueKeys }
         )
       );
-      // Reload planning view to reflect changes
       await this.loadPlanningView(integrationId, sessionId);
       return items;
     } catch (err) {
@@ -277,6 +556,174 @@ export class PiPlanningService {
       return [];
     } finally {
       this._loading.set(false);
+    }
+  }
+
+  // ==================
+  // AI Planning
+  // ==================
+
+  async generateAiPlan(
+    integrationId: number,
+    sessionId: number,
+    options?: { respectDependencies?: boolean; balanceLoad?: boolean; preferEarlierSprints?: boolean }
+  ): Promise<AiPlanningResult | null> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<AiPlanningResult>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/ai-plan/preview`,
+          options || {}
+        )
+      );
+      return result;
+    } catch (err) {
+      this._error.set('Failed to generate AI plan');
+      console.error(err);
+      return null;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async applyAiPlan(
+    integrationId: number,
+    sessionId: number,
+    assignments: PlannedAssignment[]
+  ): Promise<boolean> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/ai-plan/apply`,
+          { assignments }
+        )
+      );
+      // Reload the board view
+      await this.loadKanbanView(integrationId, sessionId);
+      return true;
+    } catch (err) {
+      this._error.set('Failed to apply AI plan');
+      console.error(err);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async runAutoAiPlan(
+    integrationId: number,
+    sessionId: number,
+    options?: { respectDependencies?: boolean; balanceLoad?: boolean; preferEarlierSprints?: boolean }
+  ): Promise<AiPlanningResult | null> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<AiPlanningResult>(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/ai-plan/auto`,
+          options || {}
+        )
+      );
+      // Reload the board view
+      await this.loadKanbanView(integrationId, sessionId);
+      return result;
+    } catch (err) {
+      this._error.set('Failed to run AI planning');
+      console.error(err);
+      return null;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // ==================
+  // Jira Boards
+  // ==================
+
+  async getJiraBoards(
+    integrationId: number
+  ): Promise<Array<{ id: number; name: string; type: string }>> {
+    try {
+      const boards = await firstValueFrom(
+        this.http.get<Array<{ id: number; name: string; type: string }>>(
+          `/api/jira/${integrationId}/boards`
+        )
+      );
+      return boards;
+    } catch (err) {
+      console.error('Failed to fetch Jira boards:', err);
+      return [];
+    }
+  }
+
+  async getJiraBoardVelocity(
+    integrationId: number,
+    jiraBoardId: number
+  ): Promise<number> {
+    try {
+      const result = await firstValueFrom(
+        this.http.get<{ velocity: number }>(
+          `${this.baseUrl}/${integrationId}/boards/${jiraBoardId}/velocity`
+        )
+      );
+      return result.velocity;
+    } catch (err) {
+      console.error('Failed to fetch velocity:', err);
+      return 21; // Default velocity
+    }
+  }
+
+  async updateBoardVelocity(
+    integrationId: number,
+    sessionId: number,
+    boardId: number,
+    velocity: number
+  ): Promise<boolean> {
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/boards/${boardId}`,
+          { defaultVelocity: velocity }
+        )
+      );
+      // Reload kanban view to reflect changes
+      await this.loadKanbanView(integrationId, sessionId);
+      return true;
+    } catch (err) {
+      this._error.set('Failed to update velocity');
+      console.error(err);
+      return false;
+    }
+  }
+
+  async removeBoard(
+    integrationId: number,
+    sessionId: number,
+    boardId: number
+  ): Promise<boolean> {
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.http.delete(
+          `${this.baseUrl}/${integrationId}/sessions/${sessionId}/boards/${boardId}`
+        )
+      );
+      // Reload kanban view to reflect changes
+      await this.loadKanbanView(integrationId, sessionId);
+      return true;
+    } catch (err) {
+      this._error.set('Failed to remove board');
+      console.error(err);
+      return false;
     }
   }
 
@@ -290,5 +737,9 @@ export class PiPlanningService {
 
   clearError(): void {
     this._error.set(null);
+  }
+
+  clearKanbanView(): void {
+    this._kanbanView.set(null);
   }
 }

@@ -1,0 +1,1262 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.ddl.postgresql] Detected sequence named 'pi_team_capabilities_id_seq' as owned by integer column 'pi_team_capabilities(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_team_capabilities_board_idx' on 'pi_team_capabilities'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_team_capabilities'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'extracted_facts_id_seq' as owned by integer column 'extracted_facts(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'extracted_facts_feedback_idx' on 'extracted_facts'
+INFO  [alembic.autogenerate.compare] Detected removed index 'extracted_facts_status_idx' on 'extracted_facts'
+INFO  [alembic.autogenerate.compare] Detected removed table 'extracted_facts'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'pi_sprints_id_seq' as owned by integer column 'pi_sprints(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_sprints_session_idx' on 'pi_sprints'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_sprints_unique' on 'pi_sprints'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_sprints'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'generation_extracted_facts_id_seq' as owned by integer column 'generation_extracted_facts(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'gen_extracted_facts_feedback_idx' on 'generation_extracted_facts'
+INFO  [alembic.autogenerate.compare] Detected removed index 'gen_extracted_facts_status_idx' on 'generation_extracted_facts'
+INFO  [alembic.autogenerate.compare] Detected removed table 'generation_extracted_facts'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'jira_issues_id_seq' as owned by integer column 'jira_issues(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_assignee_idx' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_epic_idx' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_integration_idx' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_key_idx' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_project_idx' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_sprint_idx' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_issues_unique' on 'jira_issues'
+INFO  [alembic.autogenerate.compare] Detected removed table 'jira_issues'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'pi_features_id_seq' as owned by integer column 'pi_features(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_features_jira_key_idx' on 'pi_features'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_features_priority_idx' on 'pi_features'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_features_session_idx' on 'pi_features'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_features'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_session_boards_session_idx' on 'pi_session_boards'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_session_boards'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'messages_id_seq' as owned by integer column 'messages(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed table 'messages'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'jira_sprints_id_seq' as owned by integer column 'jira_sprints(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_sprints_board_idx' on 'jira_sprints'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_sprints_integration_idx' on 'jira_sprints'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_sprints_state_idx' on 'jira_sprints'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_sprints_unique' on 'jira_sprints'
+INFO  [alembic.autogenerate.compare] Detected removed table 'jira_sprints'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'pi_planned_items_id_seq' as owned by integer column 'pi_planned_items(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_planned_items_board_idx' on 'pi_planned_items'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_planned_items_session_idx' on 'pi_planned_items'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_planned_items_sprint_idx' on 'pi_planned_items'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_planned_items'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_sessions_integration_idx' on 'pi_planning_sessions'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_sessions_status_idx' on 'pi_planning_sessions'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_planning_sessions'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'artifact_jira_links_id_seq' as owned by integer column 'artifact_jira_links(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'artifact_jira_links_artifact_idx' on 'artifact_jira_links'
+INFO  [alembic.autogenerate.compare] Detected removed index 'artifact_jira_links_integration_idx' on 'artifact_jira_links'
+INFO  [alembic.autogenerate.compare] Detected removed table 'artifact_jira_links'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'custom_holidays_id_seq' as owned by integer column 'custom_holidays(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'custom_holidays_config_idx' on 'custom_holidays'
+INFO  [alembic.autogenerate.compare] Detected removed index 'custom_holidays_date_idx' on 'custom_holidays'
+INFO  [alembic.autogenerate.compare] Detected removed table 'custom_holidays'
+INFO  [alembic.autogenerate.compare] Detected removed table 'conversations'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'jira_boards_id_seq' as owned by integer column 'jira_boards(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_boards_integration_idx' on 'jira_boards'
+INFO  [alembic.autogenerate.compare] Detected removed index 'jira_boards_unique' on 'jira_boards'
+INFO  [alembic.autogenerate.compare] Detected removed table 'jira_boards'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'field_mappings_id_seq' as owned by integer column 'field_mappings(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'field_mappings_integration_idx' on 'field_mappings'
+INFO  [alembic.autogenerate.compare] Detected removed table 'field_mappings'
+INFO  [alembic.autogenerate.compare] Detected removed table 'holiday_configs'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'pi_plan_versions_id_seq' as owned by integer column 'pi_plan_versions(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_versions_created_idx' on 'pi_plan_versions'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_versions_session_idx' on 'pi_plan_versions'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_plan_versions'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'required_fields_id_seq' as owned by integer column 'required_fields(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'required_fields_integration_idx' on 'required_fields'
+INFO  [alembic.autogenerate.compare] Detected removed index 'required_fields_project_idx' on 'required_fields'
+INFO  [alembic.autogenerate.compare] Detected removed index 'required_fields_unique' on 'required_fields'
+INFO  [alembic.autogenerate.compare] Detected removed table 'required_fields'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'pi_feature_assignments_id_seq' as owned by integer column 'pi_feature_assignments(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_assignments_board_idx' on 'pi_feature_assignments'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_assignments_feature_idx' on 'pi_feature_assignments'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_assignments_session_idx' on 'pi_feature_assignments'
+INFO  [alembic.autogenerate.compare] Detected removed index 'pi_assignments_sprint_idx' on 'pi_feature_assignments'
+INFO  [alembic.autogenerate.compare] Detected removed table 'pi_feature_assignments'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'agents_id_seq' as owned by integer column 'agents(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'document_chunks_id_seq' as owned by integer column 'document_chunks(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'integrations_id_seq' as owned by integer column 'integrations(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'generated_artifacts_id_seq' as owned by integer column 'generated_artifacts(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'code_chat_sessions_id_seq' as owned by integer column 'code_chat_sessions(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'flow_executions_id_seq' as owned by integer column 'flow_executions(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'jira_projects_id_seq' as owned by integer column 'jira_projects(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'agent_executions_id_seq' as owned by integer column 'agent_executions(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'library_books_id_seq' as owned by integer column 'library_books(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'prd_templates_id_seq' as owned by integer column 'prd_templates(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'generated_prds_id_seq' as owned by integer column 'generated_prds(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'library_pages_id_seq' as owned by integer column 'library_pages(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'generation_feedback_id_seq' as owned by integer column 'generation_feedback(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'code_chat_messages_id_seq' as owned by integer column 'code_chat_messages(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'feedback_id_seq' as owned by integer column 'feedback(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'library_integrations_id_seq' as owned by integer column 'library_integrations(id)', assuming SERIAL and omitting
+ERROR [alembic.util.messaging] New upgrade operations detected: [('remove_index', Index('pi_team_capabilities_board_idx', Column('session_board_id', INTEGER(), table=<pi_team_capabilities>, nullable=False))), ('remove_table', Table('pi_team_capabilities', MetaData(), Column('id', INTEGER(), table=<pi_team_capabilities>, primary_key=True, nullable=False), Column('session_board_id', INTEGER(), ForeignKey('pi_session_boards.id'), table=<pi_team_capabilities>, nullable=False), Column('can_work_on_all', INTEGER(), table=<pi_team_capabilities>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782a1f0>, for_update=False)), Column('allowed_feature_keys', JSONB(astext_type=Text()), table=<pi_team_capabilities>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782a9a0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<pi_team_capabilities>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782afd0>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<pi_team_capabilities>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782ae50>, for_update=False)), schema=None)), ('remove_index', Index('extracted_facts_feedback_idx', Column('feedback_id', INTEGER(), table=<extracted_facts>, nullable=False))), ('remove_index', Index('extracted_facts_status_idx', Column('status', TEXT(), table=<extracted_facts>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10785f250>, for_update=False)))), ('remove_table', Table('extracted_facts', MetaData(), Column('id', INTEGER(), table=<extracted_facts>, primary_key=True, nullable=False), Column('feedback_id', INTEGER(), ForeignKey('feedback.id'), table=<extracted_facts>, nullable=False), Column('content', TEXT(), table=<extracted_facts>, nullable=False), Column('knowledge_base_id', INTEGER(), ForeignKey('knowledge_bases.id'), table=<extracted_facts>), Column('status', TEXT(), table=<extracted_facts>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10785f250>, for_update=False)), Column('created_at', TIMESTAMP(), table=<extracted_facts>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10785f370>, for_update=False)), schema=None)), ('remove_index', Index('pi_sprints_session_idx', Column('session_id', INTEGER(), table=<pi_sprints>, nullable=False))), ('remove_index', Index('pi_sprints_unique', Column('session_id', INTEGER(), table=<pi_sprints>, nullable=False), Column('sprint_number', INTEGER(), table=<pi_sprints>, nullable=False), unique=True)), ('remove_table', Table('pi_sprints', MetaData(), Column('id', INTEGER(), table=<pi_sprints>, primary_key=True, nullable=False), Column('session_id', INTEGER(), ForeignKey('pi_planning_sessions.id'), table=<pi_sprints>, nullable=False), Column('sprint_number', INTEGER(), table=<pi_sprints>, nullable=False), Column('name', TEXT(), table=<pi_sprints>, nullable=False), Column('start_date', TIMESTAMP(), table=<pi_sprints>, nullable=False), Column('end_date', TIMESTAMP(), table=<pi_sprints>, nullable=False), Column('working_days', INTEGER(), table=<pi_sprints>, nullable=False), Column('total_days', INTEGER(), table=<pi_sprints>, nullable=False), Column('holidays', JSONB(astext_type=Text()), table=<pi_sprints>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10788faf0>, for_update=False)), Column('is_ip_sprint', INTEGER(), table=<pi_sprints>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10788fa30>, for_update=False)), Column('created_at', TIMESTAMP(), table=<pi_sprints>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10788fd90>, for_update=False)), schema=None)), ('remove_index', Index('gen_extracted_facts_feedback_idx', Column('feedback_id', INTEGER(), table=<generation_extracted_facts>, nullable=False))), ('remove_index', Index('gen_extracted_facts_status_idx', Column('status', TEXT(), table=<generation_extracted_facts>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107890be0>, for_update=False)))), ('remove_table', Table('generation_extracted_facts', MetaData(), Column('id', INTEGER(), table=<generation_extracted_facts>, primary_key=True, nullable=False), Column('feedback_id', INTEGER(), ForeignKey('generation_feedback.id'), table=<generation_extracted_facts>, nullable=False), Column('content', TEXT(), table=<generation_extracted_facts>, nullable=False), Column('knowledge_base_id', INTEGER(), ForeignKey('knowledge_bases.id'), table=<generation_extracted_facts>), Column('status', TEXT(), table=<generation_extracted_facts>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107890be0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<generation_extracted_facts>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107890c40>, for_update=False)), schema=None)), ('remove_index', Index('jira_issues_assignee_idx', Column('assignee_id', TEXT(), table=<jira_issues>))), ('remove_index', Index('jira_issues_epic_idx', Column('epic_key', TEXT(), table=<jira_issues>))), ('remove_index', Index('jira_issues_integration_idx', Column('integration_id', INTEGER(), table=<jira_issues>, nullable=False))), ('remove_index', Index('jira_issues_key_idx', Column('key', TEXT(), table=<jira_issues>, nullable=False))), ('remove_index', Index('jira_issues_project_idx', Column('project_key', TEXT(), table=<jira_issues>, nullable=False))), ('remove_index', Index('jira_issues_sprint_idx', Column('sprint_id', INTEGER(), table=<jira_issues>))), ('remove_index', Index('jira_issues_unique', Column('integration_id', INTEGER(), table=<jira_issues>, nullable=False), Column('jira_id', TEXT(), table=<jira_issues>, nullable=False), unique=True)), ('remove_table', Table('jira_issues', MetaData(), Column('id', INTEGER(), table=<jira_issues>, primary_key=True, nullable=False), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<jira_issues>, nullable=False), Column('jira_id', TEXT(), table=<jira_issues>, nullable=False), Column('key', TEXT(), table=<jira_issues>, nullable=False), Column('summary', TEXT(), table=<jira_issues>, nullable=False), Column('description', TEXT(), table=<jira_issues>), Column('issue_type', TEXT(), table=<jira_issues>, nullable=False), Column('issue_type_id', TEXT(), table=<jira_issues>, nullable=False), Column('status', TEXT(), table=<jira_issues>, nullable=False), Column('status_category', TEXT(), table=<jira_issues>), Column('priority', TEXT(), table=<jira_issues>), Column('assignee_id', TEXT(), table=<jira_issues>), Column('assignee_name', TEXT(), table=<jira_issues>), Column('reporter_id', TEXT(), table=<jira_issues>), Column('reporter_name', TEXT(), table=<jira_issues>), Column('story_points', INTEGER(), table=<jira_issues>), Column('sprint_id', INTEGER(), table=<jira_issues>), Column('epic_key', TEXT(), table=<jira_issues>), Column('parent_key', TEXT(), table=<jira_issues>), Column('labels', JSONB(astext_type=Text()), table=<jira_issues>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078bd910>, for_update=False)), Column('components', JSONB(astext_type=Text()), table=<jira_issues>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078bda30>, for_update=False)), Column('project_key', TEXT(), table=<jira_issues>, nullable=False), Column('created_date', TIMESTAMP(), table=<jira_issues>), Column('updated_date', TIMESTAMP(), table=<jira_issues>), Column('resolution_date', TIMESTAMP(), table=<jira_issues>), Column('synced_at', TIMESTAMP(), table=<jira_issues>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078bdcd0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<jira_issues>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078bddf0>, for_update=False)), schema=None)), ('remove_index', Index('pi_features_jira_key_idx', Column('jira_issue_key', TEXT(), table=<pi_features>))), ('remove_index', Index('pi_features_priority_idx', Column('priority_order', INTEGER(), table=<pi_features>))), ('remove_index', Index('pi_features_session_idx', Column('session_id', INTEGER(), table=<pi_features>, nullable=False))), ('remove_table', Table('pi_features', MetaData(), Column('id', INTEGER(), table=<pi_features>, primary_key=True, nullable=False), Column('session_id', INTEGER(), ForeignKey('pi_planning_sessions.id'), table=<pi_features>, nullable=False), Column('jira_issue_id', TEXT(), table=<pi_features>), Column('jira_issue_key', TEXT(), table=<pi_features>), Column('title', TEXT(), table=<pi_features>, nullable=False), Column('description', TEXT(), table=<pi_features>), Column('issue_type', TEXT(), table=<pi_features>), Column('priority', TEXT(), table=<pi_features>), Column('priority_order', INTEGER(), table=<pi_features>), Column('total_points', INTEGER(), table=<pi_features>), Column('estimated_sprints', INTEGER(), table=<pi_features>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078cba30>, for_update=False)), Column('dependencies', JSONB(astext_type=Text()), table=<pi_features>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078cbaf0>, for_update=False)), Column('labels', JSONB(astext_type=Text()), table=<pi_features>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078cbc40>, for_update=False)), Column('project_key', TEXT(), table=<pi_features>), Column('status', TEXT(), table=<pi_features>), Column('imported_at', TIMESTAMP(), table=<pi_features>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078cbe20>, for_update=False)), Column('created_at', TIMESTAMP(), table=<pi_features>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078cbf40>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<pi_features>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078d80a0>, for_update=False)), schema=None)), ('remove_index', Index('pi_session_boards_session_idx', Column('session_id', INTEGER(), table=<pi_session_boards>, nullable=False))), ('remove_table', Table('pi_session_boards', MetaData(), Column('id', INTEGER(), table=<pi_session_boards>, primary_key=True, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782a820>, for_update=False)), Column('session_id', INTEGER(), ForeignKey('pi_planning_sessions.id'), table=<pi_session_boards>, nullable=False), Column('board_id', INTEGER(), table=<pi_session_boards>, nullable=False), Column('board_name', TEXT(), table=<pi_session_boards>, nullable=False), Column('velocity_override', INTEGER(), table=<pi_session_boards>), Column('capacity_adjustment', INTEGER(), table=<pi_session_boards>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782a190>, for_update=False)), Column('created_at', TIMESTAMP(), table=<pi_session_boards>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10782a130>, for_update=False)), schema=None)), ('remove_table', Table('messages', MetaData(), Column('id', INTEGER(), table=<messages>, primary_key=True, nullable=False), Column('conversation_id', INTEGER(), ForeignKey('conversations.id'), table=<messages>, nullable=False), Column('role', TEXT(), table=<messages>, nullable=False), Column('content', TEXT(), table=<messages>, nullable=False), Column('tool_calls', JSONB(astext_type=Text()), table=<messages>), Column('tool_call_id', TEXT(), table=<messages>), Column('created_at', TIMESTAMP(), table=<messages>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078df280>, for_update=False)), schema=None)), ('remove_index', Index('jira_sprints_board_idx', Column('board_id', INTEGER(), table=<jira_sprints>, nullable=False))), ('remove_index', Index('jira_sprints_integration_idx', Column('integration_id', INTEGER(), table=<jira_sprints>, nullable=False))), ('remove_index', Index('jira_sprints_state_idx', Column('state', TEXT(), table=<jira_sprints>, nullable=False))), ('remove_index', Index('jira_sprints_unique', Column('integration_id', INTEGER(), table=<jira_sprints>, nullable=False), Column('jira_id', INTEGER(), table=<jira_sprints>, nullable=False), unique=True)), ('remove_table', Table('jira_sprints', MetaData(), Column('id', INTEGER(), table=<jira_sprints>, primary_key=True, nullable=False), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<jira_sprints>, nullable=False), Column('board_id', INTEGER(), table=<jira_sprints>, nullable=False), Column('jira_id', INTEGER(), table=<jira_sprints>, nullable=False), Column('name', TEXT(), table=<jira_sprints>, nullable=False), Column('state', TEXT(), table=<jira_sprints>, nullable=False), Column('start_date', TIMESTAMP(), table=<jira_sprints>), Column('end_date', TIMESTAMP(), table=<jira_sprints>), Column('completed_points', INTEGER(), table=<jira_sprints>), Column('committed_points', INTEGER(), table=<jira_sprints>), Column('goal', TEXT(), table=<jira_sprints>), Column('synced_at', TIMESTAMP(), table=<jira_sprints>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078ed7c0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<jira_sprints>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078edb20>, for_update=False)), schema=None)), ('remove_index', Index('pi_planned_items_board_idx', Column('assigned_board_id', INTEGER(), table=<pi_planned_items>))), ('remove_index', Index('pi_planned_items_session_idx', Column('session_id', INTEGER(), table=<pi_planned_items>, nullable=False))), ('remove_index', Index('pi_planned_items_sprint_idx', Column('target_sprint_id', INTEGER(), table=<pi_planned_items>))), ('remove_table', Table('pi_planned_items', MetaData(), Column('id', INTEGER(), table=<pi_planned_items>, primary_key=True, nullable=False), Column('session_id', INTEGER(), ForeignKey('pi_planning_sessions.id'), table=<pi_planned_items>, nullable=False), Column('jira_issue_id', TEXT(), table=<pi_planned_items>), Column('jira_issue_key', TEXT(), table=<pi_planned_items>), Column('title', TEXT(), table=<pi_planned_items>, nullable=False), Column('assigned_board_id', INTEGER(), table=<pi_planned_items>), Column('target_sprint_id', INTEGER(), table=<pi_planned_items>), Column('sequence_order', INTEGER(), table=<pi_planned_items>), Column('estimated_points', INTEGER(), table=<pi_planned_items>), Column('confidence', INTEGER(), table=<pi_planned_items>), Column('dependencies', JSONB(astext_type=Text()), table=<pi_planned_items>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078ff040>, for_update=False)), Column('notes', TEXT(), table=<pi_planned_items>), Column('ai_suggested', INTEGER(), table=<pi_planned_items>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078ff1c0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<pi_planned_items>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078ff2e0>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<pi_planned_items>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078ff400>, for_update=False)), schema=None)), ('remove_index', Index('pi_sessions_integration_idx', Column('integration_id', INTEGER(), table=<pi_planning_sessions>, nullable=False))), ('remove_index', Index('pi_sessions_status_idx', Column('status', TEXT(), table=<pi_planning_sessions>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078364f0>, for_update=False)))), ('remove_table', Table('pi_planning_sessions', MetaData(), Column('id', INTEGER(), table=<pi_planning_sessions>, primary_key=True, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10781ba30>, for_update=False)), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<pi_planning_sessions>, nullable=False), Column('name', TEXT(), table=<pi_planning_sessions>, nullable=False), Column('description', TEXT(), table=<pi_planning_sessions>), Column('start_date', TIMESTAMP(), table=<pi_planning_sessions>), Column('end_date', TIMESTAMP(), table=<pi_planning_sessions>), Column('sprint_count', INTEGER(), table=<pi_planning_sessions>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107836640>, for_update=False)), Column('status', TEXT(), table=<pi_planning_sessions>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078364f0>, for_update=False)), Column('created_by', INTEGER(), ForeignKey('users.id'), table=<pi_planning_sessions>), Column('created_at', TIMESTAMP(), table=<pi_planning_sessions>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107836880>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<pi_planning_sessions>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078369a0>, for_update=False)), Column('sprint_length_weeks', INTEGER(), table=<pi_planning_sessions>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107836ac0>, for_update=False)), Column('plannable_issue_type', TEXT(), table=<pi_planning_sessions>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107836be0>, for_update=False)), Column('custom_issue_type_name', TEXT(), table=<pi_planning_sessions>), Column('holiday_config_id', INTEGER(), ForeignKey('holiday_configs.id'), table=<pi_planning_sessions>), Column('include_ip_sprint', INTEGER(), table=<pi_planning_sessions>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107836dc0>, for_update=False)), Column('current_version', TEXT(), table=<pi_planning_sessions>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107836ee0>, for_update=False)), Column('project_keys', JSONB(astext_type=Text()), table=<pi_planning_sessions>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107842040>, for_update=False)), schema=None)), ('remove_index', Index('artifact_jira_links_artifact_idx', Column('artifact_type', TEXT(), table=<artifact_jira_links>, nullable=False), Column('artifact_id', INTEGER(), table=<artifact_jira_links>, nullable=False))), ('remove_index', Index('artifact_jira_links_integration_idx', Column('integration_id', INTEGER(), table=<artifact_jira_links>, nullable=False))), ('remove_table', Table('artifact_jira_links', MetaData(), Column('id', INTEGER(), table=<artifact_jira_links>, primary_key=True, nullable=False), Column('artifact_type', TEXT(), table=<artifact_jira_links>, nullable=False), Column('artifact_id', INTEGER(), table=<artifact_jira_links>, nullable=False), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<artifact_jira_links>, nullable=False), Column('jira_issue_id', TEXT(), table=<artifact_jira_links>, nullable=False), Column('jira_issue_key', TEXT(), table=<artifact_jira_links>, nullable=False), Column('jira_project_key', TEXT(), table=<artifact_jira_links>, nullable=False), Column('created_at', TIMESTAMP(), table=<artifact_jira_links>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1079057f0>, for_update=False)), schema=None)), ('remove_index', Index('custom_holidays_config_idx', Column('config_id', INTEGER(), table=<custom_holidays>))), ('remove_index', Index('custom_holidays_date_idx', Column('holiday_date', TIMESTAMP(), table=<custom_holidays>, nullable=False))), ('remove_table', Table('custom_holidays', MetaData(), Column('id', INTEGER(), table=<custom_holidays>, primary_key=True, nullable=False), Column('config_id', INTEGER(), ForeignKey('holiday_configs.id'), table=<custom_holidays>), Column('holiday_date', TIMESTAMP(), table=<custom_holidays>, nullable=False), Column('name', TEXT(), table=<custom_holidays>, nullable=False), Column('is_recurring', INTEGER(), table=<custom_holidays>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1079126a0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<custom_holidays>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107912700>, for_update=False)), schema=None)), ('remove_table', Table('conversations', MetaData(), Column('id', INTEGER(), table=<conversations>, primary_key=True, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078df700>, for_update=False)), Column('agent_id', INTEGER(), ForeignKey('agents.id'), table=<conversations>, nullable=False), Column('title', TEXT(), table=<conversations>), Column('metadata', JSONB(astext_type=Text()), table=<conversations>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078dfb20>, for_update=False)), Column('created_at', TIMESTAMP(), table=<conversations>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078dfc10>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<conversations>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x1078dfa30>, for_update=False)), schema=None)), ('remove_index', Index('jira_boards_integration_idx', Column('integration_id', INTEGER(), table=<jira_boards>, nullable=False))), ('remove_index', Index('jira_boards_unique', Column('integration_id', INTEGER(), table=<jira_boards>, nullable=False), Column('jira_id', INTEGER(), table=<jira_boards>, nullable=False), unique=True)), ('remove_table', Table('jira_boards', MetaData(), Column('id', INTEGER(), table=<jira_boards>, primary_key=True, nullable=False), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<jira_boards>, nullable=False), Column('jira_id', INTEGER(), table=<jira_boards>, nullable=False), Column('name', TEXT(), table=<jira_boards>, nullable=False), Column('type', TEXT(), table=<jira_boards>, nullable=False), Column('project_id', TEXT(), table=<jira_boards>), Column('project_key', TEXT(), table=<jira_boards>), Column('velocity_avg', INTEGER(), table=<jira_boards>), Column('velocity_last_n', INTEGER(), table=<jira_boards>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107df0700>, for_update=False)), Column('synced_at', TIMESTAMP(), table=<jira_boards>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107df0520>, for_update=False)), Column('created_at', TIMESTAMP(), table=<jira_boards>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107df09a0>, for_update=False)), schema=None)), ('remove_index', Index('field_mappings_integration_idx', Column('integration_id', INTEGER(), table=<field_mappings>, nullable=False))), ('remove_table', Table('field_mappings', MetaData(), Column('id', INTEGER(), table=<field_mappings>, primary_key=True, nullable=False), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<field_mappings>, nullable=False), Column('our_field', TEXT(), table=<field_mappings>, nullable=False), Column('provider_field_id', TEXT(), table=<field_mappings>, nullable=False), Column('provider_field_name', TEXT(), table=<field_mappings>, nullable=False), Column('provider_field_type', TEXT(), table=<field_mappings>), Column('confidence', INTEGER(), table=<field_mappings>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107dfd670>, for_update=False)), Column('admin_confirmed', INTEGER(), table=<field_mappings>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107dfd9a0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<field_mappings>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107dfd820>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<field_mappings>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107dfdb80>, for_update=False)), schema=None)), ('remove_table', Table('holiday_configs', MetaData(), Column('id', INTEGER(), table=<holiday_configs>, primary_key=True, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107842eb0>, for_update=False)), Column('name', TEXT(), table=<holiday_configs>, nullable=False), Column('calendar_type', TEXT(), table=<holiday_configs>, nullable=False), Column('country_codes', JSONB(astext_type=Text()), table=<holiday_configs>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10784c400>, for_update=False)), Column('is_default', INTEGER(), table=<holiday_configs>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10784c0a0>, for_update=False)), Column('created_at', TIMESTAMP(), table=<holiday_configs>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10784c3a0>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<holiday_configs>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x10784c6d0>, for_update=False)), schema=None)), ('remove_index', Index('pi_versions_created_idx', Column('created_at', TIMESTAMP(), table=<pi_plan_versions>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e067f0>, for_update=False)))), ('remove_index', Index('pi_versions_session_idx', Column('session_id', INTEGER(), table=<pi_plan_versions>, nullable=False))), ('remove_table', Table('pi_plan_versions', MetaData(), Column('id', INTEGER(), table=<pi_plan_versions>, primary_key=True, nullable=False), Column('session_id', INTEGER(), ForeignKey('pi_planning_sessions.id'), table=<pi_plan_versions>, nullable=False), Column('version_number', TEXT(), table=<pi_plan_versions>, nullable=False), Column('comment', TEXT(), table=<pi_plan_versions>), Column('snapshot', JSONB(astext_type=Text()), table=<pi_plan_versions>, nullable=False), Column('created_by', INTEGER(), ForeignKey('users.id'), table=<pi_plan_versions>), Column('created_at', TIMESTAMP(), table=<pi_plan_versions>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e067f0>, for_update=False)), schema=None)), ('remove_index', Index('required_fields_integration_idx', Column('integration_id', INTEGER(), table=<required_fields>, nullable=False))), ('remove_index', Index('required_fields_project_idx', Column('project_id', TEXT(), table=<required_fields>, nullable=False))), ('remove_index', Index('required_fields_unique', Column('integration_id', INTEGER(), table=<required_fields>, nullable=False), Column('project_id', TEXT(), table=<required_fields>, nullable=False), Column('issue_type_id', TEXT(), table=<required_fields>, nullable=False), unique=True)), ('remove_table', Table('required_fields', MetaData(), Column('id', INTEGER(), table=<required_fields>, primary_key=True, nullable=False), Column('integration_id', INTEGER(), ForeignKey('integrations.id'), table=<required_fields>, nullable=False), Column('project_id', TEXT(), table=<required_fields>, nullable=False), Column('project_key', TEXT(), table=<required_fields>, nullable=False), Column('issue_type_id', TEXT(), table=<required_fields>, nullable=False), Column('issue_type_name', TEXT(), table=<required_fields>, nullable=False), Column('fields', JSONB(astext_type=Text()), table=<required_fields>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e0f610>, for_update=False)), Column('created_at', TIMESTAMP(), table=<required_fields>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e0f940>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<required_fields>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e0f7c0>, for_update=False)), schema=None)), ('remove_index', Index('pi_assignments_board_idx', Column('board_id', INTEGER(), table=<pi_feature_assignments>, nullable=False))), ('remove_index', Index('pi_assignments_feature_idx', Column('feature_id', INTEGER(), table=<pi_feature_assignments>, nullable=False))), ('remove_index', Index('pi_assignments_session_idx', Column('session_id', INTEGER(), table=<pi_feature_assignments>, nullable=False))), ('remove_index', Index('pi_assignments_sprint_idx', Column('start_sprint_num', INTEGER(), table=<pi_feature_assignments>, nullable=False))), ('remove_table', Table('pi_feature_assignments', MetaData(), Column('id', INTEGER(), table=<pi_feature_assignments>, primary_key=True, nullable=False), Column('session_id', INTEGER(), ForeignKey('pi_planning_sessions.id'), table=<pi_feature_assignments>, nullable=False), Column('feature_id', INTEGER(), ForeignKey('pi_features.id'), table=<pi_feature_assignments>, nullable=False), Column('board_id', INTEGER(), table=<pi_feature_assignments>, nullable=False), Column('start_sprint_num', INTEGER(), table=<pi_feature_assignments>, nullable=False), Column('end_sprint_num', INTEGER(), table=<pi_feature_assignments>, nullable=False), Column('allocated_points', INTEGER(), table=<pi_feature_assignments>), Column('sequence_in_sprint', INTEGER(), table=<pi_feature_assignments>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e1cc70>, for_update=False)), Column('ai_rationale', TEXT(), table=<pi_feature_assignments>), Column('manual_override', INTEGER(), table=<pi_feature_assignments>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e1cb50>, for_update=False)), Column('override_reason', TEXT(), table=<pi_feature_assignments>), Column('created_at', TIMESTAMP(), table=<pi_feature_assignments>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e1cee0>, for_update=False)), Column('updated_at', TIMESTAMP(), table=<pi_feature_assignments>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x107e27040>, for_update=False)), schema=None))]
+DEBUG: Tables in metadata: dict_keys(['users', 'agents', 'flows', 'flow_executions', 'knowledge_bases', 'documents', 'document_chunks', 'prompt_templates', 'story_generator_split_tests', 'generated_artifacts', 'generation_feedback', 'code_chat_sessions', 'code_chat_messages', 'prd_templates', 'generated_prds', 'prompt_versions', 'split_tests', 'agent_executions', 'feedback', 'integrations', 'jira_projects', 'library_books', 'library_pages', 'library_integrations'])
+  FAILED: New upgrade operations
+  detected: [('remove_index', Index
+  ('pi_team_capabilities_board_idx'
+  , Column('session_board_id',
+  INTEGER(),
+  table=<pi_team_capabilities>,
+  nullable=False))),
+  ('remove_table',
+  Table('pi_team_capabilities',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<pi_team_capabilities>,
+  primary_key=True,
+  nullable=False),
+  Column('session_board_id',
+  INTEGER(), ForeignKey('pi_session
+  _boards.id'),
+  table=<pi_team_capabilities>,
+  nullable=False),
+  Column('can_work_on_all',
+  INTEGER(),
+  table=<pi_team_capabilities>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x10782a1f0>,
+  for_update=False)),
+  Column('allowed_feature_keys',
+  JSONB(astext_type=Text()),
+  table=<pi_team_capabilities>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x10782a9a0>,
+  for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_team_capabilities>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10782afd0>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<pi_team_capabilities>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10782ae50>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('extracted_facts_feedback_id
+  x', Column('feedback_id',
+  INTEGER(),
+  table=<extracted_facts>,
+  nullable=False))),
+  ('remove_index', Index('extracted
+  _facts_status_idx',
+  Column('status', TEXT(),
+  table=<extracted_facts>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10785f250>,
+  for_update=False)))),
+  ('remove_table',
+  Table('extracted_facts',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<extracted_facts>,
+  primary_key=True,
+  nullable=False),
+  Column('feedback_id', INTEGER(),
+  ForeignKey('feedback.id'),
+  table=<extracted_facts>,
+  nullable=False),
+  Column('content', TEXT(),
+  table=<extracted_facts>,
+  nullable=False),
+  Column('knowledge_base_id',
+  INTEGER(),
+  ForeignKey('knowledge_bases.id'),
+  table=<extracted_facts>),
+  Column('status', TEXT(),
+  table=<extracted_facts>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10785f250>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<extracted_facts>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10785f370>, for_update=False)),
+  schema=None)), ('remove_index',
+  Index('pi_sprints_session_idx',
+  Column('session_id', INTEGER(),
+  table=<pi_sprints>,
+  nullable=False))),
+  ('remove_index',
+  Index('pi_sprints_unique',
+  Column('session_id', INTEGER(),
+  table=<pi_sprints>,
+  nullable=False),
+  Column('sprint_number',
+  INTEGER(), table=<pi_sprints>,
+  nullable=False), unique=True)),
+  ('remove_table',
+  Table('pi_sprints', MetaData(),
+  Column('id', INTEGER(),
+  table=<pi_sprints>,
+  primary_key=True,
+  nullable=False),
+  Column('session_id', INTEGER(), F
+  oreignKey('pi_planning_sessions.i
+  d'), table=<pi_sprints>,
+  nullable=False),
+  Column('sprint_number',
+  INTEGER(), table=<pi_sprints>,
+  nullable=False), Column('name',
+  TEXT(), table=<pi_sprints>,
+  nullable=False),
+  Column('start_date', TIMESTAMP(),
+  table=<pi_sprints>,
+  nullable=False),
+  Column('end_date', TIMESTAMP(),
+  table=<pi_sprints>,
+  nullable=False),
+  Column('working_days', INTEGER(),
+  table=<pi_sprints>,
+  nullable=False),
+  Column('total_days', INTEGER(),
+  table=<pi_sprints>,
+  nullable=False),
+  Column('holidays',
+  JSONB(astext_type=Text()),
+  table=<pi_sprints>, server_defaul
+  t=DefaultClause(<sqlalchemy.sql.e
+  lements.TextClause object at
+  0x10788faf0>, for_update=False)),
+  Column('is_ip_sprint', INTEGER(),
+  table=<pi_sprints>, server_defaul
+  t=DefaultClause(<sqlalchemy.sql.e
+  lements.TextClause object at
+  0x10788fa30>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_sprints>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10788fd90>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('gen_extracted_facts_feedbac
+  k_idx', Column('feedback_id',
+  INTEGER(), table=<generation_extr
+  acted_facts>, nullable=False))),
+  ('remove_index', Index('gen_extra
+  cted_facts_status_idx',
+  Column('status', TEXT(), table=<g
+  eneration_extracted_facts>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107890be0>,
+  for_update=False)))),
+  ('remove_table', Table('generatio
+  n_extracted_facts', MetaData(),
+  Column('id', INTEGER(), table=<ge
+  neration_extracted_facts>,
+  primary_key=True,
+  nullable=False),
+  Column('feedback_id', INTEGER(), 
+  ForeignKey('generation_feedback.i
+  d'), table=<generation_extracted_
+  facts>, nullable=False),
+  Column('content', TEXT(), table=<
+  generation_extracted_facts>,
+  nullable=False),
+  Column('knowledge_base_id',
+  INTEGER(),
+  ForeignKey('knowledge_bases.id'),
+  table=<generation_extracted_facts
+  >), Column('status', TEXT(), tabl
+  e=<generation_extracted_facts>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107890be0>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<generation_extracted_facts
+  >, nullable=False, server_default
+  =DefaultClause(<sqlalchemy.sql.el
+  ements.TextClause object at
+  0x107890c40>, for_update=False)),
+  schema=None)), ('remove_index',
+  Index('jira_issues_assignee_idx',
+  Column('assignee_id', TEXT(),
+  table=<jira_issues>))),
+  ('remove_index',
+  Index('jira_issues_epic_idx',
+  Column('epic_key', TEXT(),
+  table=<jira_issues>))),
+  ('remove_index', Index('jira_issu
+  es_integration_idx',
+  Column('integration_id',
+  INTEGER(), table=<jira_issues>,
+  nullable=False))),
+  ('remove_index',
+  Index('jira_issues_key_idx',
+  Column('key', TEXT(),
+  table=<jira_issues>,
+  nullable=False))),
+  ('remove_index',
+  Index('jira_issues_project_idx',
+  Column('project_key', TEXT(),
+  table=<jira_issues>,
+  nullable=False))),
+  ('remove_index',
+  Index('jira_issues_sprint_idx',
+  Column('sprint_id', INTEGER(),
+  table=<jira_issues>))),
+  ('remove_index',
+  Index('jira_issues_unique',
+  Column('integration_id',
+  INTEGER(), table=<jira_issues>,
+  nullable=False),
+  Column('jira_id', TEXT(),
+  table=<jira_issues>,
+  nullable=False), unique=True)),
+  ('remove_table',
+  Table('jira_issues', MetaData(),
+  Column('id', INTEGER(),
+  table=<jira_issues>,
+  primary_key=True,
+  nullable=False),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<jira_issues>,
+  nullable=False),
+  Column('jira_id', TEXT(),
+  table=<jira_issues>,
+  nullable=False), Column('key',
+  TEXT(), table=<jira_issues>,
+  nullable=False),
+  Column('summary', TEXT(),
+  table=<jira_issues>,
+  nullable=False),
+  Column('description', TEXT(),
+  table=<jira_issues>),
+  Column('issue_type', TEXT(),
+  table=<jira_issues>,
+  nullable=False),
+  Column('issue_type_id', TEXT(),
+  table=<jira_issues>,
+  nullable=False), Column('status',
+  TEXT(), table=<jira_issues>,
+  nullable=False),
+  Column('status_category', TEXT(),
+  table=<jira_issues>),
+  Column('priority', TEXT(),
+  table=<jira_issues>),
+  Column('assignee_id', TEXT(),
+  table=<jira_issues>),
+  Column('assignee_name', TEXT(),
+  table=<jira_issues>),
+  Column('reporter_id', TEXT(),
+  table=<jira_issues>),
+  Column('reporter_name', TEXT(),
+  table=<jira_issues>),
+  Column('story_points', INTEGER(),
+  table=<jira_issues>),
+  Column('sprint_id', INTEGER(),
+  table=<jira_issues>),
+  Column('epic_key', TEXT(),
+  table=<jira_issues>),
+  Column('parent_key', TEXT(),
+  table=<jira_issues>),
+  Column('labels',
+  JSONB(astext_type=Text()),
+  table=<jira_issues>, server_defau
+  lt=DefaultClause(<sqlalchemy.sql.
+  elements.TextClause object at
+  0x1078bd910>, for_update=False)),
+  Column('components',
+  JSONB(astext_type=Text()),
+  table=<jira_issues>, server_defau
+  lt=DefaultClause(<sqlalchemy.sql.
+  elements.TextClause object at
+  0x1078bda30>, for_update=False)),
+  Column('project_key', TEXT(),
+  table=<jira_issues>,
+  nullable=False),
+  Column('created_date',
+  TIMESTAMP(),
+  table=<jira_issues>),
+  Column('updated_date',
+  TIMESTAMP(),
+  table=<jira_issues>),
+  Column('resolution_date',
+  TIMESTAMP(),
+  table=<jira_issues>),
+  Column('synced_at', TIMESTAMP(),
+  table=<jira_issues>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078bdcd0>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<jira_issues>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078bddf0>, for_update=False)),
+  schema=None)), ('remove_index',
+  Index('pi_features_jira_key_idx',
+  Column('jira_issue_key', TEXT(),
+  table=<pi_features>))),
+  ('remove_index',
+  Index('pi_features_priority_idx',
+  Column('priority_order',
+  INTEGER(),
+  table=<pi_features>))),
+  ('remove_index',
+  Index('pi_features_session_idx',
+  Column('session_id', INTEGER(),
+  table=<pi_features>,
+  nullable=False))),
+  ('remove_table',
+  Table('pi_features', MetaData(),
+  Column('id', INTEGER(),
+  table=<pi_features>,
+  primary_key=True,
+  nullable=False),
+  Column('session_id', INTEGER(), F
+  oreignKey('pi_planning_sessions.i
+  d'), table=<pi_features>,
+  nullable=False),
+  Column('jira_issue_id', TEXT(),
+  table=<pi_features>),
+  Column('jira_issue_key', TEXT(),
+  table=<pi_features>),
+  Column('title', TEXT(),
+  table=<pi_features>,
+  nullable=False),
+  Column('description', TEXT(),
+  table=<pi_features>),
+  Column('issue_type', TEXT(),
+  table=<pi_features>),
+  Column('priority', TEXT(),
+  table=<pi_features>),
+  Column('priority_order',
+  INTEGER(), table=<pi_features>),
+  Column('total_points', INTEGER(),
+  table=<pi_features>),
+  Column('estimated_sprints',
+  INTEGER(), table=<pi_features>, s
+  erver_default=DefaultClause(<sqla
+  lchemy.sql.elements.TextClause
+  object at 0x1078cba30>,
+  for_update=False)),
+  Column('dependencies',
+  JSONB(astext_type=Text()),
+  table=<pi_features>, server_defau
+  lt=DefaultClause(<sqlalchemy.sql.
+  elements.TextClause object at
+  0x1078cbaf0>, for_update=False)),
+  Column('labels',
+  JSONB(astext_type=Text()),
+  table=<pi_features>, server_defau
+  lt=DefaultClause(<sqlalchemy.sql.
+  elements.TextClause object at
+  0x1078cbc40>, for_update=False)),
+  Column('project_key', TEXT(),
+  table=<pi_features>),
+  Column('status', TEXT(),
+  table=<pi_features>),
+  Column('imported_at',
+  TIMESTAMP(), table=<pi_features>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078cbe20>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_features>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078cbf40>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<pi_features>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078d80a0>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('pi_session_boards_session_i
+  dx', Column('session_id',
+  INTEGER(),
+  table=<pi_session_boards>,
+  nullable=False))),
+  ('remove_table',
+  Table('pi_session_boards',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<pi_session_boards>,
+  primary_key=True, nullable=False,
+  server_default=DefaultClause(<sql
+  alchemy.sql.elements.TextClause
+  object at 0x10782a820>,
+  for_update=False)),
+  Column('session_id', INTEGER(), F
+  oreignKey('pi_planning_sessions.i
+  d'), table=<pi_session_boards>,
+  nullable=False),
+  Column('board_id', INTEGER(),
+  table=<pi_session_boards>,
+  nullable=False),
+  Column('board_name', TEXT(),
+  table=<pi_session_boards>,
+  nullable=False),
+  Column('velocity_override',
+  INTEGER(),
+  table=<pi_session_boards>),
+  Column('capacity_adjustment',
+  INTEGER(),
+  table=<pi_session_boards>, server
+  _default=DefaultClause(<sqlalchem
+  y.sql.elements.TextClause object
+  at 0x10782a190>,
+  for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_session_boards>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10782a130>, for_update=False)),
+  schema=None)), ('remove_table',
+  Table('messages', MetaData(),
+  Column('id', INTEGER(),
+  table=<messages>,
+  primary_key=True,
+  nullable=False),
+  Column('conversation_id',
+  INTEGER(),
+  ForeignKey('conversations.id'),
+  table=<messages>,
+  nullable=False), Column('role',
+  TEXT(), table=<messages>,
+  nullable=False),
+  Column('content', TEXT(),
+  table=<messages>,
+  nullable=False),
+  Column('tool_calls',
+  JSONB(astext_type=Text()),
+  table=<messages>),
+  Column('tool_call_id', TEXT(),
+  table=<messages>),
+  Column('created_at', TIMESTAMP(),
+  table=<messages>, nullable=False,
+  server_default=DefaultClause(<sql
+  alchemy.sql.elements.TextClause
+  object at 0x1078df280>,
+  for_update=False)),
+  schema=None)), ('remove_index',
+  Index('jira_sprints_board_idx',
+  Column('board_id', INTEGER(),
+  table=<jira_sprints>,
+  nullable=False))),
+  ('remove_index', Index('jira_spri
+  nts_integration_idx',
+  Column('integration_id',
+  INTEGER(), table=<jira_sprints>,
+  nullable=False))),
+  ('remove_index',
+  Index('jira_sprints_state_idx',
+  Column('state', TEXT(),
+  table=<jira_sprints>,
+  nullable=False))),
+  ('remove_index',
+  Index('jira_sprints_unique',
+  Column('integration_id',
+  INTEGER(), table=<jira_sprints>,
+  nullable=False),
+  Column('jira_id', INTEGER(),
+  table=<jira_sprints>,
+  nullable=False), unique=True)),
+  ('remove_table',
+  Table('jira_sprints', MetaData(),
+  Column('id', INTEGER(),
+  table=<jira_sprints>,
+  primary_key=True,
+  nullable=False),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<jira_sprints>,
+  nullable=False),
+  Column('board_id', INTEGER(),
+  table=<jira_sprints>,
+  nullable=False),
+  Column('jira_id', INTEGER(),
+  table=<jira_sprints>,
+  nullable=False), Column('name',
+  TEXT(), table=<jira_sprints>,
+  nullable=False), Column('state',
+  TEXT(), table=<jira_sprints>,
+  nullable=False),
+  Column('start_date', TIMESTAMP(),
+  table=<jira_sprints>),
+  Column('end_date', TIMESTAMP(),
+  table=<jira_sprints>),
+  Column('completed_points',
+  INTEGER(), table=<jira_sprints>),
+  Column('committed_points',
+  INTEGER(), table=<jira_sprints>),
+  Column('goal', TEXT(),
+  table=<jira_sprints>),
+  Column('synced_at', TIMESTAMP(),
+  table=<jira_sprints>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078ed7c0>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<jira_sprints>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078edb20>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('pi_planned_items_board_idx'
+  , Column('assigned_board_id',
+  INTEGER(),
+  table=<pi_planned_items>))),
+  ('remove_index', Index('pi_planne
+  d_items_session_idx',
+  Column('session_id', INTEGER(),
+  table=<pi_planned_items>,
+  nullable=False))),
+  ('remove_index', Index('pi_planne
+  d_items_sprint_idx',
+  Column('target_sprint_id',
+  INTEGER(),
+  table=<pi_planned_items>))),
+  ('remove_table',
+  Table('pi_planned_items',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<pi_planned_items>,
+  primary_key=True,
+  nullable=False),
+  Column('session_id', INTEGER(), F
+  oreignKey('pi_planning_sessions.i
+  d'), table=<pi_planned_items>,
+  nullable=False),
+  Column('jira_issue_id', TEXT(),
+  table=<pi_planned_items>),
+  Column('jira_issue_key', TEXT(),
+  table=<pi_planned_items>),
+  Column('title', TEXT(),
+  table=<pi_planned_items>,
+  nullable=False),
+  Column('assigned_board_id',
+  INTEGER(),
+  table=<pi_planned_items>),
+  Column('target_sprint_id',
+  INTEGER(),
+  table=<pi_planned_items>),
+  Column('sequence_order',
+  INTEGER(),
+  table=<pi_planned_items>),
+  Column('estimated_points',
+  INTEGER(),
+  table=<pi_planned_items>),
+  Column('confidence', INTEGER(),
+  table=<pi_planned_items>),
+  Column('dependencies',
+  JSONB(astext_type=Text()),
+  table=<pi_planned_items>, server_
+  default=DefaultClause(<sqlalchemy
+  .sql.elements.TextClause object
+  at 0x1078ff040>,
+  for_update=False)),
+  Column('notes', TEXT(),
+  table=<pi_planned_items>),
+  Column('ai_suggested', INTEGER(),
+  table=<pi_planned_items>, server_
+  default=DefaultClause(<sqlalchemy
+  .sql.elements.TextClause object
+  at 0x1078ff1c0>,
+  for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_planned_items>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078ff2e0>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<pi_planned_items>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078ff400>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('pi_sessions_integration_idx
+  ', Column('integration_id',
+  INTEGER(),
+  table=<pi_planning_sessions>,
+  nullable=False))),
+  ('remove_index',
+  Index('pi_sessions_status_idx',
+  Column('status', TEXT(),
+  table=<pi_planning_sessions>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078364f0>,
+  for_update=False)))),
+  ('remove_table',
+  Table('pi_planning_sessions',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<pi_planning_sessions>,
+  primary_key=True, nullable=False,
+  server_default=DefaultClause(<sql
+  alchemy.sql.elements.TextClause
+  object at 0x10781ba30>,
+  for_update=False)),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<pi_planning_sessions>,
+  nullable=False), Column('name',
+  TEXT(),
+  table=<pi_planning_sessions>,
+  nullable=False),
+  Column('description', TEXT(),
+  table=<pi_planning_sessions>),
+  Column('start_date', TIMESTAMP(),
+  table=<pi_planning_sessions>),
+  Column('end_date', TIMESTAMP(),
+  table=<pi_planning_sessions>),
+  Column('sprint_count', INTEGER(),
+  table=<pi_planning_sessions>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x107836640>,
+  for_update=False)),
+  Column('status', TEXT(),
+  table=<pi_planning_sessions>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078364f0>, for_update=False)),
+  Column('created_by', INTEGER(),
+  ForeignKey('users.id'),
+  table=<pi_planning_sessions>),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_planning_sessions>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107836880>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<pi_planning_sessions>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078369a0>, for_update=False)),
+  Column('sprint_length_weeks',
+  INTEGER(),
+  table=<pi_planning_sessions>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x107836ac0>,
+  for_update=False)),
+  Column('plannable_issue_type',
+  TEXT(),
+  table=<pi_planning_sessions>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x107836be0>,
+  for_update=False)),
+  Column('custom_issue_type_name',
+  TEXT(),
+  table=<pi_planning_sessions>),
+  Column('holiday_config_id',
+  INTEGER(),
+  ForeignKey('holiday_configs.id'),
+  table=<pi_planning_sessions>),
+  Column('include_ip_sprint',
+  INTEGER(),
+  table=<pi_planning_sessions>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x107836dc0>,
+  for_update=False)),
+  Column('current_version', TEXT(),
+  table=<pi_planning_sessions>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x107836ee0>,
+  for_update=False)),
+  Column('project_keys',
+  JSONB(astext_type=Text()),
+  table=<pi_planning_sessions>, ser
+  ver_default=DefaultClause(<sqlalc
+  hemy.sql.elements.TextClause
+  object at 0x107842040>,
+  for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('artifact_jira_links_artifac
+  t_idx', Column('artifact_type',
+  TEXT(),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('artifact_id', INTEGER(),
+  table=<artifact_jira_links>,
+  nullable=False))),
+  ('remove_index', Index('artifact_
+  jira_links_integration_idx',
+  Column('integration_id',
+  INTEGER(),
+  table=<artifact_jira_links>,
+  nullable=False))),
+  ('remove_table',
+  Table('artifact_jira_links',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<artifact_jira_links>,
+  primary_key=True,
+  nullable=False),
+  Column('artifact_type', TEXT(),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('artifact_id', INTEGER(),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('jira_issue_id', TEXT(),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('jira_issue_key', TEXT(),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('jira_project_key',
+  TEXT(),
+  table=<artifact_jira_links>,
+  nullable=False),
+  Column('created_at', TIMESTAMP(),
+  table=<artifact_jira_links>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1079057f0>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('custom_holidays_config_idx'
+  , Column('config_id', INTEGER(),
+  table=<custom_holidays>))),
+  ('remove_index',
+  Index('custom_holidays_date_idx',
+  Column('holiday_date',
+  TIMESTAMP(),
+  table=<custom_holidays>,
+  nullable=False))),
+  ('remove_table',
+  Table('custom_holidays',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<custom_holidays>,
+  primary_key=True,
+  nullable=False),
+  Column('config_id', INTEGER(),
+  ForeignKey('holiday_configs.id'),
+  table=<custom_holidays>),
+  Column('holiday_date',
+  TIMESTAMP(),
+  table=<custom_holidays>,
+  nullable=False), Column('name',
+  TEXT(), table=<custom_holidays>,
+  nullable=False),
+  Column('is_recurring', INTEGER(),
+  table=<custom_holidays>, server_d
+  efault=DefaultClause(<sqlalchemy.
+  sql.elements.TextClause object at
+  0x1079126a0>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<custom_holidays>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107912700>, for_update=False)),
+  schema=None)), ('remove_table',
+  Table('conversations',
+  MetaData(), Column('id',
+  INTEGER(), table=<conversations>,
+  primary_key=True, nullable=False,
+  server_default=DefaultClause(<sql
+  alchemy.sql.elements.TextClause
+  object at 0x1078df700>,
+  for_update=False)),
+  Column('agent_id', INTEGER(),
+  ForeignKey('agents.id'),
+  table=<conversations>,
+  nullable=False), Column('title',
+  TEXT(), table=<conversations>),
+  Column('metadata',
+  JSONB(astext_type=Text()),
+  table=<conversations>, server_def
+  ault=DefaultClause(<sqlalchemy.sq
+  l.elements.TextClause object at
+  0x1078dfb20>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<conversations>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078dfc10>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<conversations>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x1078dfa30>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('jira_boards_integration_idx
+  ', Column('integration_id',
+  INTEGER(), table=<jira_boards>,
+  nullable=False))),
+  ('remove_index',
+  Index('jira_boards_unique',
+  Column('integration_id',
+  INTEGER(), table=<jira_boards>,
+  nullable=False),
+  Column('jira_id', INTEGER(),
+  table=<jira_boards>,
+  nullable=False), unique=True)),
+  ('remove_table',
+  Table('jira_boards', MetaData(),
+  Column('id', INTEGER(),
+  table=<jira_boards>,
+  primary_key=True,
+  nullable=False),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<jira_boards>,
+  nullable=False),
+  Column('jira_id', INTEGER(),
+  table=<jira_boards>,
+  nullable=False), Column('name',
+  TEXT(), table=<jira_boards>,
+  nullable=False), Column('type',
+  TEXT(), table=<jira_boards>,
+  nullable=False),
+  Column('project_id', TEXT(),
+  table=<jira_boards>),
+  Column('project_key', TEXT(),
+  table=<jira_boards>),
+  Column('velocity_avg', INTEGER(),
+  table=<jira_boards>),
+  Column('velocity_last_n',
+  INTEGER(), table=<jira_boards>, s
+  erver_default=DefaultClause(<sqla
+  lchemy.sql.elements.TextClause
+  object at 0x107df0700>,
+  for_update=False)),
+  Column('synced_at', TIMESTAMP(),
+  table=<jira_boards>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107df0520>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<jira_boards>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107df09a0>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('field_mappings_integration_
+  idx', Column('integration_id',
+  INTEGER(),
+  table=<field_mappings>,
+  nullable=False))),
+  ('remove_table',
+  Table('field_mappings',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<field_mappings>,
+  primary_key=True,
+  nullable=False),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<field_mappings>,
+  nullable=False),
+  Column('our_field', TEXT(),
+  table=<field_mappings>,
+  nullable=False),
+  Column('provider_field_id',
+  TEXT(), table=<field_mappings>,
+  nullable=False),
+  Column('provider_field_name',
+  TEXT(), table=<field_mappings>,
+  nullable=False),
+  Column('provider_field_type',
+  TEXT(), table=<field_mappings>),
+  Column('confidence', INTEGER(),
+  table=<field_mappings>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107dfd670>, for_update=False)),
+  Column('admin_confirmed',
+  INTEGER(),
+  table=<field_mappings>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107dfd9a0>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<field_mappings>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107dfd820>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<field_mappings>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107dfdb80>, for_update=False)),
+  schema=None)), ('remove_table',
+  Table('holiday_configs',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<holiday_configs>,
+  primary_key=True, nullable=False,
+  server_default=DefaultClause(<sql
+  alchemy.sql.elements.TextClause
+  object at 0x107842eb0>,
+  for_update=False)),
+  Column('name', TEXT(),
+  table=<holiday_configs>,
+  nullable=False),
+  Column('calendar_type', TEXT(),
+  table=<holiday_configs>,
+  nullable=False),
+  Column('country_codes',
+  JSONB(astext_type=Text()),
+  table=<holiday_configs>, server_d
+  efault=DefaultClause(<sqlalchemy.
+  sql.elements.TextClause object at
+  0x10784c400>, for_update=False)),
+  Column('is_default', INTEGER(),
+  table=<holiday_configs>, server_d
+  efault=DefaultClause(<sqlalchemy.
+  sql.elements.TextClause object at
+  0x10784c0a0>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<holiday_configs>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10784c3a0>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<holiday_configs>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x10784c6d0>, for_update=False)),
+  schema=None)), ('remove_index',
+  Index('pi_versions_created_idx',
+  Column('created_at', TIMESTAMP(),
+  table=<pi_plan_versions>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e067f0>,
+  for_update=False)))),
+  ('remove_index',
+  Index('pi_versions_session_idx',
+  Column('session_id', INTEGER(),
+  table=<pi_plan_versions>,
+  nullable=False))),
+  ('remove_table',
+  Table('pi_plan_versions',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<pi_plan_versions>,
+  primary_key=True,
+  nullable=False),
+  Column('session_id', INTEGER(), F
+  oreignKey('pi_planning_sessions.i
+  d'), table=<pi_plan_versions>,
+  nullable=False),
+  Column('version_number', TEXT(),
+  table=<pi_plan_versions>,
+  nullable=False),
+  Column('comment', TEXT(),
+  table=<pi_plan_versions>),
+  Column('snapshot',
+  JSONB(astext_type=Text()),
+  table=<pi_plan_versions>,
+  nullable=False),
+  Column('created_by', INTEGER(),
+  ForeignKey('users.id'),
+  table=<pi_plan_versions>),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_plan_versions>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e067f0>, for_update=False)),
+  schema=None)), ('remove_index', I
+  ndex('required_fields_integration
+  _idx', Column('integration_id',
+  INTEGER(),
+  table=<required_fields>,
+  nullable=False))),
+  ('remove_index', Index('required_
+  fields_project_idx',
+  Column('project_id', TEXT(),
+  table=<required_fields>,
+  nullable=False))),
+  ('remove_index',
+  Index('required_fields_unique',
+  Column('integration_id',
+  INTEGER(),
+  table=<required_fields>,
+  nullable=False),
+  Column('project_id', TEXT(),
+  table=<required_fields>,
+  nullable=False),
+  Column('issue_type_id', TEXT(),
+  table=<required_fields>,
+  nullable=False), unique=True)),
+  ('remove_table',
+  Table('required_fields',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<required_fields>,
+  primary_key=True,
+  nullable=False),
+  Column('integration_id',
+  INTEGER(),
+  ForeignKey('integrations.id'),
+  table=<required_fields>,
+  nullable=False),
+  Column('project_id', TEXT(),
+  table=<required_fields>,
+  nullable=False),
+  Column('project_key', TEXT(),
+  table=<required_fields>,
+  nullable=False),
+  Column('issue_type_id', TEXT(),
+  table=<required_fields>,
+  nullable=False),
+  Column('issue_type_name', TEXT(),
+  table=<required_fields>,
+  nullable=False), Column('fields',
+  JSONB(astext_type=Text()),
+  table=<required_fields>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e0f610>, for_update=False)),
+  Column('created_at', TIMESTAMP(),
+  table=<required_fields>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e0f940>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<required_fields>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e0f7c0>, for_update=False)),
+  schema=None)), ('remove_index',
+  Index('pi_assignments_board_idx',
+  Column('board_id', INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False))),
+  ('remove_index', Index('pi_assign
+  ments_feature_idx',
+  Column('feature_id', INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False))),
+  ('remove_index', Index('pi_assign
+  ments_session_idx',
+  Column('session_id', INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False))),
+  ('remove_index', Index('pi_assign
+  ments_sprint_idx',
+  Column('start_sprint_num',
+  INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False))),
+  ('remove_table',
+  Table('pi_feature_assignments',
+  MetaData(), Column('id',
+  INTEGER(),
+  table=<pi_feature_assignments>,
+  primary_key=True,
+  nullable=False),
+  Column('session_id', INTEGER(), F
+  oreignKey('pi_planning_sessions.i
+  d'),
+  table=<pi_feature_assignments>,
+  nullable=False),
+  Column('feature_id', INTEGER(),
+  ForeignKey('pi_features.id'),
+  table=<pi_feature_assignments>,
+  nullable=False),
+  Column('board_id', INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False),
+  Column('start_sprint_num',
+  INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False),
+  Column('end_sprint_num',
+  INTEGER(),
+  table=<pi_feature_assignments>,
+  nullable=False),
+  Column('allocated_points',
+  INTEGER(),
+  table=<pi_feature_assignments>),
+  Column('sequence_in_sprint',
+  INTEGER(),
+  table=<pi_feature_assignments>, s
+  erver_default=DefaultClause(<sqla
+  lchemy.sql.elements.TextClause
+  object at 0x107e1cc70>,
+  for_update=False)),
+  Column('ai_rationale', TEXT(),
+  table=<pi_feature_assignments>),
+  Column('manual_override',
+  INTEGER(),
+  table=<pi_feature_assignments>, s
+  erver_default=DefaultClause(<sqla
+  lchemy.sql.elements.TextClause
+  object at 0x107e1cb50>,
+  for_update=False)),
+  Column('override_reason', TEXT(),
+  table=<pi_feature_assignments>),
+  Column('created_at', TIMESTAMP(),
+  table=<pi_feature_assignments>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e1cee0>, for_update=False)),
+  Column('updated_at', TIMESTAMP(),
+  table=<pi_feature_assignments>,
+  nullable=False, server_default=De
+  faultClause(<sqlalchemy.sql.eleme
+  nts.TextClause object at
+  0x107e27040>, for_update=False)),
+  schema=None))]

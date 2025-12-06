@@ -78,37 +78,35 @@ Reference: `.claude/agents/architect.md`
 Reference: `.claude/agents/backend.md`
 
 **Actions:**
-1. Update Prisma schema and run migration
+1. Update Drizzle schema and run migration
    ```bash
    cd server
-   npx prisma migrate dev --name add_[feature]
-   npx prisma generate
+   npm run db:generate
+   npm run db:push
    ```
 
-2. Create shared types in `shared/types/[feature].ts`
+2. Create Pydantic models in `server/app/models/[feature].py`
+   - Request/response models
+   - Validation rules
 
-3. Create validator schemas in `server/src/validators/[feature].validator.ts`
-
-4. Create service in `server/src/services/[feature].service.ts`
+3. Create service in `server/app/services/[feature].py`
    - CRUD methods
    - Business logic
-   - Pagination support
+   - Springboard integration if needed
 
-5. Create controller in `server/src/controllers/[feature].controller.ts`
-   - Request handling
-   - Error handling
+4. Create router in `server/app/api/[feature].py`
+   - FastAPI endpoints
+   - Request validation
    - Response formatting
 
-6. Create routes in `server/src/routes/[feature].routes.ts`
-   - Route definitions
-   - Middleware (validation)
+5. Register router in `server/app/api/router.py`
 
-7. Register routes in `server/src/routes/index.ts`
+6. Add dependency injection in `server/app/core/deps.py`
 
-8. **Write tests BEFORE verification:**
-   - Create fixtures in `server/tests/fixtures/[feature].fixtures.ts`
-   - Create unit tests in `server/tests/unit/[feature].service.test.ts`
-   - Create integration tests in `server/tests/integration/[feature].routes.test.ts`
+7. **Write tests BEFORE verification:**
+   - Create fixtures in `server/tests/fixtures/[feature]_fixtures.py`
+   - Create unit tests in `server/tests/test_[feature]_service.py`
+   - Create integration tests in `server/tests/test_[feature]_api.py`
 
 ### Backend Verification Loop
 
@@ -117,30 +115,30 @@ ATTEMPT = 1
 MAX_ATTEMPTS = 5
 
 WHILE ATTEMPT <= MAX_ATTEMPTS:
-    
+
     1. Run backend tests and capture output:
        ```bash
-       cd server && npm test -- --testPathPattern="[feature]" 2>&1 | tee test-output.txt
+       cd server && pytest tests/test_[feature]*.py -v 2>&1 | tee test-output.txt
        ```
-    
+
     2. Check exit code and parse output:
        - If ALL TESTS PASS → Exit loop, proceed to Phase 3
        - If TESTS FAIL → Continue to step 3
-    
+
     3. Analyze failures from test-output.txt:
        - Identify which tests failed
        - Extract error messages and stack traces
        - Determine root cause (typo, logic error, missing mock, etc.)
-    
+
     4. Apply fixes based on failure analysis:
        - Fix service logic errors
-       - Fix controller response handling
-       - Fix route configuration
+       - Fix router endpoint handling
+       - Fix Pydantic model validation
        - Fix test assertions if test itself is wrong
        - Add missing error handling
-    
+
     5. ATTEMPT = ATTEMPT + 1
-    
+
 END WHILE
 
 IF ATTEMPT > MAX_ATTEMPTS:
@@ -394,17 +392,18 @@ When running `/build-feature`:
 
 ## Common Test Failure Patterns & Fixes
 
-### Backend Failures
+### Backend Failures (Python/pytest)
 
 | Error Pattern | Likely Cause | Fix |
 |---------------|--------------|-----|
-| `Cannot find module` | Missing import | Add import statement |
-| `is not a function` | Wrong export/import | Check export type (default vs named) |
-| `Expected 200, got 404` | Route not registered | Add to routes/index.ts |
-| `Expected 200, got 500` | Service throws error | Check service logic, add try/catch |
-| `Validation failed` | Zod schema mismatch | Update validator to match test data |
-| `Cannot read property of undefined` | Null/undefined value | Add null checks, fix data flow |
-| `UNIQUE constraint failed` | Duplicate test data | Reset DB or use unique values |
+| `ModuleNotFoundError` | Missing import | Add import statement |
+| `AttributeError` | Wrong attribute/method | Check class/module structure |
+| `assert 200 == 404` | Route not registered | Add router to api/router.py |
+| `assert 200 == 500` | Service throws error | Check service logic, add try/except |
+| `ValidationError` | Pydantic schema mismatch | Update model to match test data |
+| `TypeError: NoneType` | Null/None value | Add null checks, fix data flow |
+| `IntegrityError` | Duplicate test data | Reset DB or use unique values |
+| `httpx.HTTPStatusError` | External API error | Mock the external call |
 
 ### Frontend Failures
 
