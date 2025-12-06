@@ -11,7 +11,8 @@ class EmbeddingService:
     @property
     def client(self) -> OpenAI:
         if not self._client:
-            api_key = os.getenv("OPENROUTER_API_KEY")
+            from app.core.config import settings
+            api_key = settings.OPENROUTER_API_KEY
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY environment variable is required for embeddings")
             self._client = OpenAI(

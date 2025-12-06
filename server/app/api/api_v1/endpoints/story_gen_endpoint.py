@@ -1,5 +1,6 @@
+import json
 from typing import List, Any, Optional, Dict
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Form, UploadFile, File
 from sqlmodel import Session
 from app.core.db import get_session
 from app.models.story_generator import GeneratedArtifact
@@ -17,10 +18,39 @@ def list_artifacts(
 
 @router.post("/generate", response_model=GeneratedArtifact)
 def generate_artifact(
-    request: Dict[str, Any],
+    type: str = Form(...),
+    title: str = Form(...),
+    description: str = Form(...),
+    knowledgeBaseIds: str = Form("[]"),
+    files: List[UploadFile] = File(default=[]),
     session: Session = Depends(get_session)
 ) -> Any:
-    return story_generator_service.generate(session, request)
+    try:
+        kb_ids = json.loads(knowledgeBaseIds)
+    except json.JSONDecodeError:
+        kb_ids = []
+
+    file_data = []
+    for file in files:
+        file_data.append({
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "size": file.size
+        })
+
+    request = {
+        "type": type,
+        "title": title,
+        "description": description,
+        "knowledgeBaseIds": kb_ids,
+        "files": file_data
+    }
+    try:
+        return story_generator_service.generate(session, request)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @router.get("/{id}", response_model=GeneratedArtifact)
 def get_artifact(
@@ -58,5 +88,7 @@ def get_feature_config():
     # Return default config for now
     return {
         "models": ["google/gemini-2.0-flash-001", "openai/gpt-4o"],
-        "templates": []
+        "templates": [],
+        "label": "Describe the features you need",
+        "placeholder": "What capabilities do you need to add? What should users be able to do?"
     }

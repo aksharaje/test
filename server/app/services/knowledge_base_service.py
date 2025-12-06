@@ -191,7 +191,7 @@ class KnowledgeBaseService:
                 "documentId": doc.id,
                 "documentName": doc.name,
                 "content": chunk.content,
-                "metadata": chunk.metadata,
+                "metadata": chunk.metadata_,
                 "similarity": 0.0 # Placeholder, hard to get exact score without raw SQL or advanced selection
             })
             

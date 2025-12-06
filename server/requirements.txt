@@ -12,3 +12,7 @@ requests
 pgvector
 pyhumps
 httpx
+python-multipart
+python-multipart
+pytest
+pytest-asyncio

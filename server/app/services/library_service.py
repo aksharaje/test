@@ -17,7 +17,8 @@ class LibraryService:
     @property
     def client(self) -> OpenAI:
         if not self._client:
-            api_key = os.getenv("OPENROUTER_API_KEY")
+            from app.core.config import settings
+            api_key = settings.OPENROUTER_API_KEY
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY environment variable is required")
             self._client = OpenAI(
@@ -101,7 +102,8 @@ class LibraryService:
             
             context = "\\n\\n---\\n\\n".join([c.content for c in chunks])[:50000]
             
-            model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+            from app.core.config import settings
+            model = settings.OPENROUTER_MODEL
             
             # 2. Generate Structure
             structure_prompt = f"""

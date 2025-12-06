@@ -16,7 +16,8 @@ class StoryGeneratorService:
     @property
     def client(self) -> OpenAI:
         if not self._client:
-            api_key = os.getenv("OPENROUTER_API_KEY")
+            from app.core.config import settings
+            api_key = settings.OPENROUTER_API_KEY
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY environment variable is required")
             self._client = OpenAI(
@@ -169,7 +170,8 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
 
     def generate(self, session: Session, request: Dict[str, Any]) -> GeneratedArtifact:
         start_time = time.time()
-        model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+        from app.core.config import settings
+        model = settings.OPENROUTER_MODEL
         
         # Get KB context
         kb_ids = request.get("knowledgeBaseIds", [])

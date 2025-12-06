@@ -49,6 +49,16 @@ temp/
 *.sqlite3
 *.db
 
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Test output
+test_output*.txt
+
 # Misc
 .cache/
 .parcel-cache/

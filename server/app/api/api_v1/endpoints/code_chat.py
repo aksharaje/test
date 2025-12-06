@@ -48,9 +48,9 @@ def send_message(
     data: Dict[str, str],
     session: Session = Depends(get_session)
 ) -> Any:
-    message = data.get("message")
+    message = data.get("content") or data.get("message")
     if not message:
-        raise HTTPException(status_code=400, detail="Message is required")
+        raise HTTPException(status_code=400, detail="Message content is required")
         
     try:
         return code_chat_service.send_message(session, id, message)

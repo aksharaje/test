@@ -15,7 +15,8 @@ class CodeChatService:
     @property
     def client(self) -> OpenAI:
         if not self._client:
-            api_key = os.getenv("OPENROUTER_API_KEY")
+            from app.core.config import settings
+            api_key = settings.OPENROUTER_API_KEY
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY environment variable is required")
             self._client = OpenAI(
@@ -109,6 +110,12 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         chat_session = session.get(CodeChatSession, session_id)
         if not chat_session:
             return False
+            
+        # Delete messages first to avoid FK constraint violation
+        messages = session.exec(select(CodeChatMessage).where(CodeChatMessage.session_id == session_id)).all()
+        for msg in messages:
+            session.delete(msg)
+            
         session.delete(chat_session)
         session.commit()
         return True
@@ -182,7 +189,8 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         history.append({"role": "user", "content": f"{user_message}{context_text}"})
         
         # Call LLM
-        model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+        from app.core.config import settings
+        model = settings.OPENROUTER_MODEL
         response = self.client.chat.completions.create(
             model=model,
             messages=history,
@@ -220,8 +228,8 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         )
         session.add(assistant_msg)
         
-        # Update session title if first message
-        if len(messages) <= 1: # Just the user message we added
+        # Update session title if first message or still default
+        if len(messages) <= 1 or chat_session.title == "New Chat":
             title = user_message[:50] + "..." if len(user_message) > 50 else user_message
             chat_session.title = title
             

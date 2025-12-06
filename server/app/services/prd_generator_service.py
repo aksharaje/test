@@ -185,7 +185,8 @@ class PrdGeneratorService:
     @property
     def client(self) -> OpenAI:
         if not self._client:
-            api_key = os.getenv("OPENROUTER_API_KEY")
+            from app.core.config import settings
+            api_key = settings.OPENROUTER_API_KEY
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY environment variable is required")
             self._client = OpenAI(
@@ -248,7 +249,8 @@ class PrdGeneratorService:
 
     def generate(self, session: Session, request: Dict[str, Any]) -> GeneratedPrd:
         start_time = time.time()
-        model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+        from app.core.config import settings
+        model = settings.OPENROUTER_MODEL
         
         # Get template
         template_id = request.get("templateId")
@@ -308,7 +310,8 @@ class PrdGeneratorService:
         try:
             structured_content = json.loads(cleaned_content)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse PRD response as JSON: {str(e)}")
+            print(f"JSON Parse Error. Raw content: {raw_content}")
+            raise ValueError(f"Failed to parse PRD response as JSON. Error: {str(e)}. Raw content start: {raw_content[:100]}...")
             
         generation_time_ms = (time.time() - start_time) * 1000
         
@@ -353,7 +356,8 @@ class PrdGeneratorService:
             raise ValueError("PRD not found")
             
         start_time = time.time()
-        model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+        from app.core.config import settings
+        model = settings.OPENROUTER_MODEL
         
         # Get template
         template = None
