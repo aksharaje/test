@@ -4,7 +4,10 @@
   "description": "Complete PM workflow prototype from goal setting to research",
   "scripts": {
     "start": "python3 -m http.server 8000",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linting configured\" && exit 0",
+    "typecheck": "echo \"No type checking configured\" && exit 0",
+    "build": "echo \"No build step needed for static HTML\" && exit 0"
   },
   "keywords": ["pm", "workflow", "prototype", "okr", "goals"],
   "author": "Akshara Raje",
