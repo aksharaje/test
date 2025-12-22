@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Workflow Prototype - Modern Product Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #ffffff;
+            line-height: 1.6;
+            color: #1f2937;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 80px 20px 100px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            font-size: 20px;
+            margin-bottom: 40px;
+            opacity: 0.95;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: -60px auto 0;
+            padding: 0 20px 80px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+            margin-top: 80px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: #6b7280;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 32px;
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: white;
+        }
+
+        .feature-number {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .feature-card h3 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .feature-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            background: #eff6ff;
+            color: #2563eb;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tag.new {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .tag.interactive {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        /* Stats Section */
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 48px;
+            margin: 60px 0;
+            color: white;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-top: 32px;
+        }
+
+        .stat-item h3 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-item p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 40px;
+            margin-top: 60px;
+        }
+
+        .quick-actions h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+            color: #1f2937;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .action-button {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s;
+        }
+
+        .action-button:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .action-button i {
+            font-size: 24px;
+            color: #667eea;
+        }
+
+        .action-button div {
+            flex: 1;
+        }
+
+        .action-button strong {
+            display: block;
+            font-size: 15px;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .action-button span {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* Phase Sections */
+        .phase-section {
+            margin-bottom: 80px;
+        }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .phase-header i {
+            font-size: 32px;
+            color: #667eea;
+        }
+
+        .phase-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .phase-badge {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 18px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1>🎯 PM Workflow Prototype</h1>
+            <p>End-to-end product management workflow from strategic goal setting to data-driven research. Interactive, comprehensive, and ready to use.</p>
+            <div class="hero-cta">
+                <a href="#features" class="btn-primary">
+                    <i class="ph ph-rocket-launch"></i>
+                    Explore Features
+                </a>
+                <a href="workflow-index.html" class="btn-secondary">
+                    <i class="ph ph-list-bullets"></i>
+                    View All Modules
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h3>🚀 Quick Start</h3>
+            <div class="action-grid">
+                <a href="index.html" class="action-button">
+                    <i class="ph ph-play-circle"></i>
+                    <div>
+                        <strong>Start Complete Workflow</strong>
+                        <span>Begin from goal setting</span>
+                    </div>
+                </a>
+                <a href="measurement-framework.html" class="action-button">
+                    <i class="ph ph-chart-line"></i>
+                    <div>
+                        <strong>View Interactive Charts</strong>
+                        <span>See live visualizations</span>
+                    </div>
+                </a>
+                <a href="scope-monitor.html" class="action-button">
+                    <i class="ph ph-eye"></i>
+                    <div>
+                        <strong>Test Scope Monitor</strong>
+                        <span>Real-time change detection</span>
+                    </div>
+                </a>
+                <a href="research-hub.html" class="action-button">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <div>
+                        <strong>Jump to Research</strong>
+                        <span>Skip to discovery phase</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <h2 style="font-size: 32px; margin-bottom: 8px;">Comprehensive PM Toolkit</h2>
+            <p style="opacity: 0.9;">Everything you need for modern product management</p>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>11</h3>
+                    <p>Interactive Modules</p>
+                </div>
+                <div class="stat-item">
+                    <h3>2</h3>
+                    <p>Complete Phases</p>
+                </div>
+                <div class="stat-item">
+                    <h3>100%</h3>
+                    <p>Production Ready</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div id="features">
+            <!-- Phase 1: Goal Setting & Planning -->
+            <div class="phase-section">
+                <div class="phase-header">
+                    <i class="ph ph-flag"></i>
+                    <h2>Phase 1: Goal Setting & Planning</h2>
+                    <span class="phase-badge">6 Modules</span>
+                </div>
+                <div class="feature-grid">
+
+                    <a href="index.html" class="feature-card">
+                        <div class="feature-number">1</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-target"></i>
+                        </div>
+                        <h3>Goal Setting</h3>
+                        <p>Define strategic goals and initiatives with AI-powered suggestions. Set the foundation for your product roadmap.</p>
+                        <div class="feature-tags">
+                            <span class="tag">AI Assistant</span>
+                            <span class="tag">Templates</span>
+                        </div>
+                    </a>
+
+                    <a href="okr-generator.html" class="feature-card">
+                        <div class="feature-number">2</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-certificate"></i>
+                        </div>
+                        <h3>OKR Generator</h3>
+                        <p>Transform goals into measurable Objectives and Key Results. SMART validation included.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Validation</span>
+                            <span class="tag">Best Practices</span>
+                        </div>
+                    </a>
+
+                    <a href="kpi-assignment.html" class="feature-card">
+                        <div class="feature-number">3</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-chart-bar"></i>
+                        </div>
+                        <h3>KPI Assignment</h3>
+                        <p>Map KPIs to your objectives with confidence intervals and data source tracking.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Data Sources</span>
+                            <span class="tag">Tracking</span>
+                        </div>
+                    </a>
+
+                    <a href="benchmark-comparison.html" class="feature-card">
+                        <div class="feature-number">4</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-scales"></i>
+                        </div>
+                        <h3>Benchmark Comparison</h3>
+                        <p>Validate OKRs against industry standards and competitors. Ensure your targets are achievable.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Industry Data</span>
+                            <span class="tag">Competitors</span>
+                        </div>
+                    </a>
+
+                    <a href="measurement-framework.html" class="feature-card">
+                        <div class="feature-number">5</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-chart-line"></i>
+                        </div>
+                        <h3>Measurement Framework</h3>
+                        <p>Build complete measurement system with live Chart.js visualizations and metric definitions.</p>
+                        <div class="feature-tags">
+                            <span class="tag interactive">Live Charts</span>
+                            <span class="tag new">New</span>
+                        </div>
+                    </a>
+
+                    <a href="scope-definition.html" class="feature-card">
+                        <div class="feature-number">6</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-circle-dashed"></i>
+                        </div>
+                        <h3>Scope Definition</h3>
+                        <p>Define in-scope and out-of-scope items, constraints, assumptions, and risks. Lock scope and activate monitoring.</p>
+                        <div class="feature-tags">
+                            <span class="tag new">Monitor</span>
+                            <span class="tag">Versioning</span>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Phase 2: Research & Discovery -->
+            <div class="phase-section">
+                <div class="phase-header">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <h2>Phase 2: Research & Discovery</h2>
+                    <span class="phase-badge">4 Modules</span>
+                </div>
+                <div class="feature-grid">
+
+                    <a href="research-hub.html" class="feature-card">
+                        <div class="feature-number">7</div>
+                        <div class="feature-icon">
+                            <i class="ph ph-compass"></i>
+                        </div>
+                        <h3>Research Hub</h3>
+                        <p>Central navigation hub for all research and discovery activities. Track progress across modules.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Dashboard</span>
+                            <span class="tag">Navigation</span>
+                        </div>
+                    </a>
+
+                    <a href="competitive-analysis.html" class="feature-card">
+                        <div class="feature-icon">
+                            <i class="ph ph-sword"></i>
+                        </div>
+                        <h3>Competitive Analysis</h3>
+                        <p>Analyze competitor solutions, identify gaps, and find opportunities for differentiation.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Analysis</span>
+                            <span class="tag">Gaps</span>
+                        </div>
+                    </a>
+
+                    <a href="market-research.html" class="feature-card">
+                        <div class="feature-icon">
+                            <i class="ph ph-trend-up"></i>
+                        </div>
+                        <h3>Market Research</h3>
+                        <p>Synthesize market trends, user expectations, and industry insights to inform decisions.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Trends</span>
+                            <span class="tag">Insights</span>
+                        </div>
+                    </a>
+
+                    <a href="discovery-hub.html" class="feature-card">
+                        <div class="feature-icon">
+                            <i class="ph ph-users-three"></i>
+                        </div>
+                        <h3>Voice of Customer</h3>
+                        <p>Aggregate user feedback, identify core needs, and track sentiment across channels.</p>
+                        <div class="feature-tags">
+                            <span class="tag">Feedback</span>
+                            <span class="tag">Sentiment</span>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Special Features -->
+            <div class="phase-section">
+                <div class="phase-header">
+                    <i class="ph ph-star"></i>
+                    <h2>Special Features</h2>
+                    <span class="phase-badge">Highlights</span>
+                </div>
+                <div class="feature-grid">
+
+                    <a href="scope-monitor.html" class="feature-card">
+                        <div class="feature-icon">
+                            <i class="ph ph-eye"></i>
+                        </div>
+                        <h3>Scope Monitor</h3>
+                        <p>Real-time scope change detection with impact analysis, stakeholder workflows, and trade-off tracking.</p>
+                        <div class="feature-tags">
+                            <span class="tag new">Real-time</span>
+                            <span class="tag interactive">Impact Analysis</span>
+                        </div>
+                    </a>
+
+                    <a href="measurement-framework.html" class="feature-card">
+                        <div class="feature-icon">
+                            <i class="ph ph-chart-pie"></i>
+                        </div>
+                        <h3>Interactive Charts</h3>
+                        <p>Live Chart.js visualizations with line charts, funnel charts, and stacked bar charts.</p>
+                        <div class="feature-tags">
+                            <span class="tag interactive">Chart.js</span>
+                            <span class="tag new">Interactive</span>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer CTA -->
+        <div style="text-align: center; padding: 60px 20px; border-top: 2px solid #e5e7eb; margin-top: 80px;">
+            <h2 style="font-size: 32px; margin-bottom: 16px;">Ready to get started?</h2>
+            <p style="font-size: 18px; color: #6b7280; margin-bottom: 32px;">Choose your path and begin building better products.</p>
+            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <a href="index.html" class="btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <i class="ph ph-play-circle"></i>
+                    Start Complete Workflow
+                </a>
+                <a href="workflow-index.html" class="btn-secondary" style="background: white; color: #667eea; border-color: #667eea;">
+                    <i class="ph ph-list-bullets"></i>
+                    Browse All Modules
+                </a>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
