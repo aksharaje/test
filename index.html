@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goal Setting Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="okr-styles.css">
+    <link rel="stylesheet" href="ux-enhancements.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <span class="active">Goal Setting</span>
+                <i class="ph ph-caret-right"></i>
+                <a href="okr-generator.html" style="text-decoration: none; color: inherit;">OKR Generator</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="kpi-assignment.html" style="text-decoration: none; color: inherit;">KPI Assignment</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="benchmark-comparison.html" style="text-decoration: none; color: inherit;">Benchmark
+                    Comparison</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="measurement-framework.html" style="text-decoration: none; color: inherit;">Measurement
+                    Framework</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="scope-definition.html" style="text-decoration: none; color: inherit;">Scope Definition</a>
+            </nav>
+
+            <header class="app-header">
+                <h1>Goal Setting Assistant</h1>
+                <p class="subtitle">These goals were generated based on your inputs: strategy, role, and customer
+                    problems. You can edit anything.</p>
+            </header>
+
+            <!-- Context Input Form (Initially Visible) -->
+            <section id="input-section" class="summary-card" style="display: block;">
+                <div class="card-header">
+                    <h2><i class="ph ph-sliders-horizontal"></i> Context Setup</h2>
+                    <p style="color: var(--text-secondary); font-size: 14px; font-weight: 400;">Define the context for
+                        your goals. The system will generate suggestions based on these inputs.</p>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div class="form-group">
+                        <label>PM Role / Domain</label>
+                        <p
+                            style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The product area or problem space you are responsible for (e.g., authentication, payments,
+                            user onboarding).</p>
+                        <input type="text" id="input-domain" value="Onboarding + Authentication"
+                            placeholder="e.g. Checkout Flow">
+                    </div>
+                    <div class="form-group">
+                        <label>Company Strategy</label>
+                        <p
+                            style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The broader business goal this work supports (e.g., increase retention, reduce churn, drive
+                            enterprise adoption).</p>
+                        <textarea id="input-strategy" rows="2"
+                            placeholder="e.g. Expand into Enterprise market...">Improve activation and reduce operational load</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Team Charter</label>
+                        <p
+                            style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            What this team is expected to own and deliver (e.g., faster checkout, smoother onboarding,
+                            reliable login).</p>
+                        <input type="text" id="input-charter" value="Growth & Onboarding Experience">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Problem Statements</label>
+                        <p
+                            style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The customer issues you are trying to solve (e.g., users can’t log in, onboarding takes too
+                            long).</p>
+                        <textarea id="input-problems" rows="2">Login failures, high drop-off, support tickets</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Product-Specific Responsibilities (Baselines)</label>
+                        <p
+                            style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The outcomes this product team is accountable for improving (e.g., login success rate,
+                            checkout completion).</p>
+                        <input type="text" id="input-baseline" value="87% Login Success, 61% Retention"
+                            placeholder="e.g. 10% Conversion Rate">
+                    </div>
+                    <button class="btn btn-primary full-width" onclick="generateGoals()" id="generate-btn">
+                        <i class="ph ph-magic-wand"></i> Generate Goals
+                    </button>
+                    <!-- Loading State -->
+                    <div id="loading-state" style="display: none; text-align: center; padding: 20px;">
+                        <i class="ph ph-spinner ph-spin" style="font-size: 24px; color: var(--primary-color);"></i>
+                        <p style="margin-top: 8px; color: var(--text-secondary);">Analyzing inputs and generating key
+                            objectives...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Suggested Goals Results (Initially Hidden) -->
+            <section id="goals-results-section" class="goals-section" style="display: none;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2><i class="ph ph-target"></i> Suggested Goals</h2>
+                    <button class="btn btn-outline-sm" onclick="editInputs()"><i class="ph ph-pencil-simple"></i> Edit
+                        Inputs</button>
+                </div>
+
+                <div class="goals-list">
+                    <!-- Goal 1 -->
+                    <div class="goal-card">
+                        <div class="goal-content">
+                            <div class="goal-header">
+                                <h3>Goal 1</h3>
+                                <div class="goal-actions">
+                                    <button class="icon-btn" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                                    <button class="icon-btn" title="Delete"><i class="ph ph-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="goal-title">Increase login success rate from 87% → 95% by end of Q2</div>
+                            <p class="goal-desc">Improve authentication flow, reduce password-reset errors, and optimize
+                                error messaging.</p>
+                            <div class="tags">
+                                <span class="tag tag-blue">Activation</span>
+                                <span class="tag tag-gray">Reliability</span>
+                            </div>
+                            <button class="btn-link why-btn"><i class="ph ph-question"></i> Why was this
+                                generated?</button>
+                        </div>
+                    </div>
+
+                    <!-- Goal 2 -->
+                    <div class="goal-card">
+                        <div class="goal-content">
+                            <div class="goal-header">
+                                <h3>Goal 2</h3>
+                                <div class="goal-actions">
+                                    <button class="icon-btn"><i class="ph ph-pencil-simple"></i></button>
+                                    <button class="icon-btn"><i class="ph ph-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="goal-title">Reduce support tickets related to login/access issues by 30%</div>
+                            <p class="goal-desc">Resolve root causes, improve self-service flows, and reduce customer
+                                frustration.</p>
+                            <div class="tags">
+                                <span class="tag tag-purple">Support</span>
+                                <span class="tag tag-green">Efficiency</span>
+                            </div>
+                            <button class="btn-link why-btn"><i class="ph ph-question"></i> Why was this
+                                generated?</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="add-goal-container">
+                    <button class="btn btn-dashed full-width"><i class="ph ph-plus"></i> Add New Goal</button>
+                </div>
+            </section>
+
+            <script>
+                function generateGoals() {
+                    const btn = document.getElementById('generate-btn');
+                    const loader = document.getElementById('loading-state');
+                    const results = document.getElementById('goals-results-section');
+                    const inputSection = document.getElementById('input-section');
+
+                    // Show loading
+                    btn.style.display = 'none';
+                    loader.style.display = 'block';
+
+                    // Simulate processing delay
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        inputSection.style.display = 'none';
+                        results.style.display = 'block';
+                        btn.style.display = 'block'; // Reset for next time
+                    }, 1500);
+                }
+
+                function editInputs() {
+                    document.getElementById('input-section').style.display = 'block';
+                    document.getElementById('goals-results-section').style.display = 'none';
+                }
+            </script>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-card priority-card">
+                <div class="card-header">
+                    <h2><i class="ph ph-lightbulb"></i> Priority Recommendations</h2>
+                </div>
+                <p class="sidebar-text">Based on strategic alignment and potential impact, we recommend prioritizing:
+                </p>
+                <ol class="priority-list">
+                    <li>Improve Login Completion</li>
+                    <li>Increase Activation Rate</li>
+                    <li>Reduce Support Load</li>
+                </ol>
+                <button class="btn btn-outline-sm full-width">Override Priorities</button>
+            </div>
+
+            <div class="sidebar-card next-step-card">
+                <div class="card-header">
+                    <h2><i class="ph ph-link"></i> Next Step</h2>
+                </div>
+                <a href="okr-generator.html" class="btn btn-primary full-width"
+                    style="text-decoration: none; display: flex; box-sizing: border-box;">Generate OKRs <i
+                        class="ph ph-arrow-right"></i></a>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Edit Goal Modal -->
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit Goal</h2>
+                <button class="close-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Goal Title</label>
+                    <input type="text" value="Improve login success rate">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Current Baseline</label>
+                        <input type="text" value="87%">
+                    </div>
+                    <div class="form-group">
+                        <label>Success Target</label>
+                        <input type="text" value="95%">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Timeframe</label>
+                    <select>
+                        <option>End of Q2</option>
+                        <option>End of Q3</option>
+                        <option>End of Q4</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea rows="3">Improve authentication flow, reduce reset errors, optimize messaging.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Category Tags</label>
+                    <div class="tags-input">
+                        <span class="tag tag-blue removable">Activation <i class="ph ph-x"></i></span>
+                        <span class="tag tag-gray removable">Reliability <i class="ph ph-x"></i></span>
+                        <span class="tag tag-orange removable">UX <i class="ph ph-x"></i></span>
+                        <button class="add-tag-btn"><i class="ph ph-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Dependencies</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> Engineering</label>
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> Design</label>
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> Analytics</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Marketing</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes (optional)</label>
+                    <textarea rows="2"
+                        placeholder="Add context...">Need engineering signoff for rate limits and error handling.</textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="warning-box">
+                    <i class="ph ph-warning-circle"></i>
+                    <div class="warning-content">
+                        <strong>Updates Detected</strong>
+                        <p>Changes to this goal will impact OKR Generation, KPI Selection, and Dashboard Definitions.
+                        </p>
+                        <a href="#">View Impact</a>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary">Cancel</button>
+                    <button class="btn btn-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="notification-system.js"></script>
+    <script src="workflow-progress.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

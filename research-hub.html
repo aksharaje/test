@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Hub - Product Studio</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .hub-header {
+            background-image: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            padding: 40px;
+            color: white;
+            border-radius: var(--radius-lg);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .hub-header h1 {
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .hub-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <main class="full-width">
+            <div class="hub-header">
+                <h1>Research & Discovery</h1>
+                <p>Use evidence to guide product decisions and reduce risk.</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <button class="btn btn-outline-sm" onclick="window.location.href='index.html'"><i
+                        class="ph ph-arrow-left"></i> Back to Goal Setting</button>
+                <button class="btn btn-outline-sm" onclick="alert('Skipping Research Phase...')">Skip Research Phase <i
+                        class="ph ph-fast-forward"></i></button>
+            </div>
+
+            <h2 class="section-header" style="border: none; margin-bottom: 0;">Research Modules</h2>
+            <div class="research-grid">
+                <!-- Competitive Analyzer -->
+                <a href="competitive-analysis.html" class="research-card">
+                    <div class="research-icon">
+                        <i class="ph ph-trophy"></i>
+                    </div>
+                    <div class="research-title">Competitive & Industry Analyzer</div>
+                    <div class="research-desc">Analyze how competitors solve specific problems to identify gaps and best
+                        practices.</div>
+                    <div
+                        style="margin-top: 16px; color: var(--primary-color); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        Launch Module <i class="ph ph-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Market Research Synthesizer -->
+                <a href="market-research.html" class="research-card"
+                    style="border-color: var(--primary-color); background: #F8FAFC;">
+                    <div class="research-icon" style="background: #E0E7FF; color: #4338CA;">
+                        <i class="ph ph-chart-line-up"></i>
+                    </div>
+                    <div class="research-title">Market Research Synthesizer</div>
+                    <div class="research-desc">Aggregate external market signals, trends, risks, and user expectations.
+                    </div>
+                    <div
+                        style="margin-top: 16px; color: var(--primary-color); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        Start Synthesis <i class="ph ph-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Voice of Customer -->
+                <a href="discovery-hub.html" class="research-card">
+                    <div class="research-icon" style="background: #F3F4F6; color: #4B5563;">
+                        <i class="ph ph-users-three"></i>
+                    </div>
+                    <div class="research-title">Voice of Customer</div>
+                    <div class="research-desc">Synthesize user interviews, support tickets, and feedback into core
+                        needs.</div>
+                    <div
+                        style="margin-top: 16px; color: var(--primary-color); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        Open Discovery Hub <i class="ph ph-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Product Insights (Placeholder) -->
+                <div class="research-card" style="opacity: 0.6; cursor: default;">
+                    <div class="research-icon" style="background: #F3F4F6; color: #9CA3AF;">
+                        <i class="ph ph-chart-bar"></i>
+                    </div>
+                    <div class="research-title">Product & Analytics Insights</div>
+                    <div class="research-desc">Connect to analytics tools to find usage patterns and drop-off points.
+                    </div>
+                    <div
+                        style="margin-top: 16px; color: var(--text-secondary); font-size: 12px; font-weight: 500; border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 4px; width: fit-content;">
+                        Coming Soon
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

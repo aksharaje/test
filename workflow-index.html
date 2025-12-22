@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Workflow Prototype - Navigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #1f2937;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            font-size: 18px;
+            margin-bottom: 48px;
+        }
+
+        .workflow-section {
+            margin-bottom: 48px;
+        }
+
+        .workflow-section h2 {
+            font-size: 24px;
+            color: #374151;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .workflow-section h2 i {
+            font-size: 28px;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .workflow-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: block;
+        }
+
+        .workflow-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .card-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .quick-links {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 24px;
+            border-radius: 8px;
+            margin-top: 32px;
+        }
+
+        .quick-links h3 {
+            font-size: 18px;
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+
+        .quick-links ul {
+            list-style: none;
+        }
+
+        .quick-links li {
+            margin-bottom: 8px;
+        }
+
+        .quick-links a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .quick-links a:hover {
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #10b981;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge.coming-soon {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 PM Workflow Prototype</h1>
+        <p class="subtitle">Complete product management workflow from goal setting to research</p>
+
+        <!-- Phase 1: Goal Setting & Planning -->
+        <div class="workflow-section">
+            <h2>
+                <i class="ph ph-flag"></i>
+                Phase 1: Goal Setting & Planning
+            </h2>
+            <div class="workflow-grid">
+                <a href="index.html" class="workflow-card">
+                    <div class="card-number">1</div>
+                    <div class="card-title">Goal Setting</div>
+                    <div class="card-description">Define strategic goals and initiatives for your product</div>
+                </a>
+
+                <a href="okr-generator.html" class="workflow-card">
+                    <div class="card-number">2</div>
+                    <div class="card-title">OKR Generator</div>
+                    <div class="card-description">Transform goals into measurable Objectives and Key Results</div>
+                </a>
+
+                <a href="kpi-assignment.html" class="workflow-card">
+                    <div class="card-number">3</div>
+                    <div class="card-title">KPI Assignment</div>
+                    <div class="card-description">Map KPIs to your objectives and key results</div>
+                </a>
+
+                <a href="benchmark-comparison.html" class="workflow-card">
+                    <div class="card-number">4</div>
+                    <div class="card-title">Benchmark Comparison</div>
+                    <div class="card-description">Validate OKRs against industry standards and competitors</div>
+                </a>
+
+                <a href="measurement-framework.html" class="workflow-card">
+                    <div class="card-number">5</div>
+                    <div class="card-title">Measurement Framework<span class="badge">Charts</span></div>
+                    <div class="card-description">Build complete measurement system with visualizations</div>
+                </a>
+
+                <a href="scope-definition.html" class="workflow-card">
+                    <div class="card-number">6</div>
+                    <div class="card-title">Scope Definition<span class="badge">Monitor</span></div>
+                    <div class="card-description">Define and monitor project scope with change detection</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Phase 2: Research & Discovery -->
+        <div class="workflow-section">
+            <h2>
+                <i class="ph ph-magnifying-glass"></i>
+                Phase 2: Research & Discovery
+            </h2>
+            <div class="workflow-grid">
+                <a href="research-hub.html" class="workflow-card">
+                    <div class="card-number">7</div>
+                    <div class="card-title">Research Hub</div>
+                    <div class="card-description">Central hub for all research and discovery modules</div>
+                </a>
+
+                <a href="competitive-analysis.html" class="workflow-card">
+                    <div class="card-title">Competitive Analysis</div>
+                    <div class="card-description">Analyze competitor solutions and identify gaps</div>
+                </a>
+
+                <a href="market-research.html" class="workflow-card">
+                    <div class="card-title">Market Research</div>
+                    <div class="card-description">Synthesize market trends and user expectations</div>
+                </a>
+
+                <a href="discovery-hub.html" class="workflow-card">
+                    <div class="card-title">Voice of Customer</div>
+                    <div class="card-description">Aggregate user feedback and identify core needs</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Special Features -->
+        <div class="workflow-section">
+            <h2>
+                <i class="ph ph-star"></i>
+                Special Features
+            </h2>
+            <div class="workflow-grid">
+                <a href="scope-monitor.html" class="workflow-card">
+                    <div class="card-title">Scope Monitor<span class="badge">New</span></div>
+                    <div class="card-description">Real-time scope change detection and impact analysis</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="quick-links">
+            <h3>🚀 Quick Start Guides</h3>
+            <ul>
+                <li><strong>Complete Workflow:</strong> <a href="index.html">Start from Goal Setting →</a></li>
+                <li><strong>Skip to Research:</strong> <a href="research-hub.html">Research Hub →</a></li>
+                <li><strong>Test Scope Monitor:</strong> <a href="scope-definition.html">Scope Definition → Approve → Simulate Change →</a></li>
+                <li><strong>View Charts:</strong> <a href="measurement-framework.html">Measurement Framework →</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

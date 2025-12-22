@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scope Monitor - PM Workflow</title>
+    <link rel="stylesheet" href="scope-monitor-styles.css">
+    <link rel="stylesheet" href="ux-enhancements.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="index.html" class="breadcrumb-item">Goal Setting</a>
+            <span class="breadcrumb-separator">→</span>
+            <a href="okr-generator.html" class="breadcrumb-item">OKR Generator</a>
+            <span class="breadcrumb-separator">→</span>
+            <a href="kpi-assignment.html" class="breadcrumb-item">KPI Assignment</a>
+            <span class="breadcrumb-separator">→</span>
+            <a href="benchmark-comparison.html" class="breadcrumb-item">Benchmark Comparison</a>
+            <span class="breadcrumb-separator">→</span>
+            <a href="measurement-framework.html" class="breadcrumb-item">Measurement Framework</a>
+            <span class="breadcrumb-separator">→</span>
+            <a href="scope-definition.html" class="breadcrumb-item">Scope Definition</a>
+            <span class="breadcrumb-separator">→</span>
+            <span class="breadcrumb-item active">Scope Monitor</span>
+        </nav>
+
+        <!-- Alert Header -->
+        <header class="alert-header">
+            <div class="alert-icon">
+                <i class="ph ph-warning-circle"></i>
+            </div>
+            <div class="alert-content">
+                <h1>Scope Change Detected</h1>
+                <p class="subtitle">This request conflicts with approved scope (v1.0).<br>Review impact before
+                    proceeding.</p>
+            </div>
+        </header>
+
+        <!-- Incoming Request -->
+        <section class="section">
+            <div class="section-header">
+                <h2><i class="ph ph-envelope-open"></i> Incoming Request</h2>
+            </div>
+            <div class="request-box" id="requestBox">
+                <div class="request-field">
+                    <strong>Request:</strong>
+                    <span class="request-title">"Add Google + Apple social login"</span>
+                </div>
+                <div class="request-meta">
+                    <div class="meta-item">
+                        <strong>Requested by:</strong> Sales
+                    </div>
+                    <div class="meta-item">
+                        <strong>Current Status:</strong>
+                        <span class="status-badge out-of-scope">
+                            <i class="ph ph-x-circle"></i> Out of Scope
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <strong>Requested on:</strong> <span id="requestDate"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Impact Scores -->
+        <section class="section">
+            <div class="section-header">
+                <h2><i class="ph ph-chart-bar"></i> Impact Scores</h2>
+            </div>
+            <div class="impact-container">
+                <div class="impact-item">
+                    <div class="impact-label">Timeline Impact</div>
+                    <div class="impact-bar-container">
+                        <div class="impact-bar" style="--progress: 70%">
+                            <div class="impact-fill"></div>
+                        </div>
+                        <span class="impact-value">(+3 weeks)</span>
+                    </div>
+                </div>
+
+                <div class="impact-item">
+                    <div class="impact-label">Engineering Effort</div>
+                    <div class="impact-bar-container">
+                        <div class="impact-bar" style="--progress: 80%">
+                            <div class="impact-fill"></div>
+                        </div>
+                        <span class="impact-value">(High)</span>
+                    </div>
+                </div>
+
+                <div class="impact-item">
+                    <div class="impact-label">OKR Risk</div>
+                    <div class="impact-bar-container">
+                        <div class="impact-bar" style="--progress: 60%">
+                            <div class="impact-fill"></div>
+                        </div>
+                        <span class="impact-value">(Login success delayed)</span>
+                    </div>
+                </div>
+
+                <div class="impact-summary">
+                    <strong>Overall Impact:</strong>
+                    <span class="impact-badge high">
+                        <i class="ph ph-warning"></i> HIGH
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Negotiation Brief -->
+        <section class="section negotiation-section">
+            <div class="section-header">
+                <h2><i class="ph ph-brain"></i> Negotiation Brief</h2>
+            </div>
+            <div class="negotiation-content">
+                <div class="violations-box">
+                    <h3>This change violates:</h3>
+                    <ul class="violations-list">
+                        <li><i class="ph ph-warning-circle"></i> <strong>Constraint:</strong> No backend changes this
+                            quarter</li>
+                        <li><i class="ph ph-warning-circle"></i> <strong>Risk:</strong> Login success OKR at risk</li>
+                    </ul>
+                </div>
+
+                <div class="options-box">
+                    <h3>Recommended Options:</h3>
+                    <div class="option-item recommended">
+                        <div class="option-number">1</div>
+                        <div class="option-content">
+                            <div class="option-title">
+                                Defer social login to next quarter
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <p class="option-desc">Maintain current scope and timeline. Add to Q3 roadmap.</p>
+                        </div>
+                    </div>
+
+                    <div class="option-item">
+                        <div class="option-number">2</div>
+                        <div class="option-content">
+                            <div class="option-title">Replace MFA improvement with social login</div>
+                            <p class="option-desc">Trade-off: Delays multi-factor authentication work.</p>
+                        </div>
+                    </div>
+
+                    <div class="option-item">
+                        <div class="option-number">3</div>
+                        <div class="option-content">
+                            <div class="option-title">Limit scope to Google-only login</div>
+                            <p class="option-desc">Reduces effort by 40%, partial solution.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Change History (if any previous changes) -->
+        <section class="section" id="changeHistorySection" style="display: none;">
+            <div class="section-header">
+                <h2><i class="ph ph-clock-counter-clockwise"></i> Previous Scope Changes</h2>
+            </div>
+            <div class="history-timeline" id="changeHistory">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="actions">
+            <button class="btn-danger" onclick="rejectChange()">
+                <i class="ph ph-x-circle"></i>
+                Reject Change
+            </button>
+            <button class="btn-secondary" onclick="escalateChange()">
+                <i class="ph ph-arrow-up"></i>
+                Escalate
+            </button>
+            <button class="btn-secondary" onclick="proceedToResearch()" style="background: #6b7280; color: white; border-color: #6b7280;">
+                <i class="ph ph-arrow-right"></i>
+                Skip & Go to Research
+            </button>
+            <button class="btn-primary" onclick="approveWithTradeoff()">
+                <i class="ph ph-check-circle"></i>
+                Approve with Trade-off
+            </button>
+        </div>
+
+        <!-- Trade-off Modal (hidden by default) -->
+        <div class="modal" id="tradeoffModal">
+            <div class="modal-content">
+                <h2>Select Trade-off Option</h2>
+                <p class="modal-subtitle">Choose which option to proceed with:</p>
+
+                <div class="tradeoff-options">
+                    <label class="tradeoff-option">
+                        <input type="radio" name="tradeoff" value="defer" checked>
+                        <div class="option-card">
+                            <div class="option-header">
+                                <strong>Option 1:</strong> Defer to Q3
+                                <span class="recommended-badge">Recommended</span>
+                            </div>
+                            <p>Maintain current scope and timeline</p>
+                        </div>
+                    </label>
+
+                    <label class="tradeoff-option">
+                        <input type="radio" name="tradeoff" value="replace">
+                        <div class="option-card">
+                            <div class="option-header">
+                                <strong>Option 2:</strong> Replace MFA improvement
+                            </div>
+                            <p>Trade MFA work for social login</p>
+                        </div>
+                    </label>
+
+                    <label class="tradeoff-option">
+                        <input type="radio" name="tradeoff" value="limit">
+                        <div class="option-card">
+                            <div class="option-header">
+                                <strong>Option 3:</strong> Limit to Google-only
+                            </div>
+                            <p>Partial implementation</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeTradeoffModal()">Cancel</button>
+                    <button class="btn-primary" onclick="confirmTradeoff()">Confirm & Update Scope</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div class="modal" id="confirmationModal">
+            <div class="modal-content">
+                <div class="modal-icon success">
+                    <i class="ph ph-check-circle"></i>
+                </div>
+                <h2 id="confirmationTitle">Change Approved</h2>
+                <div class="confirmation-details" id="confirmationDetails">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <button class="btn-primary" onclick="returnToScope()">Return to Scope Definition</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="notification-system.js"></script>
+    <script src="scope-monitor-script.js"></script>
+</body>
+
+</html>

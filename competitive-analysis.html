@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitive & Industry Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Page-specific overrides or additions */
+        .analyzer-container {
+            display: block !important;
+            /* Override the default grid layout */
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .steps-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            margin-bottom: 24px;
+            background: white;
+            /* Ensure card style is applied */
+        }
+
+        .checkbox-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .product-chips {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .product-chip {
+            background: #F3F4F6;
+            border: 1px solid #E5E7EB;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .results-view {
+            display: none;
+            /* Hidden by default */
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .insight-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .insight-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .insight-list li {
+            position: relative;
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .insight-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .pitfall-list li::before {
+            color: var(--danger-color);
+        }
+
+        .full-width-card {
+            grid-column: span 2;
+        }
+
+        .opportunities-list {
+            counter-reset: opp-counter;
+            list-style: none;
+        }
+
+        .opportunities-list li {
+            counter-increment: opp-counter;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .opportunities-list li::before {
+            content: counter(opp-counter);
+            background: var(--primary-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .company-input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container analyzer-container">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <button class="btn btn-outline-sm" onclick="window.location.href='research-hub.html'"><i
+                        class="ph ph-arrow-left"></i> Back to Hub</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-outline-sm" onclick="alert('Skipping...')">Skip to Next Feature</button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1>Competitive & Industry Analyzer</h1>
+                    <p class="subtitle">Learn how others solve the same problem — without manual research.</p>
+                </div>
+                <a href="index.html" class="btn btn-outline-sm"><i class="ph ph-arrow-left"></i> Back to Goal
+                    Setting</a>
+            </div>
+        </header>
+
+        <!-- STEP 1: RESEARCH ENTRY -->
+        <main id="research-entry">
+            <div class="steps-wrapper">
+                <div class="sidebar-card step-card">
+                    <div class="card-header">
+                        <h2>Step 1: Select Problem Area</h2>
+                    </div>
+                    <div style="padding: 24px;">
+                        <select id="problem-area" class="full-width" onchange="toggleOtherInput()">
+                            <option value="login">Login & Authentication</option>
+                            <option value="onboarding">Onboarding Flow</option>
+                            <option value="checkout">Checkout Process</option>
+                            <option value="search">Search & Discovery</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input type="text" id="custom-problem-area" class="full-width"
+                            style="margin-top: 12px; display: none;" placeholder="Enter problem area...">
+                    </div>
+                </div>
+
+                <div class="sidebar-card step-card">
+                    <div class="card-header">
+                        <h2>Step 2: Select Reference Products</h2>
+                    </div>
+                    <div style="padding: 24px;">
+                        <div class="checkbox-list">
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked> Direct competitors
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked> Best-in-class digital products
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox"> Adjacent industries
+                            </label>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <label style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">Specific
+                                products to analyze</label>
+                            <div class="product-chips" id="product-chips">
+                                <span class="product-chip">Google <i class="ph ph-x"
+                                        onclick="removeChip(this)"></i></span>
+                                <span class="product-chip">Amazon <i class="ph ph-x"
+                                        onclick="removeChip(this)"></i></span>
+                                <span class="product-chip">Stripe <i class="ph ph-x"
+                                        onclick="removeChip(this)"></i></span>
+                            </div>
+
+                            <div class="company-input-group">
+                                <input type="text" id="new-company-input" placeholder="Add company..."
+                                    style="font-size: 13px; padding: 6px 12px;">
+                                <button class="btn btn-outline-sm" onclick="addCompany()">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 32px;">
+                    <button class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;"
+                        onclick="runAnalysis()">
+                        Run Competitive Analysis <i class="ph ph-lightning"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- LOADING STATE -->
+        <div id="loading" class="loading-overlay">
+            <i class="ph ph-spinner-gap ph-spin" style="font-size: 48px; color: var(--primary-color);"></i>
+            <p style="margin-top: 16px; font-weight: 500; color: var(--text-secondary);">Analyzing market patterns...
+            </p>
+        </div>
+
+        <!-- STEP 2: RESULTS VIEW -->
+        <main id="results-view" class="results-view">
+            <div class="section-header">
+                <div>
+                    <button class="btn btn-outline-sm" style="margin-bottom: 12px;" onclick="resetAnalysis()"><i
+                            class="ph ph-arrow-left"></i> Edit Inputs</button>
+                    <div>
+                        <span class="tag tag-blue" style="margin-bottom: 8px;">Analysis Complete</span>
+                        <h2 id="results-title">Results: Login & Authentication</h2>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-end;">
+                    <button class="btn btn-secondary"><i class="ph ph-download-simple"></i> Export</button>
+                    <button class="btn btn-primary">Continue to Ideation <i class="ph ph-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <div class="results-grid">
+                <!-- Industry Standards -->
+                <div class="insight-card">
+                    <div class="insight-header"><i class="ph ph-tag" style="color: #0284C7;"></i> Industry Standards
+                    </div>
+                    <ul class="insight-list" id="standards-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Best in Class -->
+                <div class="insight-card">
+                    <div class="insight-header"><i class="ph ph-star" style="color: #EAB308;"></i> Best-in-Class
+                        Patterns</div>
+                    <ul class="insight-list" id="best-class-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Common Pitfalls -->
+                <div class="insight-card">
+                    <div class="insight-header"><i class="ph ph-warning" style="color: #DC2626;"></i> Common Pitfalls
+                    </div>
+                    <ul class="insight-list pitfall-list" id="pitfalls-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Gaps -->
+                <div class="insight-card">
+                    <div class="insight-header"><i class="ph ph-trend-down" style="color: #7C3AED;"></i> Gaps vs Your
+                        Product</div>
+                    <ul class="insight-list pitfall-list" id="gaps-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Opportunities -->
+                <div class="insight-card full-width-card">
+                    <div class="insight-header"><i class="ph ph-target" style="color: var(--primary-color);"></i>
+                        Opportunities (Mapped to OKRs)</div>
+                    <ul class="opportunities-list" id="opportunities-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // Mock Data for different problem areas
+        const mockData = {
+            login: {
+                standards: [
+                    "Clear error messaging (used by ~85% of products)",
+                    "Inline password guidance",
+                    "Visible 'Forgot password' entry point",
+                    "Login retry without full reset"
+                ],
+                bestClass: [
+                    "Explain reason for failure (e.g., wrong password vs locked)",
+                    "Progressive disclosure for security",
+                    "Reduced cognitive load during login"
+                ],
+                pitfalls: [
+                    "Generic error copy ('Invalid credentials')",
+                    "Hidden reset flows",
+                    "Too many onboarding steps (6+)"
+                ],
+                gaps: [
+                    "Error messaging lacks clarity",
+                    "Onboarding flow longer than industry norm",
+                    "Mobile login less optimized"
+                ],
+                opportunities: [
+                    { text: "Improve error copy", tag: "Increases login success", color: "tag-green", icon: "ph-trend-up" },
+                    { text: "Reduce onboarding steps", tag: "Improves activation", color: "tag-blue", icon: "ph-users" },
+                    { text: "Optimize mobile login", tag: "Reduces drop-off", color: "tag-indigo", icon: "ph-device-mobile" }
+                ]
+            },
+            onboarding: {
+                standards: [
+                    "Progress bar visibility (90% adoption)",
+                    "Skip option for non-mandatory steps",
+                    "Personalization survey (3-5 questions)"
+                ],
+                bestClass: [
+                    "Contextual tooltips",
+                    "Interactive product tour (vs static slides)",
+                    "Empty state education"
+                ],
+                pitfalls: [
+                    "Forced account creation before value",
+                    "Overwhelming permission requests",
+                    "No 'Back' navigation"
+                ],
+                gaps: [
+                    "Lack of progress indication",
+                    "Too much text in welcome screens",
+                    "No personalization based on role"
+                ],
+                opportunities: [
+                    { text: "Add progress bar", tag: "Reduces drop-off", color: "tag-green", icon: "ph-chart-bar" },
+                    { text: "Defer account creation", tag: "Increases conversion", color: "tag-blue", icon: "ph-user-plus" },
+                    { text: "Simplify permissions", tag: "Improves trust", color: "tag-purple", icon: "ph-shield-check" }
+                ]
+            },
+            checkout: {
+                standards: [
+                    "Guest checkout option",
+                    "Auto-address completion",
+                    "Multiple payment methods"
+                ],
+                bestClass: [
+                    "One-page checkout",
+                    "Real-time validation",
+                    "Transparent shipping costs early"
+                ],
+                pitfalls: [
+                    "Hidden fees at final step",
+                    "Forced registration",
+                    "Distracting navigation links"
+                ],
+                gaps: [
+                    "No guest checkout",
+                    "Address validation missing",
+                    "Shipping calculation delayed"
+                ],
+                opportunities: [
+                    { text: "Implement guest checkout", tag: "Reduces abandonment", color: "tag-green", icon: "ph-shopping-cart" },
+                    { text: "Add auto-complete", tag: "Speeds up process", color: "tag-blue", icon: "ph-lightning" },
+                    { text: "Show fees early", tag: "Builds trust", color: "tag-orange", icon: "ph-eye" }
+                ]
+            },
+            search: {
+                standards: [
+                    "Predictive text / Autocomplete",
+                    "Recent search history",
+                    "Filter and sort options"
+                ],
+                bestClass: [
+                    "Natural language processing",
+                    "Visual search results",
+                    "Personalized ranking"
+                ],
+                pitfalls: [
+                    "No results page with no suggestions",
+                    "Slow load times",
+                    "Irrelevant matches"
+                ],
+                gaps: [
+                    "Basic keyword match only",
+                    "No recent history",
+                    "Filters purely technical"
+                ],
+                opportunities: [
+                    { text: "Add autocomplete", tag: "Improves discovery", color: "tag-blue", icon: "ph-magnifying-glass" },
+                    { text: "Suggest categories", tag: "Increases engagement", color: "tag-green", icon: "ph-list" },
+                    { text: "Optimize 'No Results'", tag: "Retains users", color: "tag-gray", icon: "ph-arrow-u-up-left" }
+                ]
+            }
+        };
+
+        // Fallback for "Other" or undefined
+        const defaultData = {
+            standards: ["Standard pattern A", "Standard pattern B", "Industry norm C"],
+            bestClass: ["Innovative approach X", "User-centric design Y"],
+            pitfalls: ["Common mistake 1", "Anti-pattern 2"],
+            gaps: ["Feature X missing", "Performance lag"],
+            opportunities: [
+                { text: "Generic Opportunity 1", tag: "High Impact", color: "tag-green", icon: "ph-star" },
+                { text: "Generic Opportunity 2", tag: "Medium Effort", color: "tag-blue", icon: "ph-wrench" }
+            ]
+        };
+
+        function toggleOtherInput() {
+            const select = document.getElementById('problem-area');
+            const input = document.getElementById('custom-problem-area');
+            if (select.value === 'other') {
+                input.style.display = 'block';
+                input.focus();
+            } else {
+                input.style.display = 'none';
+            }
+        }
+
+        function removeChip(icon) {
+            const chip = icon.parentElement;
+            chip.remove();
+        }
+
+        function addCompany() {
+            const input = document.getElementById('new-company-input');
+            const name = input.value.trim();
+            if (name) {
+                const container = document.getElementById('product-chips');
+                const chip = document.createElement('span');
+                chip.className = 'product-chip';
+                chip.innerHTML = `${name} <i class="ph ph-x" onclick="removeChip(this)"></i>`;
+                container.appendChild(chip);
+                input.value = '';
+            }
+        }
+
+        document.getElementById('new-company-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                addCompany();
+            }
+        });
+
+        function populateList(id, items) {
+            const list = document.getElementById(id);
+            list.innerHTML = '';
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                list.appendChild(li);
+            });
+        }
+
+        function populateOpportunities(items) {
+            const list = document.getElementById('opportunities-list');
+            list.innerHTML = '';
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span style="flex: 1;">${item.text}</span>
+                    <span class="tag ${item.color}"><i class="ph ${item.icon}"></i> ${item.tag}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function resetAnalysis() {
+            document.getElementById('results-view').style.display = 'none';
+            document.getElementById('research-entry').style.display = 'block';
+        }
+
+        function runAnalysis() {
+            document.getElementById('loading').style.display = 'flex';
+
+            const areaSelect = document.getElementById('problem-area');
+            const customArea = document.getElementById('custom-problem-area');
+            const selectedValue = areaSelect.value;
+            let areaText = areaSelect.options[areaSelect.selectedIndex].text;
+
+            if (selectedValue === 'other' && customArea.value) {
+                areaText = customArea.value;
+            }
+
+            // Select data
+            const data = mockData[selectedValue] || defaultData;
+
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('research-entry').style.display = 'none';
+                document.getElementById('results-view').style.display = 'block';
+
+                document.getElementById('results-title').innerText = 'Results: ' + areaText;
+
+                // Populate content
+                populateList('standards-list', data.standards);
+                populateList('best-class-list', data.bestClass);
+                populateList('pitfalls-list', data.pitfalls);
+                populateList('gaps-list', data.gaps);
+                populateOpportunities(data.opportunities);
+
+            }, 1000); // Reduced delay slightly for snappiness
+        }
+    </script>
+</body>
+
+</html>
