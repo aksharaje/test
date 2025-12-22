@@ -53,7 +53,9 @@ export class AuthenticatedShellComponent {
       path: '/backlog-authoring',
       children: [
         { label: 'PRD Generator', path: '/prd-generator' },
-        { label: 'Epic/Feature/Story Generator', path: '/story-generator' },
+        { label: 'Epic Creator', path: '/epic-creator' },
+        { label: 'Feature Creator', path: '/feature-creator' },
+        { label: 'User Story Creator', path: '/user-story-creator' },
       ],
     },
     {

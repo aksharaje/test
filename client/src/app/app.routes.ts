@@ -62,8 +62,27 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'story-generator',
-        title: 'Epic/Feature/Story Creator | Product Studio',
+        path: 'epic-creator',
+        title: 'Epic Creator | Product Studio',
+        data: { type: 'epic' },
+        loadComponent: () =>
+          import('./features/story-generator/story-generator.component').then(
+            (m) => m.StoryGeneratorComponent
+          ),
+      },
+      {
+        path: 'feature-creator',
+        title: 'Feature Creator | Product Studio',
+        data: { type: 'feature' },
+        loadComponent: () =>
+          import('./features/story-generator/story-generator.component').then(
+            (m) => m.StoryGeneratorComponent
+          ),
+      },
+      {
+        path: 'user-story-creator',
+        title: 'User Story Creator | Product Studio',
+        data: { type: 'user_story' },
         loadComponent: () =>
           import('./features/story-generator/story-generator.component').then(
             (m) => m.StoryGeneratorComponent

@@ -50,11 +50,11 @@ import { HlmButtonDirective } from '../../ui/button';
         <div class="flex h-14 items-center justify-between px-6">
           <div class="flex items-center gap-4">
             <a
-              routerLink="/story-generator"
+              [routerLink]="backLink()"
               class="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ng-icon name="lucideArrowLeft" class="h-4 w-4" />
-              Back to Generator
+              {{ backLabel() }}
             </a>
             @if (artifact()) {
               <span class="text-muted-foreground">|</span>
@@ -222,10 +222,10 @@ import { HlmButtonDirective } from '../../ui/button';
             <p class="mt-2 text-sm text-muted-foreground">
               This artifact may have been deleted or doesn't exist.
             </p>
-            <a routerLink="/story-generator" class="mt-4">
+            <a [routerLink]="backLink()" class="mt-4">
               <button hlmBtn variant="outline">
                 <ng-icon name="lucideArrowLeft" class="mr-2 h-4 w-4" />
-                Back to Generator
+                {{ backLabel() }}
               </button>
             </a>
           </div>
@@ -412,6 +412,26 @@ export class StoryGeneratorOutputComponent implements OnInit {
     } catch {
       // Content is not JSON (legacy markdown format)
       return null;
+    }
+  });
+
+  protected backLink = computed(() => {
+    const type = this.artifact()?.type;
+    switch (type) {
+      case 'epic': return '/epic-creator';
+      case 'feature': return '/feature-creator';
+      case 'user_story': return '/user-story-creator';
+      default: return '/epic-creator';
+    }
+  });
+
+  protected backLabel = computed(() => {
+    const type = this.artifact()?.type;
+    switch (type) {
+      case 'epic': return 'Back to Epic Creator';
+      case 'feature': return 'Back to Feature Creator';
+      case 'user_story': return 'Back to User Story Creator';
+      default: return 'Back to Creator';
     }
   });
 

@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideSparkles,
@@ -46,29 +46,10 @@ import { HlmButtonDirective } from '../../ui/button';
       <!-- Left Panel: Input Form -->
       <div class="w-1/2 border-r p-6 overflow-y-auto">
         <div class="max-w-xl mx-auto">
-          <h1 class="text-2xl font-bold text-foreground">Epic/Feature/Story Creator</h1>
+          <h1 class="text-2xl font-bold text-foreground">{{ typeLabels[selectedType()] }} Creator</h1>
           <p class="mt-1 text-muted-foreground">
             Generate professional product documentation using AI.
           </p>
-
-          <!-- Artifact Type Selector -->
-          <div class="mt-6">
-            <label class="text-sm font-medium">What do you want to create?</label>
-            <div class="mt-2 grid grid-cols-3 gap-2">
-              @for (option of typeOptions; track option.value) {
-                <button
-                  type="button"
-                  class="rounded-lg border p-3 text-center transition-colors"
-                  [class.border-primary]="selectedType() === option.value"
-                  [class.bg-primary/5]="selectedType() === option.value"
-                  [class.border-border]="selectedType() !== option.value"
-                  (click)="selectType(option.value)"
-                >
-                  <span class="font-medium">{{ option.label }}</span>
-                </button>
-              }
-            </div>
-          </div>
 
           <!-- Title Input (Required) -->
           <div class="mt-6">
@@ -320,7 +301,7 @@ import { HlmButtonDirective } from '../../ui/button';
                 }
               </div>
             </div>
-          } @else if (service.artifacts().length === 0) {
+          } @else if (filteredArtifacts().length === 0) {
             <div class="flex-1 flex items-center justify-center p-6 h-full">
               <div class="text-center">
                 <ng-icon name="lucideHistory" class="mx-auto h-12 w-12 text-muted-foreground/50" />
@@ -332,7 +313,7 @@ import { HlmButtonDirective } from '../../ui/button';
             </div>
           } @else {
             <div class="p-4 space-y-2">
-              @for (artifact of service.artifacts(); track artifact.id) {
+              @for (artifact of filteredArtifacts(); track artifact.id) {
                 <div
                   class="group rounded-lg border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
                   (click)="viewArtifact(artifact)"
@@ -397,6 +378,7 @@ import { HlmButtonDirective } from '../../ui/button';
 })
 export class StoryGeneratorComponent implements OnInit {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   protected service = inject(StoryGeneratorService);
 
   // Type options
@@ -445,7 +427,20 @@ export class StoryGeneratorComponent implements OnInit {
     return this.service.knowledgeBases().filter(kb => selectedIds.includes(kb.id));
   });
 
+  protected filteredArtifacts = computed(() => {
+    const type = this.selectedType();
+    return this.service.artifacts().filter(a => a.type === type);
+  });
+
   ngOnInit(): void {
+    // Get type from route data
+    this.route.data.subscribe(data => {
+      if (data['type']) {
+        this.selectedType.set(data['type']);
+        this.updateInputConfig();
+      }
+    });
+
     this.service.loadKnowledgeBases();
     this.service.loadArtifacts();
     this.updateInputConfig();
