@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKR Generator - Goal Setting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="okr-styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <a href="index.html" style="text-decoration: none; color: inherit;">Goal Setting</a>
+                <i class="ph ph-caret-right"></i>
+                <span class="active">OKR Generator</span>
+                <i class="ph ph-caret-right"></i>
+                <a href="kpi-assignment.html" style="text-decoration: none; color: inherit;">KPI Assignment</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="benchmark-comparison.html" style="text-decoration: none; color: inherit;">Benchmark
+                    Comparison</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="measurement-framework.html" style="text-decoration: none; color: inherit;">Measurement
+                    Framework</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="scope-definition.html" style="text-decoration: none; color: inherit;">Scope Definition</a>
+            </nav>
+
+            <header class="app-header">
+                <h1>OKR Generator</h1>
+                <p class="subtitle">Your goals have been converted into Objectives and measurable Key Results. You can
+                    edit anything.</p>
+            </header>
+
+            <section class="goals-section">
+
+                <!-- Objective 1 -->
+                <div class="okr-card">
+                    <div class="objective-header">
+                        <div>
+                            <span class="tag tag-blue" style="margin-bottom: 8px;">Objective 1</span>
+                            <h3 style="font-size: 18px; margin: 0;">Deliver a frictionless login experience for all
+                                users.</h3>
+                        </div>
+                        <div class="objective-actions">
+                            <button class="btn btn-outline-sm" onclick="editObjective(1)"><i
+                                    class="ph ph-pencil-simple"></i> Edit</button>
+                            <button class="btn btn-outline-sm"><i class="ph ph-plus"></i> Add KR</button>
+                            <button class="btn btn-outline-sm"
+                                style="color: var(--red-600); border-color: var(--red-200);"><i
+                                    class="ph ph-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="kr-list-1">
+                        <!-- KR 1 -->
+                        <div class="kr-card">
+                            <div class="kr-header">
+                                <i class="ph ph-check-circle"
+                                    style="color: var(--primary-color); font-size: 20px; margin-top: 2px;"></i>
+                                <div class="kr-title">Increase login success rate from 87% → 95% by Q2</div>
+                            </div>
+                            <div class="kr-meta-grid">
+                                <div class="kr-meta-item">Baseline: <strong>87%</strong></div>
+                                <div class="kr-meta-item">Owner: <strong>PM • Growth</strong></div>
+                                <div class="kr-meta-item">KPI: <strong>Login Success Rate</strong></div>
+                            </div>
+                            <div class="kr-actions">
+                                <div class="kr-action-btn"
+                                    onclick="openEditModal('Increase login success rate from 87% → 95% by Q2')"><i
+                                        class="ph ph-pencil-simple"></i> Edit</div>
+                                <div class="kr-action-btn delete"><i class="ph ph-trash"></i> Delete</div>
+                                <div class="kr-action-btn"><i class="ph ph-caret-up"></i> Move</div>
+                            </div>
+                        </div>
+
+                        <!-- KR 2 -->
+                        <div class="kr-card">
+                            <div class="kr-header">
+                                <i class="ph ph-check-circle"
+                                    style="color: var(--primary-color); font-size: 20px; margin-top: 2px;"></i>
+                                <div class="kr-title">Reduce password-reset error rate by 40%</div>
+                            </div>
+                            <div class="kr-meta-grid">
+                                <div class="kr-meta-item">Baseline: <strong>High Failures</strong></div>
+                                <div class="kr-meta-item">Owner: <strong>Eng • Auth</strong></div>
+                                <div class="kr-meta-item">KPI: <strong>Reset Error Rate</strong></div>
+                            </div>
+                            <div class="kr-actions">
+                                <div class="kr-action-btn"
+                                    onclick="openEditModal('Reduce password-reset error rate by 40%')"><i
+                                        class="ph ph-pencil-simple"></i> Edit</div>
+                                <div class="kr-action-btn delete"><i class="ph ph-trash"></i> Delete</div>
+                                <div class="kr-action-btn"><i class="ph ph-caret-up"></i> Move</div>
+                            </div>
+                        </div>
+
+                        <!-- KR 3 -->
+                        <div class="kr-card">
+                            <div class="kr-header">
+                                <i class="ph ph-check-circle"
+                                    style="color: var(--primary-color); font-size: 20px; margin-top: 2px;"></i>
+                                <div class="kr-title">Decrease average login time from 22 sec → 12 sec</div>
+                            </div>
+                            <div class="kr-meta-grid">
+                                <div class="kr-meta-item">Baseline: <strong>22 sec</strong></div>
+                                <div class="kr-meta-item">Owner: <strong>Frontend + UX</strong></div>
+                                <div class="kr-meta-item">KPI: <strong>Login Duration</strong></div>
+                            </div>
+                            <div class="kr-actions">
+                                <div class="kr-action-btn"
+                                    onclick="openEditModal('Decrease average login time from 22 sec → 12 sec')"><i
+                                        class="ph ph-pencil-simple"></i> Edit</div>
+                                <div class="kr-action-btn delete"><i class="ph ph-trash"></i> Delete</div>
+                                <div class="kr-action-btn"><i class="ph ph-caret-up"></i> Move</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-dashed full-width" onclick="alert('Add Key Result Logic')">+ Add Key
+                        Result</button>
+                </div>
+
+                <!-- Objective 2 -->
+                <div class="okr-card">
+                    <div class="objective-header">
+                        <div>
+                            <span class="tag tag-purple" style="margin-bottom: 8px;">Objective 2</span>
+                            <h3 style="font-size: 18px; margin: 0;">Reduce dependency on customer support for access
+                                issues.</h3>
+                        </div>
+                        <div class="objective-actions">
+                            <button class="btn btn-outline-sm"><i class="ph ph-pencil-simple"></i> Edit</button>
+                            <button class="btn btn-outline-sm"><i class="ph ph-plus"></i> Add KR</button>
+                            <button class="btn btn-outline-sm"
+                                style="color: var(--red-600); border-color: var(--red-200);"><i
+                                    class="ph ph-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="kr-list-2">
+                        <!-- KR 1 -->
+                        <div class="kr-card">
+                            <div class="kr-header">
+                                <i class="ph ph-check-circle"
+                                    style="color: var(--primary-color); font-size: 20px; margin-top: 2px;"></i>
+                                <div class="kr-title">Reduce login-related support tickets by 30%</div>
+                            </div>
+                            <div class="kr-meta-grid">
+                                <div class="kr-meta-item">Baseline: <strong>Monthly Vol</strong></div>
+                                <div class="kr-meta-item">Owner: <strong>CS Ops</strong></div>
+                                <div class="kr-meta-item">KPI: <strong>Ticket Volume</strong></div>
+                            </div>
+                            <div class="kr-actions">
+                                <div class="kr-action-btn"><i class="ph ph-pencil-simple"></i> Edit</div>
+                                <div class="kr-action-btn delete"><i class="ph ph-trash"></i> Delete</div>
+                                <div class="kr-action-btn"><i class="ph ph-caret-up"></i> Move</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-dashed full-width">+ Add Key Result</button>
+                </div>
+
+                <div class="add-goal-container">
+                    <button class="btn btn-dashed full-width" style="padding: 16px;"><i class="ph ph-plus"></i> Add New
+                        Objective</button>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-card priority-card">
+                <div class="card-header">
+                    <h2><i class="ph ph-check-circle"></i> Progress</h2>
+                </div>
+                <ul class="priority-list">
+                    <li style="color: var(--text-secondary); text-decoration: line-through;">Define Goals</li>
+                    <li style="font-weight: 600;">Generate OKRs</li>
+                    <li style="color: var(--text-secondary);">Assign KPIs</li>
+                    <li style="color: var(--text-secondary);">Benchmark Data</li>
+                    <li style="color: var(--text-secondary);">Measurement Plan</li>
+                </ul>
+            </div>
+
+            <div class="sidebar-card next-step-card">
+                <div class="card-header">
+                    <h2><i class="ph ph-link"></i> Next Step</h2>
+                </div>
+                <a href="kpi-assignment.html" class="btn btn-primary full-width"
+                    style="text-decoration: none; display: flex; box-sizing: border-box;">Continue to KPI Assignment <i
+                        class="ph ph-arrow-right"></i></a>
+            </div>
+            <button class="btn btn-outline-sm full-width" style="margin-top: 12px;"
+                onclick="window.location.href='index.html'">Back to Goals</button>
+        </aside>
+    </div>
+
+    <!-- Edit Key Result Modal -->
+    <div class="modal-overlay" id="edit-kr-modal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit Key Result</h2>
+                <button class="close-btn" onclick="closeEditModal()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Key Result Title</label>
+                    <input type="text" id="modal-kr-title" value="Increase login success rate from 87% to 95%">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight: 600; color: var(--text-primary); margin-top: 8px;">Target
+                        Configuration</label>
+                    <div
+                        style="background: #F8FAFC; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-top: 8px;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Baseline</label>
+                                <input type="text" value="87%">
+                            </div>
+                            <div class="form-group">
+                                <label>Industry Average</label>
+                                <input type="text" value="92%" placeholder="e.g. 90%">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Commit Target (Goal)</label>
+                                <input type="text" value="95%"
+                                    style="border-color: var(--primary-color); background: #EFF6FF;">
+                            </div>
+                            <div class="form-group">
+                                <label>Stretch Target</label>
+                                <input type="text" value="98%" placeholder="e.g. 99%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Timeframe</label>
+                        <select>
+                            <option>End of Q2</option>
+                            <option>End of Q3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Owner</label>
+                        <select>
+                            <option>PM - Growth</option>
+                            <option>Engineering Lead</option>
+                            <option>Design Lead</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Linked KPI</label>
+                    <select>
+                        <option>Login Success Rate</option>
+                        <option>User Activation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea rows="2">Reduce authentication errors and optimize error messaging.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Dependencies</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> Engineering</label>
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> UX</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Analytics</label>
+                    </div>
+                </div>
+
+                <!-- Impact Alert -->
+                <div class="impact-alert">
+                    <i class="ph ph-arrows-clockwise impact-icon"></i>
+                    <div class="impact-content">
+                        <h4>Impact Analysis</h4>
+                        <p style="margin: 0; font-size: 13px; color: #92400E;">Updating this Key Result will
+                            automatically modify:</p>
+                        <ul>
+                            <li>KPI Selection downstream</li>
+                            <li>Measurement targets</li>
+                            <li>Dashboard configuration</li>
+                        </ul>
+                        <a href="#">View detailed impact map</a>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveKRChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal Logic
+        const modal = document.getElementById('edit-kr-modal');
+        const titleInput = document.getElementById('modal-kr-title');
+
+        function openEditModal(currentTitle) {
+            titleInput.value = currentTitle;
+            modal.style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            modal.style.display = 'none';
+        }
+
+        function saveKRChanges() {
+            // Mock Save
+            const btn = document.querySelector('.modal-footer .btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...';
+            setTimeout(() => {
+                btn.innerText = originalText;
+                closeEditModal();
+                // In a real app, update DOM here
+            }, 600);
+        }
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
+    </script>
+</body>
+
+</html>

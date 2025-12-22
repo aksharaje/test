@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Assignment - Goal Setting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="okr-styles.css">
+    <style>
+        .kpi-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .metric-suggestions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .metric-pill {
+            background: #F1F5F9;
+            border-radius: 12px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .metric-pill:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <a href="index.html" style="text-decoration: none; color: inherit;">Goal Setting</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="okr-generator.html" style="text-decoration: none; color: inherit;">OKR Generator</a>
+                <i class="ph ph-caret-right"></i>
+                <span class="active">KPI Assignment</span>
+                <i class="ph ph-caret-right"></i>
+                <a href="benchmark-comparison.html" style="text-decoration: none; color: inherit;">Benchmark
+                    Comparison</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="measurement-framework.html" style="text-decoration: none; color: inherit;">Measurement
+                    Framework</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="scope-definition.html" style="text-decoration: none; color: inherit;">Scope Definition</a>
+            </nav>
+
+            <header class="app-header">
+                <h1>KPI Assignment</h1>
+                <p class="subtitle">Define the primary and secondary Key Performance Indicators (KPIs) used to measure
+                    the success of your goals.</p>
+            </header>
+
+            <section class="goals-section">
+                <!-- Goal 1 -->
+                <div class="kpi-card">
+                    <div style="margin-bottom: 16px;">
+                        <span class="tag tag-blue">Activation</span>
+                        <h3 style="margin-top: 8px;">Increase login success rate from 87% → 95%</h3>
+                    </div>
+
+                    <div class="kpi-row">
+                        <div class="form-group">
+                            <label>Primary KPI</label>
+                            <input type="text" value="Login Success Rate">
+                            <div class="metric-suggestions">
+                                <span class="metric-pill" onclick="selectMetric(this)">Auth Latency</span>
+                                <span class="metric-pill" onclick="selectMetric(this)">Password Reset Rate</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Measurement Unit</label>
+                            <input type="text" value="Percentage (%)">
+                        </div>
+                    </div>
+
+                    <div class="kpi-row">
+                        <div class="form-group">
+                            <label>Secondary KPI (Health Metric)</label>
+                            <input type="text" placeholder="e.g. Support Ticket Volume...">
+                        </div>
+                        <div class="form-group">
+                            <label>Check Frequency</label>
+                            <select
+                                style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md);">
+                                <option>Weekly</option>
+                                <option>Monthly</option>
+                                <option>Quarterly</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goal 2 -->
+                <div class="kpi-card">
+                    <div style="margin-bottom: 16px;">
+                        <span class="tag tag-purple">Support</span>
+                        <h3 style="margin-top: 8px;">Reduce support tickets related to login by 30%</h3>
+                    </div>
+
+                    <div class="kpi-row">
+                        <div class="form-group">
+                            <label>Primary KPI</label>
+                            <input type="text" value="Support Ticket Volume (#)">
+                        </div>
+                        <div class="form-group">
+                            <label>Measurement Unit</label>
+                            <input type="text" value="Count">
+                        </div>
+                    </div>
+
+                    <div class="kpi-row">
+                        <div class="form-group">
+                            <label>Secondary KPI (Health Metric)</label>
+                            <input type="text" placeholder="e.g. CSAT Score...">
+                        </div>
+                        <div class="form-group">
+                            <label>Check Frequency</label>
+                            <select
+                                style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md);">
+                                <option>Weekly</option>
+                                <option>Monthly</option>
+                                <option>Quarterly</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-card priority-card">
+                <div class="card-header">
+                    <h2><i class="ph ph-check-circle"></i> Progress</h2>
+                </div>
+                <ul class="priority-list">
+                    <li style="color: var(--text-secondary); text-decoration: line-through;">Define Goals</li>
+                    <li style="font-weight: 600;">Assign KPIs</li>
+                    <li style="color: var(--text-secondary);">Benchmark Data</li>
+                    <li style="color: var(--text-secondary);">Measurement Plan</li>
+                </ul>
+            </div>
+
+            <div class="sidebar-card next-step-card">
+                <div class="card-header">
+                    <h2><i class="ph ph-link"></i> Next Step</h2>
+                </div>
+                <a href="benchmark-comparison.html" class="btn btn-primary full-width"
+                    style="text-decoration: none; display: flex; box-sizing: border-box;">Compare Benchmarks <i
+                        class="ph ph-arrow-right"></i></a>
+            </div>
+            <button class="btn btn-outline-sm full-width" style="margin-top: 12px;"
+                onclick="window.location.href='okr-generator.html'">Back to OKRs</button>
+        </aside>
+    </div>
+
+    <script>
+        function selectMetric(pill) {
+            // Simple interaction demo
+            const input = pill.parentElement.parentElement.querySelector('input');
+            input.value = pill.innerText;
+        }
+    </script>
+</body>
+
+</html>

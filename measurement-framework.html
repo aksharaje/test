@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurement Framework Builder - Goal Setting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="okr-styles.css">
+    <link rel="stylesheet" href="ux-enhancements.css">
+    <style>
+        .measurement-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .measurement-header h1 {
+            color: white;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+        }
+
+        .measurement-header p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .metric-group {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .metric-group-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .metric-group-header i {
+            font-size: 24px;
+        }
+
+        .metric-group-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .metric-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .metric-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .target-row {
+            display: grid;
+            grid-template-columns: 200px 1fr 200px;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .target-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .target-input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .target-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .field-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            padding-top: 10px;
+        }
+
+        .segment-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .segment-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .segment-badge:hover {
+            background: #e5e7eb;
+        }
+
+        .segment-badge.selected {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-box {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .alert-config {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .alert-input {
+            padding: 6px 10px;
+            border: 1px solid #fbbf24;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            width: 100px;
+        }
+
+        .edit-rule-btn {
+            padding: 4px 12px;
+            background: white;
+            border: 1px solid #fbbf24;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #92400e;
+            font-weight: 500;
+        }
+
+        .edit-rule-btn:hover {
+            background: #fef3c7;
+        }
+
+        .visualization-box {
+            background: #f9fafb;
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .viz-list {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .viz-list li {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 4px 0;
+        }
+
+        .add-metric-section {
+            text-align: center;
+            padding: 32px;
+            background: #f9fafb;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .add-metric-btn {
+            padding: 12px 24px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .add-metric-btn:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+        }
+
+        .publish-section {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .publish-btn {
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .publish-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <main class="main-content full-width">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <a href="index.html">Goal Setting</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="okr-generator.html">OKR Generator</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="kpi-assignment.html">KPI Assignment</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="benchmark-comparison.html">Benchmark Comparison</a>
+                <i class="ph ph-caret-right"></i>
+                <span class="active">Measurement Framework</span>
+                <i class="ph ph-caret-right"></i>
+                <a href="#" class="disabled">Scope Definition</a>
+            </nav>
+
+            <!-- Header -->
+            <div class="measurement-header">
+                <h1>Measurement Framework Builder</h1>
+                <p>Your OKRs have been calibrated with benchmark data.<br>Now finalize the measurement model for
+                    tracking and reporting.</p>
+            </div>
+
+            <!-- Metric Group 1: Authentication / Login Health -->
+            <div class="metric-group" data-metric="login-success">
+                <div class="metric-group-header">
+                    <i class="ph ph-chart-bar" style="color: #667eea;"></i>
+                    <h2>Metric Group: Authentication / Login Health</h2>
+                </div>
+
+                <div class="metric-title">Metric: Login Success Rate</div>
+                <div class="metric-subtitle">Derived from Benchmark Comparison. Targets auto-filled.</div>
+
+                <div class="target-row">
+                    <div class="target-label">Floor Target:</div>
+                    <select class="target-input floor-target">
+                        <option value="90">90%</option>
+                        <option value="91">91%</option>
+                        <option value="92" selected>92%</option>
+                        <option value="93">93%</option>
+                        <option value="94">94%</option>
+                    </select>
+                    <div class="target-hint">(Benchmark: Industry Avg Minimum)</div>
+                </div>
+
+                <div class="target-row">
+                    <div class="target-label">Commit Target:</div>
+                    <select class="target-input commit-target">
+                        <option value="93">93%</option>
+                        <option value="94">94%</option>
+                        <option value="95" selected>95%</option>
+                        <option value="96">96%</option>
+                        <option value="97">97%</option>
+                    </select>
+                    <div class="target-hint">(Benchmark: Solid Performer)</div>
+                </div>
+
+                <div class="target-row">
+                    <div class="target-label">Stretch Target:</div>
+                    <select class="target-input stretch-target">
+                        <option value="95">95%</option>
+                        <option value="96">96%</option>
+                        <option value="97" selected>97%</option>
+                        <option value="98">98%</option>
+                        <option value="99">99%</option>
+                    </select>
+                    <div class="target-hint">(Benchmark: Top Quartile)</div>
+                </div>
+
+                <div style="height: 20px;"></div>
+
+                <div class="field-row">
+                    <div class="field-label">Cadence:</div>
+                    <select class="target-input">
+                        <option value="realtime">Real-time</option>
+                        <option value="daily" selected>Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Segments:</div>
+                    <div class="segment-badges">
+                        <span class="segment-badge selected"><i class="ph ph-check"></i> Device Type</span>
+                        <span class="segment-badge selected"><i class="ph ph-check"></i> Region</span>
+                        <span class="segment-badge selected"><i class="ph ph-check"></i> New vs Returning</span>
+                        <span class="segment-badge"><i class="ph ph-plus"></i> Add Segment</span>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Data Source:</div>
+                    <select class="target-input">
+                        <option value="ga4" selected>GA4 – Login Events</option>
+                        <option value="segment">Segment Analytics</option>
+                        <option value="mixpanel">Mixpanel</option>
+                        <option value="custom">Custom Database</option>
+                    </select>
+                </div>
+
+                <div style="height: 20px;"></div>
+
+                <div class="alert-box">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-warning"></i> Alert Rule
+                        </div>
+                        <button class="edit-rule-btn">Edit Rule</button>
+                    </div>
+                    <div class="alert-config">
+                        Trigger when login success &lt;
+                        <input type="number" class="alert-input" value="92">
+                        % for
+                        <input type="number" class="alert-input" value="2">
+                        consecutive days.
+                    </div>
+                </div>
+
+                <div class="visualization-box">
+                    <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">
+                        <i class="ph ph-chart-line" style="color: #667eea;"></i> Visualization Preview
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                        Line chart (7-day rolling average) • Segmented by device
+                    </div>
+                    <canvas id="loginSuccessChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Metric Group 2: Onboarding / Activation -->
+            <div class="metric-group" data-metric="activation">
+                <div class="metric-group-header">
+                    <i class="ph ph-rocket-launch" style="color: #10b981;"></i>
+                    <h2>Metric Group: Onboarding / Activation</h2>
+                </div>
+
+                <div class="metric-title">Metric: Activation Rate (D0, D1, D7)</div>
+                <div class="metric-subtitle">Measures user activation across multiple time horizons.</div>
+
+                <div class="target-row">
+                    <div class="target-label">Floor Target:</div>
+                    <select class="target-input floor-target">
+                        <option value="45">45%</option>
+                        <option value="46">46%</option>
+                        <option value="47">47%</option>
+                        <option value="48" selected>48%</option>
+                        <option value="49">49%</option>
+                        <option value="50">50%</option>
+                    </select>
+                    <div class="target-hint">(Minimum acceptable)</div>
+                </div>
+
+                <div class="target-row">
+                    <div class="target-label">Commit Target:</div>
+                    <select class="target-input commit-target">
+                        <option value="52">52%</option>
+                        <option value="53">53%</option>
+                        <option value="54">54%</option>
+                        <option value="55" selected>55%</option>
+                        <option value="56">56%</option>
+                        <option value="57">57%</option>
+                    </select>
+                    <div class="target-hint">(Primary goal)</div>
+                </div>
+
+                <div class="target-row">
+                    <div class="target-label">Stretch Target:</div>
+                    <select class="target-input stretch-target">
+                        <option value="58">58%</option>
+                        <option value="59">59%</option>
+                        <option value="60" selected>60%</option>
+                        <option value="61">61%</option>
+                        <option value="62">62%</option>
+                    </select>
+                    <div class="target-hint">(Aspirational)</div>
+                </div>
+
+                <div style="height: 20px;"></div>
+
+                <div class="field-row">
+                    <div class="field-label">Cadence:</div>
+                    <select class="target-input">
+                        <option value="daily">Daily</option>
+                        <option value="weekly" selected>Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Segments:</div>
+                    <div class="segment-badges">
+                        <span class="segment-badge selected"><i class="ph ph-check"></i> Country</span>
+                        <span class="segment-badge selected"><i class="ph ph-check"></i> Acquisition Source</span>
+                        <span class="segment-badge"><i class="ph ph-plus"></i> Add Segment</span>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Data Source:</div>
+                    <select class="target-input">
+                        <option value="funnel" selected>Funnel Analytics</option>
+                        <option value="amplitude">Amplitude</option>
+                        <option value="mixpanel">Mixpanel</option>
+                    </select>
+                </div>
+
+                <div style="height: 20px;"></div>
+
+                <div class="alert-box">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-warning"></i> Alert Rule
+                        </div>
+                        <button class="edit-rule-btn">Edit Rule</button>
+                    </div>
+                    <div class="alert-config">
+                        Trigger when Step 2 drop-off &gt;
+                        <input type="number" class="alert-input" value="30">
+                        %
+                    </div>
+                </div>
+
+                <div class="visualization-box">
+                    <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">
+                        <i class="ph ph-funnel" style="color: #10b981;"></i> Visualization Preview
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                        Funnel chart (Step-by-step activation) • Trend line over time
+                    </div>
+                    <canvas id="activationFunnelChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Metric Group 3: Support Load -->
+            <div class="metric-group" data-metric="support-tickets">
+                <div class="metric-group-header">
+                    <i class="ph ph-headset" style="color: #f59e0b;"></i>
+                    <h2>Metric Group: Support Load</h2>
+                </div>
+
+                <div class="metric-title">Metric: Login-Related Support Tickets</div>
+                <div class="metric-subtitle">Track reduction in support volume as a success indicator.</div>
+
+                <div class="target-row">
+                    <div class="target-label">Floor Target:</div>
+                    <select class="target-input floor-target">
+                        <option value="-10">-10%</option>
+                        <option value="-12">-12%</option>
+                        <option value="-15" selected>-15%</option>
+                        <option value="-18">-18%</option>
+                        <option value="-20">-20%</option>
+                    </select>
+                    <div class="target-hint">(Minimum reduction)</div>
+                </div>
+
+                <div class="target-row">
+                    <div class="target-label">Commit Target:</div>
+                    <select class="target-input commit-target">
+                        <option value="-25">-25%</option>
+                        <option value="-28">-28%</option>
+                        <option value="-30" selected>-30%</option>
+                        <option value="-32">-32%</option>
+                        <option value="-35">-35%</option>
+                    </select>
+                    <div class="target-hint">(Expected reduction)</div>
+                </div>
+
+                <div class="target-row">
+                    <div class="target-label">Stretch Target:</div>
+                    <select class="target-input stretch-target">
+                        <option value="-33">-33%</option>
+                        <option value="-35" selected>-35%</option>
+                        <option value="-38">-38%</option>
+                        <option value="-40">-40%</option>
+                    </select>
+                    <div class="target-hint">(Best-case scenario)</div>
+                </div>
+
+                <div style="height: 20px;"></div>
+
+                <div class="field-row">
+                    <div class="field-label">Cadence:</div>
+                    <select class="target-input">
+                        <option value="daily" selected>Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Segments:</div>
+                    <div class="segment-badges">
+                        <span class="segment-badge selected"><i class="ph ph-check"></i> Issue Type</span>
+                        <span class="segment-badge"><i class="ph ph-plus"></i> Add Segment</span>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Data Source:</div>
+                    <select class="target-input">
+                        <option value="support-db" selected>Support Ticket DB</option>
+                        <option value="zendesk">Zendesk</option>
+                        <option value="jira">Jira Service Desk</option>
+                    </select>
+                </div>
+
+                <div style="height: 20px;"></div>
+
+                <div class="alert-box">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-warning"></i> Alert Rule
+                        </div>
+                        <button class="edit-rule-btn">Edit Rule</button>
+                    </div>
+                    <div class="alert-config">
+                        Trigger when ticket volume &gt; Monthly Baseline +
+                        <input type="number" class="alert-input" value="20">
+                        %
+                    </div>
+                </div>
+
+                <div class="visualization-box">
+                    <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">
+                        <i class="ph ph-chart-bar-horizontal" style="color: #f59e0b;"></i> Visualization Preview
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                        Stacked bar by issue type • Trend comparison to last 12 weeks
+                    </div>
+                    <canvas id="supportTicketsChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Add Metric Section -->
+            <div class="add-metric-section">
+                <button class="add-metric-btn" id="addMetricBtn">
+                    <i class="ph ph-plus-circle" style="font-size: 20px;"></i>
+                    Add Metric
+                </button>
+            </div>
+
+            <!-- Publish Section -->
+            <div class="publish-section">
+                <h2 style="margin: 0 0 16px 0;">Review & Publish Measurement Plan</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                    3 metric groups configured · 9 segments defined · 3 alert rules active
+                </p>
+                <button class="publish-btn" id="publishBtn">
+                    <i class="ph ph-arrow-right"></i>
+                    Proceed to Scope Definition
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script src="notification-system.js"></script>
+    <script src="workflow-progress.js"></script>
+    <script src="measurement-charts.js"></script>
+    <script src="measurement-script.js"></script>
+</body>
+
+</html>

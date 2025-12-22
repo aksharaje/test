@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmark Comparison - Goal Setting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="okr-styles.css">
+    <link rel="stylesheet" href="ux-enhancements.css">
+    <style>
+        .benchmark-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .benchmark-header h1 {
+            color: white;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+        }
+
+        .benchmark-header p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .summary-stats {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .summary-stats h3 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 16px 0;
+        }
+
+        .summary-list li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-list li::before {
+            content: '•';
+            color: #667eea;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .benchmark-group {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .benchmark-group-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .benchmark-group-header i {
+            font-size: 24px;
+        }
+
+        .benchmark-group-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .kr-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .benchmark-data {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .data-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .data-value.baseline {
+            color: #6b7280;
+        }
+
+        .data-value.target {
+            color: #10b981;
+        }
+
+        .data-value.benchmark {
+            color: #667eea;
+        }
+
+        .recommendation-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 4px solid #10b981;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .recommendation-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #15803d;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .recommendation-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .recommendation-box li {
+            font-size: 14px;
+            color: #166534;
+            margin: 4px 0;
+        }
+
+        .visual-preview {
+            background: #f9fafb;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .visual-preview h4 {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .preview-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .preview-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .preview-stat-label {
+            color: var(--text-secondary);
+        }
+
+        .preview-stat-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .benchmark-range {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .range-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            position: relative;
+            margin: 8px 0;
+        }
+
+        .range-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+        }
+
+        .finalize-section {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .finalize-section h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .finalize-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .finalize-stat {
+            text-align: center;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .finalize-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .finalize-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .impact-areas {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .btn-view-sources {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-view-sources:hover {
+            background: #f9fafb;
+            border-color: #667eea;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.applied {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <main class="main-content full-width">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <a href="index.html">Goal Setting</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="okr-generator.html">OKR Generator</a>
+                <i class="ph ph-caret-right"></i>
+                <a href="kpi-assignment.html">KPI Assignment</a>
+                <i class="ph ph-caret-right"></i>
+                <span class="active">Benchmark Comparison</span>
+                <i class="ph ph-caret-right"></i>
+                <a href="#" class="disabled">Measurement Framework</a>
+            </nav>
+
+            <!-- Header -->
+            <div class="benchmark-header">
+                <h1>Benchmark Comparison</h1>
+                <p>We've analyzed your OKRs and KPIs against industry and category benchmarks.<br>Review
+                    recommendations before finalizing your targets.</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="summary-stats">
+                <h3><i class="ph ph-chart-bar"></i> Summary</h3>
+                <ul class="summary-list">
+                    <li>4 Key Results matched to benchmark families</li>
+                    <li>4 benchmark sets available (Authentication, Onboarding, Support, Engagement)</li>
+                    <li>Recommendations generated based on industry performance and top-quartile stats</li>
+                </ul>
+                <button class="btn-view-sources" id="viewSourcesBtn">
+                    <i class="ph ph-info"></i> View Benchmark Sources
+                </button>
+            </div>
+
+            <!-- Benchmark Group 1: Authentication -->
+            <div class="benchmark-group" data-group="auth">
+                <div class="benchmark-group-header">
+                    <i class="ph ph-lock" style="color: #667eea;"></i>
+                    <h2>Benchmark Group: Authentication / Login Success</h2>
+                </div>
+
+                <div class="kr-title">KR: Increase login success rate from 87% → 95%</div>
+
+                <div class="benchmark-data">
+                    <div class="data-item">
+                        <span class="data-label">Your Target (Commit)</span>
+                        <span class="data-value target">95%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Baseline</span>
+                        <span class="data-value baseline">87%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Industry Average</span>
+                        <span class="data-value benchmark">92–95%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Top Quartile</span>
+                        <span class="data-value benchmark">97–99%</span>
+                    </div>
+                </div>
+
+                <div class="recommendation-box">
+                    <h4><i class="ph ph-lightbulb"></i> Recommendation</h4>
+                    <ul>
+                        <li>Keep Commit target at <strong>95%</strong> (aligned with industry avg)</li>
+                        <li>Set Stretch target at <strong>97%</strong> (moves toward top quartile)</li>
+                    </ul>
+                </div>
+
+                <div class="visual-preview">
+                    <h4>Visual Preview</h4>
+                    <div class="preview-stats">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Your baseline:</span>
+                            <span class="preview-stat-value">87%</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Commit:</span>
+                            <span class="preview-stat-value">95%</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Stretch:</span>
+                            <span class="preview-stat-value">97%</span>
+                        </div>
+                    </div>
+                    <div class="benchmark-range">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Benchmark Range:</span>
+                            <span class="preview-stat-value">92–99%</span>
+                        </div>
+                        <div class="range-bar">
+                            <div class="range-fill" style="width: 95%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary apply-btn" data-kr="login-success">
+                        <i class="ph ph-check"></i> Apply Recommendation
+                    </button>
+                    <button class="btn btn-secondary edit-btn" data-kr="login-success">
+                        <i class="ph ph-pencil"></i> Edit Manually
+                    </button>
+                    <button class="btn btn-outline-sm skip-btn" data-kr="login-success">
+                        Skip
+                    </button>
+                </div>
+            </div>
+
+            <!-- Benchmark Group 2: User Activation -->
+            <div class="benchmark-group" data-group="activation">
+                <div class="benchmark-group-header">
+                    <i class="ph ph-rocket-launch" style="color: #10b981;"></i>
+                    <h2>Benchmark Group: User Activation / Onboarding</h2>
+                </div>
+
+                <div class="kr-title">KR: Increase activation from 42% → 55%</div>
+
+                <div class="benchmark-data">
+                    <div class="data-item">
+                        <span class="data-label">Your Target (Commit)</span>
+                        <span class="data-value target">55%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Baseline</span>
+                        <span class="data-value baseline">42%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Industry Average</span>
+                        <span class="data-value benchmark">50–60%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Top Quartile</span>
+                        <span class="data-value benchmark">60–70%</span>
+                    </div>
+                </div>
+
+                <div class="recommendation-box">
+                    <h4><i class="ph ph-lightbulb"></i> Recommendation</h4>
+                    <ul>
+                        <li>Keep Commit at <strong>55%</strong></li>
+                        <li>Add Stretch target at <strong>60%</strong> to align with high-performing onboarding flows
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="visual-preview">
+                    <h4>Visual Preview</h4>
+                    <div class="preview-stats">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Your baseline:</span>
+                            <span class="preview-stat-value">42%</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Commit:</span>
+                            <span class="preview-stat-value">55%</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Stretch:</span>
+                            <span class="preview-stat-value">60%</span>
+                        </div>
+                    </div>
+                    <div class="benchmark-range">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Benchmark Range:</span>
+                            <span class="preview-stat-value">50–70%</span>
+                        </div>
+                        <div class="range-bar">
+                            <div class="range-fill" style="width: 55%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary apply-btn" data-kr="activation">
+                        <i class="ph ph-check"></i> Apply Recommendation
+                    </button>
+                    <button class="btn btn-secondary edit-btn" data-kr="activation">
+                        <i class="ph ph-pencil"></i> Edit Manually
+                    </button>
+                    <button class="btn btn-outline-sm skip-btn" data-kr="activation">
+                        Skip
+                    </button>
+                </div>
+            </div>
+
+            <!-- Benchmark Group 3: Support Ticket Volume -->
+            <div class="benchmark-group" data-group="support">
+                <div class="benchmark-group-header">
+                    <i class="ph ph-headset" style="color: #f59e0b;"></i>
+                    <h2>Benchmark Group: Support Ticket Volume</h2>
+                </div>
+
+                <div class="kr-title">KR: Reduce login-related support tickets by 30%</div>
+
+                <div class="benchmark-data">
+                    <div class="data-item">
+                        <span class="data-label">Your Target (Commit)</span>
+                        <span class="data-value target">-30%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Baseline</span>
+                        <span class="data-value baseline">1,200/mo</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Typical Improvement</span>
+                        <span class="data-value benchmark">15–25%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">High-Performing Teams</span>
+                        <span class="data-value benchmark">25–35%</span>
+                    </div>
+                </div>
+
+                <div class="recommendation-box">
+                    <h4><i class="ph ph-lightbulb"></i> Recommendation</h4>
+                    <ul>
+                        <li>Keep Commit at <strong>-30%</strong></li>
+                        <li>Add Stretch at <strong>-35%</strong></li>
+                    </ul>
+                </div>
+
+                <div class="visual-preview">
+                    <h4>Visual Preview</h4>
+                    <div class="preview-stats">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Baseline:</span>
+                            <span class="preview-stat-value">1,200 tickets/mo</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Commit (-30%):</span>
+                            <span class="preview-stat-value">840 tickets/mo</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Stretch (-35%):</span>
+                            <span class="preview-stat-value">780 tickets/mo</span>
+                        </div>
+                    </div>
+                    <div class="benchmark-range">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Reduction Range:</span>
+                            <span class="preview-stat-value">15–35%</span>
+                        </div>
+                        <div class="range-bar">
+                            <div class="range-fill" style="width: 85%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary apply-btn" data-kr="support">
+                        <i class="ph ph-check"></i> Apply Recommendation
+                    </button>
+                    <button class="btn btn-secondary edit-btn" data-kr="support">
+                        <i class="ph ph-pencil"></i> Edit Manually
+                    </button>
+                    <button class="btn btn-outline-sm skip-btn" data-kr="support">
+                        Skip
+                    </button>
+                </div>
+            </div>
+
+            <!-- Benchmark Group 4: Password Reset Errors -->
+            <div class="benchmark-group" data-group="password-reset">
+                <div class="benchmark-group-header">
+                    <i class="ph ph-arrows-counter-clockwise" style="color: #ef4444;"></i>
+                    <h2>Benchmark Group: Password Reset Errors</h2>
+                </div>
+
+                <div class="kr-title">KR: Reduce reset errors by 40%</div>
+
+                <div class="benchmark-data">
+                    <div class="data-item">
+                        <span class="data-label">Your Target</span>
+                        <span class="data-value target">-40%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Industry Typical</span>
+                        <span class="data-value benchmark">-20% to -35%</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Best-in-Class</span>
+                        <span class="data-value benchmark">-40% to -50%</span>
+                    </div>
+                </div>
+
+                <div class="recommendation-box">
+                    <h4><i class="ph ph-lightbulb"></i> Recommendation</h4>
+                    <ul>
+                        <li>Set Floor at <strong>-20%</strong></li>
+                        <li>Commit at <strong>-40%</strong></li>
+                        <li>Stretch at <strong>-50%</strong></li>
+                    </ul>
+                </div>
+
+                <div class="visual-preview">
+                    <h4>Visual Preview</h4>
+                    <div class="preview-stats">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Floor:</span>
+                            <span class="preview-stat-value">-20%</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Commit:</span>
+                            <span class="preview-stat-value">-40%</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Stretch:</span>
+                            <span class="preview-stat-value">-50%</span>
+                        </div>
+                    </div>
+                    <div class="benchmark-range">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Reduction Range:</span>
+                            <span class="preview-stat-value">-20% to -50%</span>
+                        </div>
+                        <div class="range-bar">
+                            <div class="range-fill" style="width: 80%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary apply-all-btn" data-kr="password-reset">
+                        <i class="ph ph-check-circle"></i> Apply All Three
+                    </button>
+                    <button class="btn btn-secondary edit-btn" data-kr="password-reset">
+                        <i class="ph ph-pencil"></i> Edit Manually
+                    </button>
+                    <button class="btn btn-outline-sm skip-btn" data-kr="password-reset">
+                        Skip
+                    </button>
+                </div>
+            </div>
+
+            <!-- Finalize Targets Section -->
+            <div class="finalize-section">
+                <h3><i class="ph ph-paperclip"></i> Finalize Targets</h3>
+
+                <div class="finalize-stats">
+                    <div class="finalize-stat">
+                        <div class="finalize-stat-value" id="targetsUpdated">0</div>
+                        <div class="finalize-stat-label">Targets Updated</div>
+                    </div>
+                    <div class="finalize-stat">
+                        <div class="finalize-stat-value" id="metricsRecalibrated">0</div>
+                        <div class="finalize-stat-label">Metrics Recalibrated</div>
+                    </div>
+                    <div class="finalize-stat">
+                        <div class="finalize-stat-value">3</div>
+                        <div class="finalize-stat-label">Impact Areas</div>
+                    </div>
+                </div>
+
+                <div class="impact-areas">
+                    <strong>Impact areas:</strong> KPI thresholds · Dashboard defaults · Alert rules
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-outline-sm" id="skip-to-next">
+                        Skip to next step <i class="ph ph-arrow-right"></i>
+                    </button>
+                    <button class="btn btn-primary btn-large" id="continue-to-measurement">
+                        Proceed to Measurement Framework <i class="ph ph-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="notification-system.js"></script>
+    <script src="workflow-progress.js"></script>
+    <script src="benchmark-script.js"></script>
+</body>
+
+</html>

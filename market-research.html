@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Research Synthesizer - Product Studio</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .container-centered {
+            max-width: 800px;
+            margin: 0 auto;
+            display: block !important;
+            /* Override grid */
+        }
+
+        /* Specific result styles */
+        .insight-section-header {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .insight-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            gap: 16px;
+        }
+
+        .insight-content {
+            flex: 1;
+        }
+
+        .insight-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .conf-high {
+            background: #DCFCE7;
+            color: #15803D;
+        }
+
+        .conf-medium {
+            background: #FEF9C3;
+            color: #A16207;
+        }
+
+        .conf-low {
+            background: #FEE2E2;
+            color: #B91C1C;
+        }
+
+        .sources-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .sources-btn:hover {
+            background: #F8FAFC;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .implications-box {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #E2E8F0;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .source-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-top: 8px;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container container-centered">
+
+        <!-- Header -->
+        <header class="app-header">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <button class="btn btn-outline-sm" onclick="window.location.href='research-hub.html'"><i
+                        class="ph ph-arrow-left"></i> Back to Hub</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-outline-sm" onclick="alert('Skipping to Voice of Customer...')">Skip to Next
+                        Feature</button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1>Market Research Synthesizer</h1>
+                    <p class="subtitle">Aggregate trends, risks, and signals from industry sources.</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- SETUP VIEW -->
+        <main id="setup-view">
+            <div class="summary-card" style="padding: 24px; max-width: 600px; margin: 0 auto;">
+                <h2
+                    style="font-size: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    Configure Research Scope</h2>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Problem Area (from approved scope)</label>
+                    <input type="text" value="Login & Onboarding" id="problem-area">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Industry Context</label>
+                    <select id="industry-context">
+                        <option>B2C SaaS</option>
+                        <option>Fintech</option>
+                        <option>E-commerce</option>
+                        <option>Healthcare</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Focus Areas</label>
+                    <div class="checkbox-group" style="flex-direction: column; gap: 12px;">
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> <i class="ph ph-check"></i>
+                            User expectations</label>
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> <i class="ph ph-check"></i>
+                            Adoption trends</label>
+                        <label class="checkbox-pill checked"><input type="checkbox" checked> <i class="ph ph-check"></i>
+                            Market risks</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Regulation</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Technology shifts</label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label>Sources to include</label>
+                    <div class="tags-input" style="border: none; padding: 0;">
+                        <span class="tag tag-blue">Industry firms</span>
+                        <span class="tag tag-blue">UX bodies</span>
+                        <span class="tag tag-blue">Platform guidelines</span>
+                        <span class="tag tag-gray" style="opacity: 0.5;">Academic research</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary full-width" onclick="runSynthesis()">
+                    <i class="ph ph-magic-wand"></i> Run Market Research Synthesis
+                </button>
+            </div>
+        </main>
+
+        <!-- RESULTS VIEW (Hidden initially) -->
+        <main id="results-view" style="display: none;">
+
+            <div class="section-header">
+                <div>
+                    <span class="tag tag-purple" style="margin-bottom: 8px;">Synthesis Complete</span>
+                    <h2 id="results-title">Insights: Login & Onboarding</h2>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-outline-sm" onclick="location.reload()"><i
+                            class="ph ph-arrows-clockwise"></i> New Search</button>
+                    <button class="btn btn-outline-sm" onclick="alert('Skipping...')">Skip</button>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+
+                <!-- Trends -->
+                <section>
+                    <div class="insight-section-header"><i class="ph ph-trend-up"></i> Market Trends</div>
+                    <div id="trends-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Expectations -->
+                <section>
+                    <div class="insight-section-header"><i class="ph ph-users"></i> User Expectation Shifts</div>
+                    <div id="expectations-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Risks -->
+                <section>
+                    <div class="insight-section-header"><i class="ph ph-warning-octagon"></i> Market Risks & Constraints
+                    </div>
+                    <div id="risks-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Implications -->
+                <section>
+                    <div class="insight-section-header"><i class="ph ph-lightbulb"></i> What This Means for You</div>
+                    <div class="implications-box">
+                        <ul class="priority-list" style="margin: 0; padding-left: 16px;">
+                            <li>Reducing onboarding steps aligns with current market direction</li>
+                            <li>Improving clarity may drive more impact than adding new features</li>
+                            <li>Balance security improvements with usability to protect activation</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Next Actions -->
+                <section style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+                    <h4>Next Actions</h4>
+                    <div class="checkbox-group" style="margin: 16px 0;">
+                        <label class="checkbox-pill"><input type="checkbox"> Save insights to project</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Use insights for Ideation</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Include in PRD</label>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-primary">Continue to Ideation <i class="ph ph-arrow-right"></i></button>
+                        <button class="btn btn-secondary"><i class="ph ph-export"></i> Export Summary</button>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div style="font-weight: 500; color: var(--text-primary);">Synthesizing market signals...</div>
+        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">Scanning Nielsen Norman, Baymard,
+            and Industry Reports</div>
+    </div>
+
+    <!-- SOURCE DRAWER -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()">
+        <div class="drawer" id="drawer" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+                <h3 style="font-size: 16px; font-weight: 600;">Sources</h3>
+                <button class="icon-btn" onclick="closeDrawer()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="drawer-body" id="drawer-content">
+                <!-- Populated by JS -->
+            </div>
+            <div class="drawer-footer">
+                <button class="btn btn-secondary" onclick="closeDrawer()">Close</button>
+                <button class="btn btn-primary"><i class="ph ph-copy"></i> Copy Citations</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MOCK DATA
+        const insights = {
+            trends: [
+                {
+                    id: 1,
+                    text: "Simplified login flows are becoming standard",
+                    confidence: "HIGH",
+                    sourceCount: 3,
+                    sources: [
+                        { name: "Nielsen Norman Group", title: "Login UX Patterns (2023)", summary: "Clear error messaging and reduced login friction are correlated with higher completion rates.", url: "https://www.nngroup.com/articles/login-patterns/" },
+                        { name: "Baymard Institute", title: "UX Benchmark Study — Authentication", summary: "88% of tested products implement simplified login patterns to reduce drop-off.", url: "https://baymard.com/research/ecommerce-ux" },
+                        { name: "Google UX Guidelines", title: "Authentication Best Practices", summary: "Recommends minimizing friction during first-time login.", url: "https://developers.google.com/identity/design/guides" }
+                    ],
+                    confReason: ["3 independent sources", "Published within last 2 years", "Strong agreement across findings"]
+                },
+                {
+                    id: 2,
+                    text: "Mobile-first onboarding is now dominant",
+                    confidence: "MEDIUM",
+                    sourceCount: 2,
+                    sources: [
+                        { name: "Forrester", title: "Mobile Trends 2024", summary: "Mobile retention is driving design decisions.", url: "#" },
+                        { name: "Localytics", title: "App Retention Data", summary: "21% of users abandon an app after one use.", url: "#" }
+                    ],
+                    confReason: ["2 independent sources", "Consistent trend"]
+                },
+                {
+                    id: 3,
+                    text: "Faster time-to-value strongly correlates with retention",
+                    confidence: "HIGH",
+                    sourceCount: 4,
+                    sources: [],
+                    confReason: ["4 independent sources", "Highly cited metric"]
+                }
+            ],
+            expectations: [
+                {
+                    id: 4,
+                    text: "Users expect clearer error explanations during login",
+                    confidence: "HIGH",
+                    sourceCount: 4,
+                    sources: [],
+                    confReason: []
+                },
+                {
+                    id: 5,
+                    text: "Long onboarding flows are increasingly rejected",
+                    confidence: "MEDIUM",
+                    sourceCount: 3,
+                    sources: [],
+                    confReason: []
+                }
+            ],
+            risks: [
+                {
+                    id: 6,
+                    text: "Rising security expectations may increase friction",
+                    confidence: "MEDIUM",
+                    sourceCount: 2,
+                    sources: [],
+                    confReason: []
+                },
+                {
+                    id: 7,
+                    text: "Over-engineering onboarding can reduce conversion",
+                    confidence: "HIGH",
+                    sourceCount: 3,
+                    sources: [],
+                    confReason: []
+                }
+            ]
+        };
+
+        function renderInsights() {
+            renderSection('trends-container', insights.trends);
+            renderSection('expectations-container', insights.expectations);
+            renderSection('risks-container', insights.risks);
+        }
+
+        function renderSection(containerId, items) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            items.forEach(item => {
+                const confClass = item.confidence === 'HIGH' ? 'conf-high' : (item.confidence === 'MEDIUM' ? 'conf-medium' : 'conf-low');
+
+                const div = document.createElement('div');
+                div.className = 'insight-row';
+                div.innerHTML = `
+                    <div class="insight-content">
+                        <div class="insight-text">${item.text}</div>
+                        <div class="confidence-badge ${confClass}">Confidence: ${item.confidence}</div>
+                    </div>
+                    <button class="sources-btn" onclick="openDrawer(${item.id})">
+                        <i class="ph ph-info"></i> Sources (${item.sourceCount})
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function runSynthesis() {
+            document.getElementById('loading').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('setup-view').style.display = 'none';
+                document.getElementById('results-view').style.display = 'block';
+                renderInsights();
+
+                // Update title based on input
+                const area = document.getElementById('problem-area').value;
+                document.getElementById('results-title').textContent = "Insights: " + area;
+
+            }, 1800);
+        }
+
+        function openDrawer(id) {
+            const overlay = document.getElementById('drawer-overlay');
+            const drawerContent = document.getElementById('drawer-content');
+
+            // Find item across all categories
+            const allItems = [...insights.trends, ...insights.expectations, ...insights.risks];
+            const item = allItems.find(i => i.id === id);
+
+            if (!item) return;
+
+            // Build HTML
+            let html = `
+                <div style="margin-bottom: 24px;">
+                    <span class="tag tag-blue" style="margin-bottom: 8px;">Insight</span>
+                    <h4 style="font-size: 16px; color: var(--text-primary); margin-bottom: 8px;">${item.text}</h4>
+                    <div class="confidence-badge ${item.confidence === 'HIGH' ? 'conf-high' : 'conf-medium'}">Confidence: ${item.confidence}</div>
+                </div>
+
+                <h5 class="section-header">Referenced Sources</h5>
+            `;
+
+            if (item.sources && item.sources.length > 0) {
+                item.sources.forEach((src, index) => {
+                    html += `
+                        <div class="source-item">
+                            <div class="source-title">${index + 1}. ${src.name}</div>
+                            <div class="source-meta">${src.title}</div>
+                            <div class="source-summary">${src.summary}</div>
+                            ${src.url ? `<a href="${src.url}" target="_blank" class="source-link">View Source <i class="ph ph-arrow-square-out"></i></a>` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<div style="color: var(--text-secondary); font-size: 13px; font-style: italic;">Sources details mocked for demo purposes. See "Simplified login flows" for full detail.</div>`;
+            }
+
+            if (item.confReason && item.confReason.length > 0) {
+                html += `
+                    <div class="confidence-explanation">
+                        <h5 class="section-header">Why this insight is ${item.confidence} confidence</h5>
+                        <ul class="confidence-list">
+                            ${item.confReason.map(r => `<li><i class="ph ph-check-circle"></i> ${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            drawerContent.innerHTML = html;
+            overlay.classList.add('open');
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawer-overlay').classList.remove('open');
+        }
+
+        // Checkbox logic
+        document.querySelectorAll('.checkbox-pill').forEach(pill => {
+            pill.addEventListener('click', function (e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const input = this.querySelector('input');
+                    input.checked = !input.checked;
+                }
+                if (this.querySelector('input').checked) {
+                    this.classList.add('checked');
+                } else {
+                    this.classList.remove('checked');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

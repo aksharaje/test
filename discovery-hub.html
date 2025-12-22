@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discovery - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .container-centered {
+            max-width: 900px;
+            margin: 0 auto;
+            display: block !important;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container container-centered">
+        <!-- Header -->
+        <header class="app-header">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <button class="btn btn-outline-sm" onclick="window.location.href='research-hub.html'"><i
+                        class="ph ph-arrow-left"></i> Back to Hub</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-outline-sm" onclick="alert('Skipping...')">Skip to Next Feature</button>
+                </div>
+            </div>
+
+            <div class="summary-card"
+                style="background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%); color: white; border: none; margin-bottom: 32px; padding: 32px;">
+                <h1 style="color: white; font-size: 24px; margin-bottom: 8px;">Discovery</h1>
+                <p style="color: rgba(255,255,255,0.9); font-size: 16px;">Understand real client problems using feedback
+                    and evidence.</p>
+            </div>
+        </header>
+
+        <main>
+            <div class="section-header">
+                <h2>Active Problem Threads</h2>
+                <div class="action-bar" style="margin-top: 0;">
+                    <button class="btn btn-secondary" onclick="window.location.href='voc-log-feedback.html'"><i
+                            class="ph ph-plus"></i> Log New Feedback</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='voc-add-analytics.html'"><i
+                            class="ph ph-plus"></i> Add Analytics Signal</button>
+                </div>
+            </div>
+
+            <div class="threads-list">
+                <!-- Thread 1 -->
+                <a href="voc-problem-thread.html?id=login" class="voc-thread-card">
+                    <div class="thread-info">
+                        <span class="status-dot dot-red"></span>
+                        <span class="thread-name">Login error confusion</span>
+                    </div>
+                    <div class="thread-meta">
+                        <span class="meta-item">Confidence: <span class="confidence-badge conf-high">High</span></span>
+                        <span class="meta-item">Evidence: <span class="evidence-badge">3 sources</span></span>
+                        <i class="ph ph-caret-right"></i>
+                    </div>
+                </a>
+
+                <!-- Thread 2 -->
+                <a href="voc-problem-thread.html?id=onboarding" class="voc-thread-card">
+                    <div class="thread-info">
+                        <span class="status-dot dot-red"></span>
+                        <span class="thread-name">Onboarding takes too long</span>
+                    </div>
+                    <div class="thread-meta">
+                        <span class="meta-item">Confidence: <span class="confidence-badge conf-high">High</span></span>
+                        <span class="meta-item">Evidence: <span class="evidence-badge">4 sources</span></span>
+                        <i class="ph ph-caret-right"></i>
+                    </div>
+                </a>
+
+                <!-- Thread 3 -->
+                <a href="voc-problem-thread.html?id=password" class="voc-thread-card">
+                    <div class="thread-info">
+                        <span class="status-dot dot-green"></span>
+                        <span class="thread-name">Password reset delays</span>
+                    </div>
+                    <div class="thread-meta">
+                        <span class="meta-item">Confidence: <span class="confidence-badge"
+                                style="background: #ECFDF5; color: #059669;">Improving</span></span>
+                        <span class="meta-item">Evidence: <span class="evidence-badge">2 sources</span></span>
+                        <i class="ph ph-caret-right"></i>
+                    </div>
+                </a>
+            </div>
+        </main>
+    </div>
+    </div>
+
+    <script>
+        // Load dynamic threads
+        const threads = JSON.parse(localStorage.getItem('voc_threads') || '[]');
+        const container = document.querySelector('.threads-list');
+
+        threads.forEach(thread => {
+            const html = `
+                <a href="voc-problem-thread.html?id=${thread.id}" class="voc-thread-card">
+                    <div class="thread-info">
+                        <span class="status-dot dot-yellow"></span>
+                        <span class="thread-name">${thread.title}</span>
+                    </div>
+                    <div class="thread-meta">
+                        <span class="meta-item">Confidence: <span class="confidence-badge conf-low">Low</span></span>
+                        <span class="meta-item">Evidence: <span class="evidence-badge">1 source</span></span>
+                        <i class="ph ph-caret-right"></i>
+                    </div>
+                </a>
+            `;
+            // Insert after static threads (or append)
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    </script>
+</body>
+
+</html>
