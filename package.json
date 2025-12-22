@@ -1,0 +1,13 @@
+{
+  "name": "pm-workflow-prototype",
+  "version": "1.0.0",
+  "description": "Complete PM workflow prototype from goal setting to research",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": ["pm", "workflow", "prototype", "okr", "goals"],
+  "author": "Akshara Raje",
+  "license": "MIT",
+  "dependencies": {}
+}
