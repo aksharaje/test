@@ -14,6 +14,35 @@ body {
     line-height: 1.6;
 }
 
+/* Back to Home Button */
+.back-to-home-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    color: #667eea;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+    z-index: 1000;
+}
+
+.back-to-home-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.back-to-home-btn i {
+    font-size: 18px;
+}
+
 .container {
     max-width: 1000px;
     margin: 0 auto;
