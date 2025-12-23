@@ -51,6 +51,9 @@
                     problems. You can edit anything.</p>
             </header>
 
+            <!-- Workflow Banner (shows if continuing previous workflow) -->
+            <div id="workflow-banner-container"></div>
+
             <!-- Context Input Form (Initially Visible) -->
             <section id="input-section" class="summary-card" style="display: block;">
                 <div class="card-header">
@@ -308,9 +311,72 @@
             </div>
         </div>
     </div>
+    <script src="workflow-data.js"></script>
     <script src="notification-system.js"></script>
     <script src="workflow-progress.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Load previous workflow data if available
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show workflow banner if continuing previous session
+            WorkflowData.showWorkflowBanner();
+
+            // Load previous context data if available
+            const context = WorkflowData.getContext();
+            if (context) {
+                // Pre-populate form fields
+                document.getElementById('input-domain').value = context.domain || '';
+                document.getElementById('input-strategy').value = context.strategy || '';
+                document.getElementById('input-charter').value = context.charter || '';
+                document.getElementById('input-problems').value = context.problems || '';
+                document.getElementById('input-baseline').value = context.baseline || '';
+            }
+        });
+
+        // Update generateGoals to save data
+        function generateGoals() {
+            // Get form data
+            const contextData = {
+                domain: document.getElementById('input-domain').value,
+                strategy: document.getElementById('input-strategy').value,
+                charter: document.getElementById('input-charter').value,
+                problems: document.getElementById('input-problems').value,
+                baseline: document.getElementById('input-baseline').value
+            };
+
+            // Save to workflow data
+            WorkflowData.saveContext(contextData);
+
+            // Show loading state
+            document.getElementById('generate-btn').disabled = true;
+            document.getElementById('loading-state').style.display = 'block';
+
+            // Simulate generation (replace with actual logic)
+            setTimeout(() => {
+                document.getElementById('input-section').style.display = 'none';
+                document.getElementById('goals-results-section').style.display = 'block';
+                document.getElementById('generate-btn').disabled = false;
+                document.getElementById('loading-state').style.display = 'none';
+
+                // Save sample goals data
+                const goals = [
+                    {
+                        id: 1,
+                        title: 'Increase login success rate from 87% → 95% by end of Q2',
+                        description: 'Improve authentication flow, reduce password-reset errors, and optimize error messaging.',
+                        tags: ['High-Impact', 'User-Facing']
+                    }
+                ];
+                WorkflowData.saveGoals(goals);
+            }, 1500);
+        }
+
+        // Allow editing inputs
+        function editInputs() {
+            document.getElementById('goals-results-section').style.display = 'none';
+            document.getElementById('input-section').style.display = 'block';
+        }
+    </script>
 </body>
 
 </html>
