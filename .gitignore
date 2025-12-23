@@ -55,9 +55,16 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+**/pyvenv.cfg
 
 # Test output
 test_output*.txt
+test-output.txt
+
+# Development scripts
+create_*_tables.sql
+create_*_tables.py
+fix_*.py
 
 # Misc
 .cache/
