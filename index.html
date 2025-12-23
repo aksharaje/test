@@ -24,8 +24,8 @@
     <div class="app-container">
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb">
+            <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+            <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
                 <a href="landing.html" style="text-decoration: none; color: inherit; opacity: 0.7;">
                     <i class="ph ph-house"></i> Home
                 </a>
@@ -332,9 +332,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
 
-            // Only show workflow banner in complete workflow mode
+            // Show/hide breadcrumb based on workflow mode
             if (isCompleteWorkflow) {
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
                 WorkflowData.showWorkflowBanner();
+            } else {
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
             }
 
             // Load previous context data if available

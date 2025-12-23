@@ -273,8 +273,8 @@
 
     <div class="app-container">
         <main class="main-content full-width">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb">
+            <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+            <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
                 <a href="index.html">Goal Setting</a>
                 <i class="ph ph-caret-right"></i>
                 <a href="okr-generator.html">OKR Generator</a>
@@ -285,7 +285,7 @@
                 <i class="ph ph-caret-right"></i>
                 <span class="active">Measurement Framework</span>
                 <i class="ph ph-caret-right"></i>
-                <a href="#" class="disabled">Scope Definition</a>
+                <a href="scope-definition.html">Scope Definition</a>
             </nav>
 
             <!-- Header -->
@@ -614,8 +614,8 @@
                 </button>
             </div>
 
-            <!-- Publish Section -->
-            <div class="publish-section">
+            <!-- Publish Section (only show in complete workflow mode) -->
+            <div id="workflow-next-step" class="publish-section" style="display: none;">
                 <h2 style="margin: 0 0 16px 0;">Review & Publish Measurement Plan</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 24px;">
                     3 metric groups configured · 9 segments defined · 3 alert rules active
@@ -628,10 +628,25 @@
         </main>
     </div>
 
+    <script src="workflow-data.js"></script>
     <script src="notification-system.js"></script>
     <script src="workflow-progress.js"></script>
     <script src="measurement-charts.js"></script>
     <script src="measurement-script.js"></script>
+    <script>
+        // Handle workflow mode
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
+                document.getElementById('workflow-next-step').style.display = 'block';
+            } else {
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
+                document.getElementById('workflow-next-step').style.display = 'none';
+            }
+        });
+    </script>
 </body>
 
 </html>

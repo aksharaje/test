@@ -19,8 +19,8 @@
     </a>
 
     <div class="container">
-        <!-- Breadcrumb Navigation -->
-        <nav class="breadcrumb">
+        <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+        <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
             <a href="index.html" class="breadcrumb-item">Goal Setting</a>
             <span class="breadcrumb-separator">→</span>
             <a href="okr-generator.html" class="breadcrumb-item">OKR Generator</a>
@@ -33,7 +33,7 @@
             <span class="breadcrumb-separator">→</span>
             <span class="breadcrumb-item active">Scope Definition</span>
             <span class="breadcrumb-separator">→</span>
-            <a href="research-hub.html" class="breadcrumb-item" style="opacity: 0.5;">Research & Discovery</a>
+            <a href="research-hub.html" class="breadcrumb-item">Research & Discovery</a>
         </nav>
 
         <!-- Header -->
@@ -248,7 +248,7 @@
                 </div>
                 <p class="modal-note">This scope is now versioned and monitored. Any changes will be tracked for impact
                     analysis.</p>
-                <div style="display: flex; gap: 1rem; justify-content: center;">
+                <div id="workflow-next-step" style="display: none; gap: 1rem; justify-content: center;">
                     <button class="btn-secondary" onclick="simulateScopeChange()">
                         <i class="ph ph-warning"></i>
                         Simulate Scope Change
@@ -259,9 +259,32 @@
         </div>
     </div>
 
+    <script src="workflow-data.js"></script>
     <script src="notification-system.js"></script>
     <script src="workflow-progress.js"></script>
     <script src="scope-script.js?v=2"></script>
+    <script>
+        // Handle workflow mode
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
+            } else {
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
+            }
+        });
+
+        // Update approveScope to show buttons only in complete workflow
+        const originalApproveScope = window.approveScope;
+        window.approveScope = function() {
+            originalApproveScope();
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+            if (isCompleteWorkflow) {
+                document.getElementById('workflow-next-step').style.display = 'flex';
+            }
+        };
+    </script>
 </body>
 
 </html>

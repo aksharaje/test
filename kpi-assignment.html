@@ -77,8 +77,8 @@
     <div class="app-container">
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb">
+            <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+            <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
                 <a href="index.html" style="text-decoration: none; color: inherit;">Goal Setting</a>
                 <i class="ph ph-caret-right"></i>
                 <a href="okr-generator.html" style="text-decoration: none; color: inherit;">OKR Generator</a>
@@ -192,7 +192,8 @@
                 </ul>
             </div>
 
-            <div class="sidebar-card next-step-card">
+            <!-- Next Step Card (only show in complete workflow mode) -->
+            <div id="workflow-next-step" class="sidebar-card next-step-card" style="display: none;">
                 <div class="card-header">
                     <h2><i class="ph ph-link"></i> Next Step</h2>
                 </div>
@@ -205,12 +206,26 @@
         </aside>
     </div>
 
+    <script src="workflow-data.js"></script>
     <script>
         function selectMetric(pill) {
             // Simple interaction demo
             const input = pill.parentElement.parentElement.querySelector('input');
             input.value = pill.innerText;
         }
+
+        // Handle workflow mode
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
+                document.getElementById('workflow-next-step').style.display = 'block';
+            } else {
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
+                document.getElementById('workflow-next-step').style.display = 'none';
+            }
+        });
     </script>
 </body>
 
