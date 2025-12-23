@@ -36,11 +36,18 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Back to Home Button */
-.back-to-home-btn {
+/* Fixed Navigation Buttons Container */
+.fixed-nav-buttons {
     position: fixed;
     top: 20px;
     right: 20px;
+    display: flex;
+    gap: 12px;
+    z-index: 1000;
+}
+
+/* Back to Home Button */
+.back-to-home-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 12px 20px;
@@ -53,7 +60,6 @@ body {
     font-weight: 600;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     transition: all 0.2s;
-    z-index: 1000;
 }
 
 .back-to-home-btn:hover {
@@ -62,6 +68,34 @@ body {
 }
 
 .back-to-home-btn i {
+    font-size: 18px;
+}
+
+/* Back to Modules Button */
+.back-to-modules-btn {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transition: all 0.2s;
+}
+
+.back-to-modules-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.back-to-modules-btn i {
     font-size: 18px;
 }
 
