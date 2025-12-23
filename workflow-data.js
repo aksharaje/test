@@ -12,7 +12,29 @@ const WorkflowData = {
         KPIS: 'pm_workflow_kpis',
         BENCHMARKS: 'pm_workflow_benchmarks',
         MEASUREMENTS: 'pm_workflow_measurements',
-        SCOPE: 'pm_workflow_scope'
+        SCOPE: 'pm_workflow_scope',
+        WORKFLOW_MODE: 'pm_workflow_mode' // 'complete' or 'standalone'
+    },
+
+    /**
+     * Set workflow mode
+     */
+    setWorkflowMode(mode) {
+        localStorage.setItem(this.KEYS.WORKFLOW_MODE, mode);
+    },
+
+    /**
+     * Get workflow mode
+     */
+    getWorkflowMode() {
+        return localStorage.getItem(this.KEYS.WORKFLOW_MODE) || 'standalone';
+    },
+
+    /**
+     * Check if in complete workflow mode
+     */
+    isCompleteWorkflow() {
+        return this.getWorkflowMode() === 'complete';
     },
 
     /**

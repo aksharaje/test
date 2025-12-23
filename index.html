@@ -219,13 +219,25 @@
                 <button class="btn btn-outline-sm full-width">Override Priorities</button>
             </div>
 
-            <div class="sidebar-card next-step-card">
+            <div id="next-step-card" class="sidebar-card next-step-card" style="display: none;">
                 <div class="card-header">
                     <h2><i class="ph ph-link"></i> Next Step</h2>
                 </div>
                 <a href="okr-generator.html" class="btn btn-primary full-width"
-                    style="text-decoration: none; display: flex; box-sizing: border-box;">Generate OKRs <i
+                    style="text-decoration: none; display: flex; box-sizing: border-box;">Continue to OKR Generator <i
                         class="ph ph-arrow-right"></i></a>
+            </div>
+
+            <div id="standalone-actions" class="sidebar-card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="ph ph-check-circle"></i> Goals Generated</h2>
+                </div>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Your goals have been generated. You can export them or return to the home page.
+                </p>
+                <button class="btn btn-outline full-width" onclick="window.location.href='landing.html'">
+                    <i class="ph ph-house"></i> Back to Home
+                </button>
             </div>
         </aside>
     </div>
@@ -318,18 +330,31 @@
     <script>
         // Load previous workflow data if available
         document.addEventListener('DOMContentLoaded', function() {
-            // Show workflow banner if continuing previous session
-            WorkflowData.showWorkflowBanner();
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            // Only show workflow banner in complete workflow mode
+            if (isCompleteWorkflow) {
+                WorkflowData.showWorkflowBanner();
+            }
 
             // Load previous context data if available
             const context = WorkflowData.getContext();
-            if (context) {
-                // Pre-populate form fields
+            if (context && isCompleteWorkflow) {
+                // Pre-populate form fields only in complete workflow mode
                 document.getElementById('input-domain').value = context.domain || '';
                 document.getElementById('input-strategy').value = context.strategy || '';
                 document.getElementById('input-charter').value = context.charter || '';
                 document.getElementById('input-problems').value = context.problems || '';
                 document.getElementById('input-baseline').value = context.baseline || '';
+            }
+
+            // Show goals section if we already have goals data
+            const goals = WorkflowData.getGoals();
+            if (goals && isCompleteWorkflow) {
+                document.getElementById('input-section').style.display = 'none';
+                document.getElementById('goals-results-section').style.display = 'block';
+                // Show appropriate next step based on mode
+                showNextStepActions();
             }
         });
 
@@ -368,7 +393,25 @@
                     }
                 ];
                 WorkflowData.saveGoals(goals);
+
+                // Show appropriate next step actions
+                showNextStepActions();
             }, 1500);
+        }
+
+        // Show next step actions based on workflow mode
+        function showNextStepActions() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                // Show "Continue to OKR Generator" button
+                document.getElementById('next-step-card').style.display = 'block';
+                document.getElementById('standalone-actions').style.display = 'none';
+            } else {
+                // Show "Back to Home" button
+                document.getElementById('next-step-card').style.display = 'none';
+                document.getElementById('standalone-actions').style.display = 'block';
+            }
         }
 
         // Allow editing inputs
