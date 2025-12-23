@@ -23,8 +23,8 @@
     <div class="app-container">
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb">
+            <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+            <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
                 <a href="index.html" style="text-decoration: none; color: inherit;">Goal Setting</a>
                 <i class="ph ph-caret-right"></i>
                 <span class="active">OKR Generator</span>
@@ -198,7 +198,8 @@
                 </ul>
             </div>
 
-            <div class="sidebar-card next-step-card">
+            <!-- Next Step Card (only show in complete workflow mode) -->
+            <div id="workflow-next-step" class="sidebar-card next-step-card" style="display: none;">
                 <div class="card-header">
                     <h2><i class="ph ph-link"></i> Next Step</h2>
                 </div>
@@ -347,6 +348,24 @@
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 closeEditModal();
+            }
+        });
+    </script>
+
+    <script src="workflow-data.js"></script>
+    <script>
+        // Control visibility based on workflow mode
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                // Show breadcrumb and next step in complete workflow mode
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
+                document.getElementById('workflow-next-step').style.display = 'block';
+            } else {
+                // Hide breadcrumb and next step in standalone mode
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
+                document.getElementById('workflow-next-step').style.display = 'none';
             }
         });
     </script>
