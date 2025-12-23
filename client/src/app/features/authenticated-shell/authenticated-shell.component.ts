@@ -44,7 +44,14 @@ export class AuthenticatedShellComponent {
         { label: 'Code Chat', path: '/code-chat' },
       ],
     },
-    { label: 'Ideation', path: '/ideation', children: [] },
+    {
+      label: 'Ideation',
+      path: '/ideation-section',
+      children: [
+        { label: 'Brainstormer', path: '#' },
+        { label: 'Ideation Engine', path: '/ideation' },
+      ],
+    },
     { label: 'Feasibility', path: '/feasibility', children: [] },
     { label: 'Roadmapping', path: '/roadmapping', children: [] },
     { label: 'Customer Experience', path: '/customer-experience', children: [] },

@@ -97,6 +97,38 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'ideation',
+        title: 'Ideation | Product Studio',
+        loadComponent: () =>
+          import('./features/ideation/ideation-input.component').then(
+            (m) => m.IdeationInputComponent
+          ),
+      },
+      {
+        path: 'ideation/processing/:sessionId',
+        title: 'Processing | Product Studio',
+        loadComponent: () =>
+          import('./features/ideation/ideation-processing.component').then(
+            (m) => m.IdeationProcessingComponent
+          ),
+      },
+      {
+        path: 'ideation/results/:sessionId',
+        title: 'Results | Product Studio',
+        loadComponent: () =>
+          import('./features/ideation/ideation-results.component').then(
+            (m) => m.IdeationResultsComponent
+          ),
+      },
+      {
+        path: 'opportunity-linker/results/:sessionId',
+        title: 'Prioritized Backlog | Product Studio',
+        loadComponent: () =>
+          import('./features/opportunity-linker/opportunity-linker-results.component').then(
+            (m) => m.OpportunityLinkerResultsComponent
+          ),
+      },
+      {
         path: 'code-chat',
         title: 'Code Chat | Product Studio',
         loadComponent: () =>
