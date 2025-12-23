@@ -20,384 +20,532 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema - create all tables."""
+    # Create core tables first (users, agents, etc.)
+    
+    # Users
+    op.create_table('users',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('email', sa.VARCHAR(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    
+    # Agents
+    op.create_table('agents',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('system_prompt', sa.VARCHAR(), nullable=False),
+    sa.Column('model', sa.VARCHAR(), nullable=False),
+    sa.Column('tools', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    # Flows
+    op.create_table('flows',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('initial_state', sa.VARCHAR(), nullable=False),
+    sa.Column('states', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.create_table('flow_executions',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('flow_id', sa.INTEGER(), nullable=False),
+    sa.Column('current_state', sa.VARCHAR(), nullable=False),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('context', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('history', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('error', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['flow_id'], ['flows.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Integrations
+    op.create_table('integrations',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('provider', sa.VARCHAR(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('base_url', sa.VARCHAR(), nullable=False),
+    sa.Column('cloud_id', sa.VARCHAR(), nullable=True),
+    sa.Column('auth_type', sa.VARCHAR(), nullable=False),
+    sa.Column('access_token', sa.VARCHAR(), nullable=False),
+    sa.Column('refresh_token', sa.VARCHAR(), nullable=True),
+    sa.Column('token_expires_at', sa.DateTime(), nullable=True),
+    sa.Column('scopes', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('last_sync_at', sa.DateTime(), nullable=True),
+    sa.Column('error_message', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.create_table('jira_projects',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('integration_id', sa.INTEGER(), nullable=False),
+    sa.Column('jira_id', sa.VARCHAR(), nullable=False),
+    sa.Column('key', sa.VARCHAR(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('project_type', sa.VARCHAR(), nullable=True),
+    sa.Column('avatar_url', sa.VARCHAR(), nullable=True),
+    sa.Column('synced_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Knowledge Bases
+    op.create_table('knowledge_bases',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('settings', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    # source_metadata deliberately OMITTED here, to be added by next migration
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('document_count', sa.INTEGER(), nullable=False),
+    sa.Column('total_chunks', sa.INTEGER(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('documents',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('knowledge_base_id', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('source', sa.VARCHAR(), nullable=False),
+    sa.Column('source_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('content', sa.VARCHAR(), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('error', sa.VARCHAR(), nullable=True),
+    sa.Column('chunk_count', sa.INTEGER(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['knowledge_base_id'], ['knowledge_bases.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    from pgvector.sqlalchemy import Vector
+    op.create_table('document_chunks',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('document_id', sa.INTEGER(), nullable=False),
+    sa.Column('knowledge_base_id', sa.INTEGER(), nullable=False),
+    sa.Column('content', sa.VARCHAR(), nullable=False),
+    sa.Column('embedding', Vector(1536), nullable=True),
+    sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('token_count', sa.INTEGER(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
+    sa.ForeignKeyConstraint(['knowledge_base_id'], ['knowledge_bases.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Library
+    op.create_table('library_books',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('knowledge_base_id', sa.INTEGER(), nullable=False),
+    sa.Column('title', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('error', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['knowledge_base_id'], ['knowledge_bases.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('library_pages',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('book_id', sa.INTEGER(), nullable=False),
+    sa.Column('parent_id', sa.INTEGER(), nullable=True),
+    sa.Column('title', sa.VARCHAR(), nullable=False),
+    sa.Column('content', sa.VARCHAR(), nullable=False),
+    sa.Column('order', sa.INTEGER(), nullable=False),
+    sa.Column('type', sa.VARCHAR(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['book_id'], ['library_books.id'], ),
+    sa.ForeignKeyConstraint(['parent_id'], ['library_pages.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('library_integrations',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('book_id', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('integration_type', sa.VARCHAR(), nullable=False),
+    sa.Column('technical_details', sa.VARCHAR(), nullable=True),
+    sa.Column('functional_details', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['book_id'], ['library_books.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    # Code Chat
+    op.create_table('code_chat_sessions',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('title', sa.VARCHAR(), nullable=True),
+    sa.Column('knowledge_base_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('code_chat_messages',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('session_id', sa.INTEGER(), nullable=False),
+    sa.Column('role', sa.VARCHAR(), nullable=False),
+    sa.Column('content', sa.VARCHAR(), nullable=False),
+    sa.Column('citations', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['session_id'], ['code_chat_sessions.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Optimize & Agents
+    op.create_table('prompt_versions',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('agent_id', sa.INTEGER(), nullable=False),
+    sa.Column('version', sa.INTEGER(), nullable=False),
+    sa.Column('system_prompt', sa.VARCHAR(), nullable=False),
+    sa.Column('model', sa.VARCHAR(), nullable=False),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['agent_id'], ['agents.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.create_table('split_tests',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('agent_id', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('prompt_version_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['agent_id'], ['agents.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.create_table('agent_executions',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('agent_id', sa.INTEGER(), nullable=False),
+    sa.Column('split_test_id', sa.INTEGER(), nullable=True),
+    sa.Column('prompt_version_id', sa.INTEGER(), nullable=True),
+    sa.Column('conversation_id', sa.INTEGER(), nullable=True),
+    sa.Column('input_prompt', sa.VARCHAR(), nullable=False),
+    sa.Column('response', sa.VARCHAR(), nullable=False),
+    sa.Column('execution_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('executed_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['agent_id'], ['agents.id'], ),
+    sa.ForeignKeyConstraint(['split_test_id'], ['split_tests.id'], ),
+    sa.ForeignKeyConstraint(['prompt_version_id'], ['prompt_versions.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.create_table('feedback',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('execution_id', sa.INTEGER(), nullable=False),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('sentiment', sa.VARCHAR(), nullable=False),
+    sa.Column('text', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['execution_id'], ['agent_executions.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Story & PRD
+    op.create_table('prompt_templates',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('type', sa.VARCHAR(), nullable=False),
+    sa.Column('version', sa.INTEGER(), nullable=False),
+    sa.Column('system_prompt', sa.VARCHAR(), nullable=False),
+    sa.Column('model', sa.VARCHAR(), nullable=False),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    op.create_table('story_generator_split_tests',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('artifact_type', sa.VARCHAR(), nullable=False),
+    sa.Column('prompt_template_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('generated_artifacts',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('type', sa.VARCHAR(), nullable=False),
+    sa.Column('title', sa.VARCHAR(), nullable=False),
+    sa.Column('content', sa.VARCHAR(), nullable=False),
+    sa.Column('parent_id', sa.INTEGER(), nullable=True),
+    sa.Column('input_description', sa.VARCHAR(), nullable=False),
+    sa.Column('input_files', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('knowledge_base_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('prompt_template_id', sa.INTEGER(), nullable=True),
+    sa.Column('split_test_id', sa.INTEGER(), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('generation_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['prompt_template_id'], ['prompt_templates.id'], ),
+    sa.ForeignKeyConstraint(['split_test_id'], ['story_generator_split_tests.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('generation_feedback',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('artifact_id', sa.INTEGER(), nullable=False),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('sentiment', sa.VARCHAR(), nullable=False),
+    sa.Column('text', sa.VARCHAR(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['artifact_id'], ['generated_artifacts.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('prd_templates',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('is_default', sa.INTEGER(), nullable=False),
+    sa.Column('is_custom', sa.INTEGER(), nullable=False),
+    sa.Column('system_prompt', sa.VARCHAR(), nullable=False),
+    sa.Column('json_schema', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('generated_prds',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('title', sa.VARCHAR(), nullable=False),
+    sa.Column('content', sa.VARCHAR(), nullable=False),
+    sa.Column('concept', sa.VARCHAR(), nullable=False),
+    sa.Column('target_project', sa.VARCHAR(), nullable=True),
+    sa.Column('target_persona', sa.VARCHAR(), nullable=True),
+    sa.Column('industry_context', sa.VARCHAR(), nullable=True),
+    sa.Column('primary_metric', sa.VARCHAR(), nullable=True),
+    sa.Column('user_story_role', sa.VARCHAR(), nullable=True),
+    sa.Column('user_story_goal', sa.VARCHAR(), nullable=True),
+    sa.Column('user_story_benefit', sa.VARCHAR(), nullable=True),
+    sa.Column('knowledge_base_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('input_files', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('template_id', sa.INTEGER(), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('generation_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('citations', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['template_id'], ['prd_templates.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # PI Planning
+    op.create_table('pi_sessions',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('integration_id', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('project_keys', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('start_date', sa.DateTime(), nullable=True),
+    sa.Column('end_date', sa.DateTime(), nullable=True),
+    sa.Column('sprint_count', sa.INTEGER(), nullable=False),
+    sa.Column('sprint_length_weeks', sa.INTEGER(), nullable=False),
+    sa.Column('plannable_issue_type', sa.VARCHAR(), nullable=False),
+    sa.Column('custom_issue_type_name', sa.VARCHAR(), nullable=True),
+    sa.Column('holiday_config_id', sa.INTEGER(), nullable=True),
+    sa.Column('include_ip_sprint', sa.Boolean(), nullable=False),
+    sa.Column('current_version', sa.VARCHAR(), nullable=False),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('created_by', sa.INTEGER(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('pi_session_boards',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('session_id', sa.INTEGER(), nullable=False),
+    sa.Column('jira_board_id', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('board_type', sa.VARCHAR(), nullable=False),
+    sa.Column('default_velocity', sa.INTEGER(), nullable=True),
+    sa.ForeignKeyConstraint(['session_id'], ['pi_sessions.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('pi_sprints',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('session_id', sa.INTEGER(), nullable=False),
+    sa.Column('sprint_number', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('start_date', sa.DateTime(), nullable=False),
+    sa.Column('end_date', sa.DateTime(), nullable=False),
+    sa.Column('working_days', sa.INTEGER(), nullable=False),
+    sa.Column('total_days', sa.INTEGER(), nullable=False),
+    sa.Column('holidays', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('is_ip_sprint', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['session_id'], ['pi_sessions.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('pi_features',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('session_id', sa.INTEGER(), nullable=False),
+    sa.Column('jira_issue_id', sa.VARCHAR(), nullable=True),
+    sa.Column('jira_issue_key', sa.VARCHAR(), nullable=True),
+    sa.Column('title', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=True),
+    sa.Column('issue_type', sa.VARCHAR(), nullable=True),
+    sa.Column('priority', sa.VARCHAR(), nullable=True),
+    sa.Column('priority_order', sa.INTEGER(), nullable=True),
+    sa.Column('total_points', sa.INTEGER(), nullable=True),
+    sa.Column('estimated_sprints', sa.INTEGER(), nullable=False),
+    sa.Column('dependencies', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('labels', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('project_key', sa.VARCHAR(), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=True),
+    sa.ForeignKeyConstraint(['session_id'], ['pi_sessions.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    
+    op.create_table('pi_feature_assignments',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('feature_id', sa.INTEGER(), nullable=False),
+    sa.Column('board_id', sa.INTEGER(), nullable=False),
+    sa.Column('start_sprint_num', sa.INTEGER(), nullable=False),
+    sa.Column('end_sprint_num', sa.INTEGER(), nullable=False),
+    sa.Column('allocated_points', sa.INTEGER(), nullable=True),
+    sa.Column('ai_rationale', sa.VARCHAR(), nullable=True),
+    sa.Column('is_manual_override', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['feature_id'], ['pi_features.id'], ),
+    sa.ForeignKeyConstraint(['board_id'], ['pi_session_boards.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Ideation
+    op.create_table('ideation_sessions',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.INTEGER(), nullable=True),
+    sa.Column('problem_statement', sa.VARCHAR(), nullable=False),
+    sa.Column('constraints', sa.VARCHAR(), nullable=True),
+    sa.Column('goals', sa.VARCHAR(), nullable=True),
+    sa.Column('research_insights', sa.VARCHAR(), nullable=True),
+    sa.Column('knowledge_base_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('structured_problem', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('status', sa.VARCHAR(), nullable=False),
+    sa.Column('progress_step', sa.INTEGER(), nullable=False),
+    sa.Column('progress_message', sa.VARCHAR(), nullable=True),
+    sa.Column('error_message', sa.VARCHAR(), nullable=True),
+    sa.Column('confidence', sa.VARCHAR(), nullable=False),
+    sa.Column('generation_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('completed_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ideation_sessions_user_id'), 'ideation_sessions', ['user_id'], unique=False)
+
+    op.create_table('idea_clusters',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('session_id', sa.INTEGER(), nullable=False),
+    sa.Column('cluster_number', sa.INTEGER(), nullable=False),
+    sa.Column('theme_name', sa.VARCHAR(), nullable=False),
+    sa.Column('theme_description', sa.VARCHAR(), nullable=True),
+    sa.Column('idea_count', sa.INTEGER(), nullable=False),
+    sa.Column('centroid_embedding', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['session_id'], ['ideation_sessions.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_idea_clusters_session_id'), 'idea_clusters', ['session_id'], unique=False)
+
+    op.create_table('generated_ideas',
+    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('session_id', sa.INTEGER(), nullable=False),
+    sa.Column('title', sa.VARCHAR(), nullable=False),
+    sa.Column('description', sa.VARCHAR(), nullable=False),
+    sa.Column('category', sa.VARCHAR(), nullable=False),
+    sa.Column('effort_estimate', sa.VARCHAR(), nullable=False),
+    sa.Column('impact_estimate', sa.VARCHAR(), nullable=False),
+    sa.Column('embedding', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('cluster_id', sa.INTEGER(), nullable=True),
+    sa.Column('use_cases', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('edge_cases', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('implementation_notes', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('impact_score', sa.FLOAT(), nullable=True),
+    sa.Column('impact_rationale', sa.VARCHAR(), nullable=True),
+    sa.Column('feasibility_score', sa.FLOAT(), nullable=True),
+    sa.Column('feasibility_rationale', sa.VARCHAR(), nullable=True),
+    sa.Column('effort_score', sa.FLOAT(), nullable=True),
+    sa.Column('effort_rationale', sa.VARCHAR(), nullable=True),
+    sa.Column('strategic_fit_score', sa.FLOAT(), nullable=True),
+    sa.Column('strategic_fit_rationale', sa.VARCHAR(), nullable=True),
+    sa.Column('risk_score', sa.FLOAT(), nullable=True),
+    sa.Column('risk_rationale', sa.VARCHAR(), nullable=True),
+    sa.Column('composite_score', sa.FLOAT(), nullable=True),
+    sa.Column('is_duplicate', sa.Boolean(), nullable=False),
+    sa.Column('duplicate_of_id', sa.INTEGER(), nullable=True),
+    sa.Column('is_final', sa.Boolean(), nullable=False),
+    sa.Column('display_order', sa.INTEGER(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['session_id'], ['ideation_sessions.id'], ),
+    sa.ForeignKeyConstraint(['cluster_id'], ['idea_clusters.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_generated_ideas_session_id'), 'generated_ideas', ['session_id'], unique=False)
+    
     # Create holiday_configs first (no dependencies)
     op.create_table('holiday_configs',
     sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
     sa.Column('name', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('calendar_type', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('country_codes', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('is_default', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
+    sa.Column('is_default', sa.Boolean(), server_default=sa.text('0'), autoincrement=False, nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('holiday_configs_pkey'))
     )
 
-    # Create pi_planning_sessions (depends on integrations, users, holiday_configs)
-    op.create_table('pi_planning_sessions',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('start_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('end_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('sprint_count', sa.INTEGER(), server_default=sa.text('5'), autoincrement=False, nullable=True),
-    sa.Column('status', sa.TEXT(), server_default=sa.text("'draft'::text"), autoincrement=False, nullable=False),
-    sa.Column('created_by', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('sprint_length_weeks', sa.INTEGER(), server_default=sa.text('2'), autoincrement=False, nullable=True),
-    sa.Column('plannable_issue_type', sa.TEXT(), server_default=sa.text("'epic'::text"), autoincrement=False, nullable=True),
-    sa.Column('custom_issue_type_name', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('holiday_config_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('include_ip_sprint', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('current_version', sa.TEXT(), server_default=sa.text("'1.0'::text"), autoincrement=False, nullable=True),
-    sa.Column('project_keys', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.ForeignKeyConstraint(['created_by'], ['users.id'], name='pi_planning_sessions_created_by_users_id_fk'),
-    sa.ForeignKeyConstraint(['holiday_config_id'], ['holiday_configs.id'], name='pi_planning_sessions_holiday_config_id_holiday_configs_id_fk'),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name='pi_planning_sessions_integration_id_integrations_id_fk', ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name='pi_planning_sessions_pkey')
-    )
-    op.create_index(op.f('pi_sessions_status_idx'), 'pi_planning_sessions', ['status'], unique=False)
-    op.create_index(op.f('pi_sessions_integration_idx'), 'pi_planning_sessions', ['integration_id'], unique=False)
 
-    # Create pi_session_boards (depends on pi_planning_sessions)
-    op.create_table('pi_session_boards',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('board_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('board_name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('velocity_override', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('capacity_adjustment', sa.INTEGER(), server_default=sa.text('100'), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['session_id'], ['pi_planning_sessions.id'], name='pi_session_boards_session_id_pi_planning_sessions_id_fk', ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name='pi_session_boards_pkey')
-    )
-    op.create_index(op.f('pi_session_boards_session_idx'), 'pi_session_boards', ['session_id'], unique=False)
-
-    # Create pi_features (depends on pi_planning_sessions)
-    op.create_table('pi_features',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('jira_issue_id', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('jira_issue_key', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('title', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('issue_type', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('priority', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('priority_order', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('total_points', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('estimated_sprints', sa.INTEGER(), server_default=sa.text('1'), autoincrement=False, nullable=True),
-    sa.Column('dependencies', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('labels', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('project_key', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('status', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('imported_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['session_id'], ['pi_planning_sessions.id'], name=op.f('pi_features_session_id_pi_planning_sessions_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pi_features_pkey'))
-    )
-    op.create_index(op.f('pi_features_session_idx'), 'pi_features', ['session_id'], unique=False)
-    op.create_index(op.f('pi_features_priority_idx'), 'pi_features', ['priority_order'], unique=False)
-    op.create_index(op.f('pi_features_jira_key_idx'), 'pi_features', ['jira_issue_key'], unique=False)
-
-    # Create pi_feature_assignments (depends on pi_planning_sessions, pi_features)
-    op.create_table('pi_feature_assignments',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('feature_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('board_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('start_sprint_num', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('end_sprint_num', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('allocated_points', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('sequence_in_sprint', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('ai_rationale', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('manual_override', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('override_reason', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['feature_id'], ['pi_features.id'], name=op.f('pi_feature_assignments_feature_id_pi_features_id_fk'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['session_id'], ['pi_planning_sessions.id'], name=op.f('pi_feature_assignments_session_id_pi_planning_sessions_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pi_feature_assignments_pkey'))
-    )
-    op.create_index(op.f('pi_assignments_sprint_idx'), 'pi_feature_assignments', ['start_sprint_num'], unique=False)
-    op.create_index(op.f('pi_assignments_session_idx'), 'pi_feature_assignments', ['session_id'], unique=False)
-    op.create_index(op.f('pi_assignments_feature_idx'), 'pi_feature_assignments', ['feature_id'], unique=False)
-    op.create_index(op.f('pi_assignments_board_idx'), 'pi_feature_assignments', ['board_id'], unique=False)
-
-    # Create pi_sprints (depends on pi_planning_sessions)
-    op.create_table('pi_sprints',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('sprint_number', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('start_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
-    sa.Column('end_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
-    sa.Column('working_days', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('total_days', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('holidays', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('is_ip_sprint', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['session_id'], ['pi_planning_sessions.id'], name=op.f('pi_sprints_session_id_pi_planning_sessions_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pi_sprints_pkey'))
-    )
-    op.create_index(op.f('pi_sprints_unique'), 'pi_sprints', ['session_id', 'sprint_number'], unique=True)
-    op.create_index(op.f('pi_sprints_session_idx'), 'pi_sprints', ['session_id'], unique=False)
-
-    # Create pi_plan_versions (depends on pi_planning_sessions, users)
-    op.create_table('pi_plan_versions',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('version_number', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('comment', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('snapshot', postgresql.JSONB(astext_type=sa.Text()), autoincrement=False, nullable=False),
-    sa.Column('created_by', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['created_by'], ['users.id'], name=op.f('pi_plan_versions_created_by_users_id_fk')),
-    sa.ForeignKeyConstraint(['session_id'], ['pi_planning_sessions.id'], name=op.f('pi_plan_versions_session_id_pi_planning_sessions_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pi_plan_versions_pkey'))
-    )
-    op.create_index(op.f('pi_versions_session_idx'), 'pi_plan_versions', ['session_id'], unique=False)
-    op.create_index(op.f('pi_versions_created_idx'), 'pi_plan_versions', ['created_at'], unique=False)
-
-    # Create pi_team_capabilities (depends on pi_session_boards)
-    op.create_table('pi_team_capabilities',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_board_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('can_work_on_all', sa.INTEGER(), server_default=sa.text('1'), autoincrement=False, nullable=True),
-    sa.Column('allowed_feature_keys', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['session_board_id'], ['pi_session_boards.id'], name=op.f('pi_team_capabilities_session_board_id_pi_session_boards_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pi_team_capabilities_pkey'))
-    )
-    op.create_index(op.f('pi_team_capabilities_board_idx'), 'pi_team_capabilities', ['session_board_id'], unique=False)
-
-    # Create pi_planned_items (depends on pi_planning_sessions)
-    op.create_table('pi_planned_items',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('session_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('jira_issue_id', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('jira_issue_key', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('title', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('assigned_board_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('target_sprint_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('sequence_order', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('estimated_points', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('confidence', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('dependencies', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('notes', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('ai_suggested', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['session_id'], ['pi_planning_sessions.id'], name=op.f('pi_planned_items_session_id_pi_planning_sessions_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pi_planned_items_pkey'))
-    )
-    op.create_index(op.f('pi_planned_items_sprint_idx'), 'pi_planned_items', ['target_sprint_id'], unique=False)
-    op.create_index(op.f('pi_planned_items_session_idx'), 'pi_planned_items', ['session_id'], unique=False)
-    op.create_index(op.f('pi_planned_items_board_idx'), 'pi_planned_items', ['assigned_board_id'], unique=False)
-
-    # Create custom_holidays (depends on holiday_configs)
-    op.create_table('custom_holidays',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('config_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('holiday_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
-    sa.Column('name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('is_recurring', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['config_id'], ['holiday_configs.id'], name=op.f('custom_holidays_config_id_holiday_configs_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('custom_holidays_pkey'))
-    )
-    op.create_index(op.f('custom_holidays_date_idx'), 'custom_holidays', ['holiday_date'], unique=False)
-    op.create_index(op.f('custom_holidays_config_idx'), 'custom_holidays', ['config_id'], unique=False)
-
-    # Create jira_boards (depends on integrations)
-    op.create_table('jira_boards',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('jira_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('type', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('project_id', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('project_key', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('velocity_avg', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('velocity_last_n', sa.INTEGER(), server_default=sa.text('5'), autoincrement=False, nullable=True),
-    sa.Column('synced_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name=op.f('jira_boards_integration_id_integrations_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('jira_boards_pkey'))
-    )
-    op.create_index(op.f('jira_boards_unique'), 'jira_boards', ['integration_id', 'jira_id'], unique=True)
-    op.create_index(op.f('jira_boards_integration_idx'), 'jira_boards', ['integration_id'], unique=False)
-
-    # Create jira_sprints (depends on integrations)
-    op.create_table('jira_sprints',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('board_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('jira_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('state', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('start_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('end_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('completed_points', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('committed_points', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('goal', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('synced_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name=op.f('jira_sprints_integration_id_integrations_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('jira_sprints_pkey'))
-    )
-    op.create_index(op.f('jira_sprints_unique'), 'jira_sprints', ['integration_id', 'jira_id'], unique=True)
-    op.create_index(op.f('jira_sprints_state_idx'), 'jira_sprints', ['state'], unique=False)
-    op.create_index(op.f('jira_sprints_integration_idx'), 'jira_sprints', ['integration_id'], unique=False)
-    op.create_index(op.f('jira_sprints_board_idx'), 'jira_sprints', ['board_id'], unique=False)
-
-    # Create jira_issues (depends on integrations)
-    op.create_table('jira_issues',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('jira_id', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('key', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('summary', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('issue_type', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('issue_type_id', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('status', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('status_category', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('priority', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('assignee_id', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('assignee_name', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('reporter_id', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('reporter_name', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('story_points', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('sprint_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('epic_key', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('parent_key', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('labels', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('components', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('project_key', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('created_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('updated_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('resolution_date', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('synced_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name=op.f('jira_issues_integration_id_integrations_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('jira_issues_pkey'))
-    )
-    op.create_index(op.f('jira_issues_unique'), 'jira_issues', ['integration_id', 'jira_id'], unique=True)
-    op.create_index(op.f('jira_issues_sprint_idx'), 'jira_issues', ['sprint_id'], unique=False)
-    op.create_index(op.f('jira_issues_project_idx'), 'jira_issues', ['project_key'], unique=False)
-    op.create_index(op.f('jira_issues_key_idx'), 'jira_issues', ['key'], unique=False)
-    op.create_index(op.f('jira_issues_integration_idx'), 'jira_issues', ['integration_id'], unique=False)
-    op.create_index(op.f('jira_issues_epic_idx'), 'jira_issues', ['epic_key'], unique=False)
-    op.create_index(op.f('jira_issues_assignee_idx'), 'jira_issues', ['assignee_id'], unique=False)
-
-    # Create field_mappings (depends on integrations)
-    op.create_table('field_mappings',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('our_field', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('provider_field_id', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('provider_field_name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('provider_field_type', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('confidence', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=False),
-    sa.Column('admin_confirmed', sa.INTEGER(), server_default=sa.text('0'), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name=op.f('field_mappings_integration_id_integrations_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('field_mappings_pkey'))
-    )
-    op.create_index(op.f('field_mappings_integration_idx'), 'field_mappings', ['integration_id'], unique=False)
-
-    # Create required_fields (depends on integrations)
-    op.create_table('required_fields',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('project_id', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('project_key', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('issue_type_id', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('issue_type_name', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('fields', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name=op.f('required_fields_integration_id_integrations_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('required_fields_pkey'))
-    )
-    op.create_index(op.f('required_fields_unique'), 'required_fields', ['integration_id', 'project_id', 'issue_type_id'], unique=True)
-    op.create_index(op.f('required_fields_project_idx'), 'required_fields', ['project_id'], unique=False)
-    op.create_index(op.f('required_fields_integration_idx'), 'required_fields', ['integration_id'], unique=False)
-
-    # Create artifact_jira_links (depends on integrations)
-    op.create_table('artifact_jira_links',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('artifact_type', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('artifact_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('integration_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('jira_issue_id', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('jira_issue_key', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('jira_project_key', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], name=op.f('artifact_jira_links_integration_id_integrations_id_fk'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('artifact_jira_links_pkey'))
-    )
-    op.create_index(op.f('artifact_jira_links_integration_idx'), 'artifact_jira_links', ['integration_id'], unique=False)
-    op.create_index(op.f('artifact_jira_links_artifact_idx'), 'artifact_jira_links', ['artifact_type', 'artifact_id'], unique=False)
-
-    # Create conversations (depends on agents)
-    op.create_table('conversations',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('agent_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('title', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['agent_id'], ['agents.id'], name='conversations_agent_id_agents_id_fk'),
-    sa.PrimaryKeyConstraint('id', name='conversations_pkey')
-    )
-
-    # Create messages (depends on conversations)
-    op.create_table('messages',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('conversation_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('role', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('content', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('tool_calls', postgresql.JSONB(astext_type=sa.Text()), autoincrement=False, nullable=True),
-    sa.Column('tool_call_id', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['conversation_id'], ['conversations.id'], name=op.f('messages_conversation_id_conversations_id_fk')),
-    sa.PrimaryKeyConstraint('id', name=op.f('messages_pkey'))
-    )
-
-    # Create extracted_facts (depends on feedback, knowledge_bases)
-    op.create_table('extracted_facts',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('feedback_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('content', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('knowledge_base_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('status', sa.TEXT(), server_default=sa.text("'pending'::text"), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['feedback_id'], ['feedback.id'], name=op.f('extracted_facts_feedback_id_feedback_id_fk'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['knowledge_base_id'], ['knowledge_bases.id'], name=op.f('extracted_facts_knowledge_base_id_knowledge_bases_id_fk'), ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id', name=op.f('extracted_facts_pkey'))
-    )
-    op.create_index(op.f('extracted_facts_status_idx'), 'extracted_facts', ['status'], unique=False)
-    op.create_index(op.f('extracted_facts_feedback_idx'), 'extracted_facts', ['feedback_id'], unique=False)
-
-    # Create generation_extracted_facts (depends on generation_feedback, knowledge_bases)
-    op.create_table('generation_extracted_facts',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('feedback_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('content', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('knowledge_base_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('status', sa.TEXT(), server_default=sa.text("'pending'::text"), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('now()'), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['feedback_id'], ['generation_feedback.id'], name=op.f('generation_extracted_facts_feedback_id_generation_feedback_id_f'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['knowledge_base_id'], ['knowledge_bases.id'], name=op.f('generation_extracted_facts_knowledge_base_id_knowledge_bases_id'), ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id', name=op.f('generation_extracted_facts_pkey'))
-    )
-    op.create_index(op.f('gen_extracted_facts_status_idx'), 'generation_extracted_facts', ['status'], unique=False)
-    op.create_index(op.f('gen_extracted_facts_feedback_idx'), 'generation_extracted_facts', ['feedback_id'], unique=False)
 
 
 def downgrade() -> None:
@@ -464,22 +612,55 @@ def downgrade() -> None:
     op.drop_index(op.f('pi_sprints_unique'), table_name='pi_sprints')
     op.drop_table('pi_sprints')
 
-    op.drop_index(op.f('pi_assignments_board_idx'), table_name='pi_feature_assignments')
-    op.drop_index(op.f('pi_assignments_feature_idx'), table_name='pi_feature_assignments')
-    op.drop_index(op.f('pi_assignments_session_idx'), table_name='pi_feature_assignments')
-    op.drop_index(op.f('pi_assignments_sprint_idx'), table_name='pi_feature_assignments')
+def downgrade() -> None:
+    """Downgrade schema - drop all tables in reverse order."""
+    # Ideation
+    op.drop_index(op.f('ix_generated_ideas_session_id'), table_name='generated_ideas')
+    op.drop_table('generated_ideas')
+    op.drop_index(op.f('ix_idea_clusters_session_id'), table_name='idea_clusters')
+    op.drop_table('idea_clusters')
+    op.drop_index(op.f('ix_ideation_sessions_user_id'), table_name='ideation_sessions')
+    op.drop_table('ideation_sessions')
+
+    # PI Planning
     op.drop_table('pi_feature_assignments')
-
-    op.drop_index(op.f('pi_features_jira_key_idx'), table_name='pi_features')
-    op.drop_index(op.f('pi_features_priority_idx'), table_name='pi_features')
-    op.drop_index(op.f('pi_features_session_idx'), table_name='pi_features')
     op.drop_table('pi_features')
-
-    op.drop_index(op.f('pi_session_boards_session_idx'), table_name='pi_session_boards')
+    op.drop_table('pi_sprints')
     op.drop_table('pi_session_boards')
-
-    op.drop_index(op.f('pi_sessions_integration_idx'), table_name='pi_planning_sessions')
-    op.drop_index(op.f('pi_sessions_status_idx'), table_name='pi_planning_sessions')
-    op.drop_table('pi_planning_sessions')
-
+    op.drop_table('pi_sessions')
     op.drop_table('holiday_configs')
+
+    # PRD
+    op.drop_table('generated_prds')
+    op.drop_table('prd_templates')
+
+    # Story Generator
+    op.drop_table('generation_feedback')
+    op.drop_table('generated_artifacts')
+    op.drop_table('story_generator_split_tests')
+    op.drop_table('prompt_templates')
+
+    # Feedback & Optimize
+    op.drop_table('feedback')
+    op.drop_table('agent_executions')
+    op.drop_table('split_tests')
+    op.drop_table('prompt_versions')
+
+    # Chat
+    op.drop_table('code_chat_messages')
+    op.drop_table('code_chat_sessions')
+
+    # Library
+    op.drop_table('library_integrations')
+    op.drop_table('library_pages')
+    op.drop_table('library_books')
+
+    # Core
+    op.drop_table('document_chunks')
+    op.drop_table('documents')
+    op.drop_table('knowledge_bases')
+    op.drop_table('integrations')
+    op.drop_table('flow_executions')
+    op.drop_table('flows')
+    op.drop_table('agents')
+    op.drop_table('users')

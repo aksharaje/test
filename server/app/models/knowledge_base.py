@@ -11,8 +11,9 @@ class KnowledgeBaseBase(SQLModel):
     settings: Dict[str, Any] = Field(default={
         "chunkSize": 1000,
         "chunkOverlap": 200,
-        "embeddingModel": "google/gemini-embedding-001"
+        "embeddingModel": "text-embedding-ada-002"
     }, sa_column=Column(JSON))
+    sourceMetadata: Dict[str, Any] = Field(default={}, sa_column=Column("source_metadata", JSON))
     status: str = "pending"
     documentCount: int = Field(default=0, sa_column=Column("document_count", Integer))
     totalChunks: int = Field(default=0, sa_column=Column("total_chunks", Integer))

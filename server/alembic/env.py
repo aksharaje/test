@@ -63,27 +63,38 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-
-    url = str(settings.DATABASE_URL)
-    if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql://", 1)
-        
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = url
     
-    connectable = engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
+    # Check if connection is passed in config attributes (for testing)
+    connectable = config.attributes.get("connection", None)
+    
+    if connectable is None:
+        url = str(settings.DATABASE_URL)
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+            
+        configuration = config.get_section(config.config_ini_section, {})
+        configuration["sqlalchemy.url"] = url
+        
+        connectable = engine_from_config(
+            configuration,
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
         )
 
+    if isinstance(connectable, type(config.attributes.get("connection"))): # If it's a connection object
+        context.configure(
+            connection=connectable, 
+            target_metadata=target_metadata
+        )
         with context.begin_transaction():
             context.run_migrations()
+    else: # If it's an engine
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection, target_metadata=target_metadata
+            )
+            with context.begin_transaction():
+                context.run_migrations()
 
 
 if context.is_offline_mode():

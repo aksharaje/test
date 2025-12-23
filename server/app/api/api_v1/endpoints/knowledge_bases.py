@@ -1,6 +1,6 @@
 from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Response
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.core.db import get_session
 from app.models.knowledge_base import KnowledgeBase, Document
 from app.services.knowledge_base_service import knowledge_base_service
@@ -50,6 +50,89 @@ def delete_knowledge_base(
     if not knowledge_base_service.delete_knowledge_base(session, id):
         raise HTTPException(status_code=404, detail="Knowledge Base not found")
     return Response(status_code=204)
+
+@router.post("/{id}/github", response_model=Document, response_model_by_alias=True)
+def add_github_source(
+    id: int,
+    body: dict,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session)
+) -> Any:
+    url = body.get("repoUrl") or body.get("url")
+    if not url:
+        raise HTTPException(status_code=400, detail="repoUrl is required")
+        
+    # Check if this is a repository URL (heuristic)
+    # File URLs usually contain /blob/ or /raw/
+    # Repo URLs: https://github.com/user/repo or https://github.com/user/repo.git
+    is_repo = "github.com" in url and "/blob/" not in url and "raw.githubusercontent.com" not in url
+    
+    if is_repo:
+        from app.services.github_service import github_service
+        # Check if we already have this repo imported (any status)
+        existing_stmt = select(Document).where(
+            Document.knowledgeBaseId == id,
+            Document.source == "github"
+        )
+        existing_docs = session.exec(existing_stmt).all()
+        
+        for d in existing_docs:
+            if d.sourceMetadata and d.sourceMetadata.get("repoUrl") == url:
+                # Return existing document to prevent duplicates
+                return d
+        
+        # Create a placeholder document
+        doc = Document(
+            knowledgeBaseId=id,
+            name=f"Repository Import: {url.split('/')[-1]}",
+            source="github",
+            sourceMetadata={"repoUrl": url},
+            content="Repository import in progress...",
+            status="processing"
+        )
+        session.add(doc)
+        
+        # Update KB status
+        kb = session.get(KnowledgeBase, id)
+        if kb:
+            kb.status = "processing"
+            session.add(kb)
+            
+        session.commit()
+        session.refresh(doc)
+        
+        # Trigger background processing
+        access_token = body.get("accessToken")
+        background_tasks.add_task(github_service.process_repository, id, url, access_token, doc.id)
+        
+        return doc
+
+    try:
+        return knowledge_base_service.add_github_source(session, id, url)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{id}/documents", response_model=List[Document], response_model_by_alias=True)
+def list_documents(
+    id: int,
+    session: Session = Depends(get_session)
+) -> Any:
+    return knowledge_base_service.list_documents(session, id)
+
+@router.post("/{id}/documents/{doc_id}/reprocess")
+def reprocess_document(
+    id: int,
+    doc_id: int,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session)
+) -> Any:
+    # Verify document exists and belongs to KB
+    doc = session.get(Document, doc_id)
+    if not doc or doc.knowledgeBaseId != id:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    background_tasks.add_task(knowledge_base_service.index_document, session, doc_id)
+    return {"message": "Document reprocessing started"}
 
 # ... (omitted lines)
 

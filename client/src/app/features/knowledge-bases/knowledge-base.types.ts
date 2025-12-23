@@ -15,6 +15,10 @@ export interface KnowledgeBase {
   totalChunks: number;
   createdAt: string;
   updatedAt: string;
+  sourceMetadata?: {
+    repoUrl?: string;
+    accessToken?: string;
+  };
 }
 
 export interface DocumentSourceMetadata {

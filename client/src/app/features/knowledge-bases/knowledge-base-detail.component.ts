@@ -163,7 +163,22 @@ import { HlmButtonDirective } from '../../ui/button';
             <!-- GitHub Import -->
             <div class="rounded-lg border p-6">
               <ng-icon name="lucideGithub" class="mx-auto h-10 w-10 text-muted-foreground" />
-              <p class="mt-2 text-center font-medium">Import from GitHub</p>
+              <p class="mt-2 text-center font-medium">
+                @if (kb()?.sourceMetadata?.repoUrl) {
+                  Connected Repository
+                } @else {
+                  Import from GitHub
+                }
+              </p>
+              
+              @if (kb()?.sourceMetadata?.repoUrl) {
+                <p class="mt-1 text-center text-sm text-muted-foreground break-all">
+                  <a [href]="kb()!.sourceMetadata!.repoUrl" target="_blank" class="hover:underline">
+                    {{ kb()!.sourceMetadata!.repoUrl }}
+                  </a>
+                </p>
+              }
+
               <div class="mt-4 space-y-3">
                 <input
                   type="text"
@@ -171,6 +186,7 @@ import { HlmButtonDirective } from '../../ui/button';
                   class="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   [value]="githubUrl()"
                   (input)="onGithubUrlInput($event)"
+                  [disabled]="!!kb()?.sourceMetadata?.repoUrl"
                 />
                 <input
                   type="password"
@@ -188,7 +204,11 @@ import { HlmButtonDirective } from '../../ui/button';
                   @if (importing()) {
                     <ng-icon name="lucideLoader2" class="mr-2 h-4 w-4 animate-spin" />
                   }
-                  Import Repository
+                  @if (kb()?.sourceMetadata?.repoUrl) {
+                    Sync Repository
+                  } @else {
+                    Import Repository
+                  }
                 </button>
               </div>
             </div>
@@ -353,6 +373,13 @@ export class KnowledgeBaseDetailComponent implements OnInit, OnDestroy {
     const kb = await this.service.getKnowledgeBase(id);
     this.kb.set(kb);
     if (kb) {
+      if (kb.sourceMetadata?.repoUrl) {
+        this.githubUrl.set(kb.sourceMetadata.repoUrl);
+      }
+      if (kb.sourceMetadata?.accessToken) {
+        // Just show a placeholder to indicate a token is set
+        this.githubToken.set('********');
+      }
       await this.service.loadDocuments(kb.id);
       this.checkAndStartPolling();
     }
@@ -437,12 +464,14 @@ export class KnowledgeBaseDetailComponent implements OnInit, OnDestroy {
 
     this.importing.set(true);
     try {
+      const token = this.githubToken() === '********' ? undefined : this.githubToken();
       await this.service.importFromGitHub(this.kb()!.id, {
         repoUrl: this.githubUrl(),
-        token: this.githubToken() || undefined,
+        token: token || undefined,
       });
-      this.githubUrl.set('');
-      this.githubToken.set('');
+      // Don't clear URL if it's persisted
+      // this.githubUrl.set(''); 
+      // this.githubToken.set('');
       await this.loadKnowledgeBase(this.kb()!.id);
     } finally {
       this.importing.set(false);

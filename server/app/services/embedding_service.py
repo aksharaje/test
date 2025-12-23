@@ -75,7 +75,7 @@ class EmbeddingService:
 
         return chunks
 
-    def generate_embeddings(self, texts: List[str], model: str = "text-embedding-3-small") -> List[List[float]]:
+    def generate_embeddings(self, texts: List[str], model: str = "text-embedding-3-small", dimensions: Optional[int] = None) -> List[List[float]]:
         """
         Generate embeddings for a list of texts.
         """
@@ -88,23 +88,36 @@ class EmbeddingService:
 
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
-            response = self.client.embeddings.create(
-                model=model,
-                input=batch
-            )
+            kwargs = {
+                "model": model,
+                "input": batch
+            }
+            if dimensions and "text-embedding-3" in model:
+                kwargs["dimensions"] = dimensions
+                
+            response = self.client.embeddings.create(**kwargs)
             embeddings = [item.embedding for item in response.data]
+            
+            # Ensure dimensions match requested
+            if dimensions:
+                embeddings = [e[:dimensions] if len(e) > dimensions else e for e in embeddings]
+                
             all_embeddings.extend(embeddings)
 
         return all_embeddings
 
-    def generate_query_embedding(self, query: str, model: str = "text-embedding-3-small") -> List[float]:
+    def generate_query_embedding(self, query: str, model: str = "text-embedding-3-small", dimensions: Optional[int] = None) -> List[float]:
         """
         Generate a single embedding for a query.
         """
-        response = self.client.embeddings.create(
-            model=model,
-            input=query
-        )
+        kwargs = {
+            "model": model,
+            "input": query
+        }
+        if dimensions and "text-embedding-3" in model:
+            kwargs["dimensions"] = dimensions
+
+        response = self.client.embeddings.create(**kwargs)
         return response.data[0].embedding
 
     def estimate_token_count(self, text: str) -> int:

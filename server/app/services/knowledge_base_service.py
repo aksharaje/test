@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
+import requests
 from datetime import datetime
-from sqlmodel import Session, select, desc, func, col
+from sqlmodel import Session, select, desc, func, col, delete
 from sqlalchemy.orm import selectinload
 from app.models.knowledge_base import KnowledgeBase, Document, DocumentChunk
 from app.services.embedding_service import embedding_service
@@ -43,6 +44,13 @@ class KnowledgeBaseService:
         kb = session.get(KnowledgeBase, kb_id)
         if not kb:
             return False
+            
+        # Delete all document chunks associated with this KB
+        session.exec(delete(DocumentChunk).where(DocumentChunk.knowledge_base_id == kb_id))
+        
+        # Delete all documents associated with this KB
+        session.exec(delete(Document).where(Document.knowledgeBaseId == kb_id))
+        
         session.delete(kb)
         session.commit()
         return True
@@ -62,6 +70,30 @@ class KnowledgeBaseService:
             session.commit()
             
         return document
+
+    def add_github_source(self, session: Session, kb_id: int, url: str) -> Document:
+        name = url.split('/')[-1]
+        
+        # Basic content fetching for raw URLs
+        content = None
+        if "raw.githubusercontent.com" in url:
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    content = response.text
+            except Exception as e:
+                print(f"Failed to fetch content from {url}: {e}")
+
+        document = Document(
+            knowledgeBaseId=kb_id,
+            name=name,
+            source="github",
+            sourceMetadata={"url": url},
+            content=content,
+            status="pending"
+        )
+        
+        return self.add_document(session, kb_id, document)
 
     def list_documents(self, session: Session, kb_id: int) -> List[Document]:
         return session.exec(select(Document).where(Document.knowledgeBaseId == kb_id).order_by(desc(Document.createdAt))).all()
@@ -96,6 +128,7 @@ class KnowledgeBaseService:
         kb = session.get(KnowledgeBase, doc.knowledgeBaseId)
         if not kb:
             raise ValueError("Knowledge Base not found")
+        session.refresh(kb)
             
         settings = kb.settings
         chunk_size = settings.get("chunkSize", 1000)
@@ -120,8 +153,12 @@ class KnowledgeBaseService:
                 
             # Generate embeddings
             texts = [c["content"] for c in chunks_data]
-            embeddings = embedding_service.generate_embeddings(texts, embedding_model)
-            
+            embeddings = embedding_service.generate_embeddings(texts, embedding_model, dimensions=1536)
+
+            # Validate embedding dimensions
+            if embeddings and len(embeddings[0]) != 1536:
+                raise ValueError(f"Generated embeddings have {len(embeddings[0])} dimensions, but expected 1536. Model: {embedding_model}")
+
             # Save chunks
             for i, chunk_data in enumerate(chunks_data):
                 chunk = DocumentChunk(
@@ -162,7 +199,7 @@ class KnowledgeBaseService:
             raise ValueError("Knowledge Base not found")
             
         embedding_model = kb.settings.get("embeddingModel", "text-embedding-3-small")
-        query_embedding = embedding_service.generate_query_embedding(query, embedding_model)
+        query_embedding = embedding_service.generate_query_embedding(query, embedding_model, dimensions=1536)
         
         # PGVector cosine distance search
         # Note: 1 - cosine_distance = cosine_similarity

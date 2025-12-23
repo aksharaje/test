@@ -195,7 +195,14 @@ export class KnowledgeBaseService {
         )
       );
 
-      this._documents.update((docs) => [...response.documents, ...docs]);
+      this._documents.update((docs) => {
+        const newDocs = response.documents;
+        // Upsert by ID to avoid duplicates
+        const docMap = new Map(docs.map(d => [d.id, d]));
+        newDocs.forEach(d => docMap.set(d.id, d));
+        return Array.from(docMap.values());
+      });
+
       await this.refreshKnowledgeBase(knowledgeBaseId);
       return response.documents;
     } catch (err) {
