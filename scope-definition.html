@@ -39,10 +39,63 @@
         <!-- Header -->
         <header class="header">
             <h1>Scope Definition</h1>
-            <p class="subtitle">Define what is included before research and solution design begins.<br>This scope will
+            <p class="subtitle" id="scope-subtitle-complete">Define what is included before research and solution design begins.<br>This scope will
                 be monitored for changes.</p>
+            <p class="subtitle" id="scope-subtitle-standalone" style="display: none;">Set clear boundaries to avoid misalignment</p>
         </header>
 
+        <!-- Standalone Input Form -->
+        <section id="scope-input-section" style="display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h3 style="margin-bottom: 16px;"><i class="ph ph-target"></i> Input Details</h3>
+            <div style="display: grid; gap: 16px;">
+                <div class="form-group">
+                    <label>Initiative / Problem</label>
+                    <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                        What you're working on (e.g., Improve login experience).</p>
+                    <input type="text" id="scope-input-initiative" placeholder="e.g., Improve login experience">
+                </div>
+
+                <div class="form-group">
+                    <label>In Scope</label>
+                    <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                        What's included (e.g., Error messaging, password reset flow).</p>
+                    <textarea id="scope-input-inscope" rows="2" placeholder="e.g., Error messaging, password reset flow"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Out of Scope</label>
+                    <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                        What's explicitly excluded (e.g., Backend authentication rewrite).</p>
+                    <textarea id="scope-input-outscope" rows="2" placeholder="e.g., Backend authentication rewrite"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Constraints</label>
+                    <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                        Limitations or restrictions (e.g., No backend changes this quarter).</p>
+                    <textarea id="scope-input-constraints" rows="2" placeholder="e.g., No backend changes this quarter"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Assumptions (optional)</label>
+                    <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                        What you're assuming to be true (e.g., Login issues are UX-related).</p>
+                    <textarea id="scope-input-assumptions" rows="2" placeholder="e.g., Login issues are UX-related"></textarea>
+                </div>
+
+                <button class="btn btn-primary full-width" onclick="defineScope()" id="define-scope-btn">
+                    <i class="ph ph-magic-wand"></i> Define Scope
+                </button>
+
+                <div id="scope-loading-state" style="display: none; text-align: center; padding: 20px;">
+                    <i class="ph ph-spinner ph-spin" style="font-size: 24px; color: var(--primary-color);"></i>
+                    <p style="margin-top: 8px; color: var(--text-secondary);">Defining scope...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <div id="scope-results-section">
         <!-- Initiative Context -->
         <section class="section">
             <div class="section-header">
@@ -257,6 +310,7 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 
     <script src="workflow-data.js"></script>
@@ -270,10 +324,42 @@
 
             if (isCompleteWorkflow) {
                 document.getElementById('workflow-breadcrumb').style.display = 'flex';
+                document.getElementById('scope-subtitle-complete').style.display = 'block';
+                document.getElementById('scope-subtitle-standalone').style.display = 'none';
+                document.getElementById('scope-input-section').style.display = 'none';
+                document.getElementById('scope-results-section').style.display = 'block';
             } else {
                 document.getElementById('workflow-breadcrumb').style.display = 'none';
+                document.getElementById('scope-subtitle-complete').style.display = 'none';
+                document.getElementById('scope-subtitle-standalone').style.display = 'block';
+                document.getElementById('scope-input-section').style.display = 'block';
+                document.getElementById('scope-results-section').style.display = 'none';
             }
         });
+
+        // Define Scope function
+        function defineScope() {
+            const initiative = document.getElementById('scope-input-initiative').value;
+            const inscope = document.getElementById('scope-input-inscope').value;
+            const outscope = document.getElementById('scope-input-outscope').value;
+
+            if (!initiative.trim() || !inscope.trim() || !outscope.trim()) {
+                alert('Please fill in Initiative, In Scope, and Out of Scope fields');
+                return;
+            }
+
+            document.getElementById('define-scope-btn').style.display = 'none';
+            document.getElementById('scope-loading-state').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('scope-input-section').style.display = 'none';
+                document.getElementById('scope-results-section').style.display = 'block';
+                document.getElementById('scope-subtitle-standalone').innerHTML = 'Scope defined based on your inputs.';
+
+                document.getElementById('define-scope-btn').style.display = 'block';
+                document.getElementById('scope-loading-state').style.display = 'none';
+            }, 1500);
+        }
 
         // Update approveScope to show buttons only in complete workflow
         const originalApproveScope = window.approveScope;

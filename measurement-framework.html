@@ -291,10 +291,76 @@
             <!-- Header -->
             <div class="measurement-header">
                 <h1>Measurement Framework Builder</h1>
-                <p>Your OKRs have been calibrated with benchmark data.<br>Now finalize the measurement model for
+                <p id="measurement-subtitle-complete">Your OKRs have been calibrated with benchmark data.<br>Now finalize the measurement model for
                     tracking and reporting.</p>
+                <p id="measurement-subtitle-standalone" style="display: none;">Operationalize how success is measured</p>
             </div>
 
+            <!-- Standalone Input Form -->
+            <section id="measurement-input-section" style="display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;"><i class="ph ph-gauge"></i> Input Details</h3>
+                <div style="display: grid; gap: 16px;">
+                    <div class="form-group">
+                        <label>KPIs to Track</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The key metrics you want to track (e.g., Login success rate, activation rate).</p>
+                        <textarea id="measurement-input-kpis" rows="2" placeholder="e.g., Login success rate, activation rate"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tracking Source</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="measurement-source-analytics" checked>
+                                <span>Google Analytics</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="measurement-source-support" checked>
+                                <span>Support tickets</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="measurement-source-surveys">
+                                <span>Surveys</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="measurement-source-manual">
+                                <span>Manual tracking</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Review Cadence</label>
+                        <select id="measurement-input-cadence" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="Weekly">Weekly</option>
+                            <option value="Bi-weekly">Bi-weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Owner</label>
+                        <select id="measurement-input-owner" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="Product">Product</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Client">Client</option>
+                            <option value="Analytics">Analytics</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary full-width" onclick="buildMeasurementFramework()" id="build-measurement-btn">
+                        <i class="ph ph-magic-wand"></i> Build Measurement Framework
+                    </button>
+
+                    <div id="measurement-loading-state" style="display: none; text-align: center; padding: 20px;">
+                        <i class="ph ph-spinner ph-spin" style="font-size: 24px; color: var(--primary-color);"></i>
+                        <p style="margin-top: 8px; color: var(--text-secondary);">Building framework...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <div id="measurement-results-section">
             <!-- Metric Group 1: Authentication / Login Health -->
             <div class="metric-group" data-metric="login-success">
                 <div class="metric-group-header">
@@ -625,6 +691,7 @@
                     Proceed to Scope Definition
                 </button>
             </div>
+            </div>
         </main>
     </div>
 
@@ -641,11 +708,40 @@
             if (isCompleteWorkflow) {
                 document.getElementById('workflow-breadcrumb').style.display = 'flex';
                 document.getElementById('workflow-next-step').style.display = 'block';
+                document.getElementById('measurement-subtitle-complete').style.display = 'block';
+                document.getElementById('measurement-subtitle-standalone').style.display = 'none';
+                document.getElementById('measurement-input-section').style.display = 'none';
+                document.getElementById('measurement-results-section').style.display = 'block';
             } else {
                 document.getElementById('workflow-breadcrumb').style.display = 'none';
                 document.getElementById('workflow-next-step').style.display = 'none';
+                document.getElementById('measurement-subtitle-complete').style.display = 'none';
+                document.getElementById('measurement-subtitle-standalone').style.display = 'block';
+                document.getElementById('measurement-input-section').style.display = 'block';
+                document.getElementById('measurement-results-section').style.display = 'none';
             }
         });
+
+        // Build Measurement Framework function
+        function buildMeasurementFramework() {
+            const kpis = document.getElementById('measurement-input-kpis').value;
+            if (!kpis.trim()) {
+                alert('Please enter KPIs to track');
+                return;
+            }
+
+            document.getElementById('build-measurement-btn').style.display = 'none';
+            document.getElementById('measurement-loading-state').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('measurement-input-section').style.display = 'none';
+                document.getElementById('measurement-results-section').style.display = 'block';
+                document.getElementById('measurement-subtitle-standalone').innerHTML = 'Measurement framework built based on your inputs.';
+
+                document.getElementById('build-measurement-btn').style.display = 'block';
+                document.getElementById('measurement-loading-state').style.display = 'none';
+            }, 1500);
+        }
     </script>
 </body>
 

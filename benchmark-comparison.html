@@ -352,10 +352,61 @@
             <!-- Header -->
             <div class="benchmark-header">
                 <h1>Benchmark Comparison</h1>
-                <p>We've analyzed your OKRs and KPIs against industry and category benchmarks.<br>Review
+                <p id="benchmark-subtitle-complete">We've analyzed your OKRs and KPIs against industry and category benchmarks.<br>Review
                     recommendations before finalizing your targets.</p>
+                <p id="benchmark-subtitle-standalone" style="display: none;">Compare your metrics against industry norms</p>
             </div>
 
+            <!-- Standalone Input Form -->
+            <section id="benchmark-input-section" style="display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;"><i class="ph ph-chart-line"></i> Input Details</h3>
+                <div style="display: grid; gap: 16px;">
+                    <div class="form-group">
+                        <label>Metric(s) to Benchmark</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The metrics you want to compare (e.g., Login success rate, activation rate).</p>
+                        <textarea id="benchmark-input-metrics" rows="2" placeholder="e.g., Login success rate, activation rate"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Product Type</label>
+                        <select id="benchmark-input-product-type" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="B2B SaaS">B2B SaaS</option>
+                            <option value="Consumer App">Consumer App</option>
+                            <option value="Marketplace">Marketplace</option>
+                            <option value="E-commerce">E-commerce</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Industry</label>
+                        <select id="benchmark-input-industry" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="Fintech">Fintech</option>
+                            <option value="Health">Health</option>
+                            <option value="E-commerce">E-commerce</option>
+                            <option value="General SaaS">General SaaS</option>
+                            <option value="Social">Social</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>User Segment (optional)</label>
+                        <input type="text" id="benchmark-input-segment" placeholder="e.g., New users, Mobile users, Enterprise clients">
+                    </div>
+
+                    <button class="btn btn-primary full-width" onclick="generateBenchmarks()" id="generate-benchmark-btn">
+                        <i class="ph ph-magic-wand"></i> Generate Benchmarks
+                    </button>
+
+                    <div id="benchmark-loading-state" style="display: none; text-align: center; padding: 20px;">
+                        <i class="ph ph-spinner ph-spin" style="font-size: 24px; color: var(--primary-color);"></i>
+                        <p style="margin-top: 8px; color: var(--text-secondary);">Fetching benchmark data...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <div id="benchmark-results-section">
             <!-- Summary Stats -->
             <div class="summary-stats">
                 <h3><i class="ph ph-chart-bar"></i> Summary</h3>
@@ -703,6 +754,7 @@
                     </button>
                 </div>
             </div>
+            </div>
         </main>
     </div>
 
@@ -718,11 +770,40 @@
             if (isCompleteWorkflow) {
                 document.getElementById('workflow-breadcrumb').style.display = 'flex';
                 document.getElementById('workflow-next-step').style.display = 'flex';
+                document.getElementById('benchmark-subtitle-complete').style.display = 'block';
+                document.getElementById('benchmark-subtitle-standalone').style.display = 'none';
+                document.getElementById('benchmark-input-section').style.display = 'none';
+                document.getElementById('benchmark-results-section').style.display = 'block';
             } else {
                 document.getElementById('workflow-breadcrumb').style.display = 'none';
                 document.getElementById('workflow-next-step').style.display = 'none';
+                document.getElementById('benchmark-subtitle-complete').style.display = 'none';
+                document.getElementById('benchmark-subtitle-standalone').style.display = 'block';
+                document.getElementById('benchmark-input-section').style.display = 'block';
+                document.getElementById('benchmark-results-section').style.display = 'none';
             }
         });
+
+        // Generate Benchmarks function
+        function generateBenchmarks() {
+            const metrics = document.getElementById('benchmark-input-metrics').value;
+            if (!metrics.trim()) {
+                alert('Please enter metric(s) to benchmark');
+                return;
+            }
+
+            document.getElementById('generate-benchmark-btn').style.display = 'none';
+            document.getElementById('benchmark-loading-state').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('benchmark-input-section').style.display = 'none';
+                document.getElementById('benchmark-results-section').style.display = 'block';
+                document.getElementById('benchmark-subtitle-standalone').innerHTML = 'Benchmark comparison results based on your inputs.';
+
+                document.getElementById('generate-benchmark-btn').style.display = 'block';
+                document.getElementById('benchmark-loading-state').style.display = 'none';
+            }, 1500);
+        }
     </script>
 </body>
 

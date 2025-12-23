@@ -42,11 +42,76 @@
 
             <header class="app-header">
                 <h1>OKR Generator</h1>
-                <p class="subtitle">Your goals have been converted into Objectives and measurable Key Results. You can
+                <p class="subtitle" id="subtitle-complete">Your goals have been converted into Objectives and measurable Key Results. You can
                     edit anything.</p>
+                <p class="subtitle" id="subtitle-standalone" style="display: none;">Translate a goal into measurable outcomes</p>
             </header>
 
-            <section class="goals-section">
+            <!-- Standalone Input Form (Hidden by default, shown in standalone mode) -->
+            <section id="okr-input-section" class="summary-card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="ph ph-target"></i> Input Details</h2>
+                    <p style="color: var(--text-secondary); font-size: 14px; font-weight: 400;">Provide the goal and context to generate OKRs.</p>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div class="form-group">
+                        <label>Goal</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            The high-level goal you want to achieve (e.g., Improve login success and reduce user drop-off).</p>
+                        <textarea id="input-goal" rows="2" placeholder="e.g., Improve login success and reduce user drop-off"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Primary Owner / Role</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="owner-role" value="Product Manager" checked>
+                                <span>Product Manager</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="owner-role" value="Engineering">
+                                <span>Engineering</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="owner-role" value="Design">
+                                <span>Design</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="owner-role" value="Business / Client">
+                                <span>Business / Client</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Product Context (optional)</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            Additional context about your product (e.g., B2B SaaS, consumer app, mobile-first).</p>
+                        <input type="text" id="input-product-context" placeholder="e.g., B2B SaaS, consumer app">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Time Horizon</label>
+                        <select id="input-time-horizon" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="Quarter">Quarter</option>
+                            <option value="Half">Half Year</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary full-width" onclick="generateOKRs()" id="generate-okr-btn">
+                        <i class="ph ph-magic-wand"></i> Generate OKRs
+                    </button>
+
+                    <!-- Loading State -->
+                    <div id="okr-loading-state" style="display: none; text-align: center; padding: 20px;">
+                        <i class="ph ph-spinner ph-spin" style="font-size: 24px; color: var(--primary-color);"></i>
+                        <p style="margin-top: 8px; color: var(--text-secondary);">Generating OKRs...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="okr-results-section" class="goals-section">
 
                 <!-- Objective 1 -->
                 <div class="okr-card">
@@ -359,15 +424,52 @@
             const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
 
             if (isCompleteWorkflow) {
-                // Show breadcrumb and next step in complete workflow mode
+                // Complete workflow mode: show breadcrumb, next step, results
                 document.getElementById('workflow-breadcrumb').style.display = 'flex';
                 document.getElementById('workflow-next-step').style.display = 'block';
+                document.getElementById('subtitle-complete').style.display = 'block';
+                document.getElementById('subtitle-standalone').style.display = 'none';
+                document.getElementById('okr-input-section').style.display = 'none';
+                document.getElementById('okr-results-section').style.display = 'block';
             } else {
-                // Hide breadcrumb and next step in standalone mode
+                // Standalone mode: show input form, hide navigation
                 document.getElementById('workflow-breadcrumb').style.display = 'none';
                 document.getElementById('workflow-next-step').style.display = 'none';
+                document.getElementById('subtitle-complete').style.display = 'none';
+                document.getElementById('subtitle-standalone').style.display = 'block';
+                document.getElementById('okr-input-section').style.display = 'block';
+                document.getElementById('okr-results-section').style.display = 'none';
             }
         });
+
+        // Generate OKRs function for standalone mode
+        function generateOKRs() {
+            const goal = document.getElementById('input-goal').value;
+            const ownerRole = document.querySelector('input[name="owner-role"]:checked').value;
+            const productContext = document.getElementById('input-product-context').value;
+            const timeHorizon = document.getElementById('input-time-horizon').value;
+
+            if (!goal.trim()) {
+                alert('Please enter a goal');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('generate-okr-btn').style.display = 'none';
+            document.getElementById('okr-loading-state').style.display = 'block';
+
+            // Simulate generation (in real app, this would call an API)
+            setTimeout(() => {
+                // Hide input form, show results
+                document.getElementById('okr-input-section').style.display = 'none';
+                document.getElementById('okr-results-section').style.display = 'block';
+                document.getElementById('subtitle-standalone').innerHTML = 'Generated OKRs based on your inputs. You can edit anything.';
+
+                // Reset form
+                document.getElementById('generate-okr-btn').style.display = 'block';
+                document.getElementById('okr-loading-state').style.display = 'none';
+            }, 1500);
+        }
     </script>
 </body>
 
