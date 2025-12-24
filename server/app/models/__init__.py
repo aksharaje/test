@@ -11,3 +11,11 @@ from .jira import Integration, JiraProject
 from .library import LibraryBook, LibraryPage
 from .pi_planning import PiSession, PiSessionBoard, PiSprint, PiFeature, PiFeatureAssignment, HolidayConfig
 from .ideation import IdeationSession, GeneratedIdea, IdeaCluster
+from .feasibility import (
+    FeasibilitySession,
+    TechnicalComponent,
+    TimelineScenario,
+    RiskAssessment,
+    SkillRequirement,
+    ActualResult
+)
