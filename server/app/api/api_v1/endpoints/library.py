@@ -39,6 +39,16 @@ def delete_book(
         raise HTTPException(status_code=404, detail="Book not found")
     return Response(status_code=204)
 
+@router.get("/books/{id}", response_model=LibraryBook)
+def get_book(
+    id: int,
+    session: Session = Depends(get_session)
+) -> Any:
+    book = library_service.get_book(session, id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return book
+
 @router.get("/books/{id}/pages", response_model=List[Dict[str, Any]])
 def get_book_pages(
     id: int,

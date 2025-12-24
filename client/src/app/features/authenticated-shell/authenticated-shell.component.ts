@@ -52,7 +52,13 @@ export class AuthenticatedShellComponent {
         { label: 'Ideation Engine', path: '/ideation' },
       ],
     },
-    { label: 'Feasibility', path: '/feasibility', children: [] },
+    {
+      label: 'Feasibility',
+      path: '/feasibility-section',
+      children: [
+        { label: 'Feasibility Analyzer', path: '/feasibility' },
+      ],
+    },
     { label: 'Roadmapping', path: '/roadmapping', children: [] },
     { label: 'Customer Experience', path: '/customer-experience', children: [] },
     {
@@ -72,9 +78,9 @@ export class AuthenticatedShellComponent {
         { label: 'PI Planning', path: '/pi-planning' },
       ],
     },
-    { label: 'Sprint Planning', path: '/sprint-planning', children: [] },
-    { label: 'Development', path: '/development', children: [] },
-    { label: 'Testing', path: '/testing', children: [] },
+    // { label: 'Sprint Planning', path: '/sprint-planning', children: [] },
+    // { label: 'Development', path: '/development', children: [] },
+    // { label: 'Testing', path: '/testing', children: [] },
     { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
     {
       label: 'Optimize',

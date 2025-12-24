@@ -43,9 +43,20 @@ async def jira_oauth_callback(
 def list_integrations(session: Session = Depends(get_session)) -> Any:
     return jira_service.list_integrations(session)
 
-@router.get("/jira/projects")
-def list_jira_projects() -> Any:
-    return []
+@router.get("/jira/{integration_id}/projects")
+def list_jira_projects(integration_id: int) -> Any:
+    # return jira_service.list_projects(session, integration_id)
+    return [
+        {"key": "PROJ1", "name": "Project 1"},
+        {"key": "PROJ2", "name": "Project 2"}
+    ]
+
+@router.get("/jira/{integration_id}/boards")
+def list_jira_boards(integration_id: int) -> Any:
+    return [
+        {"id": 1, "name": "Board 1", "type": "scrum"},
+        {"id": 2, "name": "Board 2", "type": "kanban"}
+    ]
 
 @router.get("/pi-planning/boards")
 def list_pi_boards() -> Any:
