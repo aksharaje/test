@@ -42,3 +42,15 @@ class LibraryIntegration(LibraryIntegrationBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class LibraryBookVersionBase(SQLModel):
+    book_id: int = Field(foreign_key="library_books.id")
+    version_number: int
+    content_snapshot: str = Field(sa_column=Column(JSON))
+    commit_hash: Optional[str] = None
+    change_summary: Optional[str] = None
+
+class LibraryBookVersion(LibraryBookVersionBase, table=True):
+    __tablename__ = "library_book_versions"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)

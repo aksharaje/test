@@ -113,8 +113,6 @@ class FeasibilityService:
         # Validate input length
         if len(feature_description) < 100:
             raise ValueError("Feature description must be at least 100 characters")
-        if len(feature_description) > 2000:
-            raise ValueError("Feature description must be at most 2000 characters")
 
         session_obj = FeasibilitySession(
             user_id=user_id,
@@ -444,9 +442,9 @@ Return ONLY valid JSON, no additional text."""
         for idx, comp_data in enumerate(data.get("components", [])):
             component = TechnicalComponent(
                 session_id=session_id,
-                component_name=comp_data["component_name"],
-                component_description=comp_data["component_description"],
-                technical_category=comp_data["technical_category"],
+                component_name=comp_data.get("component_name", f"Component {idx + 1}"),
+                component_description=comp_data.get("component_description", "No description provided"),
+                technical_category=comp_data.get("technical_category", "backend"),
                 dependencies=comp_data.get("dependencies", []),
                 optimistic_hours=0,  # Will be filled by Agent 2
                 realistic_hours=0,
@@ -512,11 +510,11 @@ Return ONLY valid JSON, no additional text."""
             content = response.choices[0].message.content
             data = self._parse_llm_json(content, f"Effort Estimation Agent (Component {component.id})")
 
-            # Update component with estimates
-            component.optimistic_hours = data["optimistic_hours"]
-            component.realistic_hours = data["realistic_hours"]
-            component.pessimistic_hours = data["pessimistic_hours"]
-            component.confidence_level = data["confidence_level"]
+            # Update component with estimates (with safe defaults)
+            component.optimistic_hours = data.get("optimistic_hours", 8.0)
+            component.realistic_hours = data.get("realistic_hours", 16.0)
+            component.pessimistic_hours = data.get("pessimistic_hours", 32.0)
+            component.confidence_level = data.get("confidence_level", "medium")
             db.add(component)
 
         db.commit()
@@ -605,14 +603,14 @@ Return ONLY valid JSON, no additional text."""
         for scenario_data in data.get("scenarios", []):
             scenario = TimelineScenario(
                 session_id=session_id,
-                scenario_type=scenario_data["scenario_type"],
-                total_weeks=scenario_data["total_weeks"],
-                sprint_count=scenario_data["sprint_count"],
-                parallelization_factor=scenario_data["parallelization_factor"],
-                overhead_percentage=scenario_data["overhead_percentage"],
-                team_size_assumed=scenario_data["team_size_assumed"],
-                confidence_level=scenario_data["confidence_level"],
-                rationale=scenario_data["rationale"]
+                scenario_type=scenario_data.get("scenario_type", "realistic"),
+                total_weeks=scenario_data.get("total_weeks", 4.0),
+                sprint_count=scenario_data.get("sprint_count", 2),
+                parallelization_factor=scenario_data.get("parallelization_factor", 0.7),
+                overhead_percentage=scenario_data.get("overhead_percentage", 20.0),
+                team_size_assumed=scenario_data.get("team_size_assumed", 2),
+                confidence_level=scenario_data.get("confidence_level", "medium"),
+                rationale=scenario_data.get("rationale", "Based on component estimates")
             )
             db.add(scenario)
             scenarios.append(scenario)
@@ -701,15 +699,17 @@ Return ONLY valid JSON, no additional text."""
         # Create risk assessments
         risks = []
         for idx, risk_data in enumerate(data.get("risks", [])):
-            risk_score = risk_data["probability"] * risk_data["impact"]
+            probability = risk_data.get("probability", 0.5)
+            impact = risk_data.get("impact", 0.5)
+            risk_score = probability * impact
             risk = RiskAssessment(
                 session_id=session_id,
-                risk_category=risk_data["risk_category"],
-                risk_description=risk_data["risk_description"],
-                probability=risk_data["probability"],
-                impact=risk_data["impact"],
+                risk_category=risk_data.get("risk_category", "technical"),
+                risk_description=risk_data.get("risk_description", "Risk identified"),
+                probability=probability,
+                impact=impact,
                 risk_score=risk_score,
-                mitigation_strategy=risk_data["mitigation_strategy"],
+                mitigation_strategy=risk_data.get("mitigation_strategy", "Monitor and address as needed"),
                 display_order=idx
             )
             db.add(risk)
@@ -719,9 +719,9 @@ Return ONLY valid JSON, no additional text."""
         for idx, skill_data in enumerate(data.get("skills_needed", [])):
             skill = SkillRequirement(
                 session_id=session_id,
-                skill_name=skill_data["skill_name"],
-                proficiency_level=skill_data["proficiency_level"],
-                estimated_person_weeks=skill_data["estimated_person_weeks"],
+                skill_name=skill_data.get("skill_name", f"Skill {idx + 1}"),
+                proficiency_level=skill_data.get("proficiency_level", "intermediate"),
+                estimated_person_weeks=skill_data.get("estimated_person_weeks", 1.0),
                 is_gap=skill_data.get("is_gap", False),
                 gap_mitigation=skill_data.get("gap_mitigation"),
                 display_order=idx
@@ -794,7 +794,7 @@ Return ONLY valid JSON, no additional text."""
 
         # Update session
         session_obj = self.get_session(db, session_id)
-        session_obj.executive_summary = data["executive_summary"]
+        session_obj.executive_summary = data.get("executive_summary", "Analysis complete. Review the detailed findings above.")
         session_obj.go_no_go_recommendation = recommendation
 
         # Set confidence based on estimate variance

@@ -20,7 +20,7 @@ router = APIRouter()
 class CreateSessionRequest(BaseModel):
     model_config = {"populate_by_name": True}
 
-    feature_description: str = Field(alias="featureDescription", min_length=100, max_length=2000)
+    feature_description: str = Field(alias="featureDescription", min_length=100)
     technical_constraints: Optional[str] = Field(default=None, alias="technicalConstraints")
     target_users: Optional[str] = Field(default=None, alias="targetUsers")
     user_id: Optional[int] = Field(default=None, alias="userId")

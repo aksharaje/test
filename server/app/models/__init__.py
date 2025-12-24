@@ -8,9 +8,10 @@ from .prd import PrdTemplate, GeneratedPrd
 from .optimize import AgentExecution, PromptVersion, SplitTest
 from .feedback import Feedback
 from .jira import Integration, JiraProject
-from .library import LibraryBook, LibraryPage
+from .library import LibraryBook, LibraryPage, LibraryIntegration, LibraryBookVersion
 from .pi_planning import PiSession, PiSessionBoard, PiSprint, PiFeature, PiFeatureAssignment, HolidayConfig
 from .ideation import IdeationSession, GeneratedIdea, IdeaCluster
+from .setting import SystemSetting
 from .feasibility import (
     FeasibilitySession,
     TechnicalComponent,

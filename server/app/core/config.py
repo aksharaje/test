@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import AnyHttpUrl, PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,5 +30,7 @@ class Settings(BaseSettings):
     JIRA_CLIENT_ID: str = ""
     JIRA_CLIENT_SECRET: str = ""
     JIRA_REDIRECT_URI: str = "http://localhost:8000/api/integrations/jira/oauth/callback"
+    GITHUB_WEBHOOK_SECRET: Optional[str] = None
+    ENCRYPTION_KEY: str = "change_this_to_a_valid_fernet_key_in_production_XXXXXXXXXXXXXXXXXXXX="
 
 settings = Settings()

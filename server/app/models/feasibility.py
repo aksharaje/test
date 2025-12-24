@@ -17,7 +17,7 @@ class FeasibilitySession(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="users.id")
-    feature_description: str = Field(min_length=100, max_length=2000)
+    feature_description: str = Field(min_length=100)  # No max length - epics can be long
     technical_constraints: Optional[str] = None
     target_users: Optional[str] = None
     auto_detected_stack: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
