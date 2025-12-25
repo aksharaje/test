@@ -489,13 +489,15 @@ class BusinessCaseService:
         self,
         db: Session,
         rate_id: int,
-        rate_value: float
+        rate_value: float,
+        save_for_future: bool = True
     ) -> Optional[RateAssumption]:
         """Update a rate assumption with user override"""
         rate = db.get(RateAssumption, rate_id)
         if not rate:
             return None
 
+        original_value = rate.rate_value
         rate.rate_value = rate_value
         rate.is_user_override = True
         rate.data_source = "user_input"
@@ -504,7 +506,53 @@ class BusinessCaseService:
         db.commit()
         db.refresh(rate)
 
+        # Save as user learning for future sessions
+        if save_for_future and original_value > 0:
+            # Get the session to find user_id
+            session_obj = db.get(BusinessCaseSession, rate.session_id)
+            if session_obj:
+                learning = UserLearning(
+                    user_id=session_obj.user_id,
+                    learning_type="rate_adjustment",
+                    category=rate.rate_name,
+                    original_value=original_value,
+                    corrected_value=rate_value,
+                    correction_factor=rate_value / original_value,
+                    context=f"Rate adjustment for {rate.rate_name} ({rate.rate_type})",
+                    company_size=rate.company_size
+                )
+                db.add(learning)
+                db.commit()
+
         return rate
+
+    def get_user_rate_preferences(
+        self,
+        db: Session,
+        user_id: Optional[int],
+        company_size: str
+    ) -> Dict[str, float]:
+        """Get user's previous rate preferences for a company size"""
+        if not user_id:
+            return {}
+
+        learnings = list(db.exec(
+            select(UserLearning)
+            .where(
+                UserLearning.user_id == user_id,
+                UserLearning.learning_type == "rate_adjustment",
+                UserLearning.company_size == company_size
+            )
+            .order_by(desc(UserLearning.created_at))
+        ).all())
+
+        # Group by category and take the most recent
+        preferences: Dict[str, float] = {}
+        for learning in learnings:
+            if learning.category not in preferences and learning.corrected_value:
+                preferences[learning.category] = learning.corrected_value
+
+        return preferences
 
     def get_rate_assumptions(self, db: Session, session_id: int) -> List[RateAssumption]:
         """Get all rate assumptions for a session"""
@@ -782,66 +830,84 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
         }
         rates = hourly_rate_map.get(company_size, hourly_rate_map["medium"])
 
+        # Get user preferences from previous sessions
+        user_prefs = self.get_user_rate_preferences(db, session_obj.user_id, company_size)
+
         # Save rate assumptions for transparency
-        rate_assumptions = [
-            RateAssumption(
-                session_id=session_id,
-                rate_type="hourly_rate",
-                rate_name="Junior/Optimistic Rate",
-                rate_value=rates["low"],
-                rate_unit="per_hour",
-                company_size=company_size,
-                rate_description=f"Lower-end hourly rate for optimistic cost estimates. Based on {company_size} company size benchmarks.",
-                data_source="benchmark",
-                display_order=0
-            ),
-            RateAssumption(
-                session_id=session_id,
-                rate_type="hourly_rate",
-                rate_name="Mid-Level/Realistic Rate",
-                rate_value=rates["mid"],
-                rate_unit="per_hour",
-                company_size=company_size,
-                rate_description=f"Average hourly rate for realistic cost estimates. Based on {company_size} company size benchmarks.",
-                data_source="benchmark",
-                display_order=1
-            ),
-            RateAssumption(
-                session_id=session_id,
-                rate_type="hourly_rate",
-                rate_name="Senior/Pessimistic Rate",
-                rate_value=rates["high"],
-                rate_unit="per_hour",
-                company_size=company_size,
-                rate_description=f"Higher-end hourly rate for pessimistic cost estimates. Based on {company_size} company size benchmarks.",
-                data_source="benchmark",
-                display_order=2
-            ),
-            RateAssumption(
-                session_id=session_id,
-                rate_type="discount_rate",
-                rate_name="Discount Rate",
-                rate_value=0.10,
-                rate_unit="percentage",
-                company_size=company_size,
-                rate_description="Annual discount rate for NPV calculations. Standard corporate rate.",
-                data_source="benchmark",
-                display_order=3
-            ),
-            RateAssumption(
-                session_id=session_id,
-                rate_type="benefit_growth_rate",
-                rate_name="Annual Benefit Growth",
-                rate_value=0.05,
-                rate_unit="percentage",
-                company_size=company_size,
-                rate_description="Expected annual growth rate for benefits after year 1.",
-                data_source="benchmark",
-                display_order=4
-            )
+        # Apply user preferences if available
+        rate_definitions = [
+            {
+                "rate_type": "hourly_rate",
+                "rate_name": "Junior/Optimistic Rate",
+                "default_value": rates["low"],
+                "rate_unit": "per_hour",
+                "description": f"Lower-end hourly rate for optimistic cost estimates. Based on {company_size} company size benchmarks.",
+                "display_order": 0
+            },
+            {
+                "rate_type": "hourly_rate",
+                "rate_name": "Mid-Level/Realistic Rate",
+                "default_value": rates["mid"],
+                "rate_unit": "per_hour",
+                "description": f"Average hourly rate for realistic cost estimates. Based on {company_size} company size benchmarks.",
+                "display_order": 1
+            },
+            {
+                "rate_type": "hourly_rate",
+                "rate_name": "Senior/Pessimistic Rate",
+                "default_value": rates["high"],
+                "rate_unit": "per_hour",
+                "description": f"Higher-end hourly rate for pessimistic cost estimates. Based on {company_size} company size benchmarks.",
+                "display_order": 2
+            },
+            {
+                "rate_type": "discount_rate",
+                "rate_name": "Discount Rate",
+                "default_value": 0.10,
+                "rate_unit": "percentage",
+                "description": "Annual discount rate for NPV calculations. Standard corporate rate.",
+                "display_order": 3
+            },
+            {
+                "rate_type": "benefit_growth_rate",
+                "rate_name": "Annual Benefit Growth",
+                "default_value": 0.05,
+                "rate_unit": "percentage",
+                "description": "Expected annual growth rate for benefits after year 1.",
+                "display_order": 4
+            }
         ]
-        for rate in rate_assumptions:
+
+        for rate_def in rate_definitions:
+            # Check if user has a preference for this rate
+            is_user_pref = rate_def["rate_name"] in user_prefs
+            rate_value = user_prefs.get(rate_def["rate_name"], rate_def["default_value"])
+            description = rate_def["description"]
+            if is_user_pref:
+                description += " (Using your saved preference)"
+
+            rate = RateAssumption(
+                session_id=session_id,
+                rate_type=rate_def["rate_type"],
+                rate_name=rate_def["rate_name"],
+                rate_value=rate_value,
+                rate_unit=rate_def["rate_unit"],
+                company_size=company_size,
+                rate_description=description,
+                data_source="user_input" if is_user_pref else "benchmark",
+                is_user_override=is_user_pref,
+                display_order=rate_def["display_order"]
+            )
             db.add(rate)
+
+            # Update the rates dict if user preference was applied (for cost calculations)
+            if is_user_pref and rate_def["rate_type"] == "hourly_rate":
+                if rate_def["rate_name"] == "Junior/Optimistic Rate":
+                    rates["low"] = rate_value
+                elif rate_def["rate_name"] == "Mid-Level/Realistic Rate":
+                    rates["mid"] = rate_value
+                elif rate_def["rate_name"] == "Senior/Pessimistic Rate":
+                    rates["high"] = rate_value
 
         if feasibility_data:
             # Import from feasibility analysis

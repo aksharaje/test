@@ -189,21 +189,27 @@ def update_benefit(
     return benefit
 
 
-@router.patch("/rates/{rate_id}", response_model=RateAssumption)
+@router.patch("/rates/{rate_id}")
 def update_rate(
     rate_id: int,
     request: UpdateRateRequest,
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update a rate assumption with user override"""
+    print(f"DEBUG: update_rate called with rate_id={rate_id}, request={request}")
     rate = business_case_service.update_rate_assumption(
         db=db_session,
         rate_id=rate_id,
         rate_value=request.rate_value
     )
+    print(f"DEBUG: rate after update: {rate}")
     if not rate:
         raise HTTPException(status_code=404, detail="Rate assumption not found")
-    return rate
+    # Manually serialize with camelCase keys
+    from humps import camelize
+    result = camelize(rate.model_dump())
+    print(f"DEBUG: returning {result}")
+    return result
 
 
 @router.post("/sessions/{session_id}/learning")

@@ -17,6 +17,7 @@ from app.models.business_case import (
     FinancialScenario,
     Assumption,
     SensitivityAnalysis,
+    RateAssumption,
     UserLearning
 )
 from app.models.feasibility import FeasibilitySession
@@ -651,3 +652,141 @@ class TestDataSourceTracking:
         assert data["isUserOverride"] is True
         # Original should be preserved
         assert data["originalEstimate"] == 15000.0
+
+
+class TestRateAssumptions:
+    """Tests for rate assumption tracking and updates"""
+
+    def test_update_rate_assumption(self, clean_db):
+        """Test updating a rate assumption"""
+        with Session(engine) as db:
+            session_obj = BusinessCaseSession(
+                feature_name="Rate Test",
+                feature_description="N" * 60,
+                status="completed"
+            )
+            db.add(session_obj)
+            db.commit()
+            db.refresh(session_obj)
+
+            rate = RateAssumption(
+                session_id=session_obj.id,
+                rate_type="hourly_rate",
+                rate_name="Mid-Level/Realistic Rate",
+                rate_value=150.0,
+                rate_unit="per_hour",
+                company_size="medium",
+                rate_description="Average hourly rate",
+                data_source="benchmark",
+                is_user_override=False,
+                display_order=0
+            )
+            db.add(rate)
+            db.commit()
+            db.refresh(rate)
+            rate_id = rate.id
+
+        response = client.patch(
+            f"/api/business-case/rates/{rate_id}",
+            json={"rateValue": 175.0},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["rateValue"] == 175.0
+        assert data["isUserOverride"] is True
+        assert data["dataSource"] == "user_input"
+
+    def test_update_rate_assumption_not_found(self, clean_db):
+        """Test updating non-existent rate assumption"""
+        response = client.patch(
+            "/api/business-case/rates/999",
+            json={"rateValue": 175.0},
+        )
+        assert response.status_code == 404
+
+    def test_session_detail_includes_rates(self, clean_db):
+        """Test that session detail includes rate assumptions"""
+        with Session(engine) as db:
+            session_obj = BusinessCaseSession(
+                feature_name="Rates Detail Test",
+                feature_description="O" * 60,
+                status="completed"
+            )
+            db.add(session_obj)
+            db.commit()
+            db.refresh(session_obj)
+
+            rate = RateAssumption(
+                session_id=session_obj.id,
+                rate_type="hourly_rate",
+                rate_name="Test Rate",
+                rate_value=100.0,
+                rate_unit="per_hour",
+                company_size="medium",
+                data_source="benchmark",
+                display_order=0
+            )
+            db.add(rate)
+            db.commit()
+            session_id = session_obj.id
+
+        response = client.get(f"/api/business-case/sessions/{session_id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "rates" in data
+        assert len(data["rates"]) == 1
+        assert data["rates"][0]["rateName"] == "Test Rate"
+
+    def test_rate_update_saves_user_learning(self, clean_db):
+        """Test that updating a rate saves a user learning record"""
+        with Session(engine) as db:
+            session_obj = BusinessCaseSession(
+                feature_name="Learning Test",
+                feature_description="P" * 60,
+                status="completed",
+                user_id=1
+            )
+            db.add(session_obj)
+            db.commit()
+            db.refresh(session_obj)
+
+            rate = RateAssumption(
+                session_id=session_obj.id,
+                rate_type="hourly_rate",
+                rate_name="Senior/Pessimistic Rate",
+                rate_value=225.0,
+                rate_unit="per_hour",
+                company_size="medium",
+                data_source="benchmark",
+                is_user_override=False,
+                display_order=0
+            )
+            db.add(rate)
+            db.commit()
+            db.refresh(rate)
+            rate_id = rate.id
+
+        # Update the rate
+        response = client.patch(
+            f"/api/business-case/rates/{rate_id}",
+            json={"rateValue": 275.0},
+        )
+        assert response.status_code == 200
+
+        # Check that a user learning was created
+        with Session(engine) as db:
+            learnings = list(db.exec(
+                select(UserLearning).where(
+                    UserLearning.user_id == 1,
+                    UserLearning.learning_type == "rate_adjustment"
+                )
+            ).all())
+
+            assert len(learnings) == 1
+            learning = learnings[0]
+            assert learning.category == "Senior/Pessimistic Rate"
+            assert learning.original_value == 225.0
+            assert learning.corrected_value == 275.0
+            assert learning.company_size == "medium"

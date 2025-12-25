@@ -448,8 +448,8 @@ export class BusinessCaseService {
         this.http.delete(`${this.baseUrl}/sessions/${sessionId}`)
       );
 
-      // Refresh sessions list
-      await this.loadSessions();
+      // Remove from sessions list locally
+      this._sessions.update(sessions => sessions.filter(s => s.id !== sessionId));
 
       // Clear current session if it was deleted
       if (this._currentSession()?.session.id === sessionId) {

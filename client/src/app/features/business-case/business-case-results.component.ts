@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DecimalPipe, CurrencyPipe, TitleCasePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -24,7 +25,7 @@ import { HlmButtonDirective } from '../../ui/button';
 @Component({
   selector: 'app-business-case-results',
   standalone: true,
-  imports: [NgIcon, HlmButtonDirective, DecimalPipe, CurrencyPipe, TitleCasePipe],
+  imports: [NgIcon, HlmButtonDirective, DecimalPipe, CurrencyPipe, TitleCasePipe, FormsModule],
   viewProviders: [
     provideIcons({
       lucideArrowLeft,
@@ -447,6 +448,107 @@ import { HlmButtonDirective } from '../../ui/button';
             </div>
           }
 
+          <!-- Rate Assumptions -->
+          @if (detail()!.rates && detail()!.rates.length > 0) {
+            <div class="bg-background rounded-lg border">
+              <div class="p-4 border-b flex items-center justify-between">
+                <div>
+                  <h2 class="text-lg font-semibold">Calculation Assumptions</h2>
+                  <p class="text-sm text-muted-foreground mt-1">Rates and assumptions used in cost calculations</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  @if (hasUserOverrides()) {
+                    <button
+                      hlmBtn
+                      variant="default"
+                      size="sm"
+                      (click)="recalculateWithNewRates()"
+                      [disabled]="service.loading()"
+                    >
+                      @if (service.loading()) {
+                        <ng-icon name="lucideLoader2" class="h-4 w-4 mr-2 animate-spin" />
+                      } @else {
+                        <ng-icon name="lucideRefreshCw" class="h-4 w-4 mr-2" />
+                      }
+                      Recalculate
+                    </button>
+                  }
+                  <button
+                    hlmBtn
+                    variant="outline"
+                    size="sm"
+                    (click)="toggleRatesExpanded()"
+                  >
+                    <ng-icon [name]="ratesExpanded() ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              @if (ratesExpanded()) {
+                <div class="divide-y">
+                  @for (rate of detail()!.rates; track rate.id) {
+                    <div class="p-4 flex items-center justify-between">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                          <p class="font-medium">{{ rate.rateName }}</p>
+                          <span class="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            {{ formatRateType(rate.rateType) }}
+                          </span>
+                          @if (rate.isUserOverride) {
+                            <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+                              Custom
+                            </span>
+                          }
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">{{ rate.rateDescription }}</p>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        @if (editingRateId() === rate.id) {
+                          <input
+                            type="number"
+                            class="w-24 px-2 py-1 border rounded text-right text-sm"
+                            [ngModel]="editingRateValue()"
+                            (ngModelChange)="editingRateValue.set($event)"
+                            (keydown.enter)="saveRate(rate)"
+                            (keydown.escape)="cancelEditingRate()"
+                            step="any"
+                          />
+                          <button
+                            class="text-xs text-primary hover:underline"
+                            (click)="saveRate(rate)"
+                          >
+                            Save
+                          </button>
+                          <button
+                            class="text-xs text-muted-foreground hover:underline"
+                            (click)="cancelEditingRate()"
+                          >
+                            Cancel
+                          </button>
+                        } @else {
+                          <p class="font-medium text-right min-w-[80px]">{{ formatRateValue(rate) }}</p>
+                          <button
+                            class="p-1 hover:bg-muted rounded"
+                            (click)="startEditingRate(rate)"
+                            title="Edit rate"
+                          >
+                            <ng-icon name="lucideEdit" class="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+                <div class="p-4 bg-muted/30 border-t">
+                  <p class="text-xs text-muted-foreground">
+                    <ng-icon name="lucideInfo" class="inline h-3 w-3 mr-1" />
+                    Edit rates above and click "Recalculate" to update financial projections with your custom values.
+                    These rates are based on {{ detail()!.rates[0]?.companySize || 'medium' }}-sized company benchmarks.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+
           <!-- Cash Flow Chart (placeholder for now) -->
           @if (baseScenario()?.yearlyCashFlows) {
             <div class="bg-background rounded-lg border">
@@ -634,5 +736,30 @@ export class BusinessCaseResultsComponent implements OnInit {
       recurring_annual: 'Annual',
     };
     return labels[type] || type;
+  }
+
+  formatRateValue(rate: RateAssumption): string {
+    if (rate.rateUnit === 'per_hour') {
+      return this.formatCurrency(rate.rateValue) + '/hr';
+    } else if (rate.rateUnit === 'percentage') {
+      return (rate.rateValue * 100).toFixed(1) + '%';
+    } else if (rate.rateUnit === 'multiplier') {
+      return rate.rateValue.toFixed(2) + 'x';
+    }
+    return rate.rateValue.toString();
+  }
+
+  formatRateType(rateType: string): string {
+    const labels: Record<string, string> = {
+      hourly_rate: 'Hourly Rate',
+      discount_rate: 'Discount Rate',
+      benefit_growth_rate: 'Growth Rate',
+      overhead_multiplier: 'Overhead',
+    };
+    return labels[rateType] || rateType;
+  }
+
+  hasUserOverrides(): boolean {
+    return this.detail()?.rates?.some(r => r.isUserOverride) ?? false;
   }
 }
