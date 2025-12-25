@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -123,13 +123,17 @@ import { DatePipe } from '@angular/common';
                   (change)="onKbSelect($event)"
                 >
                   <option value="" disabled selected>Select a Knowledge Base...</option>
-                  @for (kb of knowledgeBases(); track kb.id) {
+                  @for (kb of availableKnowledgeBases(); track kb.id) {
                     <option [value]="kb.id">{{ kb.name }} ({{ kb.documentCount }} docs)</option>
                   }
                 </select>
                 @if (knowledgeBases().length === 0) {
                   <p class="mt-1 text-xs text-destructive">
                     No Knowledge Bases found. Please create one first.
+                  </p>
+                } @else if (availableKnowledgeBases().length === 0) {
+                   <p class="mt-1 text-xs text-amber-600">
+                    All Knowledge Bases already have books associated with them.
                   </p>
                 }
               </div>
@@ -162,6 +166,13 @@ export class LibraryListComponent implements OnInit, OnDestroy {
 
   protected books = signal<LibraryBook[]>([]);
   protected knowledgeBases = this.kbService.knowledgeBases;
+
+  // Computed signal to filter out KBs that already have books
+  protected availableKnowledgeBases = computed(() => {
+    const existingKbIds = new Set(this.books().map(b => b.knowledgeBaseId));
+    return this.knowledgeBases().filter(kb => !existingKbIds.has(kb.id));
+  });
+
   protected loading = signal(true);
   protected showCreateDialog = signal(false);
   protected selectedKbId = signal<number | null>(null);

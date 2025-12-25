@@ -1,0 +1,607 @@
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TitleCasePipe } from '@angular/common';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  lucideArrowLeft,
+  lucideCheck,
+  lucideX,
+  lucideAlertTriangle,
+  lucideSave,
+  lucideLoader2,
+  lucideBriefcase,
+} from '@ng-icons/lucide';
+import { FeasibilityService } from './feasibility.service';
+import type {
+  TechnicalComponent,
+  TimelineScenario,
+  RiskAssessment,
+  SkillRequirement,
+  UpdateComponentRequest,
+} from './feasibility.types';
+import { HlmButtonDirective } from '../../ui/button';
+
+type TabId = 'summary' | 'components' | 'timeline' | 'risks' | 'skills';
+
+interface Tab {
+  id: TabId;
+  label: string;
+}
+
+@Component({
+  selector: 'app-feasibility-results',
+  standalone: true,
+  imports: [NgIcon, HlmButtonDirective, TitleCasePipe],
+  viewProviders: [
+    provideIcons({
+      lucideArrowLeft,
+      lucideCheck,
+      lucideX,
+      lucideAlertTriangle,
+      lucideSave,
+      lucideLoader2,
+      lucideBriefcase,
+    }),
+  ],
+  template: `
+    <div class="h-full flex flex-col">
+      <!-- Header -->
+      <div class="border-b bg-background p-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <button
+              type="button"
+              class="p-2 rounded-lg hover:bg-muted transition-colors"
+              (click)="goBack()"
+            >
+              <ng-icon name="lucideArrowLeft" class="h-5 w-5" />
+            </button>
+            <div>
+              <h1 class="text-xl font-bold text-foreground">Feasibility Analysis Results</h1>
+              <p class="text-sm text-muted-foreground line-clamp-1 max-w-xl">
+                {{ session()?.featureDescription }}
+              </p>
+            </div>
+          </div>
+          <button
+            hlmBtn
+            (click)="buildBusinessCase()"
+          >
+            <ng-icon name="lucideBriefcase" class="mr-2 h-4 w-4" />
+            Build Business Case
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="border-b bg-background">
+        <div class="max-w-6xl mx-auto">
+          <div class="flex gap-1 p-1">
+            @for (tab of tabs; track tab.id) {
+              <button
+                type="button"
+                class="px-4 py-2 text-sm font-medium rounded-md transition-colors"
+                [class.bg-primary]="activeTab() === tab.id"
+                [class.text-primary-foreground]="activeTab() === tab.id"
+                [class.text-muted-foreground]="activeTab() !== tab.id"
+                [class.hover:bg-muted]="activeTab() !== tab.id"
+                (click)="setActiveTab(tab.id)"
+              >
+                {{ tab.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-6xl mx-auto">
+          @if (service.loading()) {
+            <div class="flex items-center justify-center h-64">
+              <ng-icon name="lucideLoader2" class="h-8 w-8 animate-spin text-primary" />
+            </div>
+          } @else {
+            @switch (activeTab()) {
+              @case ('summary') {
+                <!-- Executive Summary Tab -->
+                <div class="space-y-6">
+                  <!-- Go/No-Go Badge -->
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-lg font-semibold"
+                      [class.bg-green-100]="session()?.goNoGoRecommendation === 'go'"
+                      [class.text-green-700]="session()?.goNoGoRecommendation === 'go'"
+                      [class.bg-red-100]="session()?.goNoGoRecommendation === 'no_go'"
+                      [class.text-red-700]="session()?.goNoGoRecommendation === 'no_go'"
+                      [class.bg-yellow-100]="session()?.goNoGoRecommendation === 'conditional'"
+                      [class.text-yellow-700]="session()?.goNoGoRecommendation === 'conditional'"
+                    >
+                      @if (session()?.goNoGoRecommendation === 'go') {
+                        <ng-icon name="lucideCheck" class="h-5 w-5" />
+                        Recommended: GO
+                      } @else if (session()?.goNoGoRecommendation === 'no_go') {
+                        <ng-icon name="lucideX" class="h-5 w-5" />
+                        Recommended: NO-GO
+                      } @else {
+                        <ng-icon name="lucideAlertTriangle" class="h-5 w-5" />
+                        Recommended: CONDITIONAL
+                      }
+                    </div>
+                    <span
+                      class="px-3 py-1 rounded-full text-sm font-medium"
+                      [class.bg-green-50]="session()?.confidenceLevel === 'high'"
+                      [class.text-green-600]="session()?.confidenceLevel === 'high'"
+                      [class.bg-yellow-50]="session()?.confidenceLevel === 'medium'"
+                      [class.text-yellow-600]="session()?.confidenceLevel === 'medium'"
+                      [class.bg-red-50]="session()?.confidenceLevel === 'low'"
+                      [class.text-red-600]="session()?.confidenceLevel === 'low'"
+                    >
+                      {{ session()?.confidenceLevel | titlecase }} Confidence
+                    </span>
+                  </div>
+
+                  <!-- Executive Summary -->
+                  <div class="rounded-lg border bg-card p-6">
+                    <h2 class="text-lg font-semibold mb-3">Executive Summary</h2>
+                    <p class="text-muted-foreground whitespace-pre-line">{{ session()?.executiveSummary }}</p>
+                  </div>
+
+                  <!-- Key Metrics -->
+                  <div class="grid grid-cols-4 gap-4">
+                    <div class="rounded-lg border bg-card p-4 text-center">
+                      <p class="text-3xl font-bold text-primary">{{ components().length }}</p>
+                      <p class="text-sm text-muted-foreground">Components</p>
+                    </div>
+                    <div class="rounded-lg border bg-card p-4 text-center">
+                      <p class="text-3xl font-bold text-primary">{{ totalRealisticHours() }}</p>
+                      <p class="text-sm text-muted-foreground">Est. Hours</p>
+                    </div>
+                    <div class="rounded-lg border bg-card p-4 text-center">
+                      <p class="text-3xl font-bold text-primary">{{ realisticScenario()?.totalWeeks || '-' }}</p>
+                      <p class="text-sm text-muted-foreground">Est. Weeks</p>
+                    </div>
+                    <div class="rounded-lg border bg-card p-4 text-center">
+                      <p class="text-3xl font-bold text-primary">{{ risks().length }}</p>
+                      <p class="text-sm text-muted-foreground">Risks Identified</p>
+                    </div>
+                  </div>
+
+                  <!-- Auto-detected Stack -->
+                  @if (session()?.autoDetectedStack?.length) {
+                    <div class="rounded-lg border bg-card p-6">
+                      <h2 class="text-lg font-semibold mb-3">Auto-detected Tech Stack</h2>
+                      <div class="flex flex-wrap gap-2">
+                        @for (tech of session()?.autoDetectedStack; track tech) {
+                          <span class="px-3 py-1 bg-muted rounded-full text-sm">{{ tech }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              @case ('components') {
+                <!-- Components Tab -->
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Technical Components</h2>
+                    @if (hasUnsavedChanges()) {
+                      <button
+                        hlmBtn
+                        (click)="saveAllComponents()"
+                        [disabled]="saving()"
+                      >
+                        @if (saving()) {
+                          <ng-icon name="lucideLoader2" class="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        } @else {
+                          <ng-icon name="lucideSave" class="mr-2 h-4 w-4" />
+                          Save Changes
+                        }
+                      </button>
+                    }
+                  </div>
+
+                  <div class="rounded-lg border overflow-hidden">
+                    <table class="w-full">
+                      <thead class="bg-muted/50">
+                        <tr>
+                          <th class="text-left p-3 text-sm font-medium">Component</th>
+                          <th class="text-left p-3 text-sm font-medium">Category</th>
+                          <th class="text-center p-3 text-sm font-medium">Optimistic (hrs)</th>
+                          <th class="text-center p-3 text-sm font-medium">Realistic (hrs)</th>
+                          <th class="text-center p-3 text-sm font-medium">Pessimistic (hrs)</th>
+                          <th class="text-center p-3 text-sm font-medium">Confidence</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y">
+                        @for (component of components(); track component.id) {
+                          <tr class="hover:bg-muted/30">
+                            <td class="p-3">
+                              <p class="font-medium">{{ component.componentName }}</p>
+                              <p class="text-sm text-muted-foreground">{{ component.componentDescription }}</p>
+                            </td>
+                            <td class="p-3">
+                              <span class="px-2 py-1 bg-muted rounded text-xs">
+                                {{ formatCategory(component.technicalCategory) }}
+                              </span>
+                            </td>
+                            <td class="p-3 text-center">
+                              @if (component.isEditable) {
+                                <input
+                                  type="number"
+                                  class="w-20 text-center border rounded p-1"
+                                  [value]="getEditedValue(component.id, 'optimisticHours', component.optimisticHours)"
+                                  (input)="onHoursChange(component.id, 'optimisticHours', $event)"
+                                  min="0"
+                                />
+                              } @else {
+                                {{ component.optimisticHours }}
+                              }
+                            </td>
+                            <td class="p-3 text-center">
+                              @if (component.isEditable) {
+                                <input
+                                  type="number"
+                                  class="w-20 text-center border rounded p-1"
+                                  [value]="getEditedValue(component.id, 'realisticHours', component.realisticHours)"
+                                  (input)="onHoursChange(component.id, 'realisticHours', $event)"
+                                  min="0"
+                                />
+                              } @else {
+                                {{ component.realisticHours }}
+                              }
+                            </td>
+                            <td class="p-3 text-center">
+                              @if (component.isEditable) {
+                                <input
+                                  type="number"
+                                  class="w-20 text-center border rounded p-1"
+                                  [value]="getEditedValue(component.id, 'pessimisticHours', component.pessimisticHours)"
+                                  (input)="onHoursChange(component.id, 'pessimisticHours', $event)"
+                                  min="0"
+                                />
+                              } @else {
+                                {{ component.pessimisticHours }}
+                              }
+                            </td>
+                            <td class="p-3 text-center">
+                              <span
+                                class="px-2 py-1 rounded text-xs"
+                                [class.bg-green-100]="component.confidenceLevel === 'high'"
+                                [class.text-green-700]="component.confidenceLevel === 'high'"
+                                [class.bg-yellow-100]="component.confidenceLevel === 'medium'"
+                                [class.text-yellow-700]="component.confidenceLevel === 'medium'"
+                                [class.bg-red-100]="component.confidenceLevel === 'low'"
+                                [class.text-red-700]="component.confidenceLevel === 'low'"
+                              >
+                                {{ component.confidenceLevel | titlecase }}
+                              </span>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                      <tfoot class="bg-muted/50 font-medium">
+                        <tr>
+                          <td class="p-3" colspan="2">Total</td>
+                          <td class="p-3 text-center">{{ totalOptimisticHours() }}</td>
+                          <td class="p-3 text-center">{{ totalRealisticHours() }}</td>
+                          <td class="p-3 text-center">{{ totalPessimisticHours() }}</td>
+                          <td class="p-3"></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              }
+
+              @case ('timeline') {
+                <!-- Timeline Tab -->
+                <div class="space-y-6">
+                  <h2 class="text-lg font-semibold">Timeline Scenarios</h2>
+
+                  <div class="grid grid-cols-3 gap-6">
+                    @for (scenario of scenarios(); track scenario.id) {
+                      <div
+                        class="rounded-lg border p-6"
+                        [class.border-green-300]="scenario.scenarioType === 'optimistic'"
+                        [class.bg-green-50/50]="scenario.scenarioType === 'optimistic'"
+                        [class.border-blue-300]="scenario.scenarioType === 'realistic'"
+                        [class.bg-blue-50/50]="scenario.scenarioType === 'realistic'"
+                        [class.border-orange-300]="scenario.scenarioType === 'pessimistic'"
+                        [class.bg-orange-50/50]="scenario.scenarioType === 'pessimistic'"
+                      >
+                        <h3 class="text-lg font-semibold capitalize">{{ scenario.scenarioType }}</h3>
+
+                        <div class="mt-4 space-y-3">
+                          <div class="flex justify-between">
+                            <span class="text-muted-foreground">Duration</span>
+                            <span class="font-medium">{{ scenario.totalWeeks }} weeks</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-muted-foreground">Sprints</span>
+                            <span class="font-medium">{{ scenario.sprintCount }}</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-muted-foreground">Team Size</span>
+                            <span class="font-medium">{{ scenario.teamSizeAssumed }}</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-muted-foreground">Parallelization</span>
+                            <span class="font-medium">{{ (scenario.parallelizationFactor * 100).toFixed(0) }}%</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-muted-foreground">Overhead</span>
+                            <span class="font-medium">{{ (scenario.overheadPercentage * 100).toFixed(0) }}%</span>
+                          </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t">
+                          <p class="text-sm text-muted-foreground">{{ scenario.rationale }}</p>
+                        </div>
+
+                        <div class="mt-3">
+                          <span
+                            class="px-2 py-1 rounded text-xs"
+                            [class.bg-green-100]="scenario.confidenceLevel === 'high'"
+                            [class.text-green-700]="scenario.confidenceLevel === 'high'"
+                            [class.bg-yellow-100]="scenario.confidenceLevel === 'medium'"
+                            [class.text-yellow-700]="scenario.confidenceLevel === 'medium'"
+                            [class.bg-red-100]="scenario.confidenceLevel === 'low'"
+                            [class.text-red-700]="scenario.confidenceLevel === 'low'"
+                          >
+                            {{ scenario.confidenceLevel | titlecase }} confidence
+                          </span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              @case ('risks') {
+                <!-- Risks Tab -->
+                <div class="space-y-6">
+                  <h2 class="text-lg font-semibold">Risk Assessment</h2>
+
+                  <div class="space-y-4">
+                    @for (risk of sortedRisks(); track risk.id) {
+                      <div class="rounded-lg border p-4">
+                        <div class="flex items-start justify-between">
+                          <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                              <span
+                                class="px-2 py-1 rounded text-xs font-medium"
+                                [class.bg-red-100]="risk.riskScore >= 0.5"
+                                [class.text-red-700]="risk.riskScore >= 0.5"
+                                [class.bg-yellow-100]="risk.riskScore >= 0.25 && risk.riskScore < 0.5"
+                                [class.text-yellow-700]="risk.riskScore >= 0.25 && risk.riskScore < 0.5"
+                                [class.bg-green-100]="risk.riskScore < 0.25"
+                                [class.text-green-700]="risk.riskScore < 0.25"
+                              >
+                                Score: {{ (risk.riskScore * 100).toFixed(0) }}%
+                              </span>
+                              <span class="px-2 py-1 bg-muted rounded text-xs">
+                                {{ formatRiskCategory(risk.riskCategory) }}
+                              </span>
+                            </div>
+                            <p class="mt-2 font-medium">{{ risk.riskDescription }}</p>
+                          </div>
+                          <div class="text-right text-sm">
+                            <p class="text-muted-foreground">
+                              P: {{ (risk.probability * 100).toFixed(0) }}% × I: {{ (risk.impact * 100).toFixed(0) }}%
+                            </p>
+                          </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t">
+                          <p class="text-sm text-muted-foreground">
+                            <span class="font-medium">Mitigation:</span> {{ risk.mitigationStrategy }}
+                          </p>
+                        </div>
+                      </div>
+                    }
+
+                    @if (risks().length === 0) {
+                      <div class="text-center py-8 text-muted-foreground">
+                        No risks identified
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              @case ('skills') {
+                <!-- Skills Tab -->
+                <div class="space-y-6">
+                  <h2 class="text-lg font-semibold">Skill Requirements</h2>
+
+                  <div class="rounded-lg border overflow-hidden">
+                    <table class="w-full">
+                      <thead class="bg-muted/50">
+                        <tr>
+                          <th class="text-left p-3 text-sm font-medium">Skill</th>
+                          <th class="text-center p-3 text-sm font-medium">Proficiency Level</th>
+                          <th class="text-center p-3 text-sm font-medium">Person-Weeks</th>
+                          <th class="text-center p-3 text-sm font-medium">Gap Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y">
+                        @for (skill of skills(); track skill.id) {
+                          <tr class="hover:bg-muted/30" [class.bg-red-50/50]="skill.isGap">
+                            <td class="p-3 font-medium">{{ skill.skillName }}</td>
+                            <td class="p-3 text-center">
+                              <span class="px-2 py-1 bg-muted rounded text-xs capitalize">
+                                {{ skill.proficiencyLevel }}
+                              </span>
+                            </td>
+                            <td class="p-3 text-center">{{ skill.estimatedPersonWeeks }}</td>
+                            <td class="p-3 text-center">
+                              @if (skill.isGap) {
+                                <div>
+                                  <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
+                                    Gap
+                                  </span>
+                                  @if (skill.gapMitigation) {
+                                    <p class="mt-1 text-xs text-muted-foreground">{{ skill.gapMitigation }}</p>
+                                  }
+                                </div>
+                              } @else {
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                  Available
+                                </span>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  @if (skills().length === 0) {
+                    <div class="text-center py-8 text-muted-foreground">
+                      No skill requirements identified
+                    </div>
+                  }
+                </div>
+              }
+            }
+          }
+        </div>
+      </div>
+    </div>
+  `,
+  styles: `
+    :host {
+      display: block;
+      height: 100%;
+    }
+    .line-clamp-1 {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  `,
+})
+export class FeasibilityResultsComponent implements OnInit {
+  service = inject(FeasibilityService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  tabs: Tab[] = [
+    { id: 'summary', label: 'Executive Summary' },
+    { id: 'components', label: 'Components' },
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'risks', label: 'Risks' },
+    { id: 'skills', label: 'Skills' },
+  ];
+
+  activeTab = signal<TabId>('summary');
+  editedComponents = signal<Map<number, UpdateComponentRequest>>(new Map());
+  saving = signal(false);
+
+  // Computed values from service
+  session = computed(() => this.service.currentSession()?.session);
+  components = computed(() => this.service.currentSession()?.components ?? []);
+  scenarios = computed(() => this.service.currentSession()?.scenarios ?? []);
+  risks = computed(() => this.service.currentSession()?.risks ?? []);
+  skills = computed(() => this.service.currentSession()?.skills ?? []);
+
+  // Sorted risks by score
+  sortedRisks = computed(() =>
+    [...this.risks()].sort((a, b) => b.riskScore - a.riskScore)
+  );
+
+  // Get realistic scenario for summary
+  realisticScenario = computed(() =>
+    this.scenarios().find(s => s.scenarioType === 'realistic')
+  );
+
+  // Total hours calculations
+  totalOptimisticHours = computed(() =>
+    this.components().reduce((sum, c) => sum + c.optimisticHours, 0)
+  );
+
+  totalRealisticHours = computed(() =>
+    this.components().reduce((sum, c) => sum + c.realisticHours, 0)
+  );
+
+  totalPessimisticHours = computed(() =>
+    this.components().reduce((sum, c) => sum + c.pessimisticHours, 0)
+  );
+
+  hasUnsavedChanges = computed(() => this.editedComponents().size > 0);
+
+  async ngOnInit() {
+    const sessionId = Number(this.route.snapshot.paramMap.get('sessionId'));
+    if (sessionId) {
+      await this.service.getSessionDetail(sessionId);
+    }
+  }
+
+  setActiveTab(tabId: TabId) {
+    this.activeTab.set(tabId);
+  }
+
+  goBack() {
+    this.router.navigate(['/feasibility']);
+  }
+
+  buildBusinessCase() {
+    alert('Business Case builder coming soon! This will generate a comprehensive business case document based on the feasibility analysis.');
+  }
+
+  getEditedValue(componentId: number, field: keyof UpdateComponentRequest, defaultValue: number): number {
+    const edited = this.editedComponents().get(componentId);
+    if (edited && edited[field] !== undefined) {
+      return edited[field] as number;
+    }
+    return defaultValue;
+  }
+
+  onHoursChange(componentId: number, field: keyof UpdateComponentRequest, event: Event) {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.editedComponents.update(map => {
+      const newMap = new Map(map);
+      const existing = newMap.get(componentId) || {};
+      newMap.set(componentId, { ...existing, [field]: value });
+      return newMap;
+    });
+  }
+
+  async saveAllComponents() {
+    this.saving.set(true);
+    try {
+      const entries = Array.from(this.editedComponents().entries());
+      for (const [componentId, updates] of entries) {
+        await this.service.updateComponent(componentId, updates);
+      }
+      this.editedComponents.set(new Map());
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  formatCategory(category: string): string {
+    const labels: Record<string, string> = {
+      backend: 'Backend',
+      frontend: 'Frontend',
+      infrastructure: 'Infrastructure',
+      data: 'Data',
+      integration: 'Integration',
+    };
+    return labels[category] || category;
+  }
+
+  formatRiskCategory(category: string): string {
+    const labels: Record<string, string> = {
+      technical: 'Technical',
+      resource: 'Resource',
+      schedule: 'Schedule',
+      dependency: 'Dependency',
+      integration: 'Integration',
+    };
+    return labels[category] || category;
+  }
+}

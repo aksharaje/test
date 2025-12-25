@@ -129,6 +129,30 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'feasibility',
+        title: 'Feasibility Analyzer | Product Studio',
+        loadComponent: () =>
+          import('./features/feasibility/feasibility-input.component').then(
+            (m) => m.FeasibilityInputComponent
+          ),
+      },
+      {
+        path: 'feasibility/processing/:sessionId',
+        title: 'Analyzing | Product Studio',
+        loadComponent: () =>
+          import('./features/feasibility/feasibility-processing.component').then(
+            (m) => m.FeasibilityProcessingComponent
+          ),
+      },
+      {
+        path: 'feasibility/results/:sessionId',
+        title: 'Feasibility Results | Product Studio',
+        loadComponent: () =>
+          import('./features/feasibility/feasibility-results.component').then(
+            (m) => m.FeasibilityResultsComponent
+          ),
+      },
+      {
         path: 'code-chat',
         title: 'Code Chat | Product Studio',
         loadComponent: () =>
