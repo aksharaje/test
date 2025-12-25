@@ -27,6 +27,9 @@ export class IdeationService {
   private _knowledgeBases = signal<KnowledgeBase[]>([]);
   private _loading = signal(false);
   private _error = signal<string | null>(null);
+  private _hasMore = signal(true);
+  private _page = signal(0);
+  private readonly pageSize = 20;
 
   // Readonly accessors
   readonly currentSession = this._currentSession.asReadonly();
@@ -34,6 +37,7 @@ export class IdeationService {
   readonly knowledgeBases = this._knowledgeBases.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly hasMore = this._hasMore.asReadonly();
 
   // Create session and start processing
   async createSession(request: CreateSessionRequest): Promise<IdeationSession | null> {
@@ -44,6 +48,8 @@ export class IdeationService {
       const session = await firstValueFrom(
         this.http.post<IdeationSession>(`${this.baseUrl}/sessions`, request)
       );
+      // Prepend to current list
+      this._sessions.update(current => [session, ...current]);
       return session;
     } catch (err: any) {
       const message = err?.error?.detail || 'Failed to create session';
@@ -87,17 +93,56 @@ export class IdeationService {
     }
   }
 
-  // List sessions
-  async loadSessions(): Promise<void> {
+  // List sessions (Pagination support)
+  async loadSessions(reset = false): Promise<void> {
+    if (this._loading() && !reset) return; // Prevent concurrent loads unless resetting
     this._loading.set(true);
+
+    if (reset) {
+      this._page.set(0);
+      this._hasMore.set(true);
+      this._sessions.set([]);
+    }
+
     try {
+      const skip = this._page() * this.pageSize;
       const sessions = await firstValueFrom(
-        this.http.get<IdeationSession[]>(`${this.baseUrl}/sessions`)
+        this.http.get<IdeationSession[]>(`${this.baseUrl}/sessions?skip=${skip}&limit=${this.pageSize}`)
       );
-      this._sessions.set(sessions);
+
+      if (sessions.length < this.pageSize) {
+        this._hasMore.set(false);
+      }
+
+      this._sessions.update(current => reset ? sessions : [...current, ...sessions]);
+      this._page.update(p => p + 1);
+
     } catch (err) {
       this._error.set('Failed to load sessions');
       console.error(err);
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // Retry session
+  async retrySession(sessionId: number): Promise<IdeationSession | null> {
+    this._loading.set(true);
+    try {
+      const session = await firstValueFrom(
+        this.http.post<IdeationSession>(`${this.baseUrl}/sessions/${sessionId}/retry`, {})
+      );
+
+      // Update in local list
+      this._sessions.update(current =>
+        current.map(s => s.id === sessionId ? session : s)
+      );
+
+      return session;
+    } catch (err) {
+      console.error('Retry error:', err);
+      this._error.set('Failed to retry session');
+      return null;
     } finally {
       this._loading.set(false);
     }

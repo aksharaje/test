@@ -53,30 +53,138 @@ class FeasibilityService:
         if not content or content.strip() == "":
             raise ValueError(f"{context}: Empty response from LLM")
 
-        # Remove markdown code fences if present
-        if content.startswith("```"):
-            lines = content.split("\n")
-            content = "\n".join(line for line in lines[1:-1] if not line.startswith("```"))
-
+        original_content = content
         content = content.strip()
 
-        # Find the first { or [ to locate the start of JSON
-        json_start = min(
-            (content.find('{') if content.find('{') != -1 else len(content)),
-            (content.find('[') if content.find('[') != -1 else len(content))
-        )
-        if json_start > 0:
-            content = content[json_start:]
+        # Remove markdown code fences if present (handles ```json, ```JSON, ``` etc.)
+        if "```" in content:
+            # Extract content between code fences
+            import re
+            code_block_match = re.search(r'```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```', content)
+            if code_block_match:
+                content = code_block_match.group(1).strip()
+            else:
+                # Just remove all ``` markers
+                content = content.replace("```json", "").replace("```JSON", "").replace("```", "").strip()
 
-        # Use JSONDecoder to parse and ignore trailing content
-        try:
-            from json import JSONDecoder
-            decoder = JSONDecoder()
-            obj, end_idx = decoder.raw_decode(content)
+        # Find the first { or [ to locate the start of JSON
+        brace_idx = content.find('{')
+        bracket_idx = content.find('[')
+
+        if brace_idx == -1 and bracket_idx == -1:
+            print(f"ERROR: {context} - No JSON found. Content: {original_content[:500]}")
+            raise ValueError(f"{context}: No JSON object found in response")
+
+        json_start = min(
+            brace_idx if brace_idx != -1 else len(content),
+            bracket_idx if bracket_idx != -1 else len(content)
+        )
+        content = content[json_start:]
+
+        # Handle malformed JSON with extra wrapper braces or characters
+        # Common issues: "{\n{...}", "{ {...}", "```json\n{...}\n```"
+        if content.startswith('{'):
+            # Check if the content after first { starts with another {
+            rest = content[1:].lstrip()
+            if rest.startswith('{'):
+                # Skip the outer wrapper brace
+                content = rest
+                print(f"DEBUG: Stripped outer brace wrapper, content now starts with: {content[:50]}")
+            elif rest.startswith('"') or rest.startswith("'"):
+                # Looks like valid JSON starting with a key
+                pass
+            else:
+                # First { might be a wrapper - check if there's valid JSON inside
+                inner_brace = rest.find('{')
+                if inner_brace != -1 and inner_brace < 20:  # Close enough to be a wrapper issue
+                    content = rest[inner_brace:]
+                    print(f"DEBUG: Found inner JSON object, content now starts with: {content[:50]}")
+
+        # Find matching closing brace/bracket
+        if content.startswith('{'):
+            # Find the matching }
+            depth = 0
+            in_string = False
+            escape_next = False
+            for i, char in enumerate(content):
+                if escape_next:
+                    escape_next = False
+                    continue
+                if char == '\\':
+                    escape_next = True
+                    continue
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                if not in_string:
+                    if char == '{':
+                        depth += 1
+                    elif char == '}':
+                        depth -= 1
+                        if depth == 0:
+                            content = content[:i+1]
+                            break
+
+        # Use JSONDecoder to parse, with retry on common malformed patterns
+        from json import JSONDecoder
+        decoder = JSONDecoder()
+
+        def try_parse(s: str) -> Dict[str, Any]:
+            obj, _ = decoder.raw_decode(s)
             return obj
-        except json.JSONDecodeError as e:
-            print(f"ERROR: {context} - Failed to parse JSON. Content: {content[:500]}")
-            raise ValueError(f"{context}: LLM returned invalid JSON - {str(e)}")
+
+        # Try parsing as-is first
+        try:
+            return try_parse(content)
+        except json.JSONDecodeError:
+            pass
+
+        # Retry: strip outer wrapper braces (common LLM issue: "{\n{...}\n}")
+        if content.startswith('{'):
+            inner = content[1:].strip()
+            if inner.startswith('{') and inner.endswith('}'):
+                # Remove trailing } that matches the outer {
+                if inner.count('{') < inner.count('}'):
+                    inner = inner[:-1].rstrip()
+                try:
+                    return try_parse(inner)
+                except json.JSONDecodeError:
+                    pass
+            # Just try without first brace
+            try:
+                return try_parse(inner)
+            except json.JSONDecodeError:
+                pass
+
+        # Retry: find first complete JSON object using brace matching
+        if '{' in content:
+            start = content.find('{')
+            depth = 0
+            in_str = False
+            escape = False
+            for i, c in enumerate(content[start:], start):
+                if escape:
+                    escape = False
+                    continue
+                if c == '\\':
+                    escape = True
+                    continue
+                if c == '"':
+                    in_str = not in_str
+                    continue
+                if not in_str:
+                    if c == '{':
+                        depth += 1
+                    elif c == '}':
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                return try_parse(content[start:i+1])
+                            except json.JSONDecodeError:
+                                break
+
+        print(f"ERROR: {context} - Failed to parse JSON. Content: {content[:500]}")
+        raise ValueError(f"{context}: LLM returned invalid JSON")
 
     def _mask_pii(self, text: str) -> str:
         """
@@ -397,7 +505,7 @@ For each component, provide:
 4. dependencies: Array of indices of other components this depends on (0-indexed, empty array if none)
 
 Also identify:
-- auto_detected_stack: Array of technologies mentioned or implied (e.g., ["React", "Node.js", "PostgreSQL"])
+- mentioned_technologies: Array of technologies explicitly mentioned OR reasonably implied by the feature description (e.g., if it mentions "mobile app" you might infer iOS/Android)
 
 Guidelines:
 - Each component should be estimable (not too broad or narrow)
@@ -407,7 +515,7 @@ Guidelines:
 
 Return EXACTLY this JSON structure:
 {{
-  "auto_detected_stack": ["technology1", "technology2", ...],
+  "mentioned_technologies": ["technology1", "technology2", ...],
   "components": [
     {{
       "component_name": "...",
@@ -419,11 +527,14 @@ Return EXACTLY this JSON structure:
   ]
 }}
 
-Return ONLY valid JSON, no additional text."""
+IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.3,
             max_tokens=3000,
             response_format={"type": "json_object"}
@@ -433,7 +544,8 @@ Return ONLY valid JSON, no additional text."""
         data = self._parse_llm_json(content, "Decomposition Agent")
 
         # Update session with detected stack
-        session_obj.auto_detected_stack = data.get("auto_detected_stack", [])
+        # Store mentioned technologies (field still called auto_detected_stack in DB for compatibility)
+        session_obj.auto_detected_stack = data.get("mentioned_technologies", data.get("auto_detected_stack", []))
         db.add(session_obj)
         db.commit()
 
@@ -497,11 +609,14 @@ Return EXACTLY this JSON structure:
   "rationale": "..."
 }}
 
-Return ONLY valid JSON, no additional text."""
+IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                    {"role": "user", "content": prompt}
+                ],
                 temperature=0.2,  # Lower for consistent numerical estimates
                 max_tokens=800,
                 response_format={"type": "json_object"}
@@ -585,11 +700,14 @@ Return EXACTLY this JSON structure:
   ]
 }}
 
-Return ONLY valid JSON, no additional text."""
+IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.2,
             max_tokens=2000,
             response_format={"type": "json_object"}
@@ -672,22 +790,24 @@ Return EXACTLY this JSON structure:
     }},
     ...
   ],
-  "skills_needed": [
+  "skills_required": [
     {{
       "skill_name": "React",
-      "proficiency_level": "intermediate|advanced|expert",
-      "estimated_person_weeks": 2.0,
-      "is_gap": false
+      "proficiency_level": "beginner|intermediate|advanced|expert",
+      "estimated_person_weeks": 2.0
     }},
     ...
   ]
 }}
 
-Return ONLY valid JSON, no additional text."""
+IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.4,
             max_tokens=2500,
             response_format={"type": "json_object"}
@@ -715,15 +835,15 @@ Return ONLY valid JSON, no additional text."""
             db.add(risk)
             risks.append(risk)
 
-        # Create skill requirements
-        for idx, skill_data in enumerate(data.get("skills_needed", [])):
+        # Create skill requirements (we don't assess gaps - that requires knowing the team's actual skills)
+        for idx, skill_data in enumerate(data.get("skills_required", data.get("skills_needed", []))):
             skill = SkillRequirement(
                 session_id=session_id,
                 skill_name=skill_data.get("skill_name", f"Skill {idx + 1}"),
                 proficiency_level=skill_data.get("proficiency_level", "intermediate"),
                 estimated_person_weeks=skill_data.get("estimated_person_weeks", 1.0),
-                is_gap=skill_data.get("is_gap", False),
-                gap_mitigation=skill_data.get("gap_mitigation"),
+                is_gap=False,  # We can't know gaps without team skill data
+                gap_mitigation=None,
                 display_order=idx
             )
             db.add(skill)
@@ -752,38 +872,133 @@ Return ONLY valid JSON, no additional text."""
         realistic_scenario = next((s for s in scenarios if s.scenario_type == "realistic"), None)
         high_impact_risks = [r for r in risks if r.impact >= 0.7]
 
+        # Calculate feasibility factors based on OBJECTIVE data we have
+
+        # 1. Estimate confidence (variance between optimistic and pessimistic)
+        # High variance = high uncertainty = risk
+        variances = []
+        for c in components:
+            if c.realistic_hours > 0:
+                variance = (c.pessimistic_hours - c.optimistic_hours) / c.realistic_hours
+                variances.append(variance)
+        avg_variance = sum(variances) / len(variances) if variances else 0
+        high_uncertainty = avg_variance > 2.0  # Pessimistic is 3x+ optimistic
+        moderate_uncertainty = avg_variance > 1.5
+
+        # 2. Risk analysis - focus on high-impact + high-probability risks
+        high_impact_high_prob = [r for r in high_impact_risks if r.probability >= 0.5]
+        moderate_risks = [r for r in risks if r.impact >= 0.5 and r.probability >= 0.4]
+        severe_risk_profile = len(high_impact_high_prob) >= 2
+        elevated_risk = len(high_impact_risks) >= 3 or len(high_impact_high_prob) >= 1
+
+        # 3. Technical complexity (component interdependencies)
+        components_with_deps = [c for c in components if c.dependencies and len(c.dependencies) > 0]
+        dependency_ratio = len(components_with_deps) / len(components) if components else 0
+        high_complexity = dependency_ratio >= 0.6  # 60%+ have dependencies
+
+        # 4. Scope size (as a secondary factor, not primary)
+        large_scope = total_realistic_hours > 500  # Significant effort
+        very_large_scope = total_realistic_hours > 1000
+
+        # Build rationale based on what we actually know
+        factors_positive = []
+        factors_negative = []
+        factors_caution = []
+
+        # Estimate confidence assessment
+        if avg_variance <= 1.2:
+            factors_positive.append("high estimate confidence (low variance)")
+        elif high_uncertainty:
+            factors_negative.append(f"significant estimate uncertainty - pessimistic estimates are {avg_variance:.1f}x the optimistic")
+        elif moderate_uncertainty:
+            factors_caution.append("moderate estimate uncertainty suggests some unknowns")
+
+        # Risk assessment
+        if len(high_impact_risks) == 0:
+            factors_positive.append("no high-impact risks identified")
+        elif severe_risk_profile:
+            factors_negative.append(f"{len(high_impact_high_prob)} high-impact risks with >50% probability")
+        elif elevated_risk:
+            factors_caution.append(f"{len(high_impact_risks)} high-impact risk(s) identified - review mitigation strategies")
+
+        # Complexity assessment
+        if dependency_ratio <= 0.3:
+            factors_positive.append("low component interdependency allows parallel development")
+        elif high_complexity:
+            factors_caution.append(f"high component interdependency ({dependency_ratio:.0%}) may constrain parallelization")
+
+        # Scope assessment (informational, not blocking)
+        if very_large_scope:
+            factors_caution.append(f"significant scope ({total_realistic_hours:.0f} hours) - consider phased delivery")
+        elif large_scope:
+            factors_caution.append(f"substantial scope ({total_realistic_hours:.0f} hours) warrants careful planning")
+
         # Determine recommendation
-        if total_realistic_hours < 320 and len(high_impact_risks) <= 1:
-            recommendation = "go"
-        elif total_realistic_hours > 800 or len(high_impact_risks) >= 3:
+        # NO-GO: Multiple severe issues that compound risk
+        # CONDITIONAL: Issues exist but are manageable with mitigation
+        # GO: Favorable profile across factors
+
+        severe_issues = sum([severe_risk_profile, high_uncertainty and elevated_risk])
+        caution_issues = sum([elevated_risk, moderate_uncertainty, high_complexity, very_large_scope])
+
+        if severe_issues >= 2 or (severe_risk_profile and high_uncertainty):
             recommendation = "no_go"
-        else:
+            rationale = f"Not recommended due to compounding risk factors: {'; '.join(factors_negative)}. Consider descoping or addressing critical risks before proceeding."
+        elif severe_issues >= 1 or caution_issues >= 3:
             recommendation = "conditional"
+            all_concerns = factors_negative + factors_caution
+            rationale = f"Conditional approval. Key considerations: {'; '.join(all_concerns[:3])}. Recommend risk mitigation planning and/or phased delivery approach."
+        else:
+            recommendation = "go"
+            if factors_positive:
+                rationale = f"Recommended to proceed. Favorable factors: {'; '.join(factors_positive)}."
+            else:
+                rationale = "Recommended to proceed. Analysis indicates acceptable risk profile and manageable complexity."
+
+        # Get session for feature description
+        session_obj = self.get_session(db, session_id)
+        feature_desc = session_obj.feature_description[:500] if session_obj else "Feature"
+
+        # Build component summary
+        component_names = [c.component_name for c in components[:5]]
+        risk_descriptions = [r.risk_description for r in high_impact_risks[:3]]
 
         # Generate summary using LLM
         prompt = f"""You are a product executive summarizing a feasibility analysis.
 
-Total Realistic Hours: {total_realistic_hours}
-Timeline: {realistic_scenario.total_weeks if realistic_scenario else 'unknown'} weeks
-High-Impact Risks: {len(high_impact_risks)}
-Recommendation: {recommendation}
+Feature Description:
+{feature_desc}
 
-Generate a concise executive summary (3-4 sentences) that:
-1. States the scope (what the feature does)
-2. Highlights the effort and timeline
-3. Mentions key risks or challenges
-4. Concludes with the recommendation
+Key Components: {', '.join(component_names)}
+
+Analysis Results:
+- Total Realistic Hours: {total_realistic_hours}
+- Timeline: {realistic_scenario.total_weeks if realistic_scenario else 'unknown'} weeks
+- Number of Components: {len(components)}
+- High-Impact Risks: {len(high_impact_risks)}
+- Key Risks: {'; '.join(risk_descriptions) if risk_descriptions else 'None critical'}
+- Recommendation: {recommendation.upper().replace('_', '-')}
+- Recommendation Rationale: {rationale}
+
+Generate a concise executive summary (4-5 sentences) that:
+1. States what the feature delivers (based on the description above)
+2. Highlights the estimated effort ({total_realistic_hours} hours) and timeline ({realistic_scenario.total_weeks if realistic_scenario else 'unknown'} weeks)
+3. Mentions key risks or challenges if any
+4. States the {recommendation.upper().replace('_', '-')} recommendation AND explains WHY (use the rationale provided above)
 
 Return EXACTLY this JSON structure:
 {{
-  "executive_summary": "..."
+  "executive_summary": "Your 4-5 sentence summary here..."
 }}
 
-Return ONLY valid JSON, no additional text."""
+IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.3,
             max_tokens=500,
             response_format={"type": "json_object"}
@@ -792,8 +1007,7 @@ Return ONLY valid JSON, no additional text."""
         content = response.choices[0].message.content
         data = self._parse_llm_json(content, "Executive Summary")
 
-        # Update session
-        session_obj = self.get_session(db, session_id)
+        # Update session (session_obj already fetched above for prompt context)
         session_obj.executive_summary = data.get("executive_summary", "Analysis complete. Review the detailed findings above.")
         session_obj.go_no_go_recommendation = recommendation
 

@@ -167,10 +167,11 @@ interface Tab {
                     </div>
                   </div>
 
-                  <!-- Auto-detected Stack -->
+                  <!-- Technologies Mentioned -->
                   @if (session()?.autoDetectedStack?.length) {
                     <div class="rounded-lg border bg-card p-6">
-                      <h2 class="text-lg font-semibold mb-3">Auto-detected Tech Stack</h2>
+                      <h2 class="text-lg font-semibold mb-3">Technologies Mentioned</h2>
+                      <p class="text-xs text-muted-foreground mb-3">Based on the feature description</p>
                       <div class="flex flex-wrap gap-2">
                         @for (tech of session()?.autoDetectedStack; track tech) {
                           <span class="px-3 py-1 bg-muted rounded-full text-sm">{{ tech }}</span>
@@ -414,7 +415,12 @@ interface Tab {
               @case ('skills') {
                 <!-- Skills Tab -->
                 <div class="space-y-6">
-                  <h2 class="text-lg font-semibold">Skill Requirements</h2>
+                  <div>
+                    <h2 class="text-lg font-semibold">Skills Required</h2>
+                    <p class="text-sm text-muted-foreground mt-1">
+                      Skills likely needed based on the feature analysis. Compare against your team's capabilities.
+                    </p>
+                  </div>
 
                   <div class="rounded-lg border overflow-hidden">
                     <table class="w-full">
@@ -422,13 +428,12 @@ interface Tab {
                         <tr>
                           <th class="text-left p-3 text-sm font-medium">Skill</th>
                           <th class="text-center p-3 text-sm font-medium">Proficiency Level</th>
-                          <th class="text-center p-3 text-sm font-medium">Person-Weeks</th>
-                          <th class="text-center p-3 text-sm font-medium">Gap Status</th>
+                          <th class="text-center p-3 text-sm font-medium">Est. Person-Weeks</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y">
                         @for (skill of skills(); track skill.id) {
-                          <tr class="hover:bg-muted/30" [class.bg-red-50/50]="skill.isGap">
+                          <tr class="hover:bg-muted/30">
                             <td class="p-3 font-medium">{{ skill.skillName }}</td>
                             <td class="p-3 text-center">
                               <span class="px-2 py-1 bg-muted rounded text-xs capitalize">
@@ -436,22 +441,6 @@ interface Tab {
                               </span>
                             </td>
                             <td class="p-3 text-center">{{ skill.estimatedPersonWeeks }}</td>
-                            <td class="p-3 text-center">
-                              @if (skill.isGap) {
-                                <div>
-                                  <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
-                                    Gap
-                                  </span>
-                                  @if (skill.gapMitigation) {
-                                    <p class="mt-1 text-xs text-muted-foreground">{{ skill.gapMitigation }}</p>
-                                  }
-                                </div>
-                              } @else {
-                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-                                  Available
-                                </span>
-                              }
-                            </td>
                           </tr>
                         }
                       </tbody>
@@ -460,7 +449,7 @@ interface Tab {
 
                   @if (skills().length === 0) {
                     <div class="text-center py-8 text-muted-foreground">
-                      No skill requirements identified
+                      No specific skill requirements identified
                     </div>
                   }
                 </div>

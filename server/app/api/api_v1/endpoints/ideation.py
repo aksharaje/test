@@ -94,11 +94,33 @@ def get_session_status(
 
 @router.get("/sessions", response_model=List[IdeationSession])
 def list_sessions(
+    skip: int = 0,
+    limit: int = 20,
     db_session: Session = Depends(get_session),
     user_id: Optional[int] = None
 ) -> Any:
     """List user's ideation sessions"""
-    return ideation_service.list_sessions(db_session, user_id)
+    return ideation_service.list_sessions(db_session, user_id, skip=skip, limit=limit)
+
+
+@router.post("/sessions/{session_id}/retry", response_model=IdeationSession)
+def retry_session(
+    session_id: int,
+    background_tasks: BackgroundTasks,
+    db_session: Session = Depends(get_session)
+) -> Any:
+    """Retry a failed session"""
+    session = ideation_service.retry_session(db_session, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Trigger background processing
+    background_tasks.add_task(
+        ideation_service.run_ideation_pipeline,
+        db_session,
+        session.id
+    )
+    return session
 
 
 @router.patch("/ideas/{idea_id}", response_model=GeneratedIdea)

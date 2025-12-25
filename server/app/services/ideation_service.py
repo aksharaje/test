@@ -41,24 +41,18 @@ class IdeationService:
         """
         Robust JSON parsing for LLM responses.
         Handles markdown code fences, extra whitespace, and trailing content.
-
-        Args:
-            content: Raw LLM response text
-            context: Description of what's being parsed (for error messages)
-
-        Returns:
-            Parsed JSON object
-
-        Raises:
-            ValueError: If JSON cannot be parsed
+        Fallback to ast.literal_eval for Python-dict style outputs.
         """
+        import ast
+
         if not content or content.strip() == "":
             raise ValueError(f"{context}: Empty response from LLM")
 
         # Remove markdown code fences if present
         if content.startswith("```"):
             lines = content.split("\n")
-            content = "\n".join(line for line in lines[1:-1] if not line.startswith("```"))
+            # Filter out lines starting with ``` (start and end mostly)
+            content = "\n".join(line for line in lines if not line.strip().startswith("```"))
 
         # Clean up whitespace
         content = content.strip()
@@ -71,22 +65,37 @@ class IdeationService:
         if json_start > 0:
             content = content[json_start:]
 
-        # Use JSONDecoder to parse and ignore trailing content
+        # Try standard JSON parsing first
         try:
             from json import JSONDecoder
             decoder = JSONDecoder()
             obj, end_idx = decoder.raw_decode(content)
-
-            # Warn if there's significant trailing content
-            remaining = content[end_idx:].strip()
-            if remaining and len(remaining) > 10:
-                print(f"WARNING: {context} had trailing content after JSON: {remaining[:100]}")
-
             return obj
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
+            # Fallback: Try ast.literal_eval for single-quoted Python dicts
+            try:
+                # Limit content to the potential JSON part to avoid noise
+                print(f"WARNING: {context} - Standard JSON parse failed, trying literal_eval fallback...")
+                
+                # Pre-process content to make it python-compatible
+                # Replace JSON null/true/false with Python None/True/False
+                # Use regex to avoid replacing substring inside strings (basic check)
+                import re
+                
+                # These regexes look for whole words only
+                fallback_content = re.sub(r'\btrue\b', 'True', content)
+                fallback_content = re.sub(r'\bfalse\b', 'False', fallback_content)
+                fallback_content = re.sub(r'\bnull\b', 'None', fallback_content)
+                
+                obj = ast.literal_eval(fallback_content)
+                if isinstance(obj, (dict, list)):
+                    return obj
+            except (ValueError, SyntaxError):
+                pass
+            
+            # Re-raise original error if fallback fails
             print(f"ERROR: {context} - Failed to parse JSON. Content: {content[:500]}")
-            print(f"ERROR: JSONDecodeError: {str(e)}")
-            raise ValueError(f"{context}: LLM returned invalid JSON - {str(e)}")
+            raise ValueError(f"{context}: LLM returned invalid JSON.")
 
     # --- Session Management ---
 
@@ -147,13 +156,32 @@ class IdeationService:
         """Get session by ID"""
         return session.get(IdeationSession, session_id)
 
-    def list_sessions(self, session: Session, user_id: Optional[int] = None) -> List[IdeationSession]:
-        """List sessions for user"""
+    def list_sessions(self, session: Session, user_id: Optional[int] = None, skip: int = 0, limit: int = 20) -> List[IdeationSession]:
+        """List sessions for user with pagination"""
         query = select(IdeationSession)
         if user_id:
             query = query.where(IdeationSession.user_id == user_id)
-        query = query.order_by(desc(IdeationSession.created_at))
+        query = query.order_by(desc(IdeationSession.created_at)).offset(skip).limit(limit)
         return list(session.exec(query).all())
+
+    def retry_session(self, session: Session, session_id: int) -> Optional[IdeationSession]:
+        """Reset failed session to pending for retry"""
+        ideation_session = self.get_session(session, session_id)
+        if not ideation_session:
+            return None
+        
+        # Reset state
+        ideation_session.status = "pending"
+        ideation_session.error_message = None
+        ideation_session.progress_step = 0
+        ideation_session.progress_message = "Retrying session..."
+        ideation_session.updated_at = datetime.utcnow()
+        
+        session.add(ideation_session)
+        session.commit()
+        session.refresh(ideation_session)
+        
+        return ideation_session
 
     def get_session_detail(self, session: Session, session_id: int) -> Optional[Dict[str, Any]]:
         """Get session with clusters, ideas, and prioritized backlog"""
@@ -366,6 +394,9 @@ class IdeationService:
 
 CRITICAL FORMATTING RULES:
 - Output ONLY the JSON object - NO explanations, NO markdown, NO extra text before or after
+- Use VALID RFC8259 JSON format
+- ALL KEYS and STRINGS must be enclosed in DOUBLE QUOTES (") - do NOT use single quotes
+- All field values MUST be strings or arrays of strings as specified
 - All field values MUST be strings or arrays of strings as specified
 - Arrays must contain at least one item if the field exists in input, otherwise use empty array []
 
@@ -528,14 +559,22 @@ Goals: {', '.join(structured_problem.get('goals_parsed', []))}"""
 
         # Save ideas to DB
         ideas = []
-        for idx, idea_data in enumerate(parsed.get("ideas", [])):
+        parsed_ideas = parsed.get("ideas", [])
+        if not isinstance(parsed_ideas, list):
+            print(f"Warning: 'ideas' is not a list: {type(parsed_ideas)}")
+            parsed_ideas = []
+
+        for idx, idea_data in enumerate(parsed_ideas):
+            if not isinstance(idea_data, dict):
+                continue
+                
             idea = GeneratedIdea(
                 session_id=session_id,
-                title=idea_data["title"],
-                description=idea_data["description"],
-                category=idea_data["category"],
-                effort_estimate=idea_data["effort_estimate"],
-                impact_estimate=idea_data["impact_estimate"],
+                title=idea_data.get("title", f"Idea {idx+1}"),
+                description=idea_data.get("description", "No description provided."),
+                category=idea_data.get("category", "incremental"),
+                effort_estimate=idea_data.get("effort_estimate", "medium"),
+                impact_estimate=idea_data.get("impact_estimate", "medium"),
                 display_order=idx
             )
             session.add(idea)

@@ -11,6 +11,7 @@ import {
   lucideChevronRight,
   lucideTrash2,
   lucideLoader2,
+  lucideRotateCw,
 } from '@ng-icons/lucide';
 import { IdeationService } from './ideation.service';
 import { HlmButtonDirective } from '../../ui/button';
@@ -30,6 +31,7 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideChevronRight,
       lucideTrash2,
       lucideLoader2,
+      lucideRotateCw,
     }),
   ],
   template: `
@@ -273,6 +275,17 @@ import { HlmButtonDirective } from '../../ui/button';
                       </p>
                     </div>
                     <div class="flex items-center gap-1 ml-2">
+                      @if (session.status === 'failed') {
+                        <button
+                          type="button"
+                          class="p-1 text-muted-foreground hover:text-primary transition-colors"
+                          (click)="retrySession($event, session)"
+                          title="Retry"
+                        >
+                          <ng-icon name="lucideRotateCw" class="h-4 w-4" />
+                        </button>
+                      }
+                      
                       <button
                         type="button"
                         class="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
@@ -285,6 +298,19 @@ import { HlmButtonDirective } from '../../ui/button';
                     </div>
                   </div>
                 </div>
+              }
+              
+              @if (service.hasMore()) {
+                 <button
+                   class="w-full py-2 text-sm text-muted-foreground hover:text-primary transition-colors border rounded-md bg-background"
+                   (click)="loadMoreSessions()"
+                   [disabled]="service.loading()"
+                 >
+                   @if (service.loading()) {
+                     <ng-icon name="lucideLoader2" class="inline h-3 w-3 animate-spin mr-1" />
+                   }
+                   Load More
+                 </button>
               }
             </div>
           }
@@ -409,6 +435,18 @@ export class IdeationInputComponent implements OnInit {
     if (confirm('Are you sure you want to delete this ideation session?')) {
       await this.service.deleteSession(session.id);
     }
+  }
+
+  async retrySession(event: Event, session: any) {
+    event.stopPropagation();
+    const retried = await this.service.retrySession(session.id);
+    if (retried) {
+      this.router.navigate(['/ideation/processing', retried.id]);
+    }
+  }
+
+  loadMoreSessions() {
+    this.service.loadSessions();
   }
 
   formatDate(dateStr: string): string {
