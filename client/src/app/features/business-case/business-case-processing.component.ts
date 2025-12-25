@@ -2,17 +2,17 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideLoader2, lucideAlertCircle } from '@ng-icons/lucide';
-import { FeasibilityService } from './feasibility.service';
-import type { SessionStatusResponse } from './feasibility.types';
+import { BusinessCaseService } from './business-case.service';
+import type { SessionStatusResponse } from './business-case.types';
 
 interface ProgressStep {
   num: number;
   label: string;
-  status: 'decomposing' | 'estimating' | 'scheduling' | 'risk_analyzing' | 'completed';
+  step: number;
 }
 
 @Component({
-  selector: 'app-feasibility-processing',
+  selector: 'app-business-case-processing',
   standalone: true,
   imports: [NgIcon],
   viewProviders: [
@@ -29,7 +29,7 @@ interface ProgressStep {
           <div class="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center">
             <ng-icon name="lucideCheck" class="h-8 w-8 text-green-600" />
           </div>
-          <h1 class="mt-4 text-2xl font-bold text-foreground">Analysis Complete!</h1>
+          <h1 class="mt-4 text-2xl font-bold text-foreground">Business Case Complete!</h1>
           <p class="mt-2 text-muted-foreground">Redirecting to results...</p>
         </div>
       } @else if (sessionStatus()?.status === 'failed') {
@@ -37,23 +37,33 @@ interface ProgressStep {
           <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
             <ng-icon name="lucideAlertCircle" class="h-8 w-8 text-red-600" />
           </div>
-          <h1 class="mt-4 text-2xl font-bold text-foreground">Analysis Failed</h1>
-          <p class="mt-2 text-destructive">{{ sessionStatus()?.errorMessage }}</p>
-          <button
-            class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-            (click)="retryAnalysis()"
-          >
-            Retry Analysis
-          </button>
+          <h1 class="mt-4 text-2xl font-bold text-foreground">Analysis Could Not Be Completed</h1>
+          <p class="mt-2 text-muted-foreground max-w-md mx-auto">
+            {{ getUserFriendlyError(sessionStatus()?.errorMessage) }}
+          </p>
+          <div class="mt-6 flex items-center justify-center gap-3">
+            <button
+              class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+              (click)="goBack()"
+            >
+              Try Again
+            </button>
+            <button
+              class="px-4 py-2 border rounded-lg hover:bg-muted"
+              (click)="goBack()"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
       } @else {
         <!-- Processing State -->
         <div class="space-y-6">
           <!-- Header -->
           <div class="text-center">
-            <h1 class="text-2xl font-bold text-foreground">Analyzing Feasibility</h1>
+            <h1 class="text-2xl font-bold text-foreground">Building Business Case</h1>
             <p class="mt-2 text-muted-foreground">
-              Our AI agents are evaluating your feature request
+              Our AI agents are analyzing costs, benefits, and financial projections
             </p>
           </div>
 
@@ -110,9 +120,9 @@ interface ProgressStep {
 
           <!-- Skeleton Cards for Preview -->
           <div class="mt-8 space-y-4">
-            <p class="text-sm text-muted-foreground text-center">Preparing your analysis results...</p>
-            <div class="grid grid-cols-2 gap-4">
-              @for (item of [1, 2, 3, 4]; track item) {
+            <p class="text-sm text-muted-foreground text-center">Preparing your business case...</p>
+            <div class="grid grid-cols-3 gap-4">
+              @for (item of [1, 2, 3]; track item) {
                 <div class="rounded-lg border bg-card p-4 space-y-3">
                   <div class="h-4 w-2/3 bg-muted rounded animate-pulse"></div>
                   <div class="h-8 w-1/2 bg-muted rounded animate-pulse"></div>
@@ -126,8 +136,8 @@ interface ProgressStep {
     </div>
   `,
 })
-export class FeasibilityProcessingComponent implements OnInit, OnDestroy {
-  private service = inject(FeasibilityService);
+export class BusinessCaseProcessingComponent implements OnInit, OnDestroy {
+  private service = inject(BusinessCaseService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -135,19 +145,18 @@ export class FeasibilityProcessingComponent implements OnInit, OnDestroy {
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   steps: ProgressStep[] = [
-    { num: 1, label: 'Decomposing into components', status: 'decomposing' },
-    { num: 2, label: 'Estimating effort', status: 'estimating' },
-    { num: 3, label: 'Projecting timelines', status: 'scheduling' },
-    { num: 4, label: 'Identifying risks', status: 'risk_analyzing' },
-    { num: 5, label: 'Complete', status: 'completed' },
+    { num: 1, label: 'Analyzing business context', step: 1 },
+    { num: 2, label: 'Estimating development costs', step: 2 },
+    { num: 3, label: 'Projecting operational costs', step: 3 },
+    { num: 4, label: 'Estimating benefits', step: 4 },
+    { num: 5, label: 'Calculating financial metrics', step: 5 },
+    { num: 6, label: 'Complete', step: 6 },
   ];
-
-  private statusOrder = ['pending', 'decomposing', 'estimating', 'scheduling', 'risk_analyzing', 'completed'];
 
   async ngOnInit() {
     const sessionId = Number(this.route.snapshot.paramMap.get('sessionId'));
     if (!sessionId) {
-      this.router.navigate(['/feasibility']);
+      this.router.navigate(['/business-case']);
       return;
     }
 
@@ -175,7 +184,7 @@ export class FeasibilityProcessingComponent implements OnInit, OnDestroy {
         clearInterval(this.pollInterval);
       }
       setTimeout(() => {
-        this.router.navigate(['/feasibility/results', sessionId]);
+        this.router.navigate(['/business-case/results', sessionId]);
       }, 1500);
     } else if (status.status === 'failed') {
       if (this.pollInterval) {
@@ -185,38 +194,52 @@ export class FeasibilityProcessingComponent implements OnInit, OnDestroy {
   }
 
   isStepComplete(step: ProgressStep): boolean {
-    const currentStatus = this.sessionStatus()?.status;
-    if (!currentStatus) return false;
-
-    const currentIndex = this.statusOrder.indexOf(currentStatus);
-    const stepIndex = this.statusOrder.indexOf(step.status);
-
-    return currentIndex > stepIndex;
+    const currentStep = this.sessionStatus()?.progressStep || 0;
+    return currentStep > step.step;
   }
 
   isCurrentStep(step: ProgressStep): boolean {
-    const currentStatus = this.sessionStatus()?.status;
-    return currentStatus === step.status;
+    const currentStep = this.sessionStatus()?.progressStep || 0;
+    return currentStep === step.step;
   }
 
   isStepPending(step: ProgressStep): boolean {
     return !this.isStepComplete(step) && !this.isCurrentStep(step);
   }
 
-  async retryAnalysis() {
-    const sessionId = this.sessionStatus()?.id;
-    if (sessionId) {
-      this.sessionStatus.set(null); // Clear failed status immediately
-      await this.service.retrySession(sessionId);
-      // Restart polling
-      await this.poll(sessionId);
-      if (!this.pollInterval) {
-        this.pollInterval = setInterval(() => this.poll(sessionId!), 3000);
-      }
-    }
+  goBack() {
+    this.router.navigate(['/business-case']);
   }
 
-  goBack() {
-    this.router.navigate(['/feasibility']);
+  getUserFriendlyError(errorMessage: string | null | undefined): string {
+    if (!errorMessage) {
+      return 'An unexpected error occurred while analyzing your business case. Please try again.';
+    }
+
+    // Map technical errors to user-friendly messages
+    const errorLower = errorMessage.toLowerCase();
+
+    if (errorLower.includes('llm') || errorLower.includes('json') || errorLower.includes('parse')) {
+      return 'Our AI service encountered a temporary issue. Please try again in a moment.';
+    }
+
+    if (errorLower.includes('timeout') || errorLower.includes('timed out')) {
+      return 'The analysis took longer than expected. Please try again with a simpler description.';
+    }
+
+    if (errorLower.includes('network') || errorLower.includes('connection')) {
+      return 'Unable to connect to our analysis service. Please check your connection and try again.';
+    }
+
+    if (errorLower.includes('session not found')) {
+      return 'This analysis session could not be found. Please start a new analysis.';
+    }
+
+    if (errorLower.includes('feasibility')) {
+      return 'There was an issue linking to the feasibility analysis. Please try again or create a new analysis.';
+    }
+
+    // Default user-friendly message
+    return 'An error occurred during analysis. Please try again or contact support if the issue persists.';
   }
 }

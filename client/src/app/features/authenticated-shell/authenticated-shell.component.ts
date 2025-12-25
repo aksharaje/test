@@ -57,6 +57,7 @@ export class AuthenticatedShellComponent {
       path: '/feasibility-section',
       children: [
         { label: 'Feasibility Analyzer', path: '/feasibility' },
+        { label: 'Business Case Builder', path: '/business-case' },
       ],
     },
     { label: 'Roadmapping', path: '/roadmapping', children: [] },

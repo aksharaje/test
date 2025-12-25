@@ -318,7 +318,7 @@ import type {
                                 {{ feature.estimatedSprints }} sprints
                               </span>
                             }
-                            @if (feature.dependencies?.length) {
+                            @if (feature.dependencies.length) {
                               <span class="text-xs text-orange-600 flex items-center gap-0.5">
                                 <ng-icon hlmIcon name="lucideLink" class="h-3 w-3" />
                                 {{ feature.dependencies.length }}

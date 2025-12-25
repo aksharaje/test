@@ -91,15 +91,15 @@ import { HlmButtonDirective } from '../../ui/button';
                           <span class="text-muted-foreground"> P0</span>
                         </div>
                         <div>
-                          <span class="font-medium text-blue-600">{{ session.portfolioSummary.byTier?.p1 || 0 }}</span>
+                          <span class="font-medium text-blue-600">{{ session.portfolioSummary.byTier.p1 || 0 }}</span>
                           <span class="text-muted-foreground"> P1</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-600">{{ session.portfolioSummary.byTier?.p2 || 0 }}</span>
+                          <span class="font-medium text-gray-600">{{ session.portfolioSummary.byTier.p2 || 0 }}</span>
                           <span class="text-muted-foreground"> P2</span>
                         </div>
                         <div>
-                          <span class="font-medium text-gray-500">{{ session.portfolioSummary.byTier?.p3 || 0 }}</span>
+                          <span class="font-medium text-gray-500">{{ session.portfolioSummary.byTier.p3 || 0 }}</span>
                           <span class="text-muted-foreground"> P3</span>
                         </div>
                       </div>

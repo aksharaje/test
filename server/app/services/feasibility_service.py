@@ -131,6 +131,8 @@ class FeasibilityService:
 
         def try_parse(s: str) -> Dict[str, Any]:
             obj, _ = decoder.raw_decode(s)
+            if not isinstance(obj, (dict, list)):
+                raise ValueError(f"Parsed content is not a dict or list, got {type(obj)}")
             return obj
 
         # Try parsing as-is first
@@ -242,13 +244,50 @@ class FeasibilityService:
         """Get a session by ID"""
         return db.get(FeasibilitySession, session_id)
 
-    def list_sessions(self, db: Session, user_id: Optional[int] = None) -> List[FeasibilitySession]:
-        """List all sessions, optionally filtered by user"""
+    def list_sessions(
+        self,
+        db: Session,
+        user_id: Optional[int] = None,
+        skip: int = 0,
+        limit: int = 20
+    ) -> List[FeasibilitySession]:
+        """List all sessions, optionally filtered by user, with pagination"""
         statement = select(FeasibilitySession)
         if user_id:
             statement = statement.where(FeasibilitySession.user_id == user_id)
-        statement = statement.order_by(desc(FeasibilitySession.created_at))
+        statement = statement.order_by(desc(FeasibilitySession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
+
+    def retry_session(self, db: Session, session_id: int) -> FeasibilitySession:
+        """
+        Retry a failed session.
+        Resets status and triggers background processing.
+        """
+        session_obj = self.get_session(db, session_id)
+        if not session_obj:
+            raise ValueError("Session not found")
+            
+        # Reset session state
+        session_obj.status = "pending"
+        session_obj.error_message = None
+        session_obj.progress_step = 0
+        session_obj.progress_message = "Retrying analysis..."
+        session_obj.updated_at = datetime.utcnow()
+        
+        # Clear previous results to avoid duplicates
+        # (This mimics delete_session logic but keeps the session itself)
+        db.exec(select(TechnicalComponent).where(TechnicalComponent.session_id == session_id)).all() # execute properly
+        for obj in db.exec(select(TechnicalComponent).where(TechnicalComponent.session_id == session_id)): db.delete(obj)
+        for obj in db.exec(select(TimelineScenario).where(TimelineScenario.session_id == session_id)): db.delete(obj)
+        for obj in db.exec(select(RiskAssessment).where(RiskAssessment.session_id == session_id)): db.delete(obj)
+        for obj in db.exec(select(SkillRequirement).where(SkillRequirement.session_id == session_id)): db.delete(obj)
+        for obj in db.exec(select(ActualResult).where(ActualResult.session_id == session_id)): db.delete(obj)
+        
+        db.add(session_obj)
+        db.commit()
+        db.refresh(session_obj)
+        
+        return session_obj
 
     def get_session_detail(self, db: Session, session_id: int) -> Optional[Dict[str, Any]]:
         """
@@ -471,6 +510,43 @@ class FeasibilityService:
 
     # --- Agent 1: Decomposition ---
 
+    def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.3, max_tokens: int = 3000, context: str = "LLM") -> Dict[str, Any]:
+        """
+        Call LLM with retry logic for empty responses or API errors.
+        """
+        max_retries = 3
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                # On last attempt, try without response_format in case model doesn't support it well
+                use_json_mode = attempt < (max_retries - 1)
+                
+                kwargs = {
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                }
+                if use_json_mode:
+                    kwargs["response_format"] = {"type": "json_object"}
+
+                response = self.client.chat.completions.create(**kwargs)
+                content = response.choices[0].message.content
+                
+                if not content or not content.strip():
+                    raise ValueError("Received empty string content from LLM API")
+                
+                return self._parse_llm_json(content, context)
+                
+            except Exception as e:
+                print(f"Error calling LLM for {context} (Attempt {attempt + 1}/{max_retries}): {e}")
+                last_error = e
+                
+            time.sleep(2 * (attempt + 1)) # Increased backoff (2s, 4s, 6s)
+            
+        raise ValueError(f"{context}: Failed to get valid response from LLM after {max_retries} attempts. Last error: {last_error}")
+
     def _decompose_feature(self, db: Session, session_id: int) -> List[TechnicalComponent]:
         """
         Agent 1: Decompose feature into 4-8 technical components.
@@ -529,19 +605,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
-        response = self.client.chat.completions.create(
-            model=self.model,
+        data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
             max_tokens=3000,
-            response_format={"type": "json_object"}
+            context="Decomposition Agent"
         )
-
-        content = response.choices[0].message.content
-        data = self._parse_llm_json(content, "Decomposition Agent")
 
         # Update session with detected stack
         # Store mentioned technologies (field still called auto_detected_stack in DB for compatibility)
@@ -611,19 +683,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
-            response = self.client.chat.completions.create(
-                model=self.model,
+            data = self._call_llm(
                 messages=[
                     {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.2,  # Lower for consistent numerical estimates
+                temperature=0.2,
                 max_tokens=800,
-                response_format={"type": "json_object"}
+                context=f"Effort Estimation Agent (Component {component.id})"
             )
-
-            content = response.choices[0].message.content
-            data = self._parse_llm_json(content, f"Effort Estimation Agent (Component {component.id})")
 
             # Update component with estimates (with safe defaults)
             component.optimistic_hours = data.get("optimistic_hours", 8.0)
@@ -702,19 +770,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
-        response = self.client.chat.completions.create(
-            model=self.model,
+        data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.2,
             max_tokens=2000,
-            response_format={"type": "json_object"}
+            context="Timeline Agent"
         )
-
-        content = response.choices[0].message.content
-        data = self._parse_llm_json(content, "Timeline Agent")
 
         # Create timeline scenarios
         scenarios = []
@@ -802,19 +866,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
-        response = self.client.chat.completions.create(
-            model=self.model,
+        data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.4,
             max_tokens=2500,
-            response_format={"type": "json_object"}
+            context="Risk Agent"
         )
-
-        content = response.choices[0].message.content
-        data = self._parse_llm_json(content, "Risk Agent")
 
         # Create risk assessments
         risks = []

@@ -2,22 +2,35 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type {
-  FeasibilitySession,
+  BusinessCaseSession,
   SessionDetail,
-  TechnicalComponent,
+  CostItem,
+  BenefitItem,
+  RateAssumption,
   CreateSessionRequest,
-  UpdateComponentRequest,
-  CaptureActualsRequest,
+  UpdateCostRequest,
+  UpdateBenefitRequest,
+  UpdateRateRequest,
+  SaveLearningRequest,
   SessionStatusResponse
-} from './feasibility.types';
+} from './business-case.types';
+import type { FeasibilitySession } from '../feasibility/feasibility.types';
 import type { GeneratedArtifact, StructuredContent, EpicNode, FeatureNode } from '../story-generator/story-generator.types';
-import type { IdeationSession, GeneratedIdea, SessionDetail as IdeationSessionDetail } from '../ideation/ideation.types';
+import type { IdeationSession, SessionDetail as IdeationSessionDetail } from '../ideation/ideation.types';
+
+export interface FeasibilitySessionSummary {
+  id: number;
+  featureDescription: string;
+  fullDescription: string; // Full description for use when selected
+  goNoGoRecommendation: string | null;
+  createdAt: string;
+}
 
 export interface EpicOrFeature {
   id: number;
   type: 'epic' | 'feature';
   title: string;
-  description: string;  // AI-generated description from the structured content
+  description: string;
 }
 
 export interface IdeationSessionSummary {
@@ -38,41 +51,37 @@ export interface IdeaForSelection {
 }
 
 @Injectable({ providedIn: 'root' })
-export class FeasibilityService {
+export class BusinessCaseService {
   private http = inject(HttpClient);
-  private baseUrl = '/api/feasibility';
+  private baseUrl = '/api/business-case';
 
   // State signals
   private _currentSession = signal<SessionDetail | null>(null);
-  private _sessions = signal<FeasibilitySession[]>([]);
+  private _sessions = signal<BusinessCaseSession[]>([]);
+  private _feasibilitySessions = signal<FeasibilitySessionSummary[]>([]);
   private _epicsAndFeatures = signal<EpicOrFeature[]>([]);
   private _ideationSessions = signal<IdeationSessionSummary[]>([]);
   private _selectedIdeationIdeas = signal<IdeaForSelection[]>([]);
   private _loading = signal(false);
   private _error = signal<string | null>(null);
 
-  // Pagination state
-  private _page = signal(0);
-  private _hasMore = signal(true);
-  private readonly pageSize = 20;
-
   // Readonly accessors
   readonly currentSession = this._currentSession.asReadonly();
   readonly sessions = this._sessions.asReadonly();
+  readonly feasibilitySessions = this._feasibilitySessions.asReadonly();
   readonly epicsAndFeatures = this._epicsAndFeatures.asReadonly();
   readonly ideationSessions = this._ideationSessions.asReadonly();
   readonly selectedIdeationIdeas = this._selectedIdeationIdeas.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
-  readonly hasMore = this._hasMore.asReadonly();
 
-  async createSession(request: CreateSessionRequest): Promise<FeasibilitySession | null> {
+  async createSession(request: CreateSessionRequest): Promise<BusinessCaseSession | null> {
     try {
       this._loading.set(true);
       this._error.set(null);
 
       const session = await firstValueFrom(
-        this.http.post<FeasibilitySession>(`${this.baseUrl}/sessions`, request)
+        this.http.post<BusinessCaseSession>(`${this.baseUrl}/sessions`, request)
       );
 
       return session;
@@ -115,35 +124,20 @@ export class FeasibilityService {
     }
   }
 
-  async loadSessions(reset = false, userId?: number): Promise<void> {
+  async loadSessions(userId?: number): Promise<void> {
     try {
-      if (reset) {
-        this._page.set(0);
-        this._hasMore.set(true);
-        this._sessions.set([]);
-      }
-
-      if (!this._hasMore() && !reset) return;
-
       this._loading.set(true);
       this._error.set(null);
 
-      const skip = this._page() * this.pageSize;
       const url = userId
-        ? `${this.baseUrl}/sessions?user_id=${userId}&skip=${skip}&limit=${this.pageSize}`
-        : `${this.baseUrl}/sessions?skip=${skip}&limit=${this.pageSize}`;
+        ? `${this.baseUrl}/sessions?user_id=${userId}`
+        : `${this.baseUrl}/sessions`;
 
-      const newSessions = await firstValueFrom(
-        this.http.get<FeasibilitySession[]>(url)
+      const sessions = await firstValueFrom(
+        this.http.get<BusinessCaseSession[]>(url)
       );
 
-      if (newSessions.length < this.pageSize) {
-        this._hasMore.set(false);
-      } else {
-        this._page.update(p => p + 1);
-      }
-
-      this._sessions.update(current => reset ? newSessions : [...current, ...newSessions]);
+      this._sessions.set(sessions);
     } catch (err) {
       this._error.set(this.getErrorMessage(err));
     } finally {
@@ -151,22 +145,27 @@ export class FeasibilityService {
     }
   }
 
-  async retrySession(sessionId: number): Promise<void> {
+  async loadFeasibilitySessions(): Promise<void> {
     try {
-      this._loading.set(true);
-      const updatedSession = await firstValueFrom(
-        this.http.post<FeasibilitySession>(`${this.baseUrl}/sessions/${sessionId}/retry`, {})
+      const sessions = await firstValueFrom(
+        this.http.get<FeasibilitySession[]>('/api/feasibility/sessions')
       );
 
-      // Update the session in the list
-      this._sessions.update(sessions =>
-        sessions.map(s => s.id === sessionId ? updatedSession : s)
-      );
+      // Filter to only completed sessions
+      const completedSessions: FeasibilitySessionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          featureDescription: s.featureDescription.substring(0, 200) + (s.featureDescription.length > 200 ? '...' : ''),
+          fullDescription: s.featureDescription,
+          goNoGoRecommendation: s.goNoGoRecommendation,
+          createdAt: s.createdAt,
+        }));
 
-    } catch (err) {
-      this._error.set(this.getErrorMessage(err));
-    } finally {
-      this._loading.set(false);
+      this._feasibilitySessions.set(completedSessions);
+    } catch {
+      // Don't set error - this is optional data
+      this._feasibilitySessions.set([]);
     }
   }
 
@@ -204,7 +203,7 @@ export class FeasibilityService {
         });
 
       this._epicsAndFeatures.set(epicsAndFeatures);
-    } catch (err) {
+    } catch {
       // Don't set error - this is optional data
       this._epicsAndFeatures.set([]);
     }
@@ -287,7 +286,7 @@ export class FeasibilityService {
         }));
 
       this._ideationSessions.set(completedSessions);
-    } catch (err) {
+    } catch {
       // Don't set error - this is optional data
       this._ideationSessions.set([]);
     }
@@ -299,26 +298,18 @@ export class FeasibilityService {
         this.http.get<IdeationSessionDetail>(`/api/ideation/sessions/${sessionId}`)
       );
 
-      // Transform ideas for selection (all selected by default)
-      const ideas: IdeaForSelection[] = detail.ideas.map((idea) => ({
+      const ideas: IdeaForSelection[] = (detail.ideas || []).map((idea) => ({
         id: idea.id,
         title: idea.title,
         description: idea.description,
-        category: this.formatIdeaCategory(idea.category),
+        category: idea.category,
         effortEstimate: idea.effortEstimate,
         impactEstimate: idea.impactEstimate,
-        selected: true,
+        selected: true, // Pre-select all ideas
       }));
 
       this._selectedIdeationIdeas.set(ideas);
-
-      // Update the session's idea count
-      this._ideationSessions.update((sessions) =>
-        sessions.map((s) =>
-          s.id === sessionId ? { ...s, ideaCount: ideas.length } : s
-        )
-      );
-    } catch (err) {
+    } catch {
       this._selectedIdeationIdeas.set([]);
     }
   }
@@ -348,74 +339,106 @@ export class FeasibilityService {
   }
 
   buildIdeationDescription(): string {
-    const selectedIdeas = this._selectedIdeationIdeas().filter((idea) => idea.selected);
+    const selectedIdeas = this._selectedIdeationIdeas().filter((i) => i.selected);
+    if (selectedIdeas.length === 0) return '';
 
-    if (selectedIdeas.length === 0) {
-      return '';
-    }
-
-    const parts = selectedIdeas.map((idea, index) => {
-      const lines = [
-        `## ${index + 1}. ${idea.title}`,
-        '',
-        idea.description,
-        '',
-        `- Category: ${idea.category}`,
-        `- Effort: ${idea.effortEstimate}`,
-        `- Impact: ${idea.impactEstimate}`,
-      ];
-      return lines.join('\n');
+    const parts = selectedIdeas.map((idea) => {
+      return `## ${idea.title}\n${idea.description}\n- Category: ${idea.category}\n- Effort: ${idea.effortEstimate}\n- Impact: ${idea.impactEstimate}`;
     });
 
-    return parts.join('\n\n---\n\n');
+    return parts.join('\n\n');
   }
 
-  private formatIdeaCategory(category: string): string {
-    const labels: Record<string, string> = {
-      quick_wins: 'Quick Wins',
-      strategic_bets: 'Strategic Bets',
-      incremental: 'Incremental',
-      moonshots: 'Moonshots',
-    };
-    return labels[category] || category;
-  }
-
-  async updateComponent(
-    componentId: number,
-    data: UpdateComponentRequest
-  ): Promise<TechnicalComponent | null> {
+  async updateCost(
+    costId: number,
+    data: UpdateCostRequest
+  ): Promise<CostItem | null> {
     try {
-      const component = await firstValueFrom(
-        this.http.patch<TechnicalComponent>(
-          `${this.baseUrl}/components/${componentId}`,
-          data
-        )
+      const cost = await firstValueFrom(
+        this.http.patch<CostItem>(`${this.baseUrl}/costs/${costId}`, data)
       );
 
-      // Refresh current session if it contains this component
+      // Refresh current session
       if (this._currentSession()) {
         await this.getSessionDetail(this._currentSession()!.session.id);
       }
 
-      return component;
+      return cost;
     } catch (err) {
       this._error.set(this.getErrorMessage(err));
       return null;
     }
   }
 
-  async captureActuals(
+  async updateBenefit(
+    benefitId: number,
+    data: UpdateBenefitRequest
+  ): Promise<BenefitItem | null> {
+    try {
+      const benefit = await firstValueFrom(
+        this.http.patch<BenefitItem>(`${this.baseUrl}/benefits/${benefitId}`, data)
+      );
+
+      // Refresh current session
+      if (this._currentSession()) {
+        await this.getSessionDetail(this._currentSession()!.session.id);
+      }
+
+      return benefit;
+    } catch (err) {
+      this._error.set(this.getErrorMessage(err));
+      return null;
+    }
+  }
+
+  async updateRate(
+    rateId: number,
+    data: UpdateRateRequest
+  ): Promise<RateAssumption | null> {
+    try {
+      const rate = await firstValueFrom(
+        this.http.patch<RateAssumption>(`${this.baseUrl}/rates/${rateId}`, data)
+      );
+
+      // Refresh current session
+      if (this._currentSession()) {
+        await this.getSessionDetail(this._currentSession()!.session.id);
+      }
+
+      return rate;
+    } catch (err) {
+      this._error.set(this.getErrorMessage(err));
+      return null;
+    }
+  }
+
+  async saveLearning(
     sessionId: number,
-    request: CaptureActualsRequest
+    request: SaveLearningRequest
   ): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.http.post(`${this.baseUrl}/sessions/${sessionId}/actuals`, request)
+        this.http.post(`${this.baseUrl}/sessions/${sessionId}/learning`, request)
       );
       return true;
     } catch (err) {
       this._error.set(this.getErrorMessage(err));
       return false;
+    }
+  }
+
+  async recalculateFinancials(sessionId: number): Promise<boolean> {
+    try {
+      this._loading.set(true);
+      await firstValueFrom(
+        this.http.post(`${this.baseUrl}/sessions/${sessionId}/recalculate`, {})
+      );
+      return true;
+    } catch (err) {
+      this._error.set(this.getErrorMessage(err));
+      return false;
+    } finally {
+      this._loading.set(false);
     }
   }
 

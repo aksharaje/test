@@ -262,7 +262,7 @@ describe('FeasibilityService', () => {
     });
 
     it('should load sessions for a specific user', async () => {
-      const promise = service.loadSessions(123);
+      const promise = service.loadSessions(false, 123);
 
       const req = httpMock.expectOne(`${baseUrl}/sessions?user_id=123`);
       expect(req.request.method).toBe('GET');

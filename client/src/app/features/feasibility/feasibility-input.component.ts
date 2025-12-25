@@ -16,6 +16,7 @@ import {
   lucideCheck,
   lucideSquare,
   lucideCheckSquare,
+  lucideRotateCw,
 } from '@ng-icons/lucide';
 import { FeasibilityService, EpicOrFeature, IdeaForSelection } from './feasibility.service';
 import type { FeasibilitySession } from './feasibility.types';
@@ -42,6 +43,7 @@ type SourceType = 'custom' | 'artifact' | 'ideation';
       lucideCheck,
       lucideSquare,
       lucideCheckSquare,
+      lucideRotateCw,
     }),
   ],
   template: `
@@ -370,6 +372,7 @@ type SourceType = 'custom' | 'artifact' | 'ideation';
                           [class.text-red-700]="session.status === 'failed'"
                           [class.bg-gray-100]="session.status === 'pending'"
                           [class.text-gray-700]="session.status === 'pending'"
+                          [class.text-gray-700]="session.status === 'pending'"
                         >
                           {{ formatStatus(session.status) }}
                         </span>
@@ -395,6 +398,16 @@ type SourceType = 'custom' | 'artifact' | 'ideation';
                       </p>
                     </div>
                     <div class="flex items-center gap-1 ml-2">
+                      @if (session.status === 'failed') {
+                        <button
+                          type="button"
+                          class="p-1 text-muted-foreground hover:text-primary transition-colors"
+                          (click)="retrySession($event, session)"
+                          title="Retry Analysis"
+                        >
+                          <ng-icon name="lucideRotateCw" class="h-4 w-4" />
+                        </button>
+                      }
                       <button
                         type="button"
                         class="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
@@ -406,6 +419,21 @@ type SourceType = 'custom' | 'artifact' | 'ideation';
                       <ng-icon name="lucideChevronRight" class="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
+                </div>
+              }
+              
+              @if (service.hasMore()) {
+                <div class="pt-2 pb-4 text-center">
+                  <button 
+                    hlmBtn variant="ghost" size="sm" 
+                    (click)="loadMoreSessions()"
+                    [disabled]="service.loading()"
+                  >
+                    @if (service.loading()) {
+                      <ng-icon name="lucideLoader2" class="mr-2 h-4 w-4 animate-spin" />
+                    }
+                    Load More
+                  </button>
                 </div>
               }
             </div>
@@ -465,7 +493,7 @@ export class FeasibilityInputComponent implements OnInit {
   async ngOnInit() {
     // Load all data sources in parallel
     await Promise.all([
-      this.service.loadSessions(),
+      this.service.loadSessions(true), // reset=true
       this.service.loadEpicsAndFeatures(),
       this.service.loadIdeationSessions(),
     ]);
@@ -562,7 +590,8 @@ export class FeasibilityInputComponent implements OnInit {
   viewSession(session: FeasibilitySession) {
     if (session.status === 'completed') {
       this.router.navigate(['/feasibility/results', session.id]);
-    } else if (session.status !== 'failed') {
+    } else {
+      // Navigate to processing for pending, processing, OR failed states
       this.router.navigate(['/feasibility/processing', session.id]);
     }
   }
@@ -572,6 +601,17 @@ export class FeasibilityInputComponent implements OnInit {
     if (confirm('Are you sure you want to delete this analysis?')) {
       await this.service.deleteSession(session.id);
     }
+  }
+
+  async retrySession(event: Event, session: FeasibilitySession) {
+    event.stopPropagation();
+    await this.service.retrySession(session.id);
+    // Navigate to processing view
+    this.router.navigate(['/feasibility/processing', session.id]);
+  }
+
+  loadMoreSessions() {
+    this.service.loadSessions();
   }
 
   isProcessing(status: string): boolean {

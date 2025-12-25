@@ -153,6 +153,30 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'business-case',
+        title: 'Business Case Builder | Product Studio',
+        loadComponent: () =>
+          import('./features/business-case/business-case-input.component').then(
+            (m) => m.BusinessCaseInputComponent
+          ),
+      },
+      {
+        path: 'business-case/processing/:sessionId',
+        title: 'Building Business Case | Product Studio',
+        loadComponent: () =>
+          import('./features/business-case/business-case-processing.component').then(
+            (m) => m.BusinessCaseProcessingComponent
+          ),
+      },
+      {
+        path: 'business-case/results/:sessionId',
+        title: 'Business Case Results | Product Studio',
+        loadComponent: () =>
+          import('./features/business-case/business-case-results.component').then(
+            (m) => m.BusinessCaseResultsComponent
+          ),
+      },
+      {
         path: 'code-chat',
         title: 'Code Chat | Product Studio',
         loadComponent: () =>

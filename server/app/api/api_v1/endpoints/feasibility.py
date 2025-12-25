@@ -113,10 +113,33 @@ def get_session_status(
 @router.get("/sessions", response_model=List[FeasibilitySession])
 def list_sessions(
     user_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 20,
     db_session: Session = Depends(get_session)
 ) -> Any:
-    """List all sessions, optionally filtered by user"""
-    return feasibility_service.list_sessions(db_session, user_id=user_id)
+    """List all sessions, optionally filtered by user, with pagination"""
+    return feasibility_service.list_sessions(db_session, user_id=user_id, skip=skip, limit=limit)
+
+@router.post("/sessions/{session_id}/retry", response_model=FeasibilitySession)
+def retry_session(
+    session_id: int,
+    background_tasks: BackgroundTasks,
+    db_session: Session = Depends(get_session)
+) -> Any:
+    """Retry a failed session"""
+    try:
+        session_obj = feasibility_service.retry_session(db_session, session_id)
+        
+        # Trigger background processing
+        background_tasks.add_task(
+            feasibility_service.run_feasibility_pipeline,
+            db_session,
+            session_obj.id
+        )
+        
+        return session_obj
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.patch("/components/{component_id}", response_model=TechnicalComponent)
