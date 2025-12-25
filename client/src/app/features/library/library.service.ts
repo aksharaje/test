@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface LibraryBook {
     id: number;
@@ -34,15 +35,21 @@ export class LibraryService {
     private apiUrl = '/api/library';
 
     listBooks(): Observable<LibraryBook[]> {
-        return this.http.get<LibraryBook[]>(`${this.apiUrl}/books`);
+        return this.http.get<any[]>(`${this.apiUrl}/books`).pipe(
+            map(books => books.map(book => this.mapBook(book)))
+        );
     }
 
     createBook(knowledgeBaseId: number): Observable<LibraryBook> {
-        return this.http.post<LibraryBook>(`${this.apiUrl}/books`, { knowledgeBaseId });
+        return this.http.post<any>(`${this.apiUrl}/books`, { knowledgeBaseId }).pipe(
+            map(book => this.mapBook(book))
+        );
     }
 
     getBook(id: number): Observable<LibraryBook> {
-        return this.http.get<LibraryBook>(`${this.apiUrl}/books/${id}`);
+        return this.http.get<any>(`${this.apiUrl}/books/${id}`).pipe(
+            map(book => this.mapBook(book))
+        );
     }
 
     getBookPages(id: number): Observable<LibraryPage[]> {
@@ -55,5 +62,18 @@ export class LibraryService {
 
     deleteBook(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/books/${id}`);
+    }
+
+    private mapBook(book: any): LibraryBook {
+        return {
+            id: book.id,
+            knowledgeBaseId: book.knowledge_base_id,
+            title: book.title,
+            description: book.description,
+            status: book.status,
+            error: book.error,
+            createdAt: book.created_at || book.createdAt,
+            updatedAt: book.updated_at || book.updatedAt
+        };
     }
 }
