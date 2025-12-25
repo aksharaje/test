@@ -463,25 +463,29 @@ class BusinessCaseService:
 
     def delete_session(self, db: Session, session_id: int) -> bool:
         """Delete session and all related data"""
+        from sqlalchemy import text
+
         session_obj = self.get_session(db, session_id)
         if not session_obj:
             return False
 
-        # Delete related data
-        for obj in db.exec(select(CostItem).where(CostItem.session_id == session_id)):
-            db.delete(obj)
-        for obj in db.exec(select(BenefitItem).where(BenefitItem.session_id == session_id)):
-            db.delete(obj)
-        for obj in db.exec(select(FinancialScenario).where(FinancialScenario.session_id == session_id)):
-            db.delete(obj)
-        for obj in db.exec(select(Assumption).where(Assumption.session_id == session_id)):
-            db.delete(obj)
-        for obj in db.exec(select(SensitivityAnalysis).where(SensitivityAnalysis.session_id == session_id)):
-            db.delete(obj)
-        for obj in db.exec(select(RateAssumption).where(RateAssumption.session_id == session_id)):
-            db.delete(obj)
+        # Use raw SQL to delete related data in proper order
+        # This bypasses ORM ordering issues with foreign keys
+        # Note: user_learnings is global (not session-specific) so not deleted here
+        tables_to_delete = [
+            "business_case_cost_items",
+            "business_case_benefit_items",
+            "business_case_financial_scenarios",
+            "business_case_assumptions",
+            "business_case_sensitivity",
+            "business_case_rate_assumptions",
+        ]
 
-        db.delete(session_obj)
+        for table in tables_to_delete:
+            db.execute(text(f"DELETE FROM {table} WHERE session_id = :sid"), {"sid": session_id})
+
+        # Delete the session itself
+        db.execute(text("DELETE FROM business_case_sessions WHERE id = :sid"), {"sid": session_id})
         db.commit()
         return True
 
@@ -1231,7 +1235,8 @@ IMPORTANT: Return ONLY valid JSON. For qualitative benefits, set amounts to null
         for year in range(1, projection_years + 1):
             # Benefits grow slightly each year
             year_benefits = annual_benefits_year_1 * (1.05 ** (year - 1))
-            year_costs = total_recurring_annual
+            # Year 1 includes one-time costs, subsequent years only recurring
+            year_costs = total_recurring_annual + (one_time_costs if year == 1 else 0)
             net_cash_flow = year_benefits - year_costs
 
             # Discount factor
@@ -1243,9 +1248,9 @@ IMPORTANT: Return ONLY valid JSON. For qualitative benefits, set amounts to null
                 "year": year,
                 "benefits": round(year_benefits, 2),
                 "costs": round(year_costs, 2),
-                "net_cash_flow": round(net_cash_flow, 2),
-                "discounted_cash_flow": round(discounted_cf, 2),
-                "cumulative_npv": round(cumulative_npv, 2)
+                "netCashFlow": round(net_cash_flow, 2),
+                "discountedCashFlow": round(discounted_cf, 2),
+                "cumulativeNpv": round(cumulative_npv, 2)
             })
 
             # Track payback
@@ -1255,7 +1260,7 @@ IMPORTANT: Return ONLY valid JSON. For qualitative benefits, set amounts to null
                 if year == 1:
                     payback_months = 12
                 else:
-                    prev_cumulative = yearly_cash_flows[year-2]["cumulative_npv"]
+                    prev_cumulative = yearly_cash_flows[year-2]["cumulativeNpv"]
                     if net_cash_flow > 0:
                         fraction = (-prev_cumulative) / (cumulative_npv - prev_cumulative)
                         payback_months = (year - 1) * 12 + int(fraction * 12)
@@ -1267,7 +1272,7 @@ IMPORTANT: Return ONLY valid JSON. For qualitative benefits, set amounts to null
         # Calculate IRR using Newton-Raphson approximation
         irr = self._calculate_irr(
             -one_time_costs,
-            [cf["net_cash_flow"] for cf in yearly_cash_flows]
+            [cf["netCashFlow"] for cf in yearly_cash_flows]
         )
 
         # ROI calculation

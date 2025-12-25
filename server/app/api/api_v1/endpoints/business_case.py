@@ -111,6 +111,23 @@ def create_session(
         raise HTTPException(status_code=422, detail=str(e))
 
 
+def _transform_cash_flow_keys(cash_flows):
+    """Transform snake_case keys to camelCase for legacy data compatibility"""
+    if not cash_flows:
+        return cash_flows
+    transformed = []
+    for cf in cash_flows:
+        transformed.append({
+            "year": cf.get("year"),
+            "benefits": cf.get("benefits"),
+            "costs": cf.get("costs"),
+            "netCashFlow": cf.get("netCashFlow") or cf.get("net_cash_flow"),
+            "discountedCashFlow": cf.get("discountedCashFlow") or cf.get("discounted_cash_flow"),
+            "cumulativeNpv": cf.get("cumulativeNpv") or cf.get("cumulative_npv")
+        })
+    return transformed
+
+
 @router.get("/sessions/{session_id}")
 def get_session_detail_endpoint(
     session_id: int,
@@ -120,6 +137,12 @@ def get_session_detail_endpoint(
     result = business_case_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
+
+    # Transform cash flow keys for legacy data
+    for scenario in result.get("scenarios", []):
+        if scenario.yearly_cash_flows:
+            scenario.yearly_cash_flows = _transform_cash_flow_keys(scenario.yearly_cash_flows)
+
     return result
 
 
@@ -196,20 +219,16 @@ def update_rate(
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update a rate assumption with user override"""
-    print(f"DEBUG: update_rate called with rate_id={rate_id}, request={request}")
     rate = business_case_service.update_rate_assumption(
         db=db_session,
         rate_id=rate_id,
         rate_value=request.rate_value
     )
-    print(f"DEBUG: rate after update: {rate}")
     if not rate:
         raise HTTPException(status_code=404, detail="Rate assumption not found")
     # Manually serialize with camelCase keys
     from humps import camelize
-    result = camelize(rate.model_dump())
-    print(f"DEBUG: returning {result}")
-    return result
+    return camelize(rate.model_dump())
 
 
 @router.post("/sessions/{session_id}/learning")
