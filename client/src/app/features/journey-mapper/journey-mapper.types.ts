@@ -58,6 +58,7 @@ export interface JourneyPainPoint {
   deltaStatus?: DeltaStatus;
   previousSeverity?: number;
   isUserEdited: boolean;
+  isHypothetical: boolean; // true = AI-generated hypothesis (no real data), false = data-backed insight
   createdAt: string;
   updatedAt: string;
 }

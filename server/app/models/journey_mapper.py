@@ -103,6 +103,9 @@ class JourneyPainPoint(SQLModel, table=True):
     # User edits
     is_user_edited: bool = Field(default=False)
 
+    # Indicates if this is AI-generated hypothesis (no real data) vs data-backed insight
+    is_hypothetical: bool = Field(default=False)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

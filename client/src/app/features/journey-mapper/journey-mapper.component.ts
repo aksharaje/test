@@ -74,94 +74,21 @@ import {
   ],
   template: `
     <div class="min-h-screen bg-background">
-      <!-- Mode Selection (full width when no mode selected) -->
-      @if (!selectedMode()) {
-        <div class="max-w-6xl mx-auto p-6">
-          <div class="mb-8">
-            <h1 class="text-2xl font-bold text-foreground">Journey & Pain Point Mapper</h1>
-            <p class="text-muted-foreground mt-1">
-              Create AI-powered customer journey maps from research data
-            </p>
-          </div>
-
-          <div class="mb-8">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Select Journey Type</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              @for (card of modeCards; track card.mode) {
-                <button
-                  (click)="selectMode(card.mode)"
-                  class="p-6 bg-card rounded-lg border-2 border-border hover:border-primary hover:shadow-md transition-all text-left group"
-                >
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                      <ng-icon [name]="card.icon" class="text-primary" size="24" />
-                    </div>
-                    <h3 class="font-semibold text-foreground">{{ card.title }}</h3>
-                  </div>
-                  <p class="text-sm text-muted-foreground mb-4">{{ card.description }}</p>
-                  <ul class="space-y-1">
-                    @for (feature of card.features; track feature) {
-                      <li class="text-xs text-muted-foreground flex items-center gap-1">
-                        <span class="w-1 h-1 bg-primary rounded-full"></span>
-                        {{ feature }}
-                      </li>
-                    }
-                  </ul>
-                </button>
-              }
-            </div>
-          </div>
-
-          <!-- Recent Sessions (when no mode selected) -->
-          @if (service.sessions().length > 0) {
-            <div class="mt-8">
-              <h2 class="text-lg font-semibold text-foreground mb-4">Recent Journey Maps</h2>
-              <div class="bg-card rounded-lg border border-border divide-y divide-border">
-                @for (session of service.sessions().slice(0, 5); track session.id) {
-                  <button
-                    (click)="viewSession(session)"
-                    class="w-full p-4 text-left hover:bg-muted/50 transition-colors flex items-center justify-between"
-                  >
-                    <div>
-                      <p class="font-medium text-foreground">{{ session.journeyDescription }}</p>
-                      <p class="text-sm text-muted-foreground">
-                        {{ session.mode | titlecase }} Journey &bull; v{{ session.version }}
-                      </p>
-                    </div>
-                    <ng-icon name="lucideChevronRight" class="text-muted-foreground" size="20" />
-                  </button>
-                }
+      <!-- Split Layout (form + history) -->
+      <div class="flex h-[calc(100vh-64px)]">
+        <!-- Left Panel: Input Form -->
+        <div class="w-1/2 overflow-y-auto border-r border-border">
+          <div class="p-6">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-2 bg-primary/10 rounded-lg">
+                <ng-icon name="lucideRoute" class="text-primary" size="24" />
+              </div>
+              <div>
+                <h2 class="font-semibold text-foreground">Journey & Pain Point Mapper</h2>
+                <p class="text-sm text-muted-foreground">Create AI-powered customer journey maps from research data</p>
               </div>
             </div>
-          }
-        </div>
-      }
-
-      <!-- Split Layout (form + history) when mode selected -->
-      @if (selectedMode()) {
-        <div class="flex h-[calc(100vh-64px)]">
-          <!-- Left Panel: Input Form -->
-          <div class="w-1/2 overflow-y-auto border-r border-border">
-            <div class="p-6">
-              <!-- Header -->
-              <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                  <div class="p-2 bg-primary/10 rounded-lg">
-                    <ng-icon [name]="getSelectedModeCard()?.icon || 'lucideRoute'" class="text-primary" size="24" />
-                  </div>
-                  <div>
-                    <h2 class="font-semibold text-foreground">{{ getSelectedModeCard()?.title }}</h2>
-                    <p class="text-sm text-muted-foreground">{{ getSelectedModeCard()?.description }}</p>
-                  </div>
-                </div>
-                <button
-                  (click)="clearMode()"
-                  class="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-                >
-                  <ng-icon name="lucideX" size="16" />
-                  Change mode
-                </button>
-              </div>
 
               <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
                 <!-- Journey Description -->
@@ -183,78 +110,8 @@ import {
                   }
                 </div>
 
-                <!-- Competitor Name (competitive mode only) -->
-                @if (selectedMode() === 'competitive') {
-                  <div>
-                    <label class="block text-sm font-medium text-foreground mb-1">
-                      Competitor Name
-                    </label>
-                    <input
-                      type="text"
-                      formControlName="competitorName"
-                      class="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="e.g., Competitor A"
-                    />
-                  </div>
-                }
-
-                <!-- Personas (multi-persona mode only) -->
-                @if (selectedMode() === 'multi_persona') {
-                  <div>
-                    <div class="flex items-center justify-between mb-2">
-                      <label class="block text-sm font-medium text-foreground">
-                        Personas (2-5) <span class="text-destructive">*</span>
-                      </label>
-                      <button
-                        type="button"
-                        (click)="addPersona()"
-                        [disabled]="personas.length >= 5"
-                        class="text-sm text-primary hover:text-primary/80 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <ng-icon name="lucidePlus" size="14" />
-                        Add Persona
-                      </button>
-                    </div>
-                    <div class="space-y-3">
-                      @for (persona of personas.controls; track $index; let i = $index) {
-                        <div class="flex gap-3 items-start p-3 bg-muted/50 rounded-lg">
-                          <div class="flex-1 grid grid-cols-2 gap-3">
-                            <input
-                              [formControl]="getPersonaControl(i, 'name')"
-                              type="text"
-                              class="px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
-                              placeholder="Persona name"
-                            />
-                            <input
-                              [formControl]="getPersonaControl(i, 'description')"
-                              type="text"
-                              class="px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
-                              placeholder="Description (optional)"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            (click)="removePersona(i)"
-                            [disabled]="personas.length <= 2"
-                            class="p-2 text-muted-foreground hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <ng-icon name="lucideTrash2" size="16" />
-                          </button>
-                        </div>
-                      }
-                    </div>
-                    @if (personas.length < 2) {
-                      <p class="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                        <ng-icon name="lucideAlertTriangle" size="14" />
-                        At least 2 personas are required
-                      </p>
-                    }
-                  </div>
-                }
-
-                <!-- File Upload (standard and multi-persona modes) -->
-                @if (selectedMode() !== 'competitive') {
-                  <div>
+                <!-- File Upload -->
+                <div>
                     <label class="block text-sm font-medium text-foreground mb-1">
                       Data Sources (Optional)
                     </label>
@@ -297,7 +154,6 @@ import {
                       </div>
                     }
                   </div>
-                }
 
                 <!-- Context Sources (Collapsible) -->
                 <div class="rounded-lg border border-border bg-card">
@@ -487,18 +343,14 @@ import {
                 <div class="flex justify-end pt-4 border-t border-border">
                   <button
                     type="submit"
-                    [disabled]="form.invalid || service.loading() || (selectedMode() === 'multi_persona' && personas.length < 2)"
+                    [disabled]="form.invalid || service.loading()"
                     class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     @if (service.loading()) {
                       <ng-icon name="lucideLoader2" class="animate-spin" size="18" />
                       Creating...
                     } @else {
-                      @if (selectedMode() === 'competitive') {
-                        Start Walkthrough
-                      } @else {
-                        Generate Journey Map
-                      }
+                      Generate Journey Map
                       <ng-icon name="lucideArrowRight" size="18" />
                     }
                   </button>
@@ -572,7 +424,7 @@ import {
                       </p>
 
                       <div class="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{{ session.mode | titlecase }} &bull; v{{ session.version }}</span>
+                        <span>v{{ session.version }}</span>
                       </div>
 
                       <div class="flex items-center justify-between mt-3">
@@ -622,8 +474,7 @@ import {
               }
             </div>
           </div>
-        </div>
-      }
+      </div>
     </div>
   `,
   styles: [`
@@ -638,7 +489,7 @@ export class JourneyMapperComponent implements OnInit {
   service = inject(JourneyMapperService);
 
   modeCards = MODE_CARDS;
-  selectedMode = signal<JourneyMode | null>(null);
+  selectedMode = signal<JourneyMode | null>('standard'); // Always use standard mode
   selectedFiles = signal<File[]>([]);
   selectedKnowledgeBases = signal<number[]>([]);
   selectedIdeationSession = signal<number | null>(null);
@@ -886,34 +737,18 @@ export class JourneyMapperComponent implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.form.invalid) return;
 
-    const mode = this.selectedMode();
-    if (!mode) return;
-
-    if (mode === 'multi_persona' && this.personas.length < 2) return;
-
     try {
-      const personas: PersonaInput[] = this.personas.controls.map((control) => ({
-        name: control.get('name')?.value,
-        description: control.get('description')?.value || undefined,
-      }));
-
       const session = await this.service.createSession({
-        mode,
+        mode: 'standard',
         journeyDescription: this.form.get('journeyDescription')?.value,
-        competitorName: this.form.get('competitorName')?.value || undefined,
         knowledgeBaseIds: this.selectedKnowledgeBases().length > 0 ? this.selectedKnowledgeBases() : undefined,
         ideationSessionId: this.selectedIdeationSession() || undefined,
         feasibilitySessionId: this.selectedFeasibilitySession() || undefined,
         businessCaseSessionId: this.selectedBusinessCaseSession() || undefined,
-        personas: mode === 'multi_persona' ? personas : undefined,
         files: this.selectedFiles().length > 0 ? this.selectedFiles() : undefined,
       });
 
-      if (mode === 'competitive') {
-        this.router.navigate(['/journey-mapper/results', session.id]);
-      } else {
-        this.router.navigate(['/journey-mapper/processing', session.id]);
-      }
+      this.router.navigate(['/journey-mapper/processing', session.id]);
     } catch (err) {
       console.error('Failed to create journey session:', err);
     }

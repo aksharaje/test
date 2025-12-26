@@ -425,6 +425,14 @@ class JourneyMapperService:
         if not session_obj:
             return False
 
+        # Clear parent_version_id on any child versions to avoid FK violation
+        child_sessions = list(db.exec(
+            select(JourneyMapSession).where(JourneyMapSession.parent_version_id == session_id)
+        ))
+        for child in child_sessions:
+            child.parent_version_id = None
+            db.add(child)
+
         # Delete related data
         for obj in db.exec(select(JourneyPainPoint).where(JourneyPainPoint.journey_map_id == session_id)):
             db.delete(obj)
@@ -703,18 +711,23 @@ class JourneyMapperService:
 
         self._update_progress(db, session_id, "processing", 2, "Generating journey stages...")
 
-        # Check if we have enough data
+        # Check if we have real data sources
+        has_real_data = bool(context and context.strip())
         word_count = len(context.split()) if context else 0
         data_quality_warning = None
-        if word_count < 500:
+        if not has_real_data:
+            data_quality_warning = "No data sources provided. Pain points are AI-generated hypotheses based on typical patterns."
+        elif word_count < 500:
             data_quality_warning = "Limited data detected. Journey may be incomplete. Add more sources for better quality."
 
-        prompt = f"""You are an expert UX researcher and customer experience analyst. Create a detailed customer journey map from the provided data.
+        # Use different prompts based on whether we have real data
+        if has_real_data:
+            prompt = f"""You are an expert UX researcher and customer experience analyst. Create a detailed customer journey map from the provided data.
 
 JOURNEY TO MAP: {masked_description}
 
 DATA SOURCES:
-{masked_context if masked_context else "No additional data provided. Generate a typical journey based on the description."}
+{masked_context}
 
 Analyze the data and create a journey map with:
 1. 4-8 journey stages (phases the customer goes through)
@@ -762,6 +775,57 @@ Return EXACTLY this JSON structure:
 }}
 
 IMPORTANT: Return ONLY valid JSON. No markdown, no explanations."""
+        else:
+            # No real data - generate hypotheses WITHOUT fake evidence/frequency
+            prompt = f"""You are an expert UX researcher and customer experience analyst. Create a hypothetical customer journey map based on typical patterns for this type of journey.
+
+JOURNEY TO MAP: {masked_description}
+
+NOTE: No data sources were provided. Generate a HYPOTHETICAL journey map based on typical patterns and common user experiences for this type of journey.
+
+Create a journey map with:
+1. 4-8 journey stages (phases the customer typically goes through)
+2. Key touchpoints at each stage (typical interactions)
+3. Hypothetical pain points with severity scores (0-10 scale, based on typical user frustrations)
+4. Emotion scores per stage (0-10, where 0=very negative, 5=neutral, 10=very positive)
+
+IMPORTANT: Since there is no real data:
+- Do NOT include "frequency" counts (set to 0)
+- Do NOT include "evidence" arrays (set to empty [])
+- These are hypotheses based on typical patterns, NOT data-backed insights
+
+Return EXACTLY this JSON structure:
+{{
+  "stages": [
+    {{
+      "id": "stage_1",
+      "name": "Stage Name",
+      "description": "What typically happens in this stage",
+      "order": 0,
+      "duration_estimate": "typical estimate",
+      "touchpoints": [
+        {{"id": "tp_1", "name": "Touchpoint name", "description": "Details", "channel": "web|email|phone|in-person"}}
+      ],
+      "emotion_score": 6.5
+    }}
+  ],
+  "pain_points": [
+    {{
+      "stage_id": "stage_1",
+      "description": "Hypothetical pain point based on typical user frustrations",
+      "severity": 7.5,
+      "frequency": 0,
+      "evidence": []
+    }}
+  ],
+  "emotion_curve": [
+    {{"stage_id": "stage_1", "score": 6.5, "label": "Hopeful"}}
+  ],
+  "confidence_score": 0.5,
+  "summary": "Hypothetical journey based on typical patterns - validate with real user data"
+}}
+
+IMPORTANT: Return ONLY valid JSON. No markdown, no explanations."""
 
         data = self._call_llm(
             messages=[
@@ -796,22 +860,30 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanations."""
             if not isinstance(pp_data, dict):
                 print(f"WARNING: Skipping non-dict pain point: {pp_data}")
                 continue
-            evidence = pp_data.get("evidence", [])
-            if not isinstance(evidence, list):
-                evidence = []
+
+            # Only include evidence if we have real data
             data_sources = []
-            for e in evidence:
-                if isinstance(e, dict):
-                    data_sources.append({"source_type": e.get("source", "unknown"), "excerpt": e.get("excerpt", "")})
-                elif isinstance(e, str):
-                    data_sources.append({"source_type": "unknown", "excerpt": e})
+            if has_real_data:
+                evidence = pp_data.get("evidence", [])
+                if not isinstance(evidence, list):
+                    evidence = []
+                for e in evidence:
+                    if isinstance(e, dict):
+                        data_sources.append({"source_type": e.get("source", "unknown"), "excerpt": e.get("excerpt", "")})
+                    elif isinstance(e, str):
+                        data_sources.append({"source_type": "unknown", "excerpt": e})
+
+            # Set frequency to 0 if no real data (don't fabricate counts)
+            frequency = int(pp_data.get("frequency", 1)) if has_real_data else 0
+
             pain_point = JourneyPainPoint(
                 journey_map_id=session_id,
                 stage_id=pp_data.get("stage_id", "unknown"),
                 description=pp_data.get("description", ""),
                 severity=float(pp_data.get("severity", 5.0)),
-                frequency=int(pp_data.get("frequency", 1)),
-                data_sources=data_sources
+                frequency=frequency,
+                data_sources=data_sources if data_sources else None,
+                is_hypothetical=not has_real_data  # Mark as AI hypothesis when no real data
             )
             db.add(pain_point)
 
@@ -1079,21 +1151,48 @@ JOURNEY TO MAP: {masked_description}
 COMPETITOR: {competitor_name}
 
 Based on typical competitor patterns, create a journey map that:
-1. Represents a plausible competitor experience
+1. Represents a plausible competitor experience (4-6 stages)
 2. Identifies common pain points in this type of journey
 3. Notes typical competitor strengths
+4. Includes emotion scores for each stage
 
 Return EXACTLY this JSON structure:
 {{
-  "stages": [...],
-  "pain_points": [...],
-  "strengths": [...],
-  "emotion_curve": [...],
+  "stages": [
+    {{
+      "id": "stage_1",
+      "name": "Stage Name",
+      "description": "What typically happens in this stage",
+      "order": 0,
+      "duration_estimate": "estimated time",
+      "touchpoints": [{{"id": "tp_1", "name": "Touchpoint", "description": "Details", "channel": "web"}}],
+      "emotion_score": 6.0
+    }}
+  ],
+  "pain_points": [
+    {{
+      "stage_id": "stage_1",
+      "description": "Typical pain point description",
+      "severity": 6.5,
+      "frequency": 0,
+      "evidence": []
+    }}
+  ],
+  "strengths": [
+    {{
+      "stage_id": "stage_1",
+      "description": "What competitor typically does well"
+    }}
+  ],
+  "emotion_curve": [{{"stage_id": "stage_1", "score": 6.0, "label": "Neutral"}}],
   "confidence_score": 0.5,
   "summary": "Hypothetical competitive analysis - based on typical patterns, not actual observations"
 }}
 
-IMPORTANT: Return ONLY valid JSON."""
+IMPORTANT: Return ONLY valid JSON. Include real stage IDs, names, descriptions, and pain points."""
+
+        # Track if we have real observations
+        has_observations = len(observations) > 0
 
         data = self._call_llm(
             messages=[
@@ -1118,6 +1217,8 @@ IMPORTANT: Return ONLY valid JSON."""
         session_obj.emotion_curve = data.get("emotion_curve", [])
         session_obj.confidence_score = data.get("confidence_score", 0.6)
         session_obj.raw_llm_response = json.dumps(data)
+        if not has_observations:
+            session_obj.data_quality_warning = "No observations provided. This is a hypothetical competitive analysis based on typical patterns."
         db.add(session_obj)
         db.commit()
 
@@ -1127,23 +1228,30 @@ IMPORTANT: Return ONLY valid JSON."""
             if not isinstance(pp_data, dict):
                 print(f"WARNING: Skipping non-dict pain point: {pp_data}")
                 continue
-            evidence = pp_data.get("evidence", [])
-            # Ensure evidence items are dicts
-            if not isinstance(evidence, list):
-                evidence = []
+
+            # Only include evidence if we have observations
             data_sources = []
-            for e in evidence:
-                if isinstance(e, dict):
-                    data_sources.append({"source_type": e.get("source", "observation"), "excerpt": e.get("excerpt", "")})
-                elif isinstance(e, str):
-                    data_sources.append({"source_type": "observation", "excerpt": e})
+            if has_observations:
+                evidence = pp_data.get("evidence", [])
+                if not isinstance(evidence, list):
+                    evidence = []
+                for e in evidence:
+                    if isinstance(e, dict):
+                        data_sources.append({"source_type": e.get("source", "observation"), "excerpt": e.get("excerpt", "")})
+                    elif isinstance(e, str):
+                        data_sources.append({"source_type": "observation", "excerpt": e})
+
+            # Set frequency to 0 if no observations
+            frequency = int(pp_data.get("frequency", 1)) if has_observations else 0
+
             pain_point = JourneyPainPoint(
                 journey_map_id=session_id,
                 stage_id=pp_data.get("stage_id", "unknown"),
                 description=pp_data.get("description", ""),
                 severity=float(pp_data.get("severity", 5.0)),
-                frequency=int(pp_data.get("frequency", 1)),
-                data_sources=data_sources
+                frequency=frequency,
+                data_sources=data_sources if data_sources else None,
+                is_hypothetical=not has_observations
             )
             db.add(pain_point)
 

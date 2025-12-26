@@ -239,13 +239,12 @@ async def create_session(
             personas=persona_list if persona_list else None
         )
 
-        # Trigger background generation (skip for competitive mode until observations added)
-        if mode != "competitive":
-            background_tasks.add_task(
-                journey_mapper_service.run_journey_generation_pipeline,
-                db_session,
-                session_obj.id
-            )
+        # Trigger background generation for all modes
+        background_tasks.add_task(
+            journey_mapper_service.run_journey_generation_pipeline,
+            db_session,
+            session_obj.id
+        )
 
         return session_obj
 

@@ -255,21 +255,61 @@ import {
                   </div>
                 </div>
 
-                <!-- Emotion Curve (simple visualization) -->
-                @if (emotionCurve().length) {
+                <!-- Emotion Curve (SVG line visualization) - matches stage layout -->
+                @if (emotionCurve().length > 0) {
                   <div class="mt-8 pt-6 border-t border-gray-200">
-                    <h4 class="text-sm font-medium text-gray-700 mb-3">Emotion Curve</h4>
-                    <div class="flex items-end gap-4 h-20">
-                      @for (point of emotionCurve(); track point.stageId) {
-                        <div class="flex-1 flex flex-col items-center">
-                          <div
-                            class="w-full rounded-t transition-all"
-                            [style.height.%]="point.score * 10"
-                            [style.backgroundColor]="getEmotionColor(point.score)"
-                          ></div>
-                          <span class="text-xs text-gray-500 mt-1">{{ point.label }}</span>
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Emotional Journey</h4>
+                    <!-- Chart aligned with stages above -->
+                    <div class="flex gap-4">
+                      @for (point of emotionCurve(); track point.stageId; let i = $index) {
+                        <div class="flex-1 min-w-[200px] flex flex-col items-center">
+                          <!-- SVG for this segment -->
+                          <svg viewBox="0 0 100 80" class="w-full h-20" preserveAspectRatio="none">
+                            <!-- Grid line -->
+                            <line x1="0" y1="40" x2="100" y2="40" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="2"/>
+
+                            <!-- Gradient background -->
+                            <defs>
+                              <linearGradient [attr.id]="'grad' + i" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#22c55e;stop-opacity:0.2" />
+                                <stop offset="50%" style="stop-color:#eab308;stop-opacity:0.15" />
+                                <stop offset="100%" style="stop-color:#ef4444;stop-opacity:0.1" />
+                              </linearGradient>
+                            </defs>
+
+                            <!-- Area fill for this segment -->
+                            <rect x="0" [attr.y]="75 - (point.score * 7)" width="100" [attr.height]="point.score * 7 + 5" [attr.fill]="'url(#grad' + i + ')'" />
+
+                            <!-- Line segment connecting to next point -->
+                            @if (i < emotionCurve().length - 1) {
+                              <line
+                                x1="50" [attr.y1]="75 - (point.score * 7)"
+                                x2="100" [attr.y2]="75 - ((point.score + emotionCurve()[i + 1].score) / 2 * 7)"
+                                stroke="#6366f1" stroke-width="3" stroke-linecap="round"
+                              />
+                            }
+                            @if (i > 0) {
+                              <line
+                                x1="0" [attr.y1]="75 - ((emotionCurve()[i - 1].score + point.score) / 2 * 7)"
+                                x2="50" [attr.y2]="75 - (point.score * 7)"
+                                stroke="#6366f1" stroke-width="3" stroke-linecap="round"
+                              />
+                            }
+
+                            <!-- Data point -->
+                            <circle
+                              cx="50"
+                              [attr.cy]="75 - (point.score * 7)"
+                              r="6"
+                              [attr.fill]="getEmotionColor(point.score)"
+                              stroke="white"
+                              stroke-width="2"
+                            />
+                          </svg>
                         </div>
                       }
+                      <!-- Empty space to match "Add Stage" button -->
+                      <div class="min-w-[100px]"></div>
                     </div>
                   </div>
                 }
@@ -312,6 +352,12 @@ import {
                               <span class="text-sm font-medium text-gray-900">
                                 {{ pp.severity | number:'1.1-1' }}/10 severity
                               </span>
+                              <!-- AI Hypothesis badge -->
+                              @if (pp.isHypothetical) {
+                                <span class="px-2 py-0.5 text-xs rounded bg-purple-100 text-purple-700">
+                                  AI Hypothesis
+                                </span>
+                              }
                               <!-- Delta badge -->
                               @if (pp.deltaStatus && pp.deltaStatus !== 'unchanged') {
                                 <span
@@ -326,13 +372,15 @@ import {
                             <p class="text-gray-700">{{ pp.description }}</p>
                             <p class="text-xs text-gray-400 mt-1">
                               Stage: {{ getStageNameById(pp.stageId) }}
-                              @if (pp.frequency > 1) {
+                              <!-- Only show frequency if data-backed (not hypothetical) and frequency > 1 -->
+                              @if (!pp.isHypothetical && pp.frequency > 1) {
                                 &bull; Mentioned {{ pp.frequency }} times
                               }
                             </p>
                           </div>
                           <div class="flex items-center gap-1 ml-4">
-                            @if (pp.dataSources?.length) {
+                            <!-- Only show source count if data-backed (not hypothetical) -->
+                            @if (!pp.isHypothetical && pp.dataSources?.length) {
                               <span class="text-xs text-gray-400">
                                 {{ pp.dataSources?.length }} source(s)
                               </span>
@@ -397,8 +445,8 @@ import {
                         ></textarea>
                       </div>
 
-                      <!-- Evidence -->
-                      @if (selectedPainPoint()?.dataSources?.length) {
+                      <!-- Evidence (only for data-backed pain points) -->
+                      @if (!selectedPainPoint()?.isHypothetical && selectedPainPoint()?.dataSources?.length) {
                         <div>
                           <label class="text-sm font-medium text-gray-700 block mb-2">
                             Evidence ({{ selectedPainPoint()?.dataSources?.length }})
@@ -410,6 +458,21 @@ import {
                                 <p class="text-gray-700 mt-1 italic">"{{ source.excerpt }}"</p>
                               </div>
                             }
+                          </div>
+                        </div>
+                      }
+                      <!-- Hypothesis notice for AI-generated pain points -->
+                      @if (selectedPainPoint()?.isHypothetical) {
+                        <div class="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                          <div class="flex items-start gap-2">
+                            <ng-icon name="lucideInfo" class="text-purple-600 flex-shrink-0 mt-0.5" size="16" />
+                            <div>
+                              <p class="text-sm font-medium text-purple-800">AI-Generated Hypothesis</p>
+                              <p class="text-xs text-purple-600 mt-1">
+                                This pain point was generated based on typical patterns for this type of journey.
+                                Validate with real user research data.
+                              </p>
+                            </div>
                           </div>
                         </div>
                       }
@@ -549,7 +612,12 @@ export class JourneyMapperResultsComponent implements OnInit {
   emotionCurve = computed(() => {
     const curve = this.sessionDetail()?.session?.emotionCurve;
     if (Array.isArray(curve)) {
-      return curve as EmotionCurvePoint[];
+      // Map snake_case from API to camelCase expected by component
+      return curve.map((point: any) => ({
+        stageId: point.stageId || point.stage_id || '',
+        score: point.score ?? point.emotion_score ?? 5,
+        label: point.label || point.stage || ''
+      })) as EmotionCurvePoint[];
     }
     return [];
   });
@@ -711,5 +779,60 @@ export class JourneyMapperResultsComponent implements OnInit {
         console.error('Failed to export:', err);
       });
     }
+  }
+
+  // Generate SVG path for the emotion curve line
+  getEmotionCurvePath(): string {
+    const curve = this.emotionCurve();
+    if (curve.length === 0) return '';
+
+    const points = curve.map((point, i) => ({
+      x: 60 + i * 120,
+      y: 110 - (point.score * 10)
+    }));
+
+    // Create smooth curve using quadratic bezier curves
+    let path = `M ${points[0].x} ${points[0].y}`;
+
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpX = (prev.x + curr.x) / 2;
+      path += ` Q ${prev.x + 30} ${prev.y}, ${cpX} ${(prev.y + curr.y) / 2}`;
+      path += ` Q ${curr.x - 30} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    return path;
+  }
+
+  // Generate SVG path for the area fill under the curve
+  getEmotionAreaPath(): string {
+    const curve = this.emotionCurve();
+    if (curve.length === 0) return '';
+
+    const width = curve.length * 120;
+    const points = curve.map((point, i) => ({
+      x: 60 + i * 120,
+      y: 110 - (point.score * 10)
+    }));
+
+    // Start from bottom-left, draw curve, then close to bottom-right
+    let path = `M 0 110`;
+    path += ` L ${points[0].x} 110`;
+    path += ` L ${points[0].x} ${points[0].y}`;
+
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpX = (prev.x + curr.x) / 2;
+      path += ` Q ${prev.x + 30} ${prev.y}, ${cpX} ${(prev.y + curr.y) / 2}`;
+      path += ` Q ${curr.x - 30} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    path += ` L ${points[points.length - 1].x} 110`;
+    path += ` L ${width} 110`;
+    path += ` Z`;
+
+    return path;
   }
 }
