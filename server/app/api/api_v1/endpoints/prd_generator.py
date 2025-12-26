@@ -1,5 +1,5 @@
 from typing import List, Any, Optional, Dict
-from fastapi import APIRouter, Depends, HTTPException, Response, Form, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Response, Form, UploadFile, File, BackgroundTasks
 from sqlmodel import Session, select
 from app.core.db import get_session
 from app.models.prd import GeneratedPrd, PrdTemplate
@@ -23,7 +23,8 @@ def generate_prd(
     knowledgeBaseIds: str = Form("[]"),
     templateId: Optional[str] = Form(None),
     files: List[UploadFile] = Form(default=[]),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ) -> Any:
     try:
         kb_ids = json.loads(knowledgeBaseIds)
@@ -53,9 +54,65 @@ def generate_prd(
     }
     
     try:
-        return prd_generator_service.generate(session, request)
+        # Create PRD in pending state
+        prd = prd_generator_service.create_prd(session, request)
+        
+        # Schedule background generation
+        background_tasks.add_task(
+            prd_generator_service.run_prd_pipeline,
+            session,
+            prd.id
+        )
+        
+        return prd
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/", response_model=List[GeneratedPrd])
+def list_prds(
+    skip: int = 0,
+    limit: int = 20,
+    session: Session = Depends(get_session),
+    user_id: Optional[int] = None
+) -> Any:
+    return prd_generator_service.list_prds(session, skip=skip, limit=limit, user_id=user_id)
+
+@router.get("/{id}/status")
+def get_prd_status(
+    id: int,
+    session: Session = Depends(get_session)
+) -> Any:
+    prd = prd_generator_service.get_prd(session, id)
+    if not prd:
+        raise HTTPException(status_code=404, detail="PRD not found")
+        
+    return {
+        "id": prd.id,
+        "status": prd.status,
+        "progressStep": prd.progress_step,
+        "progressMessage": prd.progress_message,
+        "errorMessage": prd.error_message,
+        "updatedAt": prd.updated_at.isoformat()
+    }
+
+@router.post("/{id}/retry", response_model=GeneratedPrd)
+def retry_prd(
+    id: int,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session)
+) -> Any:
+    prd = prd_generator_service.retry_prd(session, id)
+    if not prd:
+        raise HTTPException(status_code=404, detail="PRD not found")
+        
+    # Schedule background generation
+    background_tasks.add_task(
+        prd_generator_service.run_prd_pipeline,
+        session,
+        prd.id
+    )
+    
+    return prd
 
 @router.get("/templates", response_model=List[PrdTemplate])
 def list_templates(session: Session = Depends(get_session)) -> Any:

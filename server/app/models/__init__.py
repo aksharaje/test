@@ -37,3 +37,10 @@ from .research_planner import (
     Survey,
     RecruitingPlan
 )
+from .journey_mapper import (
+    JourneyMapSession,
+    JourneyPainPoint,
+    JourneyPersona,
+    JourneyDivergencePoint,
+    CompetitorJourneyObservation
+)

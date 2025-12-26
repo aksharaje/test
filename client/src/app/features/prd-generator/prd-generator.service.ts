@@ -16,6 +16,15 @@ export class PrdGeneratorService {
   private baseUrl = '/api/prd-generator';
   private kbUrl = '/api/knowledge-bases';
 
+  // Status mapping
+  readonly statusMap = {
+    pending: { label: 'Pending', icon: 'lucideLoader2', class: 'text-muted-foreground' },
+    processing: { label: 'Processing', icon: 'lucideLoader2', class: 'text-blue-500 animate-spin' },
+    draft: { label: 'Draft', icon: 'lucideFileText', class: 'text-orange-500' },
+    final: { label: 'Final', icon: 'lucideCheckCircle', class: 'text-green-500' },
+    failed: { label: 'Failed', icon: 'lucideAlertCircle', class: 'text-destructive' }
+  };
+
   // State
   private _prds = signal<GeneratedPrd[]>([]);
   private _currentPrd = signal<GeneratedPrd | null>(null);
@@ -215,6 +224,59 @@ export class PrdGeneratorService {
       this._error.set('Failed to delete PRD');
       console.error(err);
       return false;
+    }
+  }
+
+  // Poll session status
+
+  // Poll session status
+  async pollSessionStatus(id: number): Promise<GeneratedPrd | null> {
+    try {
+      const prd = await firstValueFrom(
+        this.http.get<GeneratedPrd>(`${this.baseUrl}/${id}/status`)
+      );
+
+      // Update in list
+      this._prds.update(current =>
+        current.map(p => p.id === id ? { ...p, ...prd } : p)
+      );
+
+      // Update current if selected
+      if (this._currentPrd()?.id === id) {
+        this._currentPrd.update(p => p ? { ...p, ...prd } : null);
+      }
+
+      return prd;
+    } catch (err) {
+      console.error('Poll error:', err);
+      return null;
+    }
+  }
+
+  // Retry failed PRD
+  async retryPrd(id: number): Promise<GeneratedPrd | null> {
+    this._loading.set(true);
+    try {
+      const prd = await firstValueFrom(
+        this.http.post<GeneratedPrd>(`${this.baseUrl}/${id}/retry`, {})
+      );
+
+      // Update in list
+      this._prds.update(current =>
+        current.map(p => p.id === id ? prd : p)
+      );
+
+      if (this._currentPrd()?.id === id) {
+        this._currentPrd.set(prd);
+      }
+
+      return prd;
+    } catch (err) {
+      console.error('Retry error:', err);
+      this._error.set('Failed to retry PRD');
+      return null;
+    } finally {
+      this._loading.set(false);
     }
   }
 

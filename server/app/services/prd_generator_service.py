@@ -247,11 +247,8 @@ class PrdGeneratorService:
             cleaned = cleaned[:-3]
         return cleaned.strip()
 
-    def generate(self, session: Session, request: Dict[str, Any]) -> GeneratedPrd:
-        start_time = time.time()
-        from app.core.config import settings
-        model = settings.OPENROUTER_MODEL
-        
+    def create_prd(self, session: Session, request: Dict[str, Any]) -> GeneratedPrd:
+        """Create PRD record in pending state"""
         # Get template
         template_id = request.get("templateId")
         template = None
@@ -262,64 +259,11 @@ class PrdGeneratorService:
             self.ensure_default_templates(session)
             templates = self.get_templates(session)
             template = next((t for t in templates if t.is_default == 1), templates[0])
-            
-        # Get KB context
-        kb_ids = request.get("knowledgeBaseIds", [])
-        kb_result = self.get_knowledge_base_context(session, kb_ids, request.get("concept", ""))
-        kb_context = kb_result["context"]
-        citations = kb_result["citations"]
-        
-        # Build user prompt
-        user_prompt = f"Generate a PRD based on the following business requirements:\\n\\n{request.get('concept', '')}"
-        
-        context_items = []
-        if request.get("targetProject"):
-            context_items.append(f"Target Project/Team: {request['targetProject']}")
-        if request.get("targetPersona"):
-            context_items.append(f"Target Persona: {request['targetPersona']}")
-        if request.get("industryContext"):
-            context_items.append(f"Industry: {request['industryContext']}")
-        if request.get("primaryMetric"):
-            context_items.append(f"Primary Business Objective: {request['primaryMetric']}")
-            
-        if context_items:
-            context_str = '\\n'.join(context_items)
-            user_prompt += f"\\n\\nContext:\\n{context_str}"
-            
-        if request.get("userStoryRole") and request.get("userStoryGoal") and request.get("userStoryBenefit"):
-            user_prompt += f"\\n\\nUser Story:\\nAs a {request['userStoryRole']}, I want {request['userStoryGoal']}, so that {request['userStoryBenefit']}"
-            
-        if kb_context:
-            user_prompt += kb_context
-            
-        # Call LLM
-        response = self.client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": template.system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            max_tokens=8000,
-            temperature=0.7,
-            response_format={"type": "json_object"}
-        )
-        
-        raw_content = response.choices[0].message.content
-        cleaned_content = self.clean_json_response(raw_content)
-        
-        try:
-            structured_content = json.loads(cleaned_content)
-        except json.JSONDecodeError as e:
-            print(f"JSON Parse Error. Raw content: {raw_content}")
-            raise ValueError(f"Failed to parse PRD response as JSON. Error: {str(e)}. Raw content start: {raw_content[:100]}...")
-            
-        generation_time_ms = (time.time() - start_time) * 1000
-        
-        # Save PRD
+
         prd = GeneratedPrd(
             user_id=request.get("userId"),
-            title=structured_content.get("title", "Generated PRD"),
-            content=cleaned_content,
+            title="Generating PRD...",
+            content="",  # Empty content initially
             concept=request.get("concept", ""),
             target_project=request.get("targetProject"),
             target_persona=request.get("targetPersona"),
@@ -328,24 +272,134 @@ class PrdGeneratorService:
             user_story_role=request.get("userStoryRole"),
             user_story_goal=request.get("userStoryGoal"),
             user_story_benefit=request.get("userStoryBenefit"),
-            knowledge_base_ids=kb_ids,
+            knowledge_base_ids=request.get("knowledgeBaseIds", []),
             input_files=request.get("files", []),
             template_id=template.id,
-            status="draft",
-            generation_metadata={
-                "model": model,
-                "promptTokens": response.usage.prompt_tokens,
-                "completionTokens": response.usage.completion_tokens,
-                "generationTimeMs": generation_time_ms
-            },
-            citations=citations
+            status="pending",
+            progress_step=0,
+            progress_message="Starting generation...",
         )
         
         session.add(prd)
         session.commit()
         session.refresh(prd)
-        
         return prd
+
+    def run_prd_pipeline(self, session: Session, prd_id: int):
+        """Async pipeline to generate PRD content"""
+        try:
+            start_time = time.time()
+            from app.core.config import settings
+            model = settings.OPENROUTER_MODEL
+            
+            prd = self.get_prd(session, prd_id)
+            if not prd:
+                return
+
+            # Step 1: Preparation
+            self._update_progress(session, prd_id, "processing", 1, "Analyzing requirements and context...")
+            
+            template = self.get_template(session, prd.template_id)
+            if not template:
+                raise ValueError("Template not found")
+
+            # Step 2: Knowledge Base RAG
+            kb_context = ""
+            citations = []
+            if prd.knowledge_base_ids:
+                self._update_progress(session, prd_id, "processing", 2, "Searching knowledge bases...")
+                kb_result = self.get_knowledge_base_context(session, prd.knowledge_base_ids, prd.concept)
+                kb_context = kb_result["context"]
+                citations = kb_result["citations"]
+
+            # Step 3: Generation
+            self._update_progress(session, prd_id, "processing", 3, "Generating comprehensive PRD...")
+            
+            # Build user prompt
+            user_prompt = f"Generate a PRD based on the following business requirements:\\n\\n{prd.concept}"
+            
+            context_items = []
+            if prd.target_project:
+                context_items.append(f"Target Project/Team: {prd.target_project}")
+            if prd.target_persona:
+                context_items.append(f"Target Persona: {prd.target_persona}")
+            if prd.industry_context:
+                context_items.append(f"Industry: {prd.industry_context}")
+            if prd.primary_metric:
+                context_items.append(f"Primary Business Objective: {prd.primary_metric}")
+                
+            if context_items:
+                context_str = '\\n'.join(context_items)
+                user_prompt += f"\\n\\nContext:\\n{context_str}"
+                
+            if prd.user_story_role and prd.user_story_goal and prd.user_story_benefit:
+                user_prompt += f"\\n\\nUser Story:\\nAs a {prd.user_story_role}, I want {prd.user_story_goal}, so that {prd.user_story_benefit}"
+                
+            if kb_context:
+                user_prompt += kb_context
+                
+            # Call LLM
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": template.system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=8000,
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            
+            raw_content = response.choices[0].message.content
+            cleaned_content = self.clean_json_response(raw_content)
+            
+            try:
+                structured_content = json.loads(cleaned_content)
+            except json.JSONDecodeError as e:
+                print(f"JSON Parse Error. Raw content: {raw_content}")
+                raise ValueError(f"Failed to parse PRD response as JSON.")
+                
+            generation_time_ms = (time.time() - start_time) * 1000
+            
+            # Update PRD
+            prd.title = structured_content.get("title", "Generated PRD")
+            prd.content = cleaned_content
+            prd.status = "draft"  # Or "completed" if you prefer
+            prd.progress_step = 4
+            prd.progress_message = "Generation complete!"
+            prd.generation_metadata = {
+                "model": model,
+                "promptTokens": response.usage.prompt_tokens,
+                "completionTokens": response.usage.completion_tokens,
+                "generationTimeMs": generation_time_ms
+            }
+            prd.citations = citations
+            prd.updated_at = datetime.utcnow()
+            
+            session.add(prd)
+            session.commit()
+            
+        except Exception as e:
+            print(f"PRD Generation Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            prd = self.get_prd(session, prd_id)
+            if prd:
+                prd.status = "failed"
+                prd.error_message = str(e)
+                session.add(prd)
+                session.commit()
+
+    def _update_progress(self, session: Session, prd_id: int, status: str, step: int, message: str):
+        prd = self.get_prd(session, prd_id)
+        if prd:
+            prd.status = status
+            prd.progress_step = step
+            prd.progress_message = message
+            prd.updated_at = datetime.utcnow()
+            session.add(prd)
+            session.commit()
 
     def refine(self, session: Session, request: Dict[str, Any]) -> GeneratedPrd:
         prd_id = request.get("prdId")
@@ -434,11 +488,11 @@ Generate the complete updated PRD in the same JSON format."""
         
         return original
 
-    def list_prds(self, session: Session, user_id: Optional[int] = None) -> List[GeneratedPrd]:
+    def list_prds(self, session: Session, skip: int = 0, limit: int = 20, user_id: Optional[int] = None) -> List[GeneratedPrd]:
         query = select(GeneratedPrd)
         if user_id:
             query = query.where(GeneratedPrd.user_id == user_id)
-        query = query.order_by(desc(GeneratedPrd.created_at))
+        query = query.order_by(desc(GeneratedPrd.created_at)).offset(skip).limit(limit)
         return session.exec(query).all()
 
     def get_prd(self, session: Session, id: int) -> Optional[GeneratedPrd]:
@@ -465,5 +519,24 @@ Generate the complete updated PRD in the same JSON format."""
         session.delete(prd)
         session.commit()
         return True
+
+    def retry_prd(self, session: Session, id: int) -> Optional[GeneratedPrd]:
+        """Reset failed PRD to pending for retry"""
+        prd = self.get_prd(session, id)
+        if not prd:
+            return None
+            
+        # Reset state
+        prd.status = "pending"
+        prd.error_message = None
+        prd.progress_step = 0
+        prd.progress_message = "Retrying generation..."
+        prd.updated_at = datetime.utcnow()
+        
+        session.add(prd)
+        session.commit()
+        session.refresh(prd)
+        
+        return prd
 
 prd_generator_service = PrdGeneratorService()

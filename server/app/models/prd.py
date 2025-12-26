@@ -1,6 +1,15 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from enum import Enum
 from sqlmodel import SQLModel, Field, Column, JSON
+
+class PrdStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    DRAFT = "draft"
+    FINAL = "final"
+    FAILED = "failed"
+
 
 class PrdTemplateBase(SQLModel):
     name: str
@@ -35,6 +44,9 @@ class GeneratedPrdBase(SQLModel):
     status: str = "draft"
     generation_metadata: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     citations: List[Dict[str, Any]] = Field(default=[], sa_column=Column(JSON))
+    progress_step: int = Field(default=0)
+    progress_message: Optional[str] = None
+    error_message: Optional[str] = None
 
 class GeneratedPrd(GeneratedPrdBase, table=True):
     __tablename__ = "generated_prds"

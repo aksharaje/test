@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -20,6 +20,7 @@ import {
   lucideSparkles,
   lucideBookOpen,
   lucideExternalLink,
+  lucideCheck,
 } from '@ng-icons/lucide';
 import { PrdGeneratorService } from './prd-generator.service';
 import type {
@@ -52,6 +53,7 @@ import type {
       lucideSparkles,
       lucideBookOpen,
       lucideExternalLink,
+      lucideCheck,
     }),
   ],
   template: `
@@ -73,6 +75,84 @@ import type {
               <ng-icon name="lucideChevronLeft" class="h-4 w-4" />
               Go Back
             </button>
+          </div>
+        </div>
+      } @else if (isProcessing()) {
+        <div class="flex h-screen items-center justify-center">
+          <div class="w-full max-w-md space-y-6 p-6">
+            <div class="text-center">
+              <ng-icon name="lucideLoader2" class="h-12 w-12 animate-spin text-primary" />
+              <h2 class="mt-4 text-xl font-semibold text-foreground">Generating PRD...</h2>
+              <p class="text-muted-foreground">{{ prd()?.progressMessage || 'Processing...' }}</p>
+            </div>
+            
+            <!-- Progress Steps -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-full border-2"
+                  [class.border-primary]="(prd()?.progressStep || 0) >= 1"
+                  [class.bg-primary]="(prd()?.progressStep || 0) >= 1"
+                  [class.text-primary-foreground]="(prd()?.progressStep || 0) >= 1"
+                >
+                  @if ((prd()?.progressStep || 0) > 1) { <ng-icon name="lucideCheck" class="h-4 w-4" /> } @else { 1 }
+                </div>
+                <div class="flex-1">
+                  <p class="font-medium">Analyzing Input</p>
+                  <p class="text-xs text-muted-foreground">Understanding requirements and context</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-full border-2"
+                  [class.border-primary]="(prd()?.progressStep || 0) >= 2"
+                  [class.bg-primary]="(prd()?.progressStep || 0) >= 2"
+                  [class.text-primary-foreground]="(prd()?.progressStep || 0) >= 2"
+                >
+                  @if ((prd()?.progressStep || 0) > 2) { <ng-icon name="lucideCheck" class="h-4 w-4" /> } @else { 2 }
+                </div>
+                <div class="flex-1">
+                  <p class="font-medium">Searching Knowledge Base</p>
+                  <p class="text-xs text-muted-foreground">Retrieving relevant context</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-full border-2"
+                  [class.border-primary]="(prd()?.progressStep || 0) >= 3"
+                  [class.bg-primary]="(prd()?.progressStep || 0) >= 3"
+                  [class.text-primary-foreground]="(prd()?.progressStep || 0) >= 3"
+                >
+                  @if ((prd()?.progressStep || 0) > 3) { <ng-icon name="lucideCheck" class="h-4 w-4" /> } @else { 3 }
+                </div>
+                <div class="flex-1">
+                  <p class="font-medium">Generating Content</p>
+                  <p class="text-xs text-muted-foreground">Drafting comprehensive PRD</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      } @else if (isFailed()) {
+        <div class="flex h-screen items-center justify-center">
+          <div class="text-center">
+            <ng-icon name="lucideAlertCircle" class="mx-auto h-12 w-12 text-destructive" />
+            <h2 class="mt-4 text-lg font-medium text-foreground">Generation Failed</h2>
+            <p class="mt-2 text-muted-foreground">{{ prd()?.errorMessage || 'An error occurred during generation' }}</p>
+            <div class="mt-6 flex justify-center gap-3">
+              <button
+                (click)="goBack()"
+                class="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+              >
+                Go Back
+              </button>
+              <button
+                (click)="retryPrd()"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                <ng-icon name="lucideRefreshCw" class="h-4 w-4" />
+                Retry Generation
+              </button>
+            </div>
           </div>
         </div>
       } @else if (prd()) {
@@ -462,8 +542,17 @@ export class PrdGeneratorOutputComponent implements OnInit {
   protected contextPanelOpen = signal(false);
   protected refineModalOpen = signal(false);
   protected refinePrompt = '';
+  private pollInterval: any;
 
   // Computed
+  protected isProcessing = computed(() => {
+    const status = this.prd()?.status;
+    return status === 'pending' || status === 'processing';
+  });
+
+  protected isFailed = computed(() => {
+    return this.prd()?.status === 'failed';
+  });
   protected parsedContent = computed<StructuredPrdContent | null>(() => {
     const prd = this.prd();
     if (!prd) return null;
@@ -483,14 +572,27 @@ export class PrdGeneratorOutputComponent implements OnInit {
       return;
     }
 
+    await this.loadPrd(id);
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+  }
+
+  private async loadPrd(id: number): Promise<void> {
     try {
       const prd = await this.service.getPrd(id);
       if (prd) {
         this.prd.set(prd);
-        // Expand all sections by default
-        const content = JSON.parse(prd.content) as StructuredPrdContent;
-        const allKeys = new Set(content.sections.map(s => s.key));
-        this.expandedSections.set(allKeys);
+
+        // Handle different states
+        if (prd.status === 'pending' || prd.status === 'processing') {
+          this.startPolling(id);
+        } else if (prd.status === 'draft' || prd.status === 'final') {
+          this.initializeContent(prd);
+        }
       } else {
         this.error.set('PRD not found');
       }
@@ -498,6 +600,43 @@ export class PrdGeneratorOutputComponent implements OnInit {
       this.error.set('Failed to load PRD');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private startPolling(id: number): void {
+    if (this.pollInterval) clearInterval(this.pollInterval);
+
+    this.pollInterval = setInterval(async () => {
+      const prd = await this.service.pollSessionStatus(id);
+      if (prd) {
+        this.prd.set(prd);
+
+        if (prd.status === 'draft' || prd.status === 'final') {
+          clearInterval(this.pollInterval);
+          this.initializeContent(prd);
+        } else if (prd.status === 'failed') {
+          clearInterval(this.pollInterval);
+        }
+      }
+    }, 2000);
+  }
+
+  private initializeContent(prd: GeneratedPrd): void {
+    const content = JSON.parse(prd.content) as StructuredPrdContent;
+    const allKeys = new Set(content.sections.map(s => s.key));
+    this.expandedSections.set(allKeys);
+  }
+
+  async retryPrd(): Promise<void> {
+    const prd = this.prd();
+    if (!prd) return;
+
+    this.loading.set(true);
+    const updated = await this.service.retryPrd(prd.id);
+    if (updated) {
+      this.prd.set(updated);
+      this.loading.set(false);
+      this.startPolling(updated.id);
     }
   }
 

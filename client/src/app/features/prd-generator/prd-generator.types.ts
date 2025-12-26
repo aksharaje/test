@@ -62,7 +62,10 @@ export interface GeneratedPrd {
   knowledgeBaseIds: number[];
   inputFiles: GeneratedArtifactFile[];
   templateId: number | null;
-  status: 'draft' | 'final';
+  status: 'pending' | 'processing' | 'draft' | 'final' | 'failed';
+  progressStep: number;
+  progressMessage: string | null;
+  errorMessage: string | null;
   generationMetadata: PrdGenerationMetadata | null;
   citations: PrdCitation[];
   createdAt: string;
