@@ -404,6 +404,34 @@ class TestResearchPlannerServiceContextFetching:
         assert context_text == ""
         assert context_summary == {}
 
+    @patch('app.services.research_planner_service.research_planner_service._fetch_ideation_context')
+    @patch('app.services.research_planner_service.research_planner_service._fetch_feasibility_context')
+    def test_build_aggregated_context_with_data(self, mock_fetch_feasibility, mock_fetch_ideation, db_session):
+        """Test building context with sources"""
+        # Setup mocks
+        mock_fetch_ideation.return_value = {
+            "text": "Ideation context.",
+            "metadata": {"ideaCount": 5}
+        }
+        mock_fetch_feasibility.return_value = {
+            "text": "Feasibility context.",
+            "metadata": {"goDecision": "go"}
+        }
+
+        service = ResearchPlannerService()
+
+        context_text, context_summary = service._build_aggregated_context(
+            db=db_session,
+            objective="Test objective",
+            ideation_session_id=1,
+            feasibility_session_id=2
+        )
+
+        assert "Ideation context." in context_text
+        assert "Feasibility context." in context_text
+        assert context_summary["ideation"]["ideaCount"] == 5
+        assert context_summary["feasibility"]["goDecision"] == "go"
+
 
 class TestResearchPlannerServiceSessionDetail:
     """Test suite for session detail retrieval"""

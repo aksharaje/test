@@ -7,7 +7,16 @@ from app.core.db import create_db_and_tables
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # create_db_and_tables()
+    # Create/verify all database tables on startup
+    print("=== Initializing database tables ===")
+    try:
+        create_db_and_tables()
+        print("=== Database initialization complete ===")
+    except Exception as e:
+        print(f"=== Database initialization error: {e} ===")
+        import traceback
+        traceback.print_exc()
+
     for route in app.routes:
         print(f"Route: {route.path} {route.methods}")
     yield

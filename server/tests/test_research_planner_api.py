@@ -15,8 +15,16 @@ from app.models.research_planner import (
     RecommendedMethod,
     InterviewGuide,
     Survey,
+    ResearchPlanSession,
+    RecommendedMethod,
+    InterviewGuide,
+    Survey,
     RecruitingPlan
 )
+from app.models.knowledge_base import KnowledgeBase
+from app.models.ideation import IdeationSession
+from app.models.feasibility import FeasibilitySession
+from app.models.business_case import BusinessCaseSession
 
 
 # Set up test database at module level
@@ -351,20 +359,61 @@ class TestResearchPlannerAPI:
         assert data["status"] == "pending"
         assert data["errorMessage"] is None
 
-    @pytest.mark.skip(reason="Requires full database schema with knowledge_bases, ideation_sessions tables")
     def test_get_context_sources(self, clean_db):
         """Test getting available context sources"""
+        # Create some test data
+        with Session(engine) as session:
+            # Create Knowledge Base
+            kb = KnowledgeBase(name="Test KB", description="Test Desc", index_name="test")
+            session.add(kb)
+            
+            # Create Ideation Session
+            ideation = IdeationSession(problem_statement="Test Problem", status="completed", confidence="high")
+            session.add(ideation)
+            
+            # Create Feasibility Session
+            # Note: Checking required fields for FeasibilitySession
+            feasibility = FeasibilitySession(
+                feature_description="Test Feature",
+                status="completed",
+                confidence_level="high",
+                go_no_go_recommendation="go"
+            )
+            session.add(feasibility)
+            
+            # Create Business Case Session
+            # Note: Checking required fields for BusinessCaseSession
+            business_case = BusinessCaseSession(
+                feature_name="Test Business Case", 
+                status="completed",
+                recommendation="invest"
+            )
+            session.add(business_case)
+            
+            session.commit()
+
         response = client.get("/api/cx/research-planner/context-sources")
 
         assert response.status_code == 200
         data = response.json()
+        
         assert "knowledgeBases" in data
         assert "ideationSessions" in data
         assert "feasibilitySessions" in data
         assert "businessCaseSessions" in data
-        # All should be empty lists since we haven't created any
-        assert isinstance(data["knowledgeBases"], list)
-        assert isinstance(data["ideationSessions"], list)
+        
+        # Verify lists are not empty
+        assert len(data["knowledgeBases"]) == 1
+        assert data["knowledgeBases"][0]["name"] == "Test KB"
+        
+        assert len(data["ideationSessions"]) == 1
+        assert data["ideationSessions"][0]["problemStatement"] == "Test Problem"
+        
+        assert len(data["feasibilitySessions"]) == 1
+        assert data["feasibilitySessions"][0]["featureDescription"] == "Test Feature"
+        
+        assert len(data["businessCaseSessions"]) == 1
+        assert data["businessCaseSessions"][0]["featureName"] == "Test Business Case"
 
 
 class TestResearchPlannerServiceUnit:
