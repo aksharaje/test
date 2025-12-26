@@ -166,6 +166,157 @@ interface FileTreeNode {
             display: block;
             height: 100%;
         }
+
+        /* Code viewer dark theme styles - ensure all text is visible */
+        :host ::ng-deep markdown {
+            color: #e6edf3;
+            line-height: 1.6;
+        }
+
+        :host ::ng-deep markdown * {
+            color: inherit;
+        }
+
+        :host ::ng-deep markdown p,
+        :host ::ng-deep markdown li,
+        :host ::ng-deep markdown span,
+        :host ::ng-deep markdown div {
+            color: #e6edf3 !important;
+        }
+
+        :host ::ng-deep markdown p {
+            margin-bottom: 1em;
+        }
+
+        :host ::ng-deep markdown h1 {
+            color: #ffffff !important;
+            font-size: 1.75em;
+            font-weight: 600;
+            margin-top: 1.5em;
+            margin-bottom: 0.75em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #30363d;
+        }
+
+        :host ::ng-deep markdown h2 {
+            color: #ffffff !important;
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-top: 1.5em;
+            margin-bottom: 0.75em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #30363d;
+        }
+
+        :host ::ng-deep markdown h3,
+        :host ::ng-deep markdown h4,
+        :host ::ng-deep markdown h5,
+        :host ::ng-deep markdown h6 {
+            color: #ffffff !important;
+            font-weight: 600;
+            margin-top: 1.25em;
+            margin-bottom: 0.5em;
+        }
+
+        :host ::ng-deep markdown h3 {
+            font-size: 1.25em;
+        }
+
+        :host ::ng-deep markdown a {
+            color: #58a6ff !important;
+        }
+
+        :host ::ng-deep markdown strong {
+            color: #ffffff !important;
+        }
+
+        :host ::ng-deep markdown ul,
+        :host ::ng-deep markdown ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+
+        :host ::ng-deep markdown li {
+            margin-bottom: 0.25em;
+        }
+
+        :host ::ng-deep markdown blockquote {
+            padding: 0.5em 1em;
+            margin: 1em 0;
+            border-left: 3px solid #30363d;
+            color: #8b949e !important;
+        }
+
+        :host ::ng-deep pre {
+            margin: 1em 0;
+            padding: 1em;
+            background: rgba(0, 0, 0, 0.3) !important;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        :host ::ng-deep markdown > pre:only-child {
+            margin: 0;
+            padding: 0;
+            background: transparent !important;
+            border-radius: 0;
+        }
+
+        :host ::ng-deep code {
+            color: #e6edf3 !important;
+            background: transparent !important;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        :host ::ng-deep pre code {
+            display: block;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Syntax highlighting colors for dark theme */
+        :host ::ng-deep .hljs-keyword,
+        :host ::ng-deep .hljs-selector-tag,
+        :host ::ng-deep .hljs-literal,
+        :host ::ng-deep .hljs-section,
+        :host ::ng-deep .hljs-link {
+            color: #ff7b72;
+        }
+
+        :host ::ng-deep .hljs-string,
+        :host ::ng-deep .hljs-title,
+        :host ::ng-deep .hljs-name,
+        :host ::ng-deep .hljs-type,
+        :host ::ng-deep .hljs-attribute,
+        :host ::ng-deep .hljs-symbol,
+        :host ::ng-deep .hljs-bullet,
+        :host ::ng-deep .hljs-addition,
+        :host ::ng-deep .hljs-variable,
+        :host ::ng-deep .hljs-template-tag,
+        :host ::ng-deep .hljs-template-variable {
+            color: #a5d6ff;
+        }
+
+        :host ::ng-deep .hljs-comment,
+        :host ::ng-deep .hljs-quote,
+        :host ::ng-deep .hljs-deletion,
+        :host ::ng-deep .hljs-meta {
+            color: #8b949e;
+        }
+
+        :host ::ng-deep .hljs-function,
+        :host ::ng-deep .hljs-class .hljs-title {
+            color: #d2a8ff;
+        }
+
+        :host ::ng-deep .hljs-number,
+        :host ::ng-deep .hljs-built_in,
+        :host ::ng-deep .hljs-params {
+            color: #79c0ff;
+        }
     `,
 })
 export class StoryToCodeResultsComponent implements OnInit {
@@ -192,8 +343,15 @@ export class StoryToCodeResultsComponent implements OnInit {
     markdownContent = computed(() => {
         const file = this.selectedFile();
         if (!file) return '';
-        const lang = this.getLang(file);
         const content = this.getFileContent(file);
+
+        // For markdown files, render as-is (not as code block)
+        if (file.endsWith('.md')) {
+            return content;
+        }
+
+        // For code files, wrap in code block with syntax highlighting
+        const lang = this.getLang(file);
         return '```' + lang + '\n' + content + '\n```';
     });
 

@@ -328,12 +328,31 @@ export const routes: Routes = [
             (m) => m.ExperienceGapAnalyzerResultsComponent
           ),
       },
+      {
+        path: 'story-to-code',
+        title: 'Story to Code | Product Studio',
+        loadComponent: () =>
+          import('./features/story-to-code/story-to-code-input.component').then(
+            (m) => m.StoryToCodeInputComponent
+          ),
+      },
+      {
+        path: 'story-to-code/processing/:id',
+        title: 'Generating Code | Product Studio',
+        loadComponent: () =>
+          import('./features/story-to-code/story-to-code-processing.component').then(
+            (m) => m.StoryToCodeProcessingComponent
+          ),
+      },
+      {
+        path: 'story-to-code/results/:id',
+        title: 'Generated Code | Product Studio',
+        loadComponent: () =>
+          import('./features/story-to-code/story-to-code-results.component').then(
+            (m) => m.StoryToCodeResultsComponent
+          ),
+      },
     ],
-  },
-  {
-    path: 'story-to-code',
-    title: 'Story to Code | Product Studio',
-    loadChildren: () => import('./features/story-to-code/story-to-code.routes').then(m => m.STORY_TO_CODE_ROUTES)
   },
   {
     path: 'docs',

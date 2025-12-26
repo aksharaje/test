@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { UpperCasePipe, SlicePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
     lucideChevronDown,
@@ -17,6 +18,7 @@ import {
     lucideDatabase,
     lucideRotateCw,
     lucideGitBranch,
+    lucideSearch,
 } from '@ng-icons/lucide';
 import { StoryToCodeService, StoryArtifact, CodeKnowledgeBase, TECH_STACK_OPTIONS, StoryToCodeSession } from './story-to-code.service';
 import { HlmButtonDirective } from '../../ui/button';
@@ -26,7 +28,7 @@ type SourceType = 'manual' | 'artifact';
 @Component({
     selector: 'app-story-to-code-input',
     standalone: true,
-    imports: [NgIcon, HlmButtonDirective, UpperCasePipe, SlicePipe],
+    imports: [NgIcon, HlmButtonDirective, UpperCasePipe, SlicePipe, FormsModule],
     viewProviders: [
         provideIcons({
             lucideChevronDown,
@@ -43,6 +45,7 @@ type SourceType = 'manual' | 'artifact';
             lucideDatabase,
             lucideRotateCw,
             lucideGitBranch,
+            lucideSearch,
         }),
     ],
     template: `
@@ -182,24 +185,94 @@ Feature requirements:
                                 <p class="text-xs text-muted-foreground mb-3">
                                     Select knowledge bases with your existing code to follow its patterns.
                                 </p>
-                                <div class="space-y-2">
-                                    @for (kb of service.knowledgeBases(); track kb.id) {
-                                        <label class="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                [checked]="selectedKbIds().includes(kb.id)"
-                                                (change)="toggleKbSelection(kb.id)"
-                                            />
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium">{{ kb.name }}</p>
-                                                <p class="text-xs text-muted-foreground">
-                                                    {{ kb.documentCount }} files, {{ kb.totalChunks }} chunks
-                                                </p>
+
+                                <!-- Dropdown -->
+                                <div class="relative">
+                                    <button
+                                        type="button"
+                                        (click)="toggleKbDropdown()"
+                                        class="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                    >
+                                        <span class="text-muted-foreground">
+                                            @if (selectedKbIds().length === 0) {
+                                                Select knowledge bases...
+                                            } @else {
+                                                {{ selectedKbIds().length }} selected
+                                            }
+                                        </span>
+                                        <ng-icon
+                                            name="lucideChevronDown"
+                                            class="h-4 w-4 text-muted-foreground transition-transform"
+                                            [class.rotate-180]="kbDropdownOpen()"
+                                        />
+                                    </button>
+
+                                    @if (kbDropdownOpen()) {
+                                        <div class="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border bg-popover shadow-lg">
+                                            <!-- Search -->
+                                            <div class="border-b p-2">
+                                                <div class="relative">
+                                                    <ng-icon
+                                                        name="lucideSearch"
+                                                        class="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        [ngModel]="kbSearchFilter()"
+                                                        (ngModelChange)="onKbSearchInput($event)"
+                                                        placeholder="Search knowledge bases..."
+                                                        class="w-full rounded-md border bg-background py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    />
+                                                </div>
                                             </div>
-                                        </label>
+                                            <!-- Options -->
+                                            <div class="max-h-48 overflow-y-auto p-1">
+                                                @for (kb of filteredKnowledgeBases(); track kb.id) {
+                                                    <button
+                                                        type="button"
+                                                        (click)="toggleKbSelection(kb.id)"
+                                                        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent"
+                                                    >
+                                                        <div
+                                                            class="flex h-4 w-4 items-center justify-center rounded border"
+                                                            [class]="selectedKbIds().includes(kb.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input'"
+                                                        >
+                                                            @if (selectedKbIds().includes(kb.id)) {
+                                                                <ng-icon name="lucideCheck" class="h-3 w-3" />
+                                                            }
+                                                        </div>
+                                                        <span>{{ kb.name }}</span>
+                                                        <span class="ml-auto text-xs text-muted-foreground">
+                                                            {{ kb.documentCount }} docs
+                                                        </span>
+                                                    </button>
+                                                } @empty {
+                                                    <div class="px-2 py-4 text-center text-sm text-muted-foreground">
+                                                        No knowledge bases found
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
                                     }
                                 </div>
+
+                                <!-- Selected KB tags -->
+                                @if (selectedKbIds().length > 0) {
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        @for (kb of selectedKnowledgeBases(); track kb.id) {
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
+                                                {{ kb.name }}
+                                                <button
+                                                    type="button"
+                                                    (click)="toggleKbSelection(kb.id)"
+                                                    class="hover:text-primary/80"
+                                                >
+                                                    <ng-icon name="lucideX" class="h-3 w-3" />
+                                                </button>
+                                            </span>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
 
@@ -412,6 +485,10 @@ export class StoryToCodeInputComponent implements OnInit {
     selectedTechStack = signal<string | null>(null);
     customTechStack = signal('');
 
+    // KB dropdown state
+    kbDropdownOpen = signal(false);
+    kbSearchFilter = signal('');
+
     // Tech stack options
     techStackOptions = TECH_STACK_OPTIONS;
 
@@ -419,6 +496,20 @@ export class StoryToCodeInputComponent implements OnInit {
     charCount = computed(() => this.inputDescription().length);
     canSubmit = computed(() => this.charCount() >= 50);
     hasImportOptions = computed(() => this.service.artifacts().length > 0);
+
+    // Filtered KBs for dropdown
+    filteredKnowledgeBases = computed(() => {
+        const filter = this.kbSearchFilter().toLowerCase().trim();
+        const kbs = this.service.knowledgeBases();
+        if (!filter) return kbs;
+        return kbs.filter(kb => kb.name.toLowerCase().includes(filter));
+    });
+
+    // Selected KBs for tags display
+    selectedKnowledgeBases = computed(() => {
+        const ids = this.selectedKbIds();
+        return this.service.knowledgeBases().filter(kb => ids.includes(kb.id));
+    });
 
     async ngOnInit() {
         await Promise.all([
@@ -447,9 +538,94 @@ export class StoryToCodeInputComponent implements OnInit {
         const artifact = this.service.artifacts().find(a => a.id === id);
         if (artifact) {
             this.selectedArtifact.set(artifact);
-            const description = `${artifact.title}\n\n${artifact.description}`;
+            // Parse the JSON content to extract user stories
+            const description = this.parseStoriesFromArtifact(artifact);
             this.inputDescription.set(description);
         }
+    }
+
+    private parseStoriesFromArtifact(artifact: StoryArtifact): string {
+        try {
+            // The description field contains JSON with stories
+            const parsed = JSON.parse(artifact.description);
+
+            // Check if it has a stories array
+            if (parsed.stories && Array.isArray(parsed.stories)) {
+                return this.formatStories(parsed.stories, artifact.title);
+            }
+
+            // If it's a user story type, the content itself is the story
+            if (artifact.type === 'user_story' && parsed.user_story) {
+                return this.formatUserStory(parsed.user_story, artifact.title);
+            }
+
+            // Fallback: if structure is different, try to extract meaningfully
+            if (parsed.feature) {
+                const stories = parsed.stories || [];
+                if (stories.length > 0) {
+                    return this.formatStories(stories, artifact.title);
+                }
+                // Just the feature info
+                return `Feature: ${parsed.feature.title || artifact.title}\n\n${parsed.feature.description || ''}`;
+            }
+
+            if (parsed.epic) {
+                const stories = parsed.stories || [];
+                if (stories.length > 0) {
+                    return this.formatStories(stories, artifact.title);
+                }
+            }
+
+            // Last resort: just use title
+            return artifact.title;
+        } catch (e) {
+            // If JSON parsing fails, use title and raw description
+            return `${artifact.title}\n\n${artifact.description}`;
+        }
+    }
+
+    private formatStories(stories: any[], parentTitle: string): string {
+        const lines: string[] = [`# User Stories for: ${parentTitle}`, ''];
+
+        stories.forEach((story, index) => {
+            const title = story.title || story.name || `Story ${index + 1}`;
+            const userStory = story.userStory || story.user_story || '';
+            const acceptanceCriteria = story.acceptanceCriteria || story.acceptance_criteria || [];
+
+            lines.push(`## ${index + 1}. ${title}`);
+            if (userStory) {
+                lines.push(userStory);
+            }
+            if (acceptanceCriteria.length > 0) {
+                lines.push('');
+                lines.push('**Acceptance Criteria:**');
+                acceptanceCriteria.forEach((ac: string) => {
+                    lines.push(`- ${ac}`);
+                });
+            }
+            lines.push('');
+        });
+
+        return lines.join('\n');
+    }
+
+    private formatUserStory(story: any, title: string): string {
+        const lines: string[] = [`# ${title}`, ''];
+
+        if (story.userStory || story.user_story) {
+            lines.push(story.userStory || story.user_story);
+            lines.push('');
+        }
+
+        const acceptanceCriteria = story.acceptanceCriteria || story.acceptance_criteria || [];
+        if (acceptanceCriteria.length > 0) {
+            lines.push('**Acceptance Criteria:**');
+            acceptanceCriteria.forEach((ac: string) => {
+                lines.push(`- ${ac}`);
+            });
+        }
+
+        return lines.join('\n');
     }
 
     clearArtifactSelection() {
@@ -459,6 +635,14 @@ export class StoryToCodeInputComponent implements OnInit {
 
     onDescriptionInput(event: Event) {
         this.inputDescription.set((event.target as HTMLTextAreaElement).value);
+    }
+
+    toggleKbDropdown() {
+        this.kbDropdownOpen.update(v => !v);
+    }
+
+    onKbSearchInput(value: string) {
+        this.kbSearchFilter.set(value);
     }
 
     toggleKbSelection(kbId: number) {
@@ -498,11 +682,17 @@ export class StoryToCodeInputComponent implements OnInit {
         event.preventDefault();
         if (!this.canSubmit()) return;
 
+        // Use artifact title if available, otherwise derive from description
+        const artifact = this.selectedArtifact();
+        const title = artifact
+            ? artifact.title
+            : this.inputDescription().substring(0, 50) + (this.inputDescription().length > 50 ? '...' : '');
+
         const session = await this.service.createSession({
             inputDescription: this.inputDescription(),
-            title: this.inputDescription().substring(0, 50) + (this.inputDescription().length > 50 ? '...' : ''),
+            title,
             inputSource: this.sourceType(),
-            sourceArtifactId: this.selectedArtifact()?.id,
+            sourceArtifactId: artifact?.id,
             techStack: this.getTechStackValue(),
             knowledgeBaseIds: this.selectedKbIds(),
         });
