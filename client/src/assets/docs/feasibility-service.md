@@ -1,48 +1,45 @@
-# Feasibility Analysis Manager
+# FeasibilityService
 
 ## Overview
-The Feasibility Analysis Manager helps Product Managers assess the viability of their project ideas by providing a structured approach to analyzing key factors and risks.
+Service file: `feasibility_service.py`
 
-## Key Capabilities
-- Create new feasibility analysis sessions
-- Retrieve and view session details
-- Update component estimates
-- Capture actual results for learning
-- Delete sessions when needed
-- Run the feasibility analysis pipeline
+Service for managing feasibility analysis sessions
 
-## How to Use
-To get started, create a new feasibility analysis session to outline your project idea and define key parameters. Then, you can update estimates, capture actual results, and run the analysis pipeline to get valuable insights into the feasibility of your project.
+## Methods
+### client
 
-## Configuration & Fields
-- **Feature Description**: Describes the main aspect of your project idea.
-  - **What it's for**: Helps identify the core focus of your project.
-  - **Example**: "Develop a mobile app for online grocery shopping."
+### model
 
-- **Technical Constraints**: Specifies any technical limitations or requirements.
-  - **What it's for**: Identifies constraints that may impact project feasibility.
-  - **Example**: "Must be compatible with existing backend systems."
+### create_session
+Create a new feasibility analysis session
 
-- **Target Users**: Defines the intended audience or users of the project.
-  - **What it's for**: Guides decisions on design and functionality.
-  - **Example**: "Targeted at busy professionals seeking meal delivery services."
+### get_session
+Get a session by ID
 
-- **User ID**: Represents the unique identifier of the user initiating the session.
-  - **What it's for**: Tracks user involvement in the feasibility analysis process.
-  - **Example**: "User ID 1234, Product Manager Jane Doe."
+### list_sessions
+List all sessions, optionally filtered by user, with pagination
 
-- **Optimistic Hours**: Estimated minimum time required for a project component.
-  - **What it's for**: Provides a best-case scenario for project completion.
-  - **Example**: "Component A: 10 hours."
+### retry_session
+Retry a failed session.
+Resets status and triggers background processing.
 
-- **Realistic Hours**: Estimated average time required for a project component.
-  - **What it's for**: Represents the most likely scenario for project completion.
-  - **Example**: "Component B: 20 hours."
+### get_session_detail
+Get complete session detail with all related data.
+Returns: Dict with session, components, scenarios, risks, skills
 
-- **Pessimistic Hours**: Estimated maximum time required for a project component.
-  - **What it's for**: Indicates the worst-case scenario for project completion.
-  - **Example**: "Component C: 30 hours."
+### update_component
+Update component estimates (if editable)
 
-- **Actuals Data**: Records actual results for project components.
-  - **What it's for**: Captures real-time data for performance evaluation.
-  - **Example**: "Component A: 12 hours spent, key lesson learned on user interface design."
+### capture_actuals
+Capture actual results for learning.
+actuals_data: List of dicts with component_id, actual_hours_spent, lessons_learned
+
+### delete_session
+Delete a session and all related data (cascade)
+
+### run_feasibility_pipeline
+Main pipeline: orchestrates 4 AI agents sequentially.
+Runs in background task.
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

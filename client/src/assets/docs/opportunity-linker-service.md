@@ -1,26 +1,53 @@
-# Opportunity Linker
+# OpportunityLinkerService
 
 ## Overview
-Opportunity Linker helps Product Managers map ideas to potential opportunities and prioritize them based on strategic fit and estimated size. It streamlines the process of turning innovative concepts into actionable projects.
+Service file: `opportunity_linker_service.py`
 
-## Key Capabilities
-- Create a new prioritization session
-- Process and prioritize opportunities
-- View detailed prioritization session information
-- Delete unnecessary prioritization sessions
+Service for mapping ideas to opportunities and calculating priority scores
 
-## How to Use
-To get started with Opportunity Linker, create a new prioritization session to begin mapping ideas to potential opportunities. Then, process the session to analyze strategic fit, estimate size, and assign priority tiers. You can also view detailed information about each prioritization session and delete any sessions that are no longer needed.
+## Methods
+### create_session
+Create a new prioritization session and start processing.
 
-## Configuration & Fields
-- **Database**: A storage location for all your prioritization session data.
-  - **What it's for**: Storing and retrieving information related to your prioritization sessions.
-  - **Example**: Saving details about each idea, its strategic fit score, and priority tier assignments.
+Args:
+    db: Database session
+    ideation_session_id: ID of completed ideation session
+    user_id: Optional user ID
 
-- **Ideation Session ID**: Unique identifier for completed ideation sessions.
-  - **What it's for**: Connecting prioritization sessions to previously completed ideation sessions.
-  - **Example**: Linking a brainstorming session where the idea was generated to the prioritization process.
+Returns:
+    Created prioritization session
 
-- **User ID**: Optional identifier for users involved in the prioritization process.
-  - **What it's for**: Associating specific users with prioritization sessions for tracking and collaboration purposes.
-  - **Example**: Assigning team members to review and prioritize different opportunities.
+Raises:
+    ValueError: If ideation session not found or not completed
+
+### process_session
+Process a prioritization session through all agents.
+
+This is the main workflow that:
+1. Maps opportunities for each idea (Agent 7)
+2. Scores strategic fit (Agent 8)
+3. Estimates size (Agent 9)
+4. Calculates priority and assigns tiers (Agent 10)
+5. Generates portfolio summary
+
+Args:
+    db: Database session
+    session_id: Prioritization session ID
+
+Returns:
+    Updated prioritization session
+
+### get_session
+Get a prioritization session by ID
+
+### list_sessions
+List all prioritization sessions, optionally filtered by user
+
+### get_session_detail
+Get session with all prioritized ideas
+
+### delete_session
+Delete a prioritization session
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

@@ -1,39 +1,49 @@
-# Research Planner
+# ResearchPlannerService
 
 ## Overview
-The Research Planner helps Product Managers organize and plan their research activities efficiently. It enables PMs to streamline the process of setting research objectives, managing research sessions, and generating necessary research instruments.
+Service file: `research_planner_service.py`
 
-## Key Capabilities
-- Create new research planning sessions
-- View and manage existing research sessions
-- Select specific research methods to proceed with
-- Update interview guides and survey questions
-- Generate research methods recommendations and instruments
+Service for managing research planning sessions
 
-## How to Use
-To begin, start by creating a new research planning session with your research objective and context sources. Then, you can list all sessions or retrieve detailed information about a specific session. Select the appropriate research methods to proceed with and update interview guides and survey questions as needed. Finally, generate research method recommendations and instruments based on your objectives.
+## Methods
+### client
 
-## Configuration & Fields
-- **Objective**: Describes the main goal of the research session.
-  - **What it's for**: Helps focus the research efforts on a specific goal.
-  - **Example**: "Understand user preferences for a new feature."
+### model
 
-- **Research Context**: Provides additional context for the research session.
-  - **What it's for**: Helps frame the research within a broader context.
-  - **Example**: "Consider recent market trends in the analysis."
+### create_session
+Create a new research planning session with optional context sources
 
-- **User ID**: Identifies the user associated with the session (optional).
-  - **What it's for**: Links the session to a specific user for tracking purposes.
-  - **Example**: "Associate the session with the product manager."
+### get_session
+Get a session by ID
 
-- **Knowledge Base IDs**: Connects relevant knowledge bases to the session (optional).
-  - **What it's for**: Integrates existing knowledge into the research process.
-  - **Example**: "Include data from previous customer surveys."
+### list_sessions
+List all sessions, optionally filtered by user
 
-- **Interview Guide Content**: Allows users to update interview guide content.
-  - **What it's for**: Customizes the questions and structure of the interview guide.
-  - **Example**: "Adjust interview questions based on new insights."
+### get_session_detail
+Get complete session detail with all related data
 
-- **Survey Questions**: Enables users to update survey questions.
-  - **What it's for**: Tailors the survey to gather specific information from participants.
-  - **Example**: "Modify survey questions to gather feedback on a new product feature."
+### select_methods
+User selects which methods to proceed with
+
+### retry_session
+Retry a failed session
+
+### delete_session
+Delete a session and all related data
+
+### update_interview_guide
+Update interview guide content (user edits)
+
+### update_survey
+Update survey questions (user edits)
+
+### run_method_recommendation_pipeline
+Pipeline Step 1: Recommend research methods based on objective.
+Runs in background task.
+
+### run_instrument_generation_pipeline
+Pipeline Step 2: Generate instruments for selected methods.
+Runs in background task.
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

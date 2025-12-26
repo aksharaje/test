@@ -1,41 +1,53 @@
-# Business Case Analysis
+# BusinessCaseService
 
 ## Overview
-The Business Case Analysis tool helps Product Managers evaluate the feasibility and potential outcomes of business initiatives. It enables users to make informed decisions by analyzing costs, benefits, and assumptions.
+Service file: `business_case_service.py`
 
-## Key Capabilities
-- Create new business case sessions
-- Retrieve and view session details
-- Update cost and benefit items
-- Delete sessions and related data
-- Manage rate assumptions
-- Save user corrections for learning
-- Orchestrate AI agents for comprehensive analysis
+Service for managing business case analysis sessions
 
-## How to Use
-To start, create a new business case session to outline your project details. Then, input cost and benefit items, update rate assumptions, and save any user corrections for future reference. Finally, run the business case pipeline to analyze the data and gain insights.
+## Methods
+### client
 
-## Configuration & Fields
-- **Feature Name**: Name of the business feature
-  - **What it's for**: Describes the specific feature being analyzed
-  - **Example**: "Online Payment Integration"
+### model
 
-- **Feature Description**: Description of the business feature
-  - **What it's for**: Provides details about the feature's functionality
-  - **Example**: "Allows customers to securely make online payments"
+### create_session
+Create a new business case session.
 
-- **Business Context**: Contextual information for the business case
-  - **What it's for**: Sets the stage for the analysis by providing background information
-  - **Example**: "Expanding into a new market segment"
+If feasibility_session_id is provided, feature_name and feature_description
+are derived from the feasibility session if not provided.
 
-- **Target Market**: Intended market for the business initiative
-  - **What it's for**: Identifies the audience for the proposed solution
-  - **Example**: "Young professionals aged 25-35"
+### get_session
+Get a session by ID
 
-- **Feasibility Session ID**: ID of a related feasibility session
-  - **What it's for**: Links the current session to a previous feasibility study
-  - **Example**: "1234"
+### list_sessions
+List all sessions, optionally filtered by user
 
-- **User ID**: User identifier for tracking purposes
-  - **What it's for**: Associates the session with a specific user
-  - **Example**: "PM123"
+### get_session_detail
+Get complete session with all related data
+
+### update_cost_item
+Update cost item with user override
+
+### update_benefit_item
+Update benefit item with user override
+
+### delete_session
+Delete session and all related data
+
+### update_rate_assumption
+Update a rate assumption with user override
+
+### get_user_rate_preferences
+Get user's previous rate preferences for a company size
+
+### get_rate_assumptions
+Get all rate assumptions for a session
+
+### save_user_learning
+Save a user correction for future learning
+
+### run_business_case_pipeline
+Main pipeline: orchestrates 5 AI agents
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

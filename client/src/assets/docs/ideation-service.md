@@ -1,36 +1,44 @@
-# Ideation and Goal Management
+# IdeationService
 
 ## Overview
-This tool helps Product Managers facilitate ideation sessions and set SMART goals to drive innovation and strategic planning within their teams.
+Service file: `ideation_service.py`
 
-## Key Capabilities
-- Create new ideation sessions
-- Retrieve session details
-- List sessions with pagination
-- Update idea fields
-- Delete sessions and related data
-- Retry failed sessions for further ideation
+Service for managing ideation sessions and SMART goals
 
-## How to Use
-To start, create a new ideation session by defining the problem statement, constraints, goals, and any relevant research insights. Then, collaborate with your team to generate ideas, cluster them into themes, and prioritize the backlog for implementation.
+## Methods
+### client
 
-## Configuration & Fields
-- **Problem Statement**: Describes the main issue or challenge to address.
-  - **What it's for**: Helps focus the ideation session on solving specific problems.
-  - **Example**: "Improve user engagement on the mobile app."
-  
-- **Constraints**: Limitations or restrictions to consider during idea generation.
-  - **What it's for**: Guides the team to brainstorm within defined boundaries.
-  - **Example**: "Budget constraints for the upcoming quarter."
-  
-- **Goals**: Desired outcomes or achievements from the ideation session.
-  - **What it's for**: Sets clear objectives for the team to work towards.
-  - **Example**: "Increase customer retention by 20%."
-  
-- **Research Insights**: Relevant information or data to inform the ideation process.
-  - **What it's for**: Provides background context for generating innovative ideas.
-  - **Example**: "User feedback from the latest product survey."
-  
-- **Connected Knowledge**: IDs of knowledge bases or resources to reference during ideation.
-  - **What it's for**: Links existing knowledge to the ideation process for informed decision-making.
-  - **Example**: "Links to market research reports and competitor analysis."
+### model
+
+### create_session
+Create new ideation session
+
+### get_session
+Get session by ID
+
+### list_sessions
+List sessions for user with pagination
+
+### retry_session
+Reset failed session to pending for retry
+
+### get_session_detail
+Get session with clusters, ideas, and prioritized backlog
+
+### update_idea
+Update idea fields
+
+### delete_session
+Delete session and all related data
+
+### run_ideation_pipeline
+Main async pipeline: 7 steps
+1. Parse input → structured problem
+2. Generate 18 ideas (4 categories)
+3. Create embeddings & cluster into 3-5 themes
+4. Enrich with use cases, edge cases, notes
+5. Score on 5 criteria
+6. Deduplicate to 15-16 final ideas
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

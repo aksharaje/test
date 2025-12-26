@@ -1,54 +1,62 @@
-# Journey Mapping Tool
+# JourneyMapperService
 
 ## Overview
-The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys to improve product experiences and identify pain points.
+Service file: `journey_mapper_service.py`
 
-## Key Capabilities
-- Create new journey mapping sessions
-- View and edit session details
-- Add pain points and stages to the journey map
-- Compare different versions of journey maps
+Service for managing journey mapping sessions
 
-## How to Use
-Start by creating a new journey mapping session to map out the customer journey. Add stages and pain points to capture key touchpoints and pain areas. Analyze and compare different versions to track improvements over time.
+## Methods
+### client
 
-## Configuration & Fields
-- **Mode**
-  - **What it's for**: Specifies the type of journey mapping session (e.g., Research, Ideation)
-  - **Example**: Research session to understand user behavior before product launch
+### model
 
-- **Journey Description**
-  - **What it's for**: Brief description of the customer journey being mapped
-  - **Example**: Mapping the user journey from sign-up to purchase
+### create_session
+Create a new journey mapping session.
 
-- **User ID**
-  - **What it's for**: Identifies the user associated with the session
-  - **Example**: Assigning the session to a specific Product Manager
+### get_session
+Get a session by ID.
 
-- **File Metadata**
-  - **What it's for**: Additional files or documents related to the session
-  - **Example**: Attaching user research reports for reference
+### list_sessions
+List all sessions, optionally filtered by user.
 
-- **Personas**
-  - **What it's for**: Describes the different user personas involved in the journey
-  - **Example**: Creating personas for target customer segments
+### get_session_detail
+Get complete session detail with all related data.
 
-- **Stage Name**
-  - **What it's for**: Name of a specific stage in the customer journey
-  - **Example**: "Onboarding" stage to represent the initial user experience
+### delete_session
+Delete a session and all related data.
 
-- **Friction Points**
-  - **What it's for**: Identifies areas of user frustration or difficulty
-  - **Example**: Highlighting checkout process issues for improvement
+### update_pain_point
+Update a pain point (user edits).
 
-- **Strengths Observed**
-  - **What it's for**: Captures positive aspects of the customer journey
-  - **Example**: Recognizing seamless navigation in the app
+### add_pain_point
+Manually add a pain point.
 
-- **Notes**
-  - **What it's for**: Additional comments or observations related to the session
-  - **Example**: Adding insights from user interviews
+### delete_pain_point
+Delete a pain point.
 
-- **Screenshot URL**
-  - **What it's for**: Link to visual representations or screenshots related to the session
-  - **Example**: Attaching screenshots of user interactions for reference
+### update_stage
+Update a stage in the journey map.
+
+### add_stage
+Add a new stage to the journey map.
+
+### delete_stage
+Delete a stage from the journey map.
+
+### run_journey_generation_pipeline
+Main pipeline for generating journey maps. Runs in background task.
+
+### add_competitor_observation
+Add an observation during competitive walkthrough.
+
+### create_new_version
+Create a new version of a journey map with updated data.
+
+### run_version_update_pipeline
+Pipeline for updating an existing journey with new data and computing deltas.
+
+### compare_versions
+Compare two journey map versions.
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.
