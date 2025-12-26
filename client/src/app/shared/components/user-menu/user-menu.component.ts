@@ -5,6 +5,7 @@ import {
   lucideSettings,
   lucideLogOut,
   lucideChevronUp,
+  lucideMoreHorizontal,
 } from '@ng-icons/lucide';
 import { HlmAvatarComponent } from '../../../ui/avatar';
 
@@ -20,7 +21,7 @@ export interface User {
   standalone: true,
   imports: [NgIcon, HlmAvatarComponent],
   viewProviders: [
-    provideIcons({ lucideUser, lucideSettings, lucideLogOut, lucideChevronUp }),
+    provideIcons({ lucideUser, lucideSettings, lucideLogOut, lucideChevronUp, lucideMoreHorizontal }),
   ],
   template: `
     <div class="relative" #menuContainer>
@@ -40,9 +41,9 @@ export interface User {
           </span>
         </div>
         <ng-icon
-          name="lucideChevronUp"
+          name="lucideMoreHorizontal"
           class="h-4 w-4 text-muted-foreground transition-transform duration-200"
-          [class.rotate-180]="!isOpen()"
+          [class.rotate-90]="isOpen()"
         />
       </button>
 

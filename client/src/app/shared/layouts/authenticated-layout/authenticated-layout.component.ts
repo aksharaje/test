@@ -29,6 +29,8 @@ import {
   lucideTimer,
   lucideCode,
   lucideTestTube2,
+  lucideMoreHorizontal,
+  lucideLayers,
 } from '@ng-icons/lucide';
 import { UserMenuComponent, type User } from '../../components/user-menu';
 
@@ -68,6 +70,8 @@ export interface NavItem {
       lucideCalendarDays,
       lucideLibrary,
       lucideSearch,
+      lucideMoreHorizontal,
+      lucideLayers,
     }),
   ],
   template: `
@@ -159,6 +163,64 @@ export interface NavItem {
           }
         </nav>
 
+        <!-- Bottom Navigation -->
+        <nav class="mt-auto space-y-1 px-4 pb-4">
+          @for (item of bottomNavItems(); track item.path) {
+            @if (item.children && item.children.length > 0) {
+              <!-- Expandable nav item -->
+              <div>
+                <button
+                  (click)="toggleExpanded(item.path)"
+                  class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  <div class="flex items-center gap-3">
+                    @if (item.icon) {
+                      <ng-icon [name]="item.icon" class="h-4 w-4" />
+                    }
+                    {{ item.label }}
+                  </div>
+                  <ng-icon
+                    name="lucideChevronDown"
+                    class="h-4 w-4 transition-transform duration-200"
+                    [class.rotate-180]="isExpanded(item.path)"
+                  />
+                </button>
+                @if (isExpanded(item.path)) {
+                  <div class="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-4">
+                    @for (child of item.children; track child.path) {
+                      <a
+                        [routerLink]="child.path"
+                        routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        (click)="closeMobileSidebar()"
+                      >
+                        @if (child.icon) {
+                          <ng-icon [name]="child.icon" class="h-4 w-4" />
+                        }
+                        {{ child.label }}
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <!-- Regular nav item -->
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+                [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                (click)="closeMobileSidebar()"
+              >
+                @if (item.icon) {
+                  <ng-icon [name]="item.icon" class="h-4 w-4" />
+                }
+                {{ item.label }}
+              </a>
+            }
+          }
+        </nav>
+
         <!-- User menu at bottom -->
         <div class="border-t border-sidebar-border p-4">
           <app-user-menu
@@ -200,6 +262,8 @@ export class AuthenticatedLayoutComponent {
     { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
   ]);
+
+  bottomNavItems = input<NavItem[]>([]);
 
   onProfile = output<void>();
   onSettings = output<void>();

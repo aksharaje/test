@@ -14,6 +14,7 @@ import type { User } from '../../shared/components/user-menu';
     <app-authenticated-layout
       [user]="currentUser()"
       [navItems]="navItems"
+      [bottomNavItems]="bottomNavItems"
       brandName="My App"
       (onProfile)="handleProfile()"
       (onSettings)="handleSettings()"
@@ -79,22 +80,28 @@ export class AuthenticatedShellComponent {
         { label: 'PI Planning', path: '/pi-planning' },
       ],
     },
-    // { label: 'Sprint Planning', path: '/sprint-planning', children: [] },
-    // { label: 'Development', path: '/development', children: [] },
-    // { label: 'Testing', path: '/testing', children: [] },
+    { label: 'Sprint Planning', path: '/sprint-planning', children: [] },
+    { label: 'Development', path: '/development', children: [] },
+    { label: 'Testing', path: '/testing', children: [] },
     { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
+  ];
+
+  bottomNavItems: NavItem[] = [
     {
-      label: 'Optimize',
-      path: '/optimize-section',
+      label: 'Resources',
+      path: '/resources-section',
+      icon: 'lucideLayers',
       children: [
-        { label: 'Agent Optimization', path: '/optimize' },
+        { label: 'Knowledge Bases', path: '/knowledge-bases' },
+        { label: 'Library', path: '/library' },
+        { label: 'Optimize', path: '/optimize' },
+        { label: 'Docs', path: '#' },
       ],
     },
-    { label: 'Knowledge Bases', path: '/knowledge-bases' },
-    { label: 'Library', path: '/library' },
     {
       label: 'Settings',
       path: '/settings',
+      icon: 'lucideSettings',
       children: [
         { label: 'Integrations', path: '/settings/integrations' },
       ],
