@@ -234,4 +234,3 @@ export class DashboardComponent {
     return Math.min(Math.max(val, 30), 100);
   }
 }
-```
