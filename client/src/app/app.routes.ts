@@ -336,11 +336,6 @@ export const routes: Routes = [
     loadChildren: () => import('./features/story-to-code/story-to-code.routes').then(m => m.STORY_TO_CODE_ROUTES)
   },
   {
-    path: 'story-to-code',
-    title: 'Story to Code | Product Studio',
-    loadChildren: () => import('./features/story-to-code/story-to-code.routes').then(m => m.STORY_TO_CODE_ROUTES)
-  },
-  {
     path: 'docs',
     title: 'Documentation | Product Studio',
     loadChildren: () => import('./features/docs/docs.routes').then(m => m.DOCS_ROUTES)

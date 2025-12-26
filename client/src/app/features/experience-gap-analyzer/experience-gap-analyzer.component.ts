@@ -1,32 +1,33 @@
 /**
  * Experience Gap Analyzer Component
  *
- * Input form for creating a new gap analysis session.
- * Users select journeys to compare and configure analysis parameters.
+ * Simplified input form for creating a gap analysis session.
+ * Analyzes a journey against best practices to identify improvement opportunities.
  */
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  lucideSwords,
-  lucideTarget,
-  lucideClock,
   lucideArrowRight,
   lucideLoader2,
   lucideAlertCircle,
   lucideChevronDown,
-  lucideCheck,
   lucideRoute,
+  lucideHistory,
+  lucideTrash2,
+  lucideRotateCw,
+  lucideCheckCircle,
+  lucideXCircle,
+  lucideClock,
 } from '@ng-icons/lucide';
 
 import { ExperienceGapAnalyzerService } from './experience-gap-analyzer.service';
 import {
-  AnalysisType,
   AvailableJourneyMap,
-  ANALYSIS_TYPE_CONFIGS,
   CreateGapAnalysisRequest,
+  GapAnalysisSession,
 } from './experience-gap-analyzer.types';
 
 @Component({
@@ -35,104 +36,70 @@ import {
   imports: [CommonModule, FormsModule, NgIcon],
   viewProviders: [
     provideIcons({
-      lucideSwords,
-      lucideTarget,
-      lucideClock,
       lucideArrowRight,
       lucideLoader2,
       lucideAlertCircle,
       lucideChevronDown,
-      lucideCheck,
       lucideRoute,
+      lucideHistory,
+      lucideTrash2,
+      lucideRotateCw,
+      lucideCheckCircle,
+      lucideXCircle,
+      lucideClock,
     }),
   ],
   template: `
-    <div class="min-h-screen bg-background p-6 lg:p-8">
-      <div class="max-w-4xl mx-auto space-y-8">
-
-        <!-- Header -->
-        <div class="text-center">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">Experience Gap Analyzer</h1>
-          <p class="mt-2 text-muted-foreground max-w-2xl mx-auto">
-            Compare customer journeys to identify gaps and generate a prioritized improvement roadmap.
+    <div class="flex h-full">
+      <!-- Left Panel: Input Form -->
+      <div class="w-1/2 border-r p-6 overflow-y-auto">
+        <div class="max-w-xl mx-auto">
+          <h1 class="text-2xl font-bold text-foreground">Experience Gap Analyzer</h1>
+          <p class="mt-1 text-muted-foreground">
+            Analyze your customer journey to identify gaps and improvement opportunities.
           </p>
-        </div>
 
-        <!-- Error Alert -->
-        @if (error()) {
-          <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-            <div class="flex items-center gap-2 text-destructive">
-              <ng-icon name="lucideAlertCircle" class="h-4 w-4" />
-              <span class="font-medium">{{ error() }}</span>
+          <!-- Error Alert -->
+          @if (error()) {
+            <div class="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <div class="flex items-center gap-2 text-destructive">
+                <ng-icon name="lucideAlertCircle" class="h-4 w-4" />
+                <span class="font-medium">{{ error() }}</span>
+              </div>
             </div>
-          </div>
-        }
+          }
 
-        <!-- Analysis Type Selection -->
-        <div class="space-y-4">
-          <h2 class="text-lg font-semibold">1. Choose Analysis Type</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @for (config of analysisTypes; track config.type) {
-              <button
-                type="button"
-                (click)="selectAnalysisType(config.type)"
-                [class.ring-2]="selectedAnalysisType() === config.type"
-                [class.ring-primary]="selectedAnalysisType() === config.type"
-                class="relative rounded-xl border bg-card p-5 text-left transition-all hover:bg-muted/50"
-              >
-                <div class="flex items-start gap-3">
-                  <div class="rounded-lg bg-primary/10 p-2">
-                    <ng-icon [name]="config.icon" class="h-5 w-5 text-primary" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-sm">{{ config.title }}</h3>
-                    <p class="text-xs text-muted-foreground mt-1">{{ config.description }}</p>
-                  </div>
+          <form class="mt-6 space-y-6" (submit)="startAnalysis(); $event.preventDefault()">
+            <!-- Journey Selection -->
+            <div class="space-y-4">
+              <h2 class="text-lg font-semibold">Select a Journey to Analyze</h2>
+
+              @if (loadingContextSources()) {
+                <div class="flex items-center justify-center py-8">
+                  <ng-icon name="lucideLoader2" class="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                @if (selectedAnalysisType() === config.type) {
-                  <div class="absolute top-2 right-2">
-                    <ng-icon name="lucideCheck" class="h-4 w-4 text-primary" />
-                  </div>
-                }
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Journey Selection -->
-        @if (selectedAnalysisType()) {
-          <div class="space-y-4">
-            <h2 class="text-lg font-semibold">2. Select Journeys to Compare</h2>
-
-            <!-- Loading state -->
-            @if (loadingContextSources()) {
-              <div class="flex items-center justify-center py-8">
-                <ng-icon name="lucideLoader2" class="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            } @else if (journeyMaps().length === 0) {
-              <div class="rounded-lg border border-dashed p-8 text-center">
-                <ng-icon name="lucideRoute" class="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                <p class="text-muted-foreground">
-                  No completed journey maps found. Create journey maps first before running gap analysis.
-                </p>
-                <button
-                  type="button"
-                  (click)="navigateToJourneyMapper()"
-                  class="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  Go to Journey Mapper
-                  <ng-icon name="lucideArrowRight" class="h-4 w-4" />
-                </button>
-              </div>
-            } @else {
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Your Journey -->
+              } @else if (journeyMaps().length === 0) {
+                <div class="rounded-lg border border-dashed p-8 text-center">
+                  <ng-icon name="lucideRoute" class="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                  <p class="text-muted-foreground">
+                    No completed journey maps found. Create a journey map first.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="navigateToJourneyMapper()"
+                    class="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    Go to Journey Mapper
+                    <ng-icon name="lucideArrowRight" class="h-4 w-4" />
+                  </button>
+                </div>
+              } @else {
                 <div class="space-y-2">
-                  <label class="block text-sm font-medium">Your Journey</label>
                   <div class="relative">
                     <select
-                      [(ngModel)]="yourJourneyId"
-                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
+                      [(ngModel)]="selectedJourneyId"
+                      name="journeyId"
+                      class="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                     >
                       <option [ngValue]="null">Select a journey map...</option>
                       @for (journey of journeyMaps(); track journey.id) {
@@ -144,84 +111,139 @@ import {
                     </select>
                     <ng-icon name="lucideChevronDown" class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>
-                  <p class="text-xs text-muted-foreground">The journey you want to improve</p>
+                  <p class="text-xs text-muted-foreground">
+                    We'll analyze this journey against best practices to find improvement opportunities.
+                  </p>
                 </div>
+              }
+            </div>
 
-                <!-- Comparison Journey -->
-                @if (requiresComparison()) {
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium">Comparison Journey</label>
-                    <div class="relative">
-                      <select
-                        [(ngModel)]="comparisonJourneyId"
-                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
-                      >
-                        <option [ngValue]="null">Select a comparison journey...</option>
-                        @for (journey of comparisonJourneyOptions(); track journey.id) {
-                          <option [ngValue]="journey.id">
-                            {{ journey.description | slice:0:60 }}{{ journey.description.length > 60 ? '...' : '' }}
-                            @if (journey.competitorName) {
-                              ({{ journey.competitorName }})
-                            } @else {
-                              ({{ journey.stageCount }} stages)
-                            }
-                          </option>
-                        }
-                      </select>
-                      <ng-icon name="lucideChevronDown" class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                    <p class="text-xs text-muted-foreground">
-                      @if (selectedAnalysisType() === 'competitive') {
-                        A competitor's journey to compare against
-                      } @else if (selectedAnalysisType() === 'temporal') {
-                        A previous version of the same journey
-                      } @else {
-                        An industry benchmark or best practice journey
-                      }
-                    </p>
+            <!-- Analysis Name -->
+            @if (selectedJourneyId()) {
+              <div class="space-y-2">
+                <label class="block text-sm font-medium">Analysis Name (Optional)</label>
+                <input
+                  type="text"
+                  [(ngModel)]="analysisName"
+                  name="analysisName"
+                  placeholder="e.g., Q4 2024 CX Improvement Analysis"
+                  class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            }
+
+            <!-- Submit Button -->
+            @if (selectedJourneyId()) {
+              <div class="pt-4">
+                <button
+                  type="submit"
+                  [disabled]="submitting()"
+                  class="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  @if (submitting()) {
+                    <ng-icon name="lucideLoader2" class="h-4 w-4 animate-spin" />
+                    Starting Analysis...
+                  } @else {
+                    Analyze Journey
+                    <ng-icon name="lucideArrowRight" class="h-4 w-4" />
+                  }
+                </button>
+              </div>
+            }
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Panel: History -->
+      <div class="w-1/2 flex flex-col bg-muted/30">
+        <div class="border-b bg-background p-4">
+          <div class="flex items-center gap-2">
+            <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
+            <h2 class="font-semibold">Analysis History</h2>
+          </div>
+          <p class="mt-1 text-sm text-muted-foreground">
+            View and manage your past gap analyses
+          </p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+          @if (loadingHistory() && sessions().length === 0) {
+            <div class="p-4">
+              <div class="animate-pulse space-y-3">
+                @for (i of [1, 2, 3]; track i) {
+                  <div class="rounded-lg border bg-background p-4">
+                    <div class="h-4 bg-muted rounded w-3/4"></div>
+                    <div class="mt-2 h-3 bg-muted rounded w-1/2"></div>
                   </div>
                 }
               </div>
-            }
-          </div>
-        }
-
-        <!-- Analysis Name (Optional) -->
-        @if (yourJourneyId()) {
-          <div class="space-y-4">
-            <h2 class="text-lg font-semibold">3. Analysis Details</h2>
-            <div class="space-y-2">
-              <label class="block text-sm font-medium">Analysis Name (Optional)</label>
-              <input
-                type="text"
-                [(ngModel)]="analysisName"
-                placeholder="e.g., Q4 2024 Competitive Analysis"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <p class="text-xs text-muted-foreground">Give this analysis a descriptive name for easy reference</p>
             </div>
-          </div>
-        }
-
-        <!-- Submit Button -->
-        @if (canSubmit()) {
-          <div class="flex justify-end pt-4">
-            <button
-              type="button"
-              (click)="startAnalysis()"
-              [disabled]="submitting()"
-              class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              @if (submitting()) {
-                <ng-icon name="lucideLoader2" class="h-4 w-4 animate-spin" />
-                Starting Analysis...
-              } @else {
-                Start Gap Analysis
-                <ng-icon name="lucideArrowRight" class="h-4 w-4" />
+          } @else if (sessions().length === 0) {
+            <div class="flex-1 flex items-center justify-center p-6 h-full">
+              <div class="text-center">
+                <ng-icon name="lucideHistory" class="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <h3 class="mt-4 text-lg font-medium text-muted-foreground">No history yet</h3>
+                <p class="mt-2 text-sm text-muted-foreground max-w-xs">
+                  Your gap analyses will appear here.
+                </p>
+              </div>
+            </div>
+          } @else {
+            <div class="p-4 space-y-2">
+              @for (session of sessions(); track session.id) {
+                <div
+                  class="group rounded-lg border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
+                  (click)="viewSession(session)"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        @if (session.status === 'completed') {
+                          <ng-icon name="lucideCheckCircle" class="h-4 w-4 text-green-600" />
+                        } @else if (session.status === 'failed') {
+                          <ng-icon name="lucideXCircle" class="h-4 w-4 text-red-600" />
+                        } @else {
+                          <ng-icon name="lucideClock" class="h-4 w-4 text-yellow-600" />
+                        }
+                        <span class="text-xs text-muted-foreground">
+                          {{ formatDate(session.createdAt) }}
+                        </span>
+                      </div>
+                      <p class="mt-1 text-sm text-foreground line-clamp-2">
+                        {{ session.analysisName || 'Gap Analysis' }}
+                      </p>
+                      @if (session.overallAssessment?.totalGapsIdentified) {
+                        <p class="mt-1 text-xs text-muted-foreground">
+                          {{ session.overallAssessment?.totalGapsIdentified }} gaps identified
+                        </p>
+                      }
+                    </div>
+                    <div class="flex items-center gap-1 ml-2">
+                      @if (session.status === 'failed') {
+                        <button
+                          type="button"
+                          class="p-1 text-muted-foreground hover:text-primary transition-colors"
+                          (click)="retrySession($event, session)"
+                          title="Retry Analysis"
+                        >
+                          <ng-icon name="lucideRotateCw" class="h-4 w-4" />
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        (click)="deleteSession($event, session)"
+                        title="Delete"
+                      >
+                        <ng-icon name="lucideTrash2" class="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               }
-            </button>
-          </div>
-        }
+            </div>
+          }
+        </div>
       </div>
     </div>
   `,
@@ -230,48 +252,23 @@ export class ExperienceGapAnalyzerComponent implements OnInit {
   private service = inject(ExperienceGapAnalyzerService);
   private router = inject(Router);
 
-  // Configuration
-  analysisTypes = ANALYSIS_TYPE_CONFIGS;
-
   // Form state
-  selectedAnalysisType = signal<AnalysisType | null>(null);
-  yourJourneyId = signal<number | null>(null);
-  comparisonJourneyId = signal<number | null>(null);
+  selectedJourneyId = signal<number | null>(null);
   analysisName = signal<string>('');
 
   // UI state
   loadingContextSources = signal(false);
+  loadingHistory = signal(false);
   submitting = signal(false);
   error = signal<string | null>(null);
 
-  // Context sources
+  // Data
   journeyMaps = signal<AvailableJourneyMap[]>([]);
-
-  // Computed
-  requiresComparison = computed(() => {
-    const type = this.selectedAnalysisType();
-    if (!type) return false;
-    const config = this.analysisTypes.find(c => c.type === type);
-    return config?.requiresComparison ?? false;
-  });
-
-  comparisonJourneyOptions = computed(() => {
-    const yourId = this.yourJourneyId();
-    return this.journeyMaps().filter(j => j.id !== yourId);
-  });
-
-  canSubmit = computed(() => {
-    const type = this.selectedAnalysisType();
-    const yourId = this.yourJourneyId();
-    const compId = this.comparisonJourneyId();
-
-    if (!type || !yourId) return false;
-    if (this.requiresComparison() && !compId) return false;
-    return true;
-  });
+  sessions = signal<GapAnalysisSession[]>([]);
 
   ngOnInit(): void {
     this.loadContextSources();
+    this.loadHistory();
   }
 
   async loadContextSources(): Promise<void> {
@@ -288,11 +285,16 @@ export class ExperienceGapAnalyzerComponent implements OnInit {
     }
   }
 
-  selectAnalysisType(type: AnalysisType): void {
-    this.selectedAnalysisType.set(type);
-    // Reset comparison if not required
-    if (!this.requiresComparison()) {
-      this.comparisonJourneyId.set(null);
+  async loadHistory(): Promise<void> {
+    this.loadingHistory.set(true);
+
+    try {
+      const sessions = await this.service.listSessions(undefined, true);
+      this.sessions.set(sessions);
+    } catch (err) {
+      console.error('Failed to load history:', err);
+    } finally {
+      this.loadingHistory.set(false);
     }
   }
 
@@ -301,16 +303,16 @@ export class ExperienceGapAnalyzerComponent implements OnInit {
   }
 
   async startAnalysis(): Promise<void> {
-    if (!this.canSubmit()) return;
+    const journeyId = this.selectedJourneyId();
+    if (!journeyId) return;
 
     this.submitting.set(true);
     this.error.set(null);
 
     try {
       const request: CreateGapAnalysisRequest = {
-        analysisType: this.selectedAnalysisType()!,
-        yourJourneyId: this.yourJourneyId()!,
-        comparisonJourneyId: this.comparisonJourneyId() ?? undefined,
+        analysisType: 'best_practice',
+        yourJourneyId: journeyId,
         analysisName: this.analysisName() || undefined,
       };
 
@@ -321,5 +323,49 @@ export class ExperienceGapAnalyzerComponent implements OnInit {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  viewSession(session: GapAnalysisSession): void {
+    if (session.status === 'completed') {
+      this.router.navigate(['/gap-analyzer', 'results', session.id]);
+    } else if (session.status === 'failed') {
+      // Stay on this page, show error
+    } else {
+      this.router.navigate(['/gap-analyzer', 'processing', session.id]);
+    }
+  }
+
+  async retrySession(event: Event, session: GapAnalysisSession): Promise<void> {
+    event.stopPropagation();
+
+    try {
+      await this.service.retrySession(session.id);
+      this.router.navigate(['/gap-analyzer', 'processing', session.id]);
+    } catch (err) {
+      this.error.set('Failed to retry analysis');
+    }
+  }
+
+  async deleteSession(event: Event, session: GapAnalysisSession): Promise<void> {
+    event.stopPropagation();
+
+    if (!confirm('Delete this analysis?')) return;
+
+    try {
+      await this.service.deleteSession(session.id);
+      this.sessions.set(this.sessions().filter(s => s.id !== session.id));
+    } catch (err) {
+      this.error.set('Failed to delete analysis');
+    }
+  }
+
+  formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 }

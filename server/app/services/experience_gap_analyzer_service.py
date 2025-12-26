@@ -615,24 +615,30 @@ IMPORTANT: Return ONLY valid JSON."""
 
         analysis_context = ""
         if analysis_type == "competitive":
-            analysis_context = "Compare your customer journey against a competitor's journey. Identify where the competitor provides a better experience."
+            analysis_context = "Compare your customer journey against a competitor's journey based on the provided data."
         elif analysis_type == "best_practice":
-            analysis_context = "Compare your customer journey against industry best practices. Identify gaps from ideal standards."
+            analysis_context = "Analyze your customer journey for potential improvement areas."
         else:  # temporal
-            analysis_context = "Compare your current journey against a previous version. Identify areas that have regressed or need attention."
+            analysis_context = "Compare your current journey against a previous version to identify changes."
 
-        prompt = f"""You are an expert customer experience analyst. {analysis_context}
+        prompt = f"""You are a customer experience analyst. {analysis_context}
 
-YOUR JOURNEY:
+IMPORTANT INSTRUCTIONS:
+- ONLY identify gaps that are directly supported by evidence in the journey data below
+- Do NOT invent or assume gaps that aren't visible in the data
+- Base all scores on the actual data provided (pain point severity, emotion scores, etc.)
+- If the data is limited, identify fewer gaps rather than inventing them
+
+YOUR JOURNEY DATA:
 {json.dumps(your_journey_context, indent=2)}
 
-{"COMPARISON JOURNEY:" if comparison_context else "No comparison journey provided - analyze your journey for improvement opportunities based on best practices."}
+{"COMPARISON JOURNEY DATA:" if comparison_context else ""}
 {json.dumps(comparison_context, indent=2) if comparison_context else ""}
 
-Identify specific experience gaps. For each gap:
-1. Score Impact (1-10): How much does this gap affect customer satisfaction and business outcomes?
-2. Score Urgency (1-10): How quickly should this be addressed? Consider competitive pressure, customer complaints.
-3. Score Effort (1-10): How difficult/costly is this to fix? Higher = more effort required.
+For gaps you identify from the data:
+1. Impact Score (1-10): Based on pain point severity and emotion scores in the data
+2. Urgency Score (1-10): Based on how severe the pain points are in the data
+3. Effort Score (1-10): Your estimate of implementation difficulty (acknowledge this is an estimate)
 
 Return JSON with this structure:
 {{
@@ -646,21 +652,26 @@ Return JSON with this structure:
       "impact_score": 8,
       "urgency_score": 7,
       "effort_score": 4,
-      "evidence": "What data/observation supports this gap",
-      "comparison_notes": "How competitor/benchmark handles this better"
+      "evidence": "REQUIRED: Quote or reference the specific data point (pain point, emotion score, stage description) that supports this gap",
+      "comparison_notes": "How the comparison journey differs (if comparison data provided)"
     }}
   ],
-  "competitive_advantages": [
+  "relative_strengths": [
     {{
       "stage_id": "stage_id",
-      "title": "What you do better",
-      "description": "Description of your advantage",
-      "evidence": "Supporting evidence"
+      "title": "Area where your journey shows strength",
+      "description": "Description based on the journey data",
+      "evidence": "REQUIRED: Specific data point (e.g., 'emotion_score: 8 in Checkout stage', 'no pain points in Support stage')"
     }}
-  ]
+  ],
+  "data_limitations": "Describe any limitations in the data that affect the analysis"
 }}
 
-Identify 5-15 meaningful gaps and 2-5 competitive advantages.
+CRITICAL RULES:
+1. Only include gaps where you can cite specific data (pain point description, low emotion score, etc.)
+2. For relative_strengths: ONLY include if there is concrete numeric evidence (emotion scores > 7, fewer pain points than comparison). If no evidence exists, return empty array.
+3. If the journey data has few pain points or limited detail, return fewer gaps rather than inventing them.
+4. The "evidence" field MUST reference actual data from the journey, not assumptions.
 
 IMPORTANT: Return ONLY valid JSON."""
 
@@ -705,7 +716,8 @@ IMPORTANT: Return ONLY valid JSON."""
 
         # Store competitive advantages in session
         session_obj = self.get_session(db, session_id)
-        session_obj.competitive_advantages = data.get("competitive_advantages", [])
+        # Use relative_strengths (renamed from competitive_advantages to be more honest)
+        session_obj.competitive_advantages = data.get("relative_strengths", [])
         db.add(session_obj)
 
         db.commit()
@@ -721,23 +733,27 @@ IMPORTANT: Return ONLY valid JSON."""
         your_stages = your_journey.stages or []
         comparison_stages = comparison_journey.stages if comparison_journey else []
 
-        prompt = f"""You are an expert at evaluating customer experience capabilities. Create a capability matrix comparing two journeys.
+        prompt = f"""Analyze the customer experience capabilities visible in this journey data.
+
+IMPORTANT: This is an INFERENCE exercise based on limited journey data. Be honest about confidence levels.
 
 YOUR JOURNEY STAGES:
 {json.dumps([{"name": s.get("name"), "description": s.get("description", ""), "touchpoints": s.get("touchpoints", [])} for s in your_stages], indent=2)}
 
-{"COMPARISON JOURNEY STAGES:" if comparison_stages else "Compare against industry best practices."}
+{"COMPARISON JOURNEY STAGES:" if comparison_stages else "No comparison journey provided."}
 {json.dumps([{"name": s.get("name"), "description": s.get("description", ""), "touchpoints": s.get("touchpoints", [])} for s in comparison_stages], indent=2) if comparison_stages else ""}
 
-Evaluate capabilities across these categories:
+ONLY evaluate capabilities where you have actual evidence from the journey data.
+Categories to consider (only include if evidence exists):
 - Onboarding & First Use
 - Self-Service
 - Support & Help
-- Performance & Speed
 - Communication & Transparency
-- Personalization
 
-For each capability, score both journeys from 1-10.
+For each capability you can assess from the data:
+- your_score: Based on what's visible in your journey data (or null if not assessable)
+- comparison_score: Based on comparison data (or null if no comparison/not visible)
+- confidence: "high" if clear evidence, "low" if inferring from limited data
 
 Return JSON:
 {{
@@ -747,14 +763,16 @@ Return JSON:
       "category": "Onboarding & First Use",
       "your_score": 6,
       "comparison_score": 8,
-      "your_evidence": "What supports your score",
-      "comparison_evidence": "What supports comparison score",
-      "improvement_suggestion": "How to improve"
+      "confidence": "low",
+      "your_evidence": "REQUIRED: Specific stage/touchpoint that supports this score",
+      "comparison_evidence": "Specific evidence from comparison data, or 'No comparison data'",
+      "improvement_suggestion": "How to improve based on visible gaps"
     }}
-  ]
+  ],
+  "analysis_notes": "Describe limitations of this analysis given the data available"
 }}
 
-Include 8-12 capabilities.
+Only include capabilities where you have actual evidence. If data is limited, return fewer items.
 
 IMPORTANT: Return ONLY valid JSON."""
 
@@ -837,24 +855,27 @@ IMPORTANT: Return ONLY valid JSON."""
         advantages = session_obj.competitive_advantages or []
 
         # Generate executive summary using LLM
-        summary_prompt = f"""You are a CX consultant. Write a brief executive summary of this gap analysis.
+        summary_prompt = f"""Write a brief, honest summary of this gap analysis.
 
-GAPS FOUND:
-- Total: {total_gaps}
+ANALYSIS DATA:
+- Total gaps identified: {total_gaps}
 - Critical (Tier 1): {critical_gaps}
 - Important (Tier 2): {len(tier2)}
 - Nice-to-have (Tier 3): {len(tier3)}
 
-TOP CRITICAL GAPS:
-{json.dumps([{"title": g.title, "description": g.description, "opportunityScore": g.opportunity_score} for g in tier1[:3]], indent=2)}
+TOP GAPS (if any):
+{json.dumps([{"title": g.title, "description": g.description, "evidence": g.evidence} for g in tier1[:3]], indent=2) if tier1 else "No critical gaps identified"}
 
-COMPETITIVE ADVANTAGES:
-{json.dumps(advantages[:3], indent=2)}
+RELATIVE STRENGTHS (if data supported):
+{json.dumps(advantages[:3], indent=2) if advantages else "No data-supported strengths identified"}
+
+IMPORTANT: Be honest about the limitations of this analysis. This is based on journey map data, not comprehensive competitive research.
 
 Return JSON:
 {{
-  "summary": "2-3 sentence executive summary",
-  "recommendedFocusAreas": ["Focus Area 1", "Focus Area 2", "Focus Area 3"]
+  "summary": "2-3 sentence summary that honestly describes what the analysis found and its limitations",
+  "recommendedFocusAreas": ["Focus Area 1", "Focus Area 2"],
+  "dataLimitations": "Brief note on what data would improve this analysis"
 }}
 
 IMPORTANT: Return ONLY valid JSON."""

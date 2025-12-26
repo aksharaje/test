@@ -130,6 +130,18 @@ import {
       } @else if (session()) {
         <div class="max-w-7xl mx-auto p-6 space-y-8">
 
+          <!-- Data Disclaimer -->
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div class="flex gap-3">
+              <ng-icon name="lucideAlertCircle" class="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div class="text-sm text-amber-800">
+                <span class="font-medium">Analysis based on journey map data.</span>
+                Gaps and scores are inferred from your journey stages, pain points, and emotion scores.
+                For comprehensive competitive analysis, supplement with real customer research data.
+              </div>
+            </div>
+          </div>
+
           <!-- Overall Assessment -->
           <section class="space-y-4">
             <h2 class="text-lg font-semibold flex items-center gap-2">
@@ -169,9 +181,9 @@ import {
                 </div>
               </div>
 
-              <!-- Advantages -->
+              <!-- Strengths -->
               <div class="rounded-xl border bg-card p-5">
-                <div class="text-sm text-muted-foreground mb-2">Your Advantages</div>
+                <div class="text-sm text-muted-foreground mb-2">Strengths Found</div>
                 <div class="flex items-baseline gap-2">
                   <span class="text-3xl font-bold text-green-600">
                     {{ advantagesCount() }}
@@ -379,20 +391,23 @@ import {
             </section>
           }
 
-          <!-- Competitive Advantages -->
+          <!-- Relative Strengths (data-supported only) -->
           @if (advantages().length > 0) {
             <section class="space-y-4">
               <h2 class="text-lg font-semibold flex items-center gap-2">
                 <ng-icon name="lucideStar" class="h-5 w-5 text-green-600" />
-                Your Competitive Advantages
+                Relative Strengths
               </h2>
+              <p class="text-sm text-muted-foreground -mt-2">
+                Based on evidence in your journey data (emotion scores, pain points)
+              </p>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for (adv of advantages(); track adv.title) {
                   <div class="rounded-lg border border-green-200 bg-green-50/50 p-4">
                     <div class="font-medium text-green-800">{{ adv.title }}</div>
                     <div class="text-sm text-green-700 mt-1">{{ adv.description }}</div>
                     @if (adv.evidence) {
-                      <div class="text-xs text-green-600 mt-2">{{ adv.evidence }}</div>
+                      <div class="text-xs text-green-600 mt-2 font-medium">Evidence: {{ adv.evidence }}</div>
                     }
                   </div>
                 }
