@@ -23,74 +23,84 @@ def upgrade() -> None:
     # Create core tables first (users, agents, etc.)
     
     # Users
-    op.create_table('users',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('email', sa.VARCHAR(), nullable=False),
-    sa.Column('name', sa.VARCHAR(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = inspector.get_table_names()
+
+    # Users
+    if 'users' not in existing_tables:
+        op.create_table('users',
+        sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+        sa.Column('email', sa.VARCHAR(), nullable=False),
+        sa.Column('name', sa.VARCHAR(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     
     # Agents
-    op.create_table('agents',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('name', sa.VARCHAR(), nullable=False),
-    sa.Column('description', sa.VARCHAR(), nullable=True),
-    sa.Column('system_prompt', sa.VARCHAR(), nullable=False),
-    sa.Column('model', sa.VARCHAR(), nullable=False),
-    sa.Column('tools', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
+    if 'agents' not in existing_tables:
+        op.create_table('agents',
+        sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+        sa.Column('name', sa.VARCHAR(), nullable=False),
+        sa.Column('description', sa.VARCHAR(), nullable=True),
+        sa.Column('system_prompt', sa.VARCHAR(), nullable=False),
+        sa.Column('model', sa.VARCHAR(), nullable=False),
+        sa.Column('tools', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.PrimaryKeyConstraint('id')
+        )
     
     # Flows
-    op.create_table('flows',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('name', sa.VARCHAR(), nullable=False),
-    sa.Column('description', sa.VARCHAR(), nullable=True),
-    sa.Column('initial_state', sa.VARCHAR(), nullable=False),
-    sa.Column('states', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
+    if 'flows' not in existing_tables:
+        op.create_table('flows',
+        sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+        sa.Column('name', sa.VARCHAR(), nullable=False),
+        sa.Column('description', sa.VARCHAR(), nullable=True),
+        sa.Column('initial_state', sa.VARCHAR(), nullable=False),
+        sa.Column('states', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.PrimaryKeyConstraint('id')
+        )
 
-    op.create_table('flow_executions',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('flow_id', sa.INTEGER(), nullable=False),
-    sa.Column('current_state', sa.VARCHAR(), nullable=False),
-    sa.Column('status', sa.VARCHAR(), nullable=False),
-    sa.Column('context', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('history', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('error', sa.VARCHAR(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['flow_id'], ['flows.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
+    if 'flow_executions' not in existing_tables:
+        op.create_table('flow_executions',
+        sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+        sa.Column('flow_id', sa.INTEGER(), nullable=False),
+        sa.Column('current_state', sa.VARCHAR(), nullable=False),
+        sa.Column('status', sa.VARCHAR(), nullable=False),
+        sa.Column('context', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('history', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('error', sa.VARCHAR(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.ForeignKeyConstraint(['flow_id'], ['flows.id'], ),
+        sa.PrimaryKeyConstraint('id')
+        )
 
     # Integrations
-    op.create_table('integrations',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('provider', sa.VARCHAR(), nullable=False),
-    sa.Column('name', sa.VARCHAR(), nullable=False),
-    sa.Column('base_url', sa.VARCHAR(), nullable=False),
-    sa.Column('cloud_id', sa.VARCHAR(), nullable=True),
-    sa.Column('auth_type', sa.VARCHAR(), nullable=False),
-    sa.Column('access_token', sa.VARCHAR(), nullable=False),
-    sa.Column('refresh_token', sa.VARCHAR(), nullable=True),
-    sa.Column('token_expires_at', sa.DateTime(), nullable=True),
-    sa.Column('scopes', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('status', sa.VARCHAR(), nullable=False),
-    sa.Column('last_sync_at', sa.DateTime(), nullable=True),
-    sa.Column('error_message', sa.VARCHAR(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
+    if 'integrations' not in existing_tables:
+        op.create_table('integrations',
+        sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
+        sa.Column('provider', sa.VARCHAR(), nullable=False),
+        sa.Column('name', sa.VARCHAR(), nullable=False),
+        sa.Column('base_url', sa.VARCHAR(), nullable=False),
+        sa.Column('cloud_id', sa.VARCHAR(), nullable=True),
+        sa.Column('auth_type', sa.VARCHAR(), nullable=False),
+        sa.Column('access_token', sa.VARCHAR(), nullable=False),
+        sa.Column('refresh_token', sa.VARCHAR(), nullable=True),
+        sa.Column('token_expires_at', sa.DateTime(), nullable=True),
+        sa.Column('scopes', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('status', sa.VARCHAR(), nullable=False),
+        sa.Column('last_sync_at', sa.DateTime(), nullable=True),
+        sa.Column('error_message', sa.VARCHAR(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.PrimaryKeyConstraint('id')
+        )
 
     op.create_table('jira_projects',
     sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
