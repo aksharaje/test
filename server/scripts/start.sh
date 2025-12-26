@@ -1,56 +1,147 @@
 #!/bin/bash
-# Don't use set -e since we handle errors ourselves
+# Production startup script with robust migration handling
 
 echo "=== PS Prototype Server Startup ==="
-echo "Checking database migration status..."
+echo "Working directory: $(pwd)"
+echo "Python version: $(python3 --version)"
 
-# Robust Self-healing Migration Strategy
-SCHEMA_STATUS=$(python3 << 'PYTHON_EOF'
-from sqlalchemy import create_engine, inspect
+# First, ensure pgvector extension is enabled (required for embeddings)
+echo "Checking/enabling pgvector extension..."
+python3 << 'PYTHON_EOF'
+from sqlalchemy import create_engine, text
 import os
+import sys
+
 try:
-    engine = create_engine(os.environ['DATABASE_URL'])
+    db_url = os.environ.get('DATABASE_URL', '')
+    if not db_url:
+        print("ERROR: DATABASE_URL not set!")
+        sys.exit(1)
+
+    # Fix postgres:// -> postgresql://
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+    engine = create_engine(db_url)
+    with engine.connect() as conn:
+        # Enable pgvector extension (required for embeddings)
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+        print("pgvector extension enabled")
+except Exception as e:
+    print(f"Warning: Could not enable pgvector: {e}")
+    # Continue anyway - some tables don't need it
+PYTHON_EOF
+
+# Check current database state
+echo ""
+echo "Checking database state..."
+SCHEMA_STATUS=$(python3 << 'PYTHON_EOF'
+from sqlalchemy import create_engine, inspect, text
+import os
+import sys
+
+try:
+    db_url = os.environ.get('DATABASE_URL', '')
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+    engine = create_engine(db_url)
     inspector = inspect(engine)
     tables = inspector.get_table_names()
 
-    # Critical tables that MUST exist
+    print(f"Found {len(tables)} tables: {', '.join(sorted(tables)[:10])}...")
+
+    # Check alembic version
+    with engine.connect() as conn:
+        try:
+            result = conn.execute(text("SELECT version_num FROM alembic_version"))
+            version = result.scalar()
+            print(f"Alembic version: {version}")
+        except Exception as e:
+            print(f"Alembic version table not found: {e}")
+
+    # Critical tables
     required = ['ideation_sessions', 'feasibility_sessions', 'generated_prds']
     missing = [t for t in required if t not in tables]
 
     if missing:
-        print("MISSING:" + ",".join(missing))
+        print(f"MISSING: {','.join(missing)}")
     else:
         print("OK")
+
 except Exception as e:
-    print("ERROR: " + str(e))
+    print(f"ERROR: {e}")
+    sys.exit(1)
 PYTHON_EOF
 )
 
-echo "Schema check result: $SCHEMA_STATUS"
+echo "Schema status: $SCHEMA_STATUS"
 
-if [[ "$SCHEMA_STATUS" == MISSING* ]] || [[ "$SCHEMA_STATUS" == ERROR* ]] || [[ -z "$SCHEMA_STATUS" ]]; then
-    echo "CRITICAL: Database schema check failed ($SCHEMA_STATUS). Initiating repair..."
+# Run migrations based on state
+if echo "$SCHEMA_STATUS" | grep -q "MISSING:"; then
+    echo ""
+    echo "=== Missing tables detected - Running migrations ==="
 
-    # Strategy:
-    # 1. Stamp 'base' to tell Alembic "we have nothing" (reset history)
-    # 2. Run 'upgrade head' to run ALL migrations
-    # 3. Since we patched initial_migration.py to be idempotent, it won't crash on existing tables
+    # Check if alembic_version exists
+    HAS_ALEMBIC=$(python3 << 'PYTHON_EOF'
+from sqlalchemy import create_engine, text
+import os
+db_url = os.environ.get('DATABASE_URL', '')
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+engine = create_engine(db_url)
+with engine.connect() as conn:
+    try:
+        result = conn.execute(text("SELECT version_num FROM alembic_version"))
+        version = result.scalar()
+        print(f"HAS_VERSION:{version}" if version else "NO_VERSION")
+    except:
+        print("NO_TABLE")
+PYTHON_EOF
+)
 
-    echo "Stamping to base (resetting migration history)..."
-    alembic stamp base || echo "Warning: stamp base failed (may be ok if fresh db)"
+    echo "Alembic state: $HAS_ALEMBIC"
 
-    echo "Running full migration upgrade..."
-    if alembic upgrade head; then
-        echo "Schema repair complete."
-    else
-        echo "ERROR: Migration failed! Check database connection and migration files."
-        echo "Continuing to start server anyway..."
+    if echo "$HAS_ALEMBIC" | grep -q "NO_TABLE"; then
+        echo "No alembic_version table - stamping base..."
+        alembic stamp base 2>&1 || echo "Warning: stamp base had issues"
+    elif echo "$HAS_ALEMBIC" | grep -q "NO_VERSION"; then
+        echo "Empty alembic_version - stamping base..."
+        alembic stamp base 2>&1 || echo "Warning: stamp base had issues"
     fi
+
+    echo ""
+    echo "Running alembic upgrade head..."
+    # Actually capture and show errors
+    UPGRADE_OUTPUT=$(alembic upgrade head 2>&1)
+    UPGRADE_STATUS=$?
+    echo "$UPGRADE_OUTPUT"
+
+    if [ $UPGRADE_STATUS -ne 0 ]; then
+        echo ""
+        echo "=== MIGRATION FAILED (exit code: $UPGRADE_STATUS) ==="
+        echo "Attempting to diagnose..."
+
+        # Try to show which migration failed
+        alembic current 2>&1 || true
+        alembic history 2>&1 | head -20 || true
+
+        echo ""
+        echo "Will attempt to start server anyway, but functionality may be limited."
+    else
+        echo "Migrations completed successfully!"
+    fi
+
+elif echo "$SCHEMA_STATUS" | grep -q "ERROR:"; then
+    echo "Database connection error - cannot run migrations"
+    echo "Will attempt to start server anyway..."
 else
-    echo "Database schema check passed (status: $SCHEMA_STATUS)"
+    echo "All required tables exist."
     echo "Running alembic upgrade head to ensure latest migrations..."
-    alembic upgrade head || echo "Warning: upgrade head had issues"
+    alembic upgrade head 2>&1 || echo "Warning: upgrade had issues (may be ok if already current)"
 fi
 
+echo ""
 echo "=== Starting uvicorn server ==="
 exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}

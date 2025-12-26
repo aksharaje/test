@@ -24,6 +24,9 @@ import {
   lucideRefreshCw,
   lucideCheck,
   lucideX,
+  lucideDatabase,
+  lucideLightbulb,
+  lucideInfo,
 } from '@ng-icons/lucide';
 
 import { ResearchPlannerService } from './research-planner.service';
@@ -59,6 +62,9 @@ import {
       lucideRefreshCw,
       lucideCheck,
       lucideX,
+      lucideDatabase,
+      lucideLightbulb,
+      lucideInfo,
     }),
   ],
   template: `
@@ -83,6 +89,44 @@ import {
           <h1 class="text-2xl font-bold text-foreground">Research Plan</h1>
           <p class="mt-2 text-muted-foreground">{{ sessionDetail()!.session.objective }}</p>
         </div>
+
+        <!-- Context Sources Used (if any) -->
+        @if (hasContextSources()) {
+          <div class="mb-6 rounded-lg border border-border bg-muted/30 p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <ng-icon name="lucideInfo" size="16" class="text-primary" />
+              <span class="text-sm font-medium text-foreground">Context Sources Used</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              @if (sessionDetail()!.session.contextSummary?.knowledgeBases?.length) {
+                @for (kb of sessionDetail()!.session.contextSummary!.knowledgeBases; track kb.id) {
+                  <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+                    <ng-icon name="lucideDatabase" size="12" />
+                    {{ kb.name }} ({{ kb.chunksUsed }} chunks)
+                  </span>
+                }
+              }
+              @if (sessionDetail()!.session.contextSummary?.ideation) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:text-yellow-300">
+                  <ng-icon name="lucideLightbulb" size="12" />
+                  Ideation ({{ sessionDetail()!.session.contextSummary!.ideation!.ideaCount }} ideas)
+                </span>
+              }
+              @if (sessionDetail()!.session.contextSummary?.feasibility) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-300">
+                  <ng-icon name="lucideCheckCircle" size="12" />
+                  Feasibility ({{ sessionDetail()!.session.contextSummary!.feasibility!.goDecision || 'analyzed' }})
+                </span>
+              }
+              @if (sessionDetail()!.session.contextSummary?.businessCase) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 text-xs font-medium text-purple-700 dark:text-purple-300">
+                  <ng-icon name="lucideBarChart2" size="12" />
+                  Business Case ({{ sessionDetail()!.session.contextSummary!.businessCase!.recommendation || 'analyzed' }})
+                </span>
+              }
+            </div>
+          </div>
+        }
 
         <!-- Step Indicator -->
         <div class="mb-8 flex items-center gap-4 rounded-lg border border-border bg-card p-4">
@@ -596,6 +640,19 @@ export class ResearchPlannerResultsComponent implements OnInit {
   currentStep = signal(1);
   selectedMethods = signal<string[]>([]);
   activeTab = signal<'interview' | 'survey' | 'recruiting'>('interview');
+
+  // Check if context sources were used
+  hasContextSources = () => {
+    const session = this.sessionDetail()?.session;
+    if (!session?.contextSummary) return false;
+    const cs = session.contextSummary;
+    return !!(
+      cs.knowledgeBases?.length ||
+      cs.ideation ||
+      cs.feasibility ||
+      cs.businessCase
+    );
+  };
 
   // Configuration forms
   interviewConfig = {
