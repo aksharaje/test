@@ -16,6 +16,7 @@ import {
   InterviewGuide,
   Survey,
   SurveyQuestion,
+  AvailableContextSources,
 } from './research-planner.types';
 
 @Injectable({ providedIn: 'root' })
@@ -26,14 +27,41 @@ export class ResearchPlannerService {
   // State signals
   private _currentSession = signal<SessionDetail | null>(null);
   private _sessions = signal<ResearchPlanSession[]>([]);
+  private _contextSources = signal<AvailableContextSources | null>(null);
   private _loading = signal(false);
   private _error = signal<string | null>(null);
 
   // Readonly accessors
   readonly currentSession = this._currentSession.asReadonly();
   readonly sessions = this._sessions.asReadonly();
+  readonly contextSources = this._contextSources.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+
+  // --- Context Sources ---
+
+  async loadContextSources(userId?: number): Promise<AvailableContextSources> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      let url = `${this.baseUrl}/context-sources`;
+      if (userId) {
+        url += `?user_id=${userId}`;
+      }
+      const sources = await firstValueFrom(
+        this.http.get<AvailableContextSources>(url)
+      );
+      this._contextSources.set(sources);
+      return sources;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load context sources';
+      this._error.set(message);
+      throw err;
+    } finally {
+      this._loading.set(false);
+    }
+  }
 
   // --- Session Management ---
 

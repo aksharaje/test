@@ -39,6 +39,12 @@ class CreateSessionRequest(BaseModel):
     constraints: Optional[ConstraintsModel] = None
     user_id: Optional[int] = Field(default=None, alias="userId")
 
+    # Optional context sources
+    knowledge_base_ids: Optional[List[int]] = Field(default=None, alias="knowledgeBaseIds")
+    ideation_session_id: Optional[int] = Field(default=None, alias="ideationSessionId")
+    feasibility_session_id: Optional[int] = Field(default=None, alias="feasibilitySessionId")
+    business_case_session_id: Optional[int] = Field(default=None, alias="businessCaseSessionId")
+
 
 class SelectMethodsRequest(BaseModel):
     model_config = {"populate_by_name": True}
@@ -101,6 +107,80 @@ class UpdateSurveyRequest(BaseModel):
 
 # --- Endpoints ---
 
+@router.get("/context-sources")
+def get_available_context_sources(
+    user_id: Optional[int] = None,
+    db_session: Session = Depends(get_session)
+) -> Any:
+    """Get available context sources for research planning (KBs, ideation, feasibility, business case sessions)"""
+    from sqlmodel import select, desc
+    from app.models.knowledge_base import KnowledgeBase
+    from app.models.ideation import IdeationSession
+    from app.models.feasibility import FeasibilitySession
+    from app.models.business_case import BusinessCaseSession
+
+    # Get ready knowledge bases
+    kb_query = select(KnowledgeBase).where(KnowledgeBase.status == "ready")
+    if user_id:
+        kb_query = kb_query.where(KnowledgeBase.user_id == user_id)
+    kb_query = kb_query.order_by(desc(KnowledgeBase.updated_at)).limit(20)
+    knowledge_bases = list(db_session.exec(kb_query).all())
+
+    # Get completed ideation sessions
+    ideation_query = select(IdeationSession).where(IdeationSession.status == "completed")
+    if user_id:
+        ideation_query = ideation_query.where(IdeationSession.user_id == user_id)
+    ideation_query = ideation_query.order_by(desc(IdeationSession.created_at)).limit(20)
+    ideation_sessions = list(db_session.exec(ideation_query).all())
+
+    # Get completed feasibility sessions
+    feasibility_query = select(FeasibilitySession).where(FeasibilitySession.status == "completed")
+    if user_id:
+        feasibility_query = feasibility_query.where(FeasibilitySession.user_id == user_id)
+    feasibility_query = feasibility_query.order_by(desc(FeasibilitySession.created_at)).limit(20)
+    feasibility_sessions = list(db_session.exec(feasibility_query).all())
+
+    # Get completed business case sessions
+    business_case_query = select(BusinessCaseSession).where(BusinessCaseSession.status == "completed")
+    if user_id:
+        business_case_query = business_case_query.where(BusinessCaseSession.user_id == user_id)
+    business_case_query = business_case_query.order_by(desc(BusinessCaseSession.created_at)).limit(20)
+    business_case_sessions = list(db_session.exec(business_case_query).all())
+
+    return {
+        "knowledgeBases": [
+            {"id": kb.id, "name": kb.name, "documentCount": kb.document_count}
+            for kb in knowledge_bases
+        ],
+        "ideationSessions": [
+            {
+                "id": s.id,
+                "problemStatement": s.problem_statement[:100] + "..." if s.problem_statement and len(s.problem_statement) > 100 else s.problem_statement,
+                "createdAt": s.created_at.isoformat() if s.created_at else None
+            }
+            for s in ideation_sessions
+        ],
+        "feasibilitySessions": [
+            {
+                "id": s.id,
+                "featureDescription": s.feature_description[:100] + "..." if s.feature_description and len(s.feature_description) > 100 else s.feature_description,
+                "goDecision": s.go_decision,
+                "createdAt": s.created_at.isoformat() if s.created_at else None
+            }
+            for s in feasibility_sessions
+        ],
+        "businessCaseSessions": [
+            {
+                "id": s.id,
+                "featureName": s.feature_name,
+                "recommendation": s.recommendation,
+                "createdAt": s.created_at.isoformat() if s.created_at else None
+            }
+            for s in business_case_sessions
+        ]
+    }
+
+
 @router.post("/sessions", response_model=ResearchPlanSession)
 def create_session(
     request: CreateSessionRequest,
@@ -122,7 +202,11 @@ def create_session(
             db=db_session,
             objective=request.objective,
             constraints=constraints_dict,
-            user_id=request.user_id
+            user_id=request.user_id,
+            knowledge_base_ids=request.knowledge_base_ids,
+            ideation_session_id=request.ideation_session_id,
+            feasibility_session_id=request.feasibility_session_id,
+            business_case_session_id=request.business_case_session_id
         )
 
         # Trigger background method recommendation

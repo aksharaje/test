@@ -11,11 +11,48 @@ export interface Constraints {
   remoteOnly?: boolean;
 }
 
+// Context source summary for transparency
+export interface ContextSummary {
+  knowledgeBases?: Array<{
+    id: number;
+    name: string;
+    chunksUsed: number;
+  }>;
+  ideation?: {
+    sessionId: number;
+    problemStatement?: string;
+    ideaCount: number;
+    clusterCount: number;
+  };
+  feasibility?: {
+    sessionId: number;
+    featureName?: string;
+    componentCount: number;
+    riskCount: number;
+    goDecision?: string;
+  };
+  businessCase?: {
+    sessionId: number;
+    featureName?: string;
+    recommendation?: string;
+    totalInvestment?: number;
+    roiPercentage?: number;
+  };
+}
+
 export interface ResearchPlanSession {
   id: number;
   userId?: number;
   objective: string;
   constraints?: Constraints;
+
+  // Optional context sources
+  knowledgeBaseIds?: number[];
+  ideationSessionId?: number;
+  feasibilitySessionId?: number;
+  businessCaseSessionId?: number;
+  contextSummary?: ContextSummary;
+
   status: 'pending' | 'recommending' | 'selecting' | 'generating_instruments' | 'completed' | 'failed';
   progressStep: number;
   progressMessage?: string;
@@ -149,12 +186,52 @@ export interface SessionStatusResponse {
   errorMessage?: string;
 }
 
+// Context sources available for selection
+export interface ContextSourceKnowledgeBase {
+  id: number;
+  name: string;
+  documentCount: number;
+}
+
+export interface ContextSourceIdeationSession {
+  id: number;
+  problemStatement?: string;
+  createdAt?: string;
+}
+
+export interface ContextSourceFeasibilitySession {
+  id: number;
+  featureDescription?: string;
+  goDecision?: string;
+  createdAt?: string;
+}
+
+export interface ContextSourceBusinessCaseSession {
+  id: number;
+  featureName?: string;
+  recommendation?: string;
+  createdAt?: string;
+}
+
+export interface AvailableContextSources {
+  knowledgeBases: ContextSourceKnowledgeBase[];
+  ideationSessions: ContextSourceIdeationSession[];
+  feasibilitySessions: ContextSourceFeasibilitySession[];
+  businessCaseSessions: ContextSourceBusinessCaseSession[];
+}
+
 // Request types
 
 export interface CreateSessionRequest {
   objective: string;
   constraints?: Constraints;
   userId?: number;
+
+  // Optional context sources
+  knowledgeBaseIds?: number[];
+  ideationSessionId?: number;
+  feasibilitySessionId?: number;
+  businessCaseSessionId?: number;
 }
 
 export interface SelectMethodsRequest {

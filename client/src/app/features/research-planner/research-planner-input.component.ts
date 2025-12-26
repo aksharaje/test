@@ -1,9 +1,10 @@
 /**
  * Research Planner Input Component
  *
- * First step: User enters research objective and optional constraints.
+ * First step: User enters research objective, optional constraints,
+ * and optional context from knowledge bases and prior agentic flows.
  */
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,10 +16,22 @@ import {
   lucideLoader2,
   lucideAlertCircle,
   lucideHelpCircle,
+  lucideDatabase,
+  lucideLightbulb,
+  lucideCheckCircle,
+  lucideBarChart,
+  lucideX,
 } from '@ng-icons/lucide';
 
 import { ResearchPlannerService } from './research-planner.service';
-import { Constraints } from './research-planner.types';
+import {
+  Constraints,
+  AvailableContextSources,
+  ContextSourceKnowledgeBase,
+  ContextSourceIdeationSession,
+  ContextSourceFeasibilitySession,
+  ContextSourceBusinessCaseSession,
+} from './research-planner.types';
 
 @Component({
   selector: 'app-research-planner-input',
@@ -32,6 +45,11 @@ import { Constraints } from './research-planner.types';
       lucideLoader2,
       lucideAlertCircle,
       lucideHelpCircle,
+      lucideDatabase,
+      lucideLightbulb,
+      lucideCheckCircle,
+      lucideBarChart,
+      lucideX,
     }),
   ],
   template: `
@@ -104,6 +122,156 @@ import { Constraints } from './research-planner.types';
               </div>
             }
           </div>
+        </div>
+
+        <!-- Context Sources (Optional) -->
+        <div class="rounded-lg border border-border bg-card">
+          <button
+            type="button"
+            (click)="showContextSources.set(!showContextSources())"
+            class="flex w-full items-center justify-between p-6 text-left"
+          >
+            <div class="flex items-center gap-3">
+              <ng-icon name="lucideDatabase" class="h-5 w-5 text-primary" />
+              <div>
+                <span class="text-sm font-medium text-foreground">Add Context (Optional)</span>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Enrich recommendations with knowledge bases and prior analysis.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              @if (selectedContextCount() > 0) {
+                <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {{ selectedContextCount() }} selected
+                </span>
+              }
+              <ng-icon
+                [name]="showContextSources() ? 'lucideChevronUp' : 'lucideChevronDown'"
+                class="h-5 w-5 text-muted-foreground"
+              />
+            </div>
+          </button>
+
+          @if (showContextSources()) {
+            <div class="border-t border-border px-6 pb-6 pt-4 space-y-5">
+              @if (loadingContextSources()) {
+                <div class="flex items-center justify-center py-8">
+                  <ng-icon name="lucideLoader2" size="24" class="animate-spin text-muted-foreground" />
+                </div>
+              } @else {
+                <!-- Knowledge Bases -->
+                @if (contextSources()?.knowledgeBases?.length) {
+                  <div>
+                    <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <ng-icon name="lucideDatabase" size="16" class="text-blue-500" />
+                      Knowledge Bases
+                    </label>
+                    <div class="space-y-2">
+                      @for (kb of contextSources()?.knowledgeBases; track kb.id) {
+                        <label class="flex items-center gap-3 rounded-md border border-input p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                          [class.border-primary]="selectedKnowledgeBases().includes(kb.id)"
+                          [class.bg-primary/5]="selectedKnowledgeBases().includes(kb.id)"
+                        >
+                          <input
+                            type="checkbox"
+                            [checked]="selectedKnowledgeBases().includes(kb.id)"
+                            (change)="toggleKnowledgeBase(kb.id)"
+                            class="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                          />
+                          <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium text-foreground">{{ kb.name }}</span>
+                            <span class="text-xs text-muted-foreground ml-2">{{ kb.documentCount }} docs</span>
+                          </div>
+                        </label>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Ideation Sessions -->
+                @if (contextSources()?.ideationSessions?.length) {
+                  <div>
+                    <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <ng-icon name="lucideLightbulb" size="16" class="text-yellow-500" />
+                      Ideation Sessions
+                    </label>
+                    <select
+                      [value]="selectedIdeationSession()"
+                      (change)="setIdeationSession($event)"
+                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">None selected</option>
+                      @for (session of contextSources()?.ideationSessions; track session.id) {
+                        <option [value]="session.id">
+                          {{ session.problemStatement || 'Ideation #' + session.id }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
+
+                <!-- Feasibility Sessions -->
+                @if (contextSources()?.feasibilitySessions?.length) {
+                  <div>
+                    <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <ng-icon name="lucideCheckCircle" size="16" class="text-green-500" />
+                      Feasibility Analyses
+                    </label>
+                    <select
+                      [value]="selectedFeasibilitySession()"
+                      (change)="setFeasibilitySession($event)"
+                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">None selected</option>
+                      @for (session of contextSources()?.feasibilitySessions; track session.id) {
+                        <option [value]="session.id">
+                          {{ session.featureDescription || 'Analysis #' + session.id }}
+                          @if (session.goDecision) {
+                            ({{ session.goDecision }})
+                          }
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
+
+                <!-- Business Case Sessions -->
+                @if (contextSources()?.businessCaseSessions?.length) {
+                  <div>
+                    <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                      <ng-icon name="lucideBarChart" size="16" class="text-purple-500" />
+                      Business Cases
+                    </label>
+                    <select
+                      [value]="selectedBusinessCaseSession()"
+                      (change)="setBusinessCaseSession($event)"
+                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">None selected</option>
+                      @for (session of contextSources()?.businessCaseSessions; track session.id) {
+                        <option [value]="session.id">
+                          {{ session.featureName || 'Business Case #' + session.id }}
+                          @if (session.recommendation) {
+                            ({{ session.recommendation }})
+                          }
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
+
+                @if (!contextSources()?.knowledgeBases?.length &&
+                     !contextSources()?.ideationSessions?.length &&
+                     !contextSources()?.feasibilitySessions?.length &&
+                     !contextSources()?.businessCaseSessions?.length) {
+                  <p class="text-sm text-muted-foreground text-center py-4">
+                    No context sources available. Create knowledge bases or run other analyses first.
+                  </p>
+                }
+              }
+            </div>
+          }
         </div>
 
         <!-- Constraints (Collapsible) -->
@@ -248,15 +416,24 @@ import { Constraints } from './research-planner.types';
     </div>
   `,
 })
-export class ResearchPlannerInputComponent {
+export class ResearchPlannerInputComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private service = inject(ResearchPlannerService);
 
   showExamples = signal(false);
   showConstraints = signal(false);
+  showContextSources = signal(false);
   isSubmitting = signal(false);
+  loadingContextSources = signal(false);
   error = signal<string | null>(null);
+
+  // Context sources
+  contextSources = signal<AvailableContextSources | null>(null);
+  selectedKnowledgeBases = signal<number[]>([]);
+  selectedIdeationSession = signal<number | null>(null);
+  selectedFeasibilitySession = signal<number | null>(null);
+  selectedBusinessCaseSession = signal<number | null>(null);
 
   form = this.fb.group({
     objective: ['', [Validators.required, Validators.minLength(10)]],
@@ -266,9 +443,54 @@ export class ResearchPlannerInputComponent {
     remoteOnly: [null as boolean | null],
   });
 
+  selectedContextCount = () => {
+    let count = this.selectedKnowledgeBases().length;
+    if (this.selectedIdeationSession()) count++;
+    if (this.selectedFeasibilitySession()) count++;
+    if (this.selectedBusinessCaseSession()) count++;
+    return count;
+  };
+
+  async ngOnInit(): Promise<void> {
+    // Load context sources on init
+    this.loadingContextSources.set(true);
+    try {
+      const sources = await this.service.loadContextSources();
+      this.contextSources.set(sources);
+    } catch {
+      // Silent fail - context sources are optional
+    } finally {
+      this.loadingContextSources.set(false);
+    }
+  }
+
   setExample(text: string): void {
     this.form.patchValue({ objective: text });
     this.showExamples.set(false);
+  }
+
+  toggleKnowledgeBase(id: number): void {
+    const current = this.selectedKnowledgeBases();
+    if (current.includes(id)) {
+      this.selectedKnowledgeBases.set(current.filter(kbId => kbId !== id));
+    } else {
+      this.selectedKnowledgeBases.set([...current, id]);
+    }
+  }
+
+  setIdeationSession(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.selectedIdeationSession.set(value ? parseInt(value, 10) : null);
+  }
+
+  setFeasibilitySession(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.selectedFeasibilitySession.set(value ? parseInt(value, 10) : null);
+  }
+
+  setBusinessCaseSession(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.selectedBusinessCaseSession.set(value ? parseInt(value, 10) : null);
   }
 
   async onSubmit(): Promise<void> {
@@ -289,6 +511,10 @@ export class ResearchPlannerInputComponent {
       const session = await this.service.createSession({
         objective: formValue.objective || '',
         constraints: Object.keys(constraints).length > 0 ? constraints : undefined,
+        knowledgeBaseIds: this.selectedKnowledgeBases().length > 0 ? this.selectedKnowledgeBases() : undefined,
+        ideationSessionId: this.selectedIdeationSession() || undefined,
+        feasibilitySessionId: this.selectedFeasibilitySession() || undefined,
+        businessCaseSessionId: this.selectedBusinessCaseSession() || undefined,
       });
 
       // Navigate to processing page

@@ -3,6 +3,7 @@ Research Planner Service
 
 Business logic for AI-powered research planning workflow.
 Uses LLM to recommend methods and generate research instruments.
+Supports optional context from knowledge bases and other agentic flows.
 """
 import json
 import re
@@ -17,6 +18,10 @@ from app.models.research_planner import (
     Survey,
     RecruitingPlan
 )
+from app.models.ideation import IdeationSession, GeneratedIdea, IdeaCluster
+from app.models.feasibility import FeasibilitySession, TechnicalComponent, RiskAssessment
+from app.models.business_case import BusinessCaseSession, CostItem, BenefitItem, Assumption
+from app.models.knowledge_base import KnowledgeBase, DocumentChunk
 from openai import OpenAI
 
 
@@ -141,6 +146,306 @@ class ResearchPlannerService:
         text = re.sub(r'\b\d{13,16}\b', '[CARD]', text)
         return text
 
+    # --- Context Fetching from External Sources ---
+
+    def _fetch_knowledge_base_context(
+        self,
+        db: Session,
+        kb_ids: List[int],
+        query: str,
+        limit_per_kb: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Fetch relevant context from knowledge bases using semantic search.
+        Returns formatted context and metadata for tracking.
+        """
+        if not kb_ids:
+            return {"text": "", "metadata": []}
+
+        context_parts = []
+        metadata = []
+
+        for kb_id in kb_ids:
+            kb = db.get(KnowledgeBase, kb_id)
+            if not kb or kb.status != "ready":
+                continue
+
+            # Generate embedding for search query
+            try:
+                from app.core.config import settings
+                from openai import OpenAI as EmbeddingClient
+                embed_client = EmbeddingClient(api_key=settings.OPENAI_API_KEY)
+                embedding_response = embed_client.embeddings.create(
+                    model=kb.settings.get("embeddingModel", "text-embedding-ada-002") if kb.settings else "text-embedding-ada-002",
+                    input=query
+                )
+                query_embedding = embedding_response.data[0].embedding
+
+                # Search chunks using vector similarity
+                from sqlalchemy import text as sql_text
+                results = db.execute(
+                    sql_text("""
+                        SELECT id, document_id, content, metadata_,
+                               1 - (embedding <=> :embedding::vector) as similarity
+                        FROM document_chunks
+                        WHERE document_id IN (SELECT id FROM documents WHERE knowledge_base_id = :kb_id)
+                        ORDER BY embedding <=> :embedding::vector
+                        LIMIT :limit
+                    """),
+                    {"embedding": str(query_embedding), "kb_id": kb_id, "limit": limit_per_kb}
+                ).fetchall()
+
+                chunks_used = 0
+                for row in results:
+                    if row.similarity > 0.5:  # Threshold for relevance
+                        context_parts.append(f"[From Knowledge Base: {kb.name}]\n{row.content}")
+                        chunks_used += 1
+
+                if chunks_used > 0:
+                    metadata.append({
+                        "id": kb_id,
+                        "name": kb.name,
+                        "chunks_used": chunks_used
+                    })
+
+            except Exception as e:
+                print(f"Error fetching KB context from {kb_id}: {e}")
+                continue
+
+        return {
+            "text": "\n\n---\n\n".join(context_parts) if context_parts else "",
+            "metadata": metadata
+        }
+
+    def _fetch_ideation_context(self, db: Session, session_id: int) -> Dict[str, Any]:
+        """
+        Fetch context from an ideation session including problem statement and generated ideas.
+        """
+        session = db.get(IdeationSession, session_id)
+        if not session or session.status != "completed":
+            return {"text": "", "metadata": None}
+
+        context_parts = []
+
+        # Problem context
+        if session.problem_statement:
+            context_parts.append(f"**Problem Statement:** {session.problem_statement}")
+        if session.constraints:
+            context_parts.append(f"**Constraints:** {session.constraints}")
+        if session.goals:
+            context_parts.append(f"**Goals:** {session.goals}")
+        if session.research_insights:
+            context_parts.append(f"**Research Insights:** {session.research_insights}")
+
+        # Get generated ideas (top ranked)
+        ideas = list(db.exec(
+            select(GeneratedIdea)
+            .where(GeneratedIdea.session_id == session_id)
+            .where(GeneratedIdea.is_final == True)
+            .order_by(desc(GeneratedIdea.composite_score))
+            .limit(10)
+        ).all())
+
+        if ideas:
+            ideas_text = "\n".join([
+                f"- **{idea.title}** ({idea.category}): {idea.description[:200]}..."
+                for idea in ideas
+            ])
+            context_parts.append(f"**Top Ideas Generated:**\n{ideas_text}")
+
+        # Get clusters
+        clusters = list(db.exec(
+            select(IdeaCluster).where(IdeaCluster.session_id == session_id)
+        ).all())
+        if clusters:
+            cluster_names = [c.cluster_name for c in clusters if c.cluster_name]
+            if cluster_names:
+                context_parts.append(f"**Idea Themes:** {', '.join(cluster_names)}")
+
+        return {
+            "text": "\n\n".join(context_parts) if context_parts else "",
+            "metadata": {
+                "session_id": session_id,
+                "problem_statement": session.problem_statement[:200] if session.problem_statement else None,
+                "idea_count": len(ideas),
+                "cluster_count": len(clusters)
+            } if context_parts else None
+        }
+
+    def _fetch_feasibility_context(self, db: Session, session_id: int) -> Dict[str, Any]:
+        """
+        Fetch context from a feasibility session including technical analysis and risks.
+        """
+        session = db.get(FeasibilitySession, session_id)
+        if not session or session.status != "completed":
+            return {"text": "", "metadata": None}
+
+        context_parts = []
+
+        # Feature description
+        if session.feature_description:
+            context_parts.append(f"**Feature Being Analyzed:** {session.feature_description[:500]}")
+
+        # Technical constraints
+        if session.technical_constraints:
+            context_parts.append(f"**Technical Constraints:** {session.technical_constraints}")
+
+        # Target users
+        if session.target_users:
+            context_parts.append(f"**Target Users:** {session.target_users}")
+
+        # Executive summary
+        if session.executive_summary:
+            context_parts.append(f"**Executive Summary:** {session.executive_summary}")
+
+        # Get technical components
+        components = list(db.exec(
+            select(TechnicalComponent).where(TechnicalComponent.session_id == session_id)
+        ).all())
+        if components:
+            comp_text = "\n".join([
+                f"- {c.component_name} ({c.technical_category}): {c.realistic_hours}h estimated"
+                for c in components[:5]
+            ])
+            context_parts.append(f"**Technical Components:**\n{comp_text}")
+
+        # Get risks
+        risks = list(db.exec(
+            select(RiskAssessment)
+            .where(RiskAssessment.session_id == session_id)
+            .order_by(desc(RiskAssessment.risk_score))
+            .limit(5)
+        ).all())
+        if risks:
+            risks_text = "\n".join([
+                f"- {r.risk_category}: {r.risk_description[:100]}... (Score: {r.risk_score:.2f})"
+                for r in risks
+            ])
+            context_parts.append(f"**Key Risks:**\n{risks_text}")
+
+        return {
+            "text": "\n\n".join(context_parts) if context_parts else "",
+            "metadata": {
+                "session_id": session_id,
+                "feature_name": session.feature_description[:100] if session.feature_description else None,
+                "component_count": len(components),
+                "risk_count": len(risks),
+                "go_decision": session.go_decision
+            } if context_parts else None
+        }
+
+    def _fetch_business_case_context(self, db: Session, session_id: int) -> Dict[str, Any]:
+        """
+        Fetch context from a business case session including market analysis and financials.
+        """
+        session = db.get(BusinessCaseSession, session_id)
+        if not session or session.status != "completed":
+            return {"text": "", "metadata": None}
+
+        context_parts = []
+
+        # Feature info
+        if session.feature_name:
+            context_parts.append(f"**Feature:** {session.feature_name}")
+        if session.feature_description:
+            context_parts.append(f"**Description:** {session.feature_description[:300]}")
+
+        # Business context
+        if session.business_context:
+            context_parts.append(f"**Business Context:** {session.business_context}")
+
+        # Target market
+        if session.target_market:
+            context_parts.append(f"**Target Market:** {session.target_market}")
+
+        # Executive summary
+        if session.executive_summary:
+            context_parts.append(f"**Executive Summary:** {session.executive_summary}")
+
+        # Key financials
+        financials = []
+        if session.total_investment:
+            financials.append(f"Total Investment: ${session.total_investment:,.0f}")
+        if session.net_present_value:
+            financials.append(f"NPV: ${session.net_present_value:,.0f}")
+        if session.roi_percentage:
+            financials.append(f"ROI: {session.roi_percentage:.1f}%")
+        if session.payback_months:
+            financials.append(f"Payback: {session.payback_months} months")
+        if financials:
+            context_parts.append(f"**Financial Summary:** {', '.join(financials)}")
+
+        # Get key assumptions
+        assumptions = list(db.exec(
+            select(Assumption)
+            .where(Assumption.session_id == session_id)
+            .limit(5)
+        ).all())
+        if assumptions:
+            assumptions_text = "\n".join([
+                f"- {a.assumption_category}: {a.assumption_text[:100]}..."
+                for a in assumptions
+            ])
+            context_parts.append(f"**Key Assumptions:**\n{assumptions_text}")
+
+        return {
+            "text": "\n\n".join(context_parts) if context_parts else "",
+            "metadata": {
+                "session_id": session_id,
+                "feature_name": session.feature_name,
+                "recommendation": session.recommendation,
+                "total_investment": session.total_investment,
+                "roi_percentage": session.roi_percentage
+            } if context_parts else None
+        }
+
+    def _build_aggregated_context(
+        self,
+        db: Session,
+        objective: str,
+        kb_ids: Optional[List[int]] = None,
+        ideation_session_id: Optional[int] = None,
+        feasibility_session_id: Optional[int] = None,
+        business_case_session_id: Optional[int] = None
+    ) -> tuple[str, Dict[str, Any]]:
+        """
+        Aggregate context from all sources into a formatted string for LLM prompts.
+        Returns (context_text, context_summary_metadata).
+        """
+        context_sections = []
+        context_summary = {}
+
+        # Knowledge Base context
+        if kb_ids:
+            kb_context = self._fetch_knowledge_base_context(db, kb_ids, objective)
+            if kb_context["text"]:
+                context_sections.append(f"## Knowledge Base Context\n\n{kb_context['text']}")
+                context_summary["knowledge_bases"] = kb_context["metadata"]
+
+        # Ideation context
+        if ideation_session_id:
+            ideation_context = self._fetch_ideation_context(db, ideation_session_id)
+            if ideation_context["text"]:
+                context_sections.append(f"## Previous Ideation Analysis\n\n{ideation_context['text']}")
+                context_summary["ideation"] = ideation_context["metadata"]
+
+        # Feasibility context
+        if feasibility_session_id:
+            feasibility_context = self._fetch_feasibility_context(db, feasibility_session_id)
+            if feasibility_context["text"]:
+                context_sections.append(f"## Feasibility Analysis\n\n{feasibility_context['text']}")
+                context_summary["feasibility"] = feasibility_context["metadata"]
+
+        # Business case context
+        if business_case_session_id:
+            business_context = self._fetch_business_case_context(db, business_case_session_id)
+            if business_context["text"]:
+                context_sections.append(f"## Business Case Analysis\n\n{business_context['text']}")
+                context_summary["business_case"] = business_context["metadata"]
+
+        full_context = "\n\n---\n\n".join(context_sections) if context_sections else ""
+        return full_context, context_summary
+
     def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.3, max_tokens: int = 3000, context: str = "LLM") -> Dict[str, Any]:
         """Call LLM with retry logic."""
         max_retries = 3
@@ -182,9 +487,13 @@ class ResearchPlannerService:
         db: Session,
         objective: str,
         constraints: Optional[Dict[str, Any]] = None,
-        user_id: Optional[int] = None
+        user_id: Optional[int] = None,
+        knowledge_base_ids: Optional[List[int]] = None,
+        ideation_session_id: Optional[int] = None,
+        feasibility_session_id: Optional[int] = None,
+        business_case_session_id: Optional[int] = None
     ) -> ResearchPlanSession:
-        """Create a new research planning session"""
+        """Create a new research planning session with optional context sources"""
         if len(objective) < 10:
             raise ValueError("Research objective must be at least 10 characters")
 
@@ -192,6 +501,10 @@ class ResearchPlannerService:
             user_id=user_id,
             objective=objective,
             constraints=constraints,
+            knowledge_base_ids=knowledge_base_ids,
+            ideation_session_id=ideation_session_id,
+            feasibility_session_id=feasibility_session_id,
+            business_case_session_id=business_case_session_id,
             status="pending",
             progress_step=0,
             progress_message="Initializing research planner..."
@@ -494,13 +807,42 @@ class ResearchPlannerService:
             raise
 
     def _recommend_methods(self, db: Session, session_id: int) -> List[RecommendedMethod]:
-        """Recommend research methods based on objective and constraints"""
+        """Recommend research methods based on objective, constraints, and optional context"""
         session_obj = self.get_session(db, session_id)
         if not session_obj:
             raise ValueError("Session not found")
 
         masked_objective = self._mask_pii(session_obj.objective)
         constraints = session_obj.constraints or {}
+
+        # Fetch and aggregate context from all sources
+        aggregated_context, context_summary = self._build_aggregated_context(
+            db,
+            masked_objective,
+            kb_ids=session_obj.knowledge_base_ids,
+            ideation_session_id=session_obj.ideation_session_id,
+            feasibility_session_id=session_obj.feasibility_session_id,
+            business_case_session_id=session_obj.business_case_session_id
+        )
+
+        # Store context summary for transparency
+        session_obj.context_summary = context_summary if context_summary else None
+        db.add(session_obj)
+        db.commit()
+
+        # Build context section for prompt
+        context_section = ""
+        if aggregated_context:
+            context_section = f"""
+ADDITIONAL CONTEXT FROM PRIOR ANALYSIS:
+{aggregated_context}
+
+Use the above context to inform your recommendations. Consider:
+- Ideas and problems identified in ideation
+- Technical constraints and risks from feasibility analysis
+- Market context and business assumptions from business case
+- Domain knowledge from knowledge bases
+"""
 
         prompt = f"""You are an expert UX researcher helping a Product Manager design a customer research study.
 
@@ -511,7 +853,7 @@ Constraints:
 - Timeline: {constraints.get('timeline', 'not specified')}
 - User access: {constraints.get('user_access', 'not specified')}
 - Remote only: {constraints.get('remote_only', 'not specified')}
-
+{context_section}
 Analyze the objective and recommend 1-4 research methods. For each method:
 1. Explain why it fits the objective
 2. Estimate effort (low/medium/high), cost, timeline

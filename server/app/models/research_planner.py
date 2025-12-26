@@ -30,6 +30,16 @@ class ResearchPlanSession(SQLModel, table=True):
     constraints: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     # constraints schema: {budget: "limited"|"moderate"|"flexible", timeline: "urgent"|"normal"|"flexible", user_access: bool, remote_only: bool}
 
+    # Optional context sources
+    knowledge_base_ids: Optional[List[int]] = Field(default=None, sa_column=Column(JSON))
+    ideation_session_id: Optional[int] = Field(default=None, foreign_key="ideation_sessions.id")
+    feasibility_session_id: Optional[int] = Field(default=None, foreign_key="feasibility_sessions.id")
+    business_case_session_id: Optional[int] = Field(default=None, foreign_key="business_case_sessions.id")
+
+    # Aggregated context used in generation (for transparency/debugging)
+    context_summary: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
+    # schema: {knowledge_bases: [{id, name, chunks_used}], ideation: {session_id, problem_statement, idea_count}, feasibility: {session_id, feature_name}, business_case: {session_id, feature_name}}
+
     # Processing state
     status: str = Field(default="pending")
     # statuses: pending, recommending, selecting, generating_instruments, completed, failed
