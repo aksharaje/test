@@ -121,14 +121,39 @@ PYTHON_EOF
     if [ $UPGRADE_STATUS -ne 0 ]; then
         echo ""
         echo "=== MIGRATION FAILED (exit code: $UPGRADE_STATUS) ==="
-        echo "Attempting to diagnose..."
+        echo "Attempting direct table creation fallback..."
 
-        # Try to show which migration failed
-        alembic current 2>&1 || true
-        alembic history 2>&1 | head -20 || true
+        # Fallback: Create tables directly using SQLModel
+        python3 << 'FALLBACK_EOF'
+import os
+import sys
 
-        echo ""
-        echo "Will attempt to start server anyway, but functionality may be limited."
+# Add current directory to path
+sys.path.insert(0, os.getcwd())
+
+try:
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    # Import all models to register them
+    from app.models import *
+
+    db_url = os.environ.get('DATABASE_URL', '')
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+    engine = create_engine(db_url)
+
+    # Create all tables that don't exist
+    SQLModel.metadata.create_all(engine, checkfirst=True)
+    print("Direct table creation completed!")
+
+except Exception as e:
+    print(f"Fallback table creation failed: {e}")
+    import traceback
+    traceback.print_exc()
+FALLBACK_EOF
+
     else
         echo "Migrations completed successfully!"
     fi
