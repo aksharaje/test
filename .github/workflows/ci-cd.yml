@@ -46,6 +46,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
+      - name: Enable Corepack
+        run: corepack enable
+
+
+
       - name: Install Client Dependencies
         run: |
           cd client
@@ -91,6 +96,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: 'client/package-lock.json'
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install Client Dependencies
         run: |
