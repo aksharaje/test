@@ -18,3 +18,4 @@ pytest-asyncio
 GitPython
 scikit-learn
 numpy
+cryptography
