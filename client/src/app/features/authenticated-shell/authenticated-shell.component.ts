@@ -102,7 +102,7 @@ export class AuthenticatedShellComponent {
         { label: 'Knowledge Bases', path: '/knowledge-bases' },
         { label: 'Library', path: '/library' },
         { label: 'Optimize', path: '/optimize' },
-        { label: 'Docs', path: '#' },
+        { label: 'Docs', path: '/docs', external: true },
       ],
     },
     {

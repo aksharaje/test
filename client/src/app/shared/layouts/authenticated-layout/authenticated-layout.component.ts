@@ -31,6 +31,7 @@ import {
   lucideTestTube2,
   lucideMoreHorizontal,
   lucideLayers,
+  lucideSquareArrowOutUpRight,
 } from '@ng-icons/lucide';
 import { UserMenuComponent, type User } from '../../components/user-menu';
 
@@ -39,6 +40,7 @@ export interface NavItem {
   path: string;
   icon?: string;
   children?: NavItem[];
+  external?: boolean;
 }
 
 @Component({
@@ -72,6 +74,7 @@ export interface NavItem {
       lucideSearch,
       lucideMoreHorizontal,
       lucideLayers,
+      lucideSquareArrowOutUpRight,
     }),
   ],
   template: `
@@ -130,35 +133,67 @@ export interface NavItem {
                 @if (isExpanded(item.path)) {
                   <div class="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-4">
                     @for (child of item.children; track child.path) {
-                      <a
-                        [routerLink]="child.path"
-                        routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        (click)="closeMobileSidebar()"
-                      >
-                        @if (child.icon) {
-                          <ng-icon [name]="child.icon" class="h-4 w-4" />
-                        }
-                        {{ child.label }}
-                      </a>
+                      @if (child.external) {
+                        <a
+                          [href]="child.path"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          (click)="closeMobileSidebar()"
+                        >
+                          @if (child.icon) {
+                            <ng-icon [name]="child.icon" class="h-4 w-4" />
+                          }
+                          {{ child.label }}
+                          <ng-icon name="lucideSquareArrowOutUpRight" class="h-3 w-3 ml-auto opacity-50" />
+                        </a>
+                      } @else {
+                        <a
+                          [routerLink]="child.path"
+                          routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+                          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          (click)="closeMobileSidebar()"
+                        >
+                          @if (child.icon) {
+                            <ng-icon [name]="child.icon" class="h-4 w-4" />
+                          }
+                          {{ child.label }}
+                        </a>
+                      }
                     }
                   </div>
                 }
               </div>
             } @else {
               <!-- Regular nav item -->
-              <a
-                [routerLink]="item.path"
-                routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
-                [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                (click)="closeMobileSidebar()"
-              >
-                @if (item.icon) {
-                  <ng-icon [name]="item.icon" class="h-5 w-5" />
-                }
-                {{ item.label }}
-              </a>
+              @if (item.external) {
+                <a
+                  [href]="item.path"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  (click)="closeMobileSidebar()"
+                >
+                  @if (item.icon) {
+                    <ng-icon [name]="item.icon" class="h-5 w-5" />
+                  }
+                  {{ item.label }}
+                  <ng-icon name="lucideSquareArrowOutUpRight" class="h-3 w-3 ml-auto opacity-50" />
+                </a>
+              } @else {
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+                  [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  (click)="closeMobileSidebar()"
+                >
+                  @if (item.icon) {
+                    <ng-icon [name]="item.icon" class="h-5 w-5" />
+                  }
+                  {{ item.label }}
+                </a>
+              }
             }
           }
         </nav>
@@ -188,35 +223,67 @@ export interface NavItem {
                 @if (isExpanded(item.path)) {
                   <div class="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-4">
                     @for (child of item.children; track child.path) {
-                      <a
-                        [routerLink]="child.path"
-                        routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        (click)="closeMobileSidebar()"
-                      >
-                        @if (child.icon) {
-                          <ng-icon [name]="child.icon" class="h-4 w-4" />
-                        }
-                        {{ child.label }}
-                      </a>
+                      @if (child.external) {
+                        <a
+                          [href]="child.path"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          (click)="closeMobileSidebar()"
+                        >
+                          @if (child.icon) {
+                            <ng-icon [name]="child.icon" class="h-4 w-4" />
+                          }
+                          {{ child.label }}
+                          <ng-icon name="lucideSquareArrowOutUpRight" class="h-3 w-3 ml-auto opacity-50" />
+                        </a>
+                      } @else {
+                        <a
+                          [routerLink]="child.path"
+                          routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+                          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          (click)="closeMobileSidebar()"
+                        >
+                          @if (child.icon) {
+                            <ng-icon [name]="child.icon" class="h-4 w-4" />
+                          }
+                          {{ child.label }}
+                        </a>
+                      }
                     }
                   </div>
                 }
               </div>
             } @else {
               <!-- Regular nav item -->
-              <a
-                [routerLink]="item.path"
-                routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
-                [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                (click)="closeMobileSidebar()"
-              >
-                @if (item.icon) {
-                  <ng-icon [name]="item.icon" class="h-4 w-4" />
-                }
-                {{ item.label }}
-              </a>
+              @if (item.external) {
+                <a
+                  [href]="item.path"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  (click)="closeMobileSidebar()"
+                >
+                  @if (item.icon) {
+                    <ng-icon [name]="item.icon" class="h-4 w-4" />
+                  }
+                  {{ item.label }}
+                  <ng-icon name="lucideSquareArrowOutUpRight" class="h-3 w-3 ml-auto opacity-50" />
+                </a>
+              } @else {
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+                  [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  (click)="closeMobileSidebar()"
+                >
+                  @if (item.icon) {
+                    <ng-icon [name]="item.icon" class="h-4 w-4" />
+                  }
+                  {{ item.label }}
+                </a>
+              }
             }
           }
         </nav>

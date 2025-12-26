@@ -1,0 +1,116 @@
+[
+  {
+    "name": "OpportunityLinkerService",
+    "filename": "opportunity-linker-service.md",
+    "category": "Core",
+    "summary": "Opportunity Linker helps Product Managers map ideas to potential opportunities and prioritize them based on strategic fit and estimated size. It strea..."
+  },
+  {
+    "name": "CodeChatService",
+    "filename": "code-chat-service.md",
+    "category": "Research",
+    "summary": "Code Chat enables Product Managers to collaborate effectively with their team members, share code knowledge, and manage work sessions seamlessly. It f..."
+  },
+  {
+    "name": "BusinessCaseService",
+    "filename": "business-case-service.md",
+    "category": "Feasibility",
+    "summary": "The Business Case Analysis tool helps Product Managers evaluate the feasibility and potential outcomes of business initiatives. It enables users to ma..."
+  },
+  {
+    "name": "GithubService",
+    "filename": "github-service.md",
+    "category": "Core",
+    "summary": "The Github Repository Manager helps you efficiently manage and track your project repositories on Github. It streamlines the process of organizing and..."
+  },
+  {
+    "name": "FlowService",
+    "filename": "flow-service.md",
+    "category": "Core",
+    "summary": "The Flow Manager helps Product Managers streamline the management of project workflows, ensuring efficient execution and tracking of tasks. It empower..."
+  },
+  {
+    "name": "SettingsService",
+    "filename": "settings-service.md",
+    "category": "Core",
+    "summary": "The Settings Manager helps you customize and manage key configurations for your product or project, ensuring that your settings are tailored to your s..."
+  },
+  {
+    "name": "KnowledgeBaseService",
+    "filename": "knowledge-base-service.md",
+    "category": "Research",
+    "summary": "The Knowledge Base Manager helps Product Managers organize and access information efficiently, enabling them to make informed decisions and streamline..."
+  },
+  {
+    "name": "FeasibilityService",
+    "filename": "feasibility-service.md",
+    "category": "Feasibility",
+    "summary": "The Feasibility Analysis Manager helps Product Managers assess the viability of their project ideas by providing a structured approach to analyzing ke..."
+  },
+  {
+    "name": "ResearchPlannerService",
+    "filename": "research-planner-service.md",
+    "category": "Customer Experience",
+    "summary": "The Research Planner helps Product Managers organize and plan their research activities efficiently. It enables PMs to streamline the process of setti..."
+  },
+  {
+    "name": "EmbeddingService",
+    "filename": "embedding-service.md",
+    "category": "Core",
+    "summary": "The Embedding Tool helps you analyze and extract meaningful insights from text data to enhance decision-making and improve product strategies...."
+  },
+  {
+    "name": "OptimizeService",
+    "filename": "optimize-service.md",
+    "category": "Core",
+    "summary": "The Optimized Flow Manager helps Product Managers enhance and fine-tune their content strategies by optimizing user flows, analyzing feedback, and con..."
+  },
+  {
+    "name": "JourneyMapperService",
+    "filename": "journey-mapper-service.md",
+    "category": "Customer Experience",
+    "summary": "The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys to improve product experiences and identify pain points...."
+  },
+  {
+    "name": "PrdGeneratorService",
+    "filename": "prd-generator-service.md",
+    "category": "Backlog Authoring",
+    "summary": "The Product Requirement Document (PRD) Generator helps Product Managers create and manage detailed product requirement documents efficiently. It strea..."
+  },
+  {
+    "name": "IdeationService",
+    "filename": "ideation-service.md",
+    "category": "Ideation",
+    "summary": "This tool helps Product Managers facilitate ideation sessions and set SMART goals to drive innovation and strategic planning within their teams...."
+  },
+  {
+    "name": "JiraService",
+    "filename": "jira-service.md",
+    "category": "Core",
+    "summary": "Jira Manager helps you streamline project management tasks by organizing and tracking project details efficiently. It enables you to oversee project p..."
+  },
+  {
+    "name": "FeedbackService",
+    "filename": "feedback-service.md",
+    "category": "Core",
+    "summary": "The Feedback Manager allows Product Managers to gather and analyze feedback from users, enabling them to make data-driven decisions to improve their p..."
+  },
+  {
+    "name": "LibraryService",
+    "filename": "library-service.md",
+    "category": "Core",
+    "summary": "The Library Management tool helps Product Managers efficiently manage their library of resources, enabling them to easily access, organize, and update..."
+  },
+  {
+    "name": "StoryGeneratorService",
+    "filename": "story-generator-service.md",
+    "category": "Backlog Authoring",
+    "summary": "The Story Generator tool helps Product Managers create compelling narratives for their products, enhancing communication and alignment across teams. I..."
+  },
+  {
+    "name": "PiPlanningService",
+    "filename": "pi-planning-service.md",
+    "category": "PI Planning",
+    "summary": "Pi Planning helps Product Managers effectively plan and manage their product development cycles. It enables PMs to streamline their planning process a..."
+  }
+]

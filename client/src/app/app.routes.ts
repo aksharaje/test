@@ -304,6 +304,19 @@ export const routes: Routes = [
             (m) => m.JourneyMapperResultsComponent
           ),
       },
+      {
+        path: 'journey-mapper/results/:sessionId',
+        title: 'Journey Map | Product Studio',
+        loadComponent: () =>
+          import('./features/journey-mapper/journey-mapper-results.component').then(
+            (m) => m.JourneyMapperResultsComponent
+          ),
+      },
     ],
   },
+  {
+    path: 'docs',
+    title: 'Documentation | Product Studio',
+    loadChildren: () => import('./features/docs/docs.routes').then(m => m.DOCS_ROUTES)
+  }
 ];

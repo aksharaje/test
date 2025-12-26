@@ -1,0 +1,55 @@
+name: Docs Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/app/services/**'
+  workflow_dispatch:
+    inputs:
+      workflow_id:
+        description: 'Optional: Specific Workflow ID to update'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Generate Documentation
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          python server/scripts/generate_docs.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'Docs Bot'
+          git config --global user.email 'docs-bot@users.noreply.github.com'
+          git add client/src/assets/docs
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "docs: auto-update agentic workflows [skip ci]"
+            git push
+          fi
