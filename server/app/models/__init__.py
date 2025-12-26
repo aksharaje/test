@@ -30,3 +30,10 @@ from .business_case import (
     RateAssumption,
     UserLearning
 )
+from .research_planner import (
+    ResearchPlanSession,
+    RecommendedMethod,
+    InterviewGuide,
+    Survey,
+    RecruitingPlan
+)

@@ -256,6 +256,30 @@ export const routes: Routes = [
             (m) => m.BookViewerComponent
           ),
       },
+      {
+        path: 'research-planner',
+        title: 'Research Planner | Product Studio',
+        loadComponent: () =>
+          import('./features/research-planner/research-planner-input.component').then(
+            (m) => m.ResearchPlannerInputComponent
+          ),
+      },
+      {
+        path: 'research-planner/processing/:sessionId',
+        title: 'Processing | Product Studio',
+        loadComponent: () =>
+          import('./features/research-planner/research-planner-processing.component').then(
+            (m) => m.ResearchPlannerProcessingComponent
+          ),
+      },
+      {
+        path: 'research-planner/results/:sessionId',
+        title: 'Research Plan | Product Studio',
+        loadComponent: () =>
+          import('./features/research-planner/research-planner-results.component').then(
+            (m) => m.ResearchPlannerResultsComponent
+          ),
+      },
     ],
   },
 ];

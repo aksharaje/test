@@ -62,7 +62,13 @@ export class AuthenticatedShellComponent {
       ],
     },
     { label: 'Roadmapping', path: '/roadmapping', children: [] },
-    { label: 'Customer Experience', path: '/customer-experience', children: [] },
+    {
+      label: 'Customer Experience',
+      path: '/customer-experience-section',
+      children: [
+        { label: 'Research Planner', path: '/research-planner' },
+      ],
+    },
     {
       label: 'Backlog Authoring',
       path: '/backlog-authoring',

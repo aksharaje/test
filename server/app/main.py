@@ -35,7 +35,7 @@ def health_check():
         from sqlalchemy import create_engine, inspect, text
         from app.core.config import settings
         
-        engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+        engine = create_engine(str(settings.DATABASE_URL))
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         
