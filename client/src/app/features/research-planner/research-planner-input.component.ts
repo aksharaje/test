@@ -240,12 +240,13 @@ import {
                   </div>
                 }
 
-                <!-- Ideation Sessions - Single-select Searchable Dropdown -->
+                <!-- Ideation Sessions - Single-select with Checkbox (toggleable) -->
                 @if (contextSources()?.ideationSessions?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideLightbulb" size="16" class="text-yellow-500" />
                       Ideation Session
+                      <span class="text-xs text-muted-foreground font-normal">(select one)</span>
                     </label>
                     <div class="relative">
                       <button
@@ -260,22 +261,11 @@ import {
                             {{ getIdeationLabel(selectedIdeationSession()!) }}
                           }
                         </span>
-                        <div class="flex items-center gap-1">
-                          @if (selectedIdeationSession()) {
-                            <button
-                              type="button"
-                              class="p-0.5 hover:bg-muted rounded"
-                              (click)="clearSelection('ideation'); $event.stopPropagation()"
-                            >
-                              <ng-icon name="lucideX" class="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                          }
-                          <ng-icon
-                            name="lucideChevronDown"
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            [class.rotate-180]="ideationDropdownOpen()"
-                          />
-                        </div>
+                        <ng-icon
+                          name="lucideChevronDown"
+                          class="h-4 w-4 text-muted-foreground transition-transform"
+                          [class.rotate-180]="ideationDropdownOpen()"
+                        />
                       </button>
 
                       @if (ideationDropdownOpen()) {
@@ -300,15 +290,18 @@ import {
                                 type="button"
                                 class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted text-left"
                                 [class.bg-primary/10]="selectedIdeationSession() === session.id"
-                                (click)="selectIdeation(session.id); $event.stopPropagation()"
+                                [disabled]="selectedIdeationSession() !== null && selectedIdeationSession() !== session.id"
+                                [class.opacity-50]="selectedIdeationSession() !== null && selectedIdeationSession() !== session.id"
+                                [class.cursor-not-allowed]="selectedIdeationSession() !== null && selectedIdeationSession() !== session.id"
+                                (click)="toggleIdeation(session.id); $event.stopPropagation()"
                               >
                                 <div
-                                  class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                                  class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
                                   [class.bg-primary]="selectedIdeationSession() === session.id"
                                   [class.border-primary]="selectedIdeationSession() === session.id"
                                 >
                                   @if (selectedIdeationSession() === session.id) {
-                                    <div class="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                    <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
                                   }
                                 </div>
                                 <span class="truncate flex-1">{{ session.problemStatement || 'Ideation #' + session.id }}</span>
@@ -326,12 +319,13 @@ import {
                   </div>
                 }
 
-                <!-- Feasibility Sessions - Single-select Searchable Dropdown -->
+                <!-- Feasibility Sessions - Single-select with Checkbox (toggleable) -->
                 @if (contextSources()?.feasibilitySessions?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideCheckCircle" size="16" class="text-green-500" />
                       Feasibility Analysis
+                      <span class="text-xs text-muted-foreground font-normal">(select one)</span>
                     </label>
                     <div class="relative">
                       <button
@@ -346,22 +340,11 @@ import {
                             {{ getFeasibilityLabel(selectedFeasibilitySession()!) }}
                           }
                         </span>
-                        <div class="flex items-center gap-1">
-                          @if (selectedFeasibilitySession()) {
-                            <button
-                              type="button"
-                              class="p-0.5 hover:bg-muted rounded"
-                              (click)="clearSelection('feasibility'); $event.stopPropagation()"
-                            >
-                              <ng-icon name="lucideX" class="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                          }
-                          <ng-icon
-                            name="lucideChevronDown"
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            [class.rotate-180]="feasibilityDropdownOpen()"
-                          />
-                        </div>
+                        <ng-icon
+                          name="lucideChevronDown"
+                          class="h-4 w-4 text-muted-foreground transition-transform"
+                          [class.rotate-180]="feasibilityDropdownOpen()"
+                        />
                       </button>
 
                       @if (feasibilityDropdownOpen()) {
@@ -386,15 +369,18 @@ import {
                                 type="button"
                                 class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted text-left"
                                 [class.bg-primary/10]="selectedFeasibilitySession() === session.id"
-                                (click)="selectFeasibility(session.id); $event.stopPropagation()"
+                                [disabled]="selectedFeasibilitySession() !== null && selectedFeasibilitySession() !== session.id"
+                                [class.opacity-50]="selectedFeasibilitySession() !== null && selectedFeasibilitySession() !== session.id"
+                                [class.cursor-not-allowed]="selectedFeasibilitySession() !== null && selectedFeasibilitySession() !== session.id"
+                                (click)="toggleFeasibility(session.id); $event.stopPropagation()"
                               >
                                 <div
-                                  class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                                  class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
                                   [class.bg-primary]="selectedFeasibilitySession() === session.id"
                                   [class.border-primary]="selectedFeasibilitySession() === session.id"
                                 >
                                   @if (selectedFeasibilitySession() === session.id) {
-                                    <div class="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                    <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
                                   }
                                 </div>
                                 <span class="truncate flex-1">{{ session.featureDescription || 'Analysis #' + session.id }}</span>
@@ -425,12 +411,13 @@ import {
                   </div>
                 }
 
-                <!-- Business Case Sessions - Single-select Searchable Dropdown -->
+                <!-- Business Case Sessions - Single-select with Checkbox (toggleable) -->
                 @if (contextSources()?.businessCaseSessions?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideBarChart" size="16" class="text-purple-500" />
                       Business Case
+                      <span class="text-xs text-muted-foreground font-normal">(select one)</span>
                     </label>
                     <div class="relative">
                       <button
@@ -445,22 +432,11 @@ import {
                             {{ getBusinessCaseLabel(selectedBusinessCaseSession()!) }}
                           }
                         </span>
-                        <div class="flex items-center gap-1">
-                          @if (selectedBusinessCaseSession()) {
-                            <button
-                              type="button"
-                              class="p-0.5 hover:bg-muted rounded"
-                              (click)="clearSelection('businessCase'); $event.stopPropagation()"
-                            >
-                              <ng-icon name="lucideX" class="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                          }
-                          <ng-icon
-                            name="lucideChevronDown"
-                            class="h-4 w-4 text-muted-foreground transition-transform"
-                            [class.rotate-180]="businessCaseDropdownOpen()"
-                          />
-                        </div>
+                        <ng-icon
+                          name="lucideChevronDown"
+                          class="h-4 w-4 text-muted-foreground transition-transform"
+                          [class.rotate-180]="businessCaseDropdownOpen()"
+                        />
                       </button>
 
                       @if (businessCaseDropdownOpen()) {
@@ -485,15 +461,18 @@ import {
                                 type="button"
                                 class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted text-left"
                                 [class.bg-primary/10]="selectedBusinessCaseSession() === session.id"
-                                (click)="selectBusinessCase(session.id); $event.stopPropagation()"
+                                [disabled]="selectedBusinessCaseSession() !== null && selectedBusinessCaseSession() !== session.id"
+                                [class.opacity-50]="selectedBusinessCaseSession() !== null && selectedBusinessCaseSession() !== session.id"
+                                [class.cursor-not-allowed]="selectedBusinessCaseSession() !== null && selectedBusinessCaseSession() !== session.id"
+                                (click)="toggleBusinessCase(session.id); $event.stopPropagation()"
                               >
                                 <div
-                                  class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                                  class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
                                   [class.bg-primary]="selectedBusinessCaseSession() === session.id"
                                   [class.border-primary]="selectedBusinessCaseSession() === session.id"
                                 >
                                   @if (selectedBusinessCaseSession() === session.id) {
-                                    <div class="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                    <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
                                   }
                                 </div>
                                 <span class="truncate flex-1">{{ session.featureName || 'Business Case #' + session.id }}</span>
@@ -819,20 +798,6 @@ export class ResearchPlannerInputComponent implements OnInit {
     this.businessCaseDropdownOpen.set(false);
   }
 
-  clearSelection(type: 'ideation' | 'feasibility' | 'businessCase'): void {
-    switch (type) {
-      case 'ideation':
-        this.selectedIdeationSession.set(null);
-        break;
-      case 'feasibility':
-        this.selectedFeasibilitySession.set(null);
-        break;
-      case 'businessCase':
-        this.selectedBusinessCaseSession.set(null);
-        break;
-    }
-  }
-
   // Knowledge bases (multi-select)
   toggleKnowledgeBase(id: number): void {
     const current = this.selectedKnowledgeBases();
@@ -848,23 +813,35 @@ export class ResearchPlannerInputComponent implements OnInit {
     return kb?.name || `KB #${id}`;
   }
 
-  // Single-select handlers
-  selectIdeation(id: number): void {
-    this.selectedIdeationSession.set(id);
-    this.ideationDropdownOpen.set(false);
-    this.ideationSearchFilter.set('');
+  // Single-select toggle handlers (checkbox style - click to select, click again to deselect)
+  toggleIdeation(id: number): void {
+    if (this.selectedIdeationSession() === id) {
+      // Uncheck - deselect
+      this.selectedIdeationSession.set(null);
+    } else {
+      // Check - select (only if nothing else is selected)
+      this.selectedIdeationSession.set(id);
+    }
   }
 
-  selectFeasibility(id: number): void {
-    this.selectedFeasibilitySession.set(id);
-    this.feasibilityDropdownOpen.set(false);
-    this.feasibilitySearchFilter.set('');
+  toggleFeasibility(id: number): void {
+    if (this.selectedFeasibilitySession() === id) {
+      // Uncheck - deselect
+      this.selectedFeasibilitySession.set(null);
+    } else {
+      // Check - select (only if nothing else is selected)
+      this.selectedFeasibilitySession.set(id);
+    }
   }
 
-  selectBusinessCase(id: number): void {
-    this.selectedBusinessCaseSession.set(id);
-    this.businessCaseDropdownOpen.set(false);
-    this.businessCaseSearchFilter.set('');
+  toggleBusinessCase(id: number): void {
+    if (this.selectedBusinessCaseSession() === id) {
+      // Uncheck - deselect
+      this.selectedBusinessCaseSession.set(null);
+    } else {
+      // Check - select (only if nothing else is selected)
+      this.selectedBusinessCaseSession.set(id);
+    }
   }
 
   // Label getters
