@@ -68,6 +68,7 @@ export class AuthenticatedShellComponent {
       children: [
         { label: 'Research Planner', path: '/research-planner' },
         { label: 'Journey Mapper', path: '/journey-mapper' },
+        { label: 'Gap Analyzer', path: '/gap-analyzer' },
       ],
     },
     {
@@ -88,7 +89,13 @@ export class AuthenticatedShellComponent {
       ],
     },
     { label: 'Sprint Planning', path: '/sprint-planning', children: [] },
-    { label: 'Development', path: '/development', children: [] },
+    {
+      label: 'Development',
+      path: '/development-section',
+      children: [
+        { label: 'Story to Code', path: '/story-to-code' },
+      ],
+    },
     { label: 'Testing', path: '/testing', children: [] },
     { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
   ];

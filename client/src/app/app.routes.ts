@@ -305,14 +305,40 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'journey-mapper/results/:sessionId',
-        title: 'Journey Map | Product Studio',
+        path: 'gap-analyzer',
+        title: 'Experience Gap Analyzer | Product Studio',
         loadComponent: () =>
-          import('./features/journey-mapper/journey-mapper-results.component').then(
-            (m) => m.JourneyMapperResultsComponent
+          import('./features/experience-gap-analyzer/experience-gap-analyzer.component').then(
+            (m) => m.ExperienceGapAnalyzerComponent
+          ),
+      },
+      {
+        path: 'gap-analyzer/processing/:id',
+        title: 'Analyzing Gaps | Product Studio',
+        loadComponent: () =>
+          import('./features/experience-gap-analyzer/experience-gap-analyzer-processing.component').then(
+            (m) => m.ExperienceGapAnalyzerProcessingComponent
+          ),
+      },
+      {
+        path: 'gap-analyzer/results/:id',
+        title: 'Gap Analysis Results | Product Studio',
+        loadComponent: () =>
+          import('./features/experience-gap-analyzer/experience-gap-analyzer-results.component').then(
+            (m) => m.ExperienceGapAnalyzerResultsComponent
           ),
       },
     ],
+  },
+  {
+    path: 'story-to-code',
+    title: 'Story to Code | Product Studio',
+    loadChildren: () => import('./features/story-to-code/story-to-code.routes').then(m => m.STORY_TO_CODE_ROUTES)
+  },
+  {
+    path: 'story-to-code',
+    title: 'Story to Code | Product Studio',
+    loadChildren: () => import('./features/story-to-code/story-to-code.routes').then(m => m.STORY_TO_CODE_ROUTES)
   },
   {
     path: 'docs',

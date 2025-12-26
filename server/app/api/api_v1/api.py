@@ -1,11 +1,12 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard
+from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code
 from app.api.api_v1.endpoints.story_gen_endpoint import router as story_generator_router
 
 api_router = APIRouter()
 api_router.include_router(agents.router, prefix="/agents", tags=["agents"])
 api_router.include_router(knowledge_bases.router, prefix="/knowledge-bases", tags=["knowledge-bases"])
 api_router.include_router(story_generator_router, prefix="/story-generator", tags=["story-generator"])
+api_router.include_router(story_to_code.router, prefix="/story-to-code", tags=["story-to-code"])
 api_router.include_router(code_chat.router, prefix="/code-chat", tags=["code-chat"])
 api_router.include_router(prd_generator.router, prefix="/prd-generator", tags=["prd-generator"])
 api_router.include_router(library.router, prefix="/library", tags=["library"])
@@ -20,6 +21,7 @@ api_router.include_router(feasibility.router, prefix="/feasibility", tags=["feas
 api_router.include_router(business_case.router, prefix="/business-case", tags=["business-case"])
 api_router.include_router(research_planner.router, prefix="/cx/research-planner", tags=["research-planner"])
 api_router.include_router(journey_mapper.router, prefix="/cx/journey-mapper", tags=["journey-mapper"])
+api_router.include_router(experience_gap_analyzer.router, prefix="/cx/gap-analyzer", tags=["experience-gap-analyzer"])
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
