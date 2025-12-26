@@ -330,7 +330,7 @@ class ResearchPlannerService:
                 "feature_name": session.feature_description[:100] if session.feature_description else None,
                 "component_count": len(components),
                 "risk_count": len(risks),
-                "go_decision": session.go_decision
+                "go_decision": session.go_no_go_recommendation
             } if context_parts else None
         }
 

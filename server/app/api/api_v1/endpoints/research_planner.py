@@ -122,8 +122,8 @@ def get_available_context_sources(
     # Get ready knowledge bases
     kb_query = select(KnowledgeBase).where(KnowledgeBase.status == "ready")
     if user_id:
-        kb_query = kb_query.where(KnowledgeBase.user_id == user_id)
-    kb_query = kb_query.order_by(desc(KnowledgeBase.updated_at)).limit(20)
+        kb_query = kb_query.where(KnowledgeBase.userId == user_id)
+    kb_query = kb_query.order_by(desc(KnowledgeBase.updatedAt)).limit(20)
     knowledge_bases = list(db_session.exec(kb_query).all())
 
     # Get completed ideation sessions
@@ -149,7 +149,7 @@ def get_available_context_sources(
 
     return {
         "knowledgeBases": [
-            {"id": kb.id, "name": kb.name, "documentCount": kb.document_count}
+            {"id": kb.id, "name": kb.name, "documentCount": kb.documentCount}
             for kb in knowledge_bases
         ],
         "ideationSessions": [
@@ -164,7 +164,7 @@ def get_available_context_sources(
             {
                 "id": s.id,
                 "featureDescription": s.feature_description[:100] + "..." if s.feature_description and len(s.feature_description) > 100 else s.feature_description,
-                "goDecision": s.go_decision,
+                "goDecision": s.go_no_go_recommendation,
                 "createdAt": s.created_at.isoformat() if s.created_at else None
             }
             for s in feasibility_sessions
