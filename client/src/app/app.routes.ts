@@ -280,6 +280,30 @@ export const routes: Routes = [
             (m) => m.ResearchPlannerResultsComponent
           ),
       },
+      {
+        path: 'journey-mapper',
+        title: 'Journey Mapper | Product Studio',
+        loadComponent: () =>
+          import('./features/journey-mapper/journey-mapper.component').then(
+            (m) => m.JourneyMapperComponent
+          ),
+      },
+      {
+        path: 'journey-mapper/processing/:sessionId',
+        title: 'Generating Journey | Product Studio',
+        loadComponent: () =>
+          import('./features/journey-mapper/journey-mapper-processing.component').then(
+            (m) => m.JourneyMapperProcessingComponent
+          ),
+      },
+      {
+        path: 'journey-mapper/results/:sessionId',
+        title: 'Journey Map | Product Studio',
+        loadComponent: () =>
+          import('./features/journey-mapper/journey-mapper-results.component').then(
+            (m) => m.JourneyMapperResultsComponent
+          ),
+      },
     ],
   },
 ];

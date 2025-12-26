@@ -67,6 +67,7 @@ export class AuthenticatedShellComponent {
       path: '/customer-experience-section',
       children: [
         { label: 'Research Planner', path: '/research-planner' },
+        { label: 'Journey Mapper', path: '/journey-mapper' },
       ],
     },
     {

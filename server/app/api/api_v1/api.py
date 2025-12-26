@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper
+from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard
 from app.api.api_v1.endpoints.story_gen_endpoint import router as story_generator_router
 
 api_router = APIRouter()
@@ -22,4 +22,5 @@ api_router.include_router(research_planner.router, prefix="/cx/research-planner"
 api_router.include_router(journey_mapper.router, prefix="/cx/journey-mapper", tags=["journey-mapper"])
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(placeholders.router, prefix="", tags=["placeholders"])
