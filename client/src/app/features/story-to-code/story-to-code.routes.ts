@@ -1,9 +1,19 @@
 import { Routes } from '@angular/router';
-import { StoryToCodeComponent } from './story-to-code.component';
 
 export const STORY_TO_CODE_ROUTES: Routes = [
     {
         path: '',
-        component: StoryToCodeComponent
+        loadComponent: () =>
+            import('./story-to-code-input.component').then(m => m.StoryToCodeInputComponent)
+    },
+    {
+        path: 'processing/:id',
+        loadComponent: () =>
+            import('./story-to-code-processing.component').then(m => m.StoryToCodeProcessingComponent)
+    },
+    {
+        path: 'results/:id',
+        loadComponent: () =>
+            import('./story-to-code-results.component').then(m => m.StoryToCodeResultsComponent)
     }
 ];
