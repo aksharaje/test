@@ -31,7 +31,31 @@ if settings.all_cors_origins:
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok"}
+    try:
+        from sqlalchemy import create_engine, inspect, text
+        from app.core.config import settings
+        
+        engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        
+        # Check alembic version
+        with engine.connect() as conn:
+            try:
+                result = conn.execute(text("SELECT version_num FROM alembic_version"))
+                alembic_version = result.scalar()
+            except:
+                alembic_version = "not_found"
+                
+        return {
+            "status": "ok", 
+            "environment": "production",
+            "tables": tables,
+            "alembic_version": alembic_version,
+            "feasibility_table_exists": "feasibility_sessions" in tables
+        }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 # Import and include routers here later
 from app.api.api_v1.api import api_router
