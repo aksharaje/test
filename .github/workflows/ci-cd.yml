@@ -54,7 +54,7 @@ jobs:
       - name: Install Client Dependencies
         run: |
           cd client
-          npm ci
+          npm install
 
       - name: Install Backend Dependencies
         run: |
@@ -103,7 +103,7 @@ jobs:
       - name: Install Client Dependencies
         run: |
           cd client
-          npm ci
+          npm install
 
       - name: Build Clientside
         run: |
