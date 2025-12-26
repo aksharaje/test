@@ -1,39 +1,31 @@
-# PrdGeneratorService
+# Product Requirement Document Generator
 
 ## Overview
-Service file: `prd_generator_service.py`
+The Product Requirement Document (PRD) Generator helps Product Managers create and manage detailed product specifications. It streamlines the process of documenting product features, requirements, and functionalities, ensuring clear communication and alignment across teams.
 
-## Methods
-### client
+## Key Capabilities
+- Create new PRDs
+- Update and refine existing PRDs
+- Track and manage multiple PRDs
+- Generate PRD content automatically
+- Retry failed PRD submissions
 
-### ensure_default_templates
+## How to Use
+To begin, start by creating a new PRD record with essential details such as product name, description, and requirements. You can then refine and update the PRD as needed, ensuring all stakeholders are on the same page. The tool also allows you to track the progress of multiple PRDs and automatically generate detailed content based on the input provided.
 
-### get_templates
+## Configuration & Fields
+- **Session**: A work session where you can manage PRDs.
+  - **What it's for**: Allows you to work on PRDs within a specific session.
+  - **Example**: Morning PRD Review Session
 
-### get_template
+- **Request**: Details required to create or update a PRD.
+  - **What it's for**: Provides the necessary information to define or refine a product requirement.
+  - **Example**: New Feature Request for Mobile App
 
-### get_knowledge_base_context
+- **ID**: Unique identifier for a specific PRD.
+  - **What it's for**: Identifies and distinguishes different PRDs.
+  - **Example**: PRD-2023
 
-### clean_json_response
-
-### create_prd
-Create PRD record in pending state
-
-### run_prd_pipeline
-Async pipeline to generate PRD content
-
-### refine
-
-### list_prds
-
-### get_prd
-
-### update_prd
-
-### delete_prd
-
-### retry_prd
-Reset failed PRD to pending for retry
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Data**: Additional information or updates related to a PRD.
+  - **What it's for**: Allows for modifications or enhancements to an existing PRD.
+  - **Example**: Revised Market Analysis for PRD-2023

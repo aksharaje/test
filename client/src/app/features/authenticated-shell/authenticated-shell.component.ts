@@ -69,6 +69,7 @@ export class AuthenticatedShellComponent {
         { label: 'Research Planner', path: '/research-planner' },
         { label: 'Journey Mapper', path: '/journey-mapper' },
         { label: 'Gap Analyzer', path: '/gap-analyzer' },
+        { label: 'CX Recommender', path: '/cx-recommender' },
       ],
     },
     {

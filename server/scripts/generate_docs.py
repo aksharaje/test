@@ -48,32 +48,37 @@ OPENROUTER_MODEL = "openai/gpt-3.5-turbo" # Using a faster/cheaper model for tes
 # Ensure docs directory exists
 CLIENT_DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Service Categories Mapping
+# Service Categories Mapping - matches sidebar navigation structure
 SECTION_MAPPING = {
-    # Research
+    # Research (under Research section in sidebar)
     "CodeChatService": "Research",
     "KnowledgeBaseService": "Research",
-    
-    # Ideation
+
+    # Ideation (under Ideation section in sidebar)
     "IdeationService": "Ideation",
-    
-    # Feasibility
+    "OpportunityLinkerService": "Ideation",  # Prioritized backlog from ideation
+
+    # Feasibility (under Feasibility section in sidebar)
     "FeasibilityService": "Feasibility",
     "BusinessCaseService": "Feasibility",
-    
-    # Customer Experience
+
+    # Customer Experience (under Customer Experience section in sidebar)
     "ResearchPlannerService": "Customer Experience",
     "JourneyMapperService": "Customer Experience",
-    
-    # Backlog Authoring
+    "ExperienceGapAnalyzerService": "Customer Experience",
+    "CXRecommenderService": "Customer Experience",
+
+    # Backlog Authoring (under Backlog Authoring section in sidebar)
     "PrdGeneratorService": "Backlog Authoring",
     "StoryGeneratorService": "Backlog Authoring",
-    
-    # PI Planning
+
+    # PI Planning (under PI Planning section in sidebar)
     "PiPlanningService": "PI Planning",
-    
-    # Core/Shared (will go to 'General' or 'Core')
-    "OpportunityLinkerService": "Core",
+
+    # Development (under Development section in sidebar)
+    "StoryToCodeService": "Development",
+
+    # Core/Infrastructure services
     "GithubService": "Core",
     "FlowService": "Core",
     "SettingsService": "Core",

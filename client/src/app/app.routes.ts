@@ -352,6 +352,30 @@ export const routes: Routes = [
             (m) => m.StoryToCodeResultsComponent
           ),
       },
+      {
+        path: 'cx-recommender',
+        title: 'CX Recommender | Product Studio',
+        loadComponent: () =>
+          import('./features/cx-recommender/cx-recommender-input.component').then(
+            (m) => m.CxRecommenderInputComponent
+          ),
+      },
+      {
+        path: 'cx-recommender/processing/:id',
+        title: 'Generating Recommendations | Product Studio',
+        loadComponent: () =>
+          import('./features/cx-recommender/cx-recommender-processing.component').then(
+            (m) => m.CxRecommenderProcessingComponent
+          ),
+      },
+      {
+        path: 'cx-recommender/results/:id',
+        title: 'CX Recommendations | Product Studio',
+        loadComponent: () =>
+          import('./features/cx-recommender/cx-recommender-results.component').then(
+            (m) => m.CxRecommenderResultsComponent
+          ),
+      },
     ],
   },
   {

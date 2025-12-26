@@ -64,8 +64,8 @@ export class DocsLayoutComponent {
     const manifest = this.docsService.manifest();
     const groups: Record<string, any[]> = {};
 
-    // Sort order for categories
-    const order = ['Research', 'Ideation', 'Feasibility', 'Customer Experience', 'Backlog Authoring', 'PI Planning', 'Core', 'General'];
+    // Sort order for categories - matches sidebar navigation order
+    const order = ['Research', 'Ideation', 'Feasibility', 'Customer Experience', 'Backlog Authoring', 'PI Planning', 'Development', 'Core', 'General'];
 
     manifest.forEach(item => {
       const cat = item.category || 'General';
