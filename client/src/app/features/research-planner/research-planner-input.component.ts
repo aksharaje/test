@@ -4,7 +4,7 @@
  * First step: User enters research objective, optional constraints,
  * and optional context from knowledge bases and prior agentic flows.
  */
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,6 +21,7 @@ import {
   lucideCheckCircle,
   lucideBarChart,
   lucideX,
+  lucideCheck,
 } from '@ng-icons/lucide';
 
 import { ResearchPlannerService } from './research-planner.service';
@@ -28,9 +29,6 @@ import {
   Constraints,
   AvailableContextSources,
   ContextSourceKnowledgeBase,
-  ContextSourceIdeationSession,
-  ContextSourceFeasibilitySession,
-  ContextSourceBusinessCaseSession,
 } from './research-planner.types';
 
 @Component({
@@ -50,6 +48,7 @@ import {
       lucideCheckCircle,
       lucideBarChart,
       lucideX,
+      lucideCheck,
     }),
   ],
   template: `
@@ -128,7 +127,7 @@ import {
         <div class="rounded-lg border border-border bg-card">
           <button
             type="button"
-            (click)="showContextSources.set(!showContextSources())"
+            (click)="toggleContextSources()"
             class="flex w-full items-center justify-between p-6 text-left"
           >
             <div class="flex items-center gap-3">
@@ -159,31 +158,84 @@ import {
                 <div class="flex items-center justify-center py-8">
                   <ng-icon name="lucideLoader2" size="24" class="animate-spin text-muted-foreground" />
                 </div>
+              } @else if (!hasAnyContextSources()) {
+                <p class="text-sm text-muted-foreground text-center py-4">
+                  No context sources available. Create knowledge bases or run other analyses first.
+                </p>
               } @else {
-                <!-- Knowledge Bases -->
+                <!-- Knowledge Bases - Dropdown Style -->
                 @if (contextSources()?.knowledgeBases?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideDatabase" size="16" class="text-blue-500" />
                       Knowledge Bases
                     </label>
-                    <div class="space-y-2">
-                      @for (kb of contextSources()?.knowledgeBases; track kb.id) {
-                        <label class="flex items-center gap-3 rounded-md border border-input p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                          [class.border-primary]="selectedKnowledgeBases().includes(kb.id)"
-                          [class.bg-primary/5]="selectedKnowledgeBases().includes(kb.id)"
-                        >
-                          <input
-                            type="checkbox"
-                            [checked]="selectedKnowledgeBases().includes(kb.id)"
-                            (change)="toggleKnowledgeBase(kb.id)"
-                            class="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-                          />
-                          <div class="flex-1 min-w-0">
-                            <span class="text-sm font-medium text-foreground">{{ kb.name }}</span>
-                            <span class="text-xs text-muted-foreground ml-2">{{ kb.documentCount }} docs</span>
+                    <div class="relative">
+                      <button
+                        type="button"
+                        class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+                        (click)="toggleKbDropdown()"
+                      >
+                        <span class="truncate text-left">
+                          @if (selectedKnowledgeBases().length === 0) {
+                            <span class="text-muted-foreground">Select knowledge bases...</span>
+                          } @else if (selectedKnowledgeBases().length === 1) {
+                            {{ getKbName(selectedKnowledgeBases()[0]) }}
+                          } @else {
+                            {{ selectedKnowledgeBases().length }} knowledge bases selected
+                          }
+                        </span>
+                        <ng-icon
+                          name="lucideChevronDown"
+                          class="h-4 w-4 text-muted-foreground transition-transform"
+                          [class.rotate-180]="kbDropdownOpen()"
+                        />
+                      </button>
+
+                      @if (kbDropdownOpen()) {
+                        <div class="fixed inset-0 z-40" (click)="closeKbDropdown()"></div>
+                        <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                          <div class="p-2 border-b">
+                            <div class="relative">
+                              <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="text"
+                                placeholder="Filter knowledge bases..."
+                                class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                [value]="kbSearchFilter()"
+                                (input)="onKbSearchInput($event)"
+                                (click)="$event.stopPropagation()"
+                              />
+                            </div>
                           </div>
-                        </label>
+                          <div class="max-h-48 overflow-y-auto p-1">
+                            @for (kb of filteredKnowledgeBases(); track kb.id) {
+                              <button
+                                type="button"
+                                class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+                                [class.bg-primary/10]="selectedKnowledgeBases().includes(kb.id)"
+                                (click)="toggleKnowledgeBase(kb.id); $event.stopPropagation()"
+                              >
+                                <div
+                                  class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
+                                  [class.bg-primary]="selectedKnowledgeBases().includes(kb.id)"
+                                  [class.border-primary]="selectedKnowledgeBases().includes(kb.id)"
+                                >
+                                  @if (selectedKnowledgeBases().includes(kb.id)) {
+                                    <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
+                                  }
+                                </div>
+                                <span class="truncate flex-1 text-left">{{ kb.name }}</span>
+                                <span class="text-xs text-muted-foreground">{{ kb.documentCount }} docs</span>
+                              </button>
+                            }
+                            @if (filteredKnowledgeBases().length === 0) {
+                              <div class="p-3 text-center text-sm text-muted-foreground">
+                                No knowledge bases found
+                              </div>
+                            }
+                          </div>
+                        </div>
                       }
                     </div>
                   </div>
@@ -197,11 +249,11 @@ import {
                       Ideation Sessions
                     </label>
                     <select
-                      [value]="selectedIdeationSession()"
+                      [value]="selectedIdeationSession() || ''"
                       (change)="setIdeationSession($event)"
                       class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="">None selected</option>
+                      <option value="">Select an ideation session...</option>
                       @for (session of contextSources()?.ideationSessions; track session.id) {
                         <option [value]="session.id">
                           {{ session.problemStatement || 'Ideation #' + session.id }}
@@ -219,16 +271,16 @@ import {
                       Feasibility Analyses
                     </label>
                     <select
-                      [value]="selectedFeasibilitySession()"
+                      [value]="selectedFeasibilitySession() || ''"
                       (change)="setFeasibilitySession($event)"
                       class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="">None selected</option>
+                      <option value="">Select a feasibility analysis...</option>
                       @for (session of contextSources()?.feasibilitySessions; track session.id) {
                         <option [value]="session.id">
                           {{ session.featureDescription || 'Analysis #' + session.id }}
                           @if (session.goDecision) {
-                            ({{ session.goDecision }})
+                            ({{ formatGoDecision(session.goDecision) }})
                           }
                         </option>
                       }
@@ -244,30 +296,21 @@ import {
                       Business Cases
                     </label>
                     <select
-                      [value]="selectedBusinessCaseSession()"
+                      [value]="selectedBusinessCaseSession() || ''"
                       (change)="setBusinessCaseSession($event)"
                       class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="">None selected</option>
+                      <option value="">Select a business case...</option>
                       @for (session of contextSources()?.businessCaseSessions; track session.id) {
                         <option [value]="session.id">
                           {{ session.featureName || 'Business Case #' + session.id }}
                           @if (session.recommendation) {
-                            ({{ session.recommendation }})
+                            ({{ formatRecommendation(session.recommendation) }})
                           }
                         </option>
                       }
                     </select>
                   </div>
-                }
-
-                @if (!contextSources()?.knowledgeBases?.length &&
-                     !contextSources()?.ideationSessions?.length &&
-                     !contextSources()?.feasibilitySessions?.length &&
-                     !contextSources()?.businessCaseSessions?.length) {
-                  <p class="text-sm text-muted-foreground text-center py-4">
-                    No context sources available. Create knowledge bases or run other analyses first.
-                  </p>
                 }
               }
             </div>
@@ -435,6 +478,10 @@ export class ResearchPlannerInputComponent implements OnInit {
   selectedFeasibilitySession = signal<number | null>(null);
   selectedBusinessCaseSession = signal<number | null>(null);
 
+  // KB dropdown state
+  kbDropdownOpen = signal(false);
+  kbSearchFilter = signal('');
+
   form = this.fb.group({
     objective: ['', [Validators.required, Validators.minLength(10)]],
     budget: [''],
@@ -451,6 +498,27 @@ export class ResearchPlannerInputComponent implements OnInit {
     return count;
   };
 
+  hasAnyContextSources = computed(() => {
+    const sources = this.contextSources();
+    if (!sources) return false;
+    return (
+      (sources.knowledgeBases?.length || 0) > 0 ||
+      (sources.ideationSessions?.length || 0) > 0 ||
+      (sources.feasibilitySessions?.length || 0) > 0 ||
+      (sources.businessCaseSessions?.length || 0) > 0
+    );
+  });
+
+  filteredKnowledgeBases = computed(() => {
+    const sources = this.contextSources();
+    if (!sources?.knowledgeBases) return [];
+    const filter = this.kbSearchFilter().toLowerCase();
+    if (!filter) return sources.knowledgeBases;
+    return sources.knowledgeBases.filter((kb) =>
+      kb.name.toLowerCase().includes(filter)
+    );
+  });
+
   async ngOnInit(): Promise<void> {
     // Load context sources on init
     this.loadingContextSources.set(true);
@@ -464,9 +532,26 @@ export class ResearchPlannerInputComponent implements OnInit {
     }
   }
 
+  toggleContextSources(): void {
+    this.showContextSources.set(!this.showContextSources());
+  }
+
   setExample(text: string): void {
     this.form.patchValue({ objective: text });
     this.showExamples.set(false);
+  }
+
+  // KB Dropdown methods
+  toggleKbDropdown(): void {
+    this.kbDropdownOpen.update((v) => !v);
+  }
+
+  closeKbDropdown(): void {
+    this.kbDropdownOpen.set(false);
+  }
+
+  onKbSearchInput(event: Event): void {
+    this.kbSearchFilter.set((event.target as HTMLInputElement).value);
   }
 
   toggleKnowledgeBase(id: number): void {
@@ -476,6 +561,11 @@ export class ResearchPlannerInputComponent implements OnInit {
     } else {
       this.selectedKnowledgeBases.set([...current, id]);
     }
+  }
+
+  getKbName(id: number): string {
+    const kb = this.contextSources()?.knowledgeBases?.find(k => k.id === id);
+    return kb?.name || `KB #${id}`;
   }
 
   setIdeationSession(event: Event): void {
@@ -491,6 +581,24 @@ export class ResearchPlannerInputComponent implements OnInit {
   setBusinessCaseSession(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     this.selectedBusinessCaseSession.set(value ? parseInt(value, 10) : null);
+  }
+
+  formatGoDecision(decision: string): string {
+    const labels: Record<string, string> = {
+      go: 'Go',
+      no_go: 'No-Go',
+      conditional: 'Conditional',
+    };
+    return labels[decision] || decision;
+  }
+
+  formatRecommendation(recommendation: string): string {
+    const labels: Record<string, string> = {
+      invest: 'Invest',
+      defer: 'Defer',
+      reject: 'Reject',
+    };
+    return labels[recommendation] || recommendation;
   }
 
   async onSubmit(): Promise<void> {
