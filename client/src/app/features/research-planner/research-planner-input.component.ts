@@ -28,7 +28,6 @@ import { ResearchPlannerService } from './research-planner.service';
 import {
   Constraints,
   AvailableContextSources,
-  ContextSourceKnowledgeBase,
 } from './research-planner.types';
 
 @Component({
@@ -163,7 +162,7 @@ import {
                   No context sources available. Create knowledge bases or run other analyses first.
                 </p>
               } @else {
-                <!-- Knowledge Bases - Dropdown Style -->
+                <!-- Knowledge Bases - Multi-select Dropdown -->
                 @if (contextSources()?.knowledgeBases?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
@@ -174,7 +173,7 @@ import {
                       <button
                         type="button"
                         class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
-                        (click)="toggleKbDropdown()"
+                        (click)="toggleDropdown('kb')"
                       >
                         <span class="truncate text-left">
                           @if (selectedKnowledgeBases().length === 0) {
@@ -193,7 +192,7 @@ import {
                       </button>
 
                       @if (kbDropdownOpen()) {
-                        <div class="fixed inset-0 z-40" (click)="closeKbDropdown()"></div>
+                        <div class="fixed inset-0 z-40" (click)="closeAllDropdowns()"></div>
                         <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
                           <div class="p-2 border-b">
                             <div class="relative">
@@ -203,7 +202,7 @@ import {
                                 placeholder="Filter knowledge bases..."
                                 class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 [value]="kbSearchFilter()"
-                                (input)="onKbSearchInput($event)"
+                                (input)="kbSearchFilter.set(getInputValue($event))"
                                 (click)="$event.stopPropagation()"
                               />
                             </div>
@@ -241,75 +240,287 @@ import {
                   </div>
                 }
 
-                <!-- Ideation Sessions -->
+                <!-- Ideation Sessions - Single-select Searchable Dropdown -->
                 @if (contextSources()?.ideationSessions?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideLightbulb" size="16" class="text-yellow-500" />
-                      Ideation Sessions
+                      Ideation Session
                     </label>
-                    <select
-                      [value]="selectedIdeationSession() || ''"
-                      (change)="setIdeationSession($event)"
-                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Select an ideation session...</option>
-                      @for (session of contextSources()?.ideationSessions; track session.id) {
-                        <option [value]="session.id">
-                          {{ session.problemStatement || 'Ideation #' + session.id }}
-                        </option>
+                    <div class="relative">
+                      <button
+                        type="button"
+                        class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+                        (click)="toggleDropdown('ideation')"
+                      >
+                        <span class="truncate text-left">
+                          @if (!selectedIdeationSession()) {
+                            <span class="text-muted-foreground">Select an ideation session...</span>
+                          } @else {
+                            {{ getIdeationLabel(selectedIdeationSession()!) }}
+                          }
+                        </span>
+                        <div class="flex items-center gap-1">
+                          @if (selectedIdeationSession()) {
+                            <button
+                              type="button"
+                              class="p-0.5 hover:bg-muted rounded"
+                              (click)="clearSelection('ideation'); $event.stopPropagation()"
+                            >
+                              <ng-icon name="lucideX" class="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                          }
+                          <ng-icon
+                            name="lucideChevronDown"
+                            class="h-4 w-4 text-muted-foreground transition-transform"
+                            [class.rotate-180]="ideationDropdownOpen()"
+                          />
+                        </div>
+                      </button>
+
+                      @if (ideationDropdownOpen()) {
+                        <div class="fixed inset-0 z-40" (click)="closeAllDropdowns()"></div>
+                        <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                          <div class="p-2 border-b">
+                            <div class="relative">
+                              <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="text"
+                                placeholder="Filter ideation sessions..."
+                                class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                [value]="ideationSearchFilter()"
+                                (input)="ideationSearchFilter.set(getInputValue($event))"
+                                (click)="$event.stopPropagation()"
+                              />
+                            </div>
+                          </div>
+                          <div class="max-h-48 overflow-y-auto p-1">
+                            @for (session of filteredIdeationSessions(); track session.id) {
+                              <button
+                                type="button"
+                                class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted text-left"
+                                [class.bg-primary/10]="selectedIdeationSession() === session.id"
+                                (click)="selectIdeation(session.id); $event.stopPropagation()"
+                              >
+                                <div
+                                  class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                                  [class.bg-primary]="selectedIdeationSession() === session.id"
+                                  [class.border-primary]="selectedIdeationSession() === session.id"
+                                >
+                                  @if (selectedIdeationSession() === session.id) {
+                                    <div class="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                  }
+                                </div>
+                                <span class="truncate flex-1">{{ session.problemStatement || 'Ideation #' + session.id }}</span>
+                              </button>
+                            }
+                            @if (filteredIdeationSessions().length === 0) {
+                              <div class="p-3 text-center text-sm text-muted-foreground">
+                                No ideation sessions found
+                              </div>
+                            }
+                          </div>
+                        </div>
                       }
-                    </select>
+                    </div>
                   </div>
                 }
 
-                <!-- Feasibility Sessions -->
+                <!-- Feasibility Sessions - Single-select Searchable Dropdown -->
                 @if (contextSources()?.feasibilitySessions?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideCheckCircle" size="16" class="text-green-500" />
-                      Feasibility Analyses
+                      Feasibility Analysis
                     </label>
-                    <select
-                      [value]="selectedFeasibilitySession() || ''"
-                      (change)="setFeasibilitySession($event)"
-                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Select a feasibility analysis...</option>
-                      @for (session of contextSources()?.feasibilitySessions; track session.id) {
-                        <option [value]="session.id">
-                          {{ session.featureDescription || 'Analysis #' + session.id }}
-                          @if (session.goDecision) {
-                            ({{ formatGoDecision(session.goDecision) }})
+                    <div class="relative">
+                      <button
+                        type="button"
+                        class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+                        (click)="toggleDropdown('feasibility')"
+                      >
+                        <span class="truncate text-left">
+                          @if (!selectedFeasibilitySession()) {
+                            <span class="text-muted-foreground">Select a feasibility analysis...</span>
+                          } @else {
+                            {{ getFeasibilityLabel(selectedFeasibilitySession()!) }}
                           }
-                        </option>
+                        </span>
+                        <div class="flex items-center gap-1">
+                          @if (selectedFeasibilitySession()) {
+                            <button
+                              type="button"
+                              class="p-0.5 hover:bg-muted rounded"
+                              (click)="clearSelection('feasibility'); $event.stopPropagation()"
+                            >
+                              <ng-icon name="lucideX" class="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                          }
+                          <ng-icon
+                            name="lucideChevronDown"
+                            class="h-4 w-4 text-muted-foreground transition-transform"
+                            [class.rotate-180]="feasibilityDropdownOpen()"
+                          />
+                        </div>
+                      </button>
+
+                      @if (feasibilityDropdownOpen()) {
+                        <div class="fixed inset-0 z-40" (click)="closeAllDropdowns()"></div>
+                        <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                          <div class="p-2 border-b">
+                            <div class="relative">
+                              <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="text"
+                                placeholder="Filter feasibility analyses..."
+                                class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                [value]="feasibilitySearchFilter()"
+                                (input)="feasibilitySearchFilter.set(getInputValue($event))"
+                                (click)="$event.stopPropagation()"
+                              />
+                            </div>
+                          </div>
+                          <div class="max-h-48 overflow-y-auto p-1">
+                            @for (session of filteredFeasibilitySessions(); track session.id) {
+                              <button
+                                type="button"
+                                class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted text-left"
+                                [class.bg-primary/10]="selectedFeasibilitySession() === session.id"
+                                (click)="selectFeasibility(session.id); $event.stopPropagation()"
+                              >
+                                <div
+                                  class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                                  [class.bg-primary]="selectedFeasibilitySession() === session.id"
+                                  [class.border-primary]="selectedFeasibilitySession() === session.id"
+                                >
+                                  @if (selectedFeasibilitySession() === session.id) {
+                                    <div class="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                  }
+                                </div>
+                                <span class="truncate flex-1">{{ session.featureDescription || 'Analysis #' + session.id }}</span>
+                                @if (session.goDecision) {
+                                  <span
+                                    class="text-xs px-1.5 py-0.5 rounded"
+                                    [class.bg-green-100]="session.goDecision === 'go'"
+                                    [class.text-green-700]="session.goDecision === 'go'"
+                                    [class.bg-red-100]="session.goDecision === 'no_go'"
+                                    [class.text-red-700]="session.goDecision === 'no_go'"
+                                    [class.bg-yellow-100]="session.goDecision === 'conditional'"
+                                    [class.text-yellow-700]="session.goDecision === 'conditional'"
+                                  >
+                                    {{ formatGoDecision(session.goDecision) }}
+                                  </span>
+                                }
+                              </button>
+                            }
+                            @if (filteredFeasibilitySessions().length === 0) {
+                              <div class="p-3 text-center text-sm text-muted-foreground">
+                                No feasibility analyses found
+                              </div>
+                            }
+                          </div>
+                        </div>
                       }
-                    </select>
+                    </div>
                   </div>
                 }
 
-                <!-- Business Case Sessions -->
+                <!-- Business Case Sessions - Single-select Searchable Dropdown -->
                 @if (contextSources()?.businessCaseSessions?.length) {
                   <div>
                     <label class="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                       <ng-icon name="lucideBarChart" size="16" class="text-purple-500" />
-                      Business Cases
+                      Business Case
                     </label>
-                    <select
-                      [value]="selectedBusinessCaseSession() || ''"
-                      (change)="setBusinessCaseSession($event)"
-                      class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Select a business case...</option>
-                      @for (session of contextSources()?.businessCaseSessions; track session.id) {
-                        <option [value]="session.id">
-                          {{ session.featureName || 'Business Case #' + session.id }}
-                          @if (session.recommendation) {
-                            ({{ formatRecommendation(session.recommendation) }})
+                    <div class="relative">
+                      <button
+                        type="button"
+                        class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+                        (click)="toggleDropdown('businessCase')"
+                      >
+                        <span class="truncate text-left">
+                          @if (!selectedBusinessCaseSession()) {
+                            <span class="text-muted-foreground">Select a business case...</span>
+                          } @else {
+                            {{ getBusinessCaseLabel(selectedBusinessCaseSession()!) }}
                           }
-                        </option>
+                        </span>
+                        <div class="flex items-center gap-1">
+                          @if (selectedBusinessCaseSession()) {
+                            <button
+                              type="button"
+                              class="p-0.5 hover:bg-muted rounded"
+                              (click)="clearSelection('businessCase'); $event.stopPropagation()"
+                            >
+                              <ng-icon name="lucideX" class="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                          }
+                          <ng-icon
+                            name="lucideChevronDown"
+                            class="h-4 w-4 text-muted-foreground transition-transform"
+                            [class.rotate-180]="businessCaseDropdownOpen()"
+                          />
+                        </div>
+                      </button>
+
+                      @if (businessCaseDropdownOpen()) {
+                        <div class="fixed inset-0 z-40" (click)="closeAllDropdowns()"></div>
+                        <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                          <div class="p-2 border-b">
+                            <div class="relative">
+                              <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="text"
+                                placeholder="Filter business cases..."
+                                class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                [value]="businessCaseSearchFilter()"
+                                (input)="businessCaseSearchFilter.set(getInputValue($event))"
+                                (click)="$event.stopPropagation()"
+                              />
+                            </div>
+                          </div>
+                          <div class="max-h-48 overflow-y-auto p-1">
+                            @for (session of filteredBusinessCaseSessions(); track session.id) {
+                              <button
+                                type="button"
+                                class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted text-left"
+                                [class.bg-primary/10]="selectedBusinessCaseSession() === session.id"
+                                (click)="selectBusinessCase(session.id); $event.stopPropagation()"
+                              >
+                                <div
+                                  class="h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0"
+                                  [class.bg-primary]="selectedBusinessCaseSession() === session.id"
+                                  [class.border-primary]="selectedBusinessCaseSession() === session.id"
+                                >
+                                  @if (selectedBusinessCaseSession() === session.id) {
+                                    <div class="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                  }
+                                </div>
+                                <span class="truncate flex-1">{{ session.featureName || 'Business Case #' + session.id }}</span>
+                                @if (session.recommendation) {
+                                  <span
+                                    class="text-xs px-1.5 py-0.5 rounded"
+                                    [class.bg-green-100]="session.recommendation === 'invest'"
+                                    [class.text-green-700]="session.recommendation === 'invest'"
+                                    [class.bg-yellow-100]="session.recommendation === 'defer'"
+                                    [class.text-yellow-700]="session.recommendation === 'defer'"
+                                    [class.bg-red-100]="session.recommendation === 'reject'"
+                                    [class.text-red-700]="session.recommendation === 'reject'"
+                                  >
+                                    {{ formatRecommendation(session.recommendation) }}
+                                  </span>
+                                }
+                              </button>
+                            }
+                            @if (filteredBusinessCaseSessions().length === 0) {
+                              <div class="p-3 text-center text-sm text-muted-foreground">
+                                No business cases found
+                              </div>
+                            }
+                          </div>
+                        </div>
                       }
-                    </select>
+                    </div>
                   </div>
                 }
               }
@@ -478,9 +689,17 @@ export class ResearchPlannerInputComponent implements OnInit {
   selectedFeasibilitySession = signal<number | null>(null);
   selectedBusinessCaseSession = signal<number | null>(null);
 
-  // KB dropdown state
+  // Dropdown states
   kbDropdownOpen = signal(false);
+  ideationDropdownOpen = signal(false);
+  feasibilityDropdownOpen = signal(false);
+  businessCaseDropdownOpen = signal(false);
+
+  // Search filters
   kbSearchFilter = signal('');
+  ideationSearchFilter = signal('');
+  feasibilitySearchFilter = signal('');
+  businessCaseSearchFilter = signal('');
 
   form = this.fb.group({
     objective: ['', [Validators.required, Validators.minLength(10)]],
@@ -519,8 +738,37 @@ export class ResearchPlannerInputComponent implements OnInit {
     );
   });
 
+  filteredIdeationSessions = computed(() => {
+    const sources = this.contextSources();
+    if (!sources?.ideationSessions) return [];
+    const filter = this.ideationSearchFilter().toLowerCase();
+    if (!filter) return sources.ideationSessions;
+    return sources.ideationSessions.filter((s) =>
+      (s.problemStatement || '').toLowerCase().includes(filter)
+    );
+  });
+
+  filteredFeasibilitySessions = computed(() => {
+    const sources = this.contextSources();
+    if (!sources?.feasibilitySessions) return [];
+    const filter = this.feasibilitySearchFilter().toLowerCase();
+    if (!filter) return sources.feasibilitySessions;
+    return sources.feasibilitySessions.filter((s) =>
+      (s.featureDescription || '').toLowerCase().includes(filter)
+    );
+  });
+
+  filteredBusinessCaseSessions = computed(() => {
+    const sources = this.contextSources();
+    if (!sources?.businessCaseSessions) return [];
+    const filter = this.businessCaseSearchFilter().toLowerCase();
+    if (!filter) return sources.businessCaseSessions;
+    return sources.businessCaseSessions.filter((s) =>
+      (s.featureName || '').toLowerCase().includes(filter)
+    );
+  });
+
   async ngOnInit(): Promise<void> {
-    // Load context sources on init
     this.loadingContextSources.set(true);
     try {
       const sources = await this.service.loadContextSources();
@@ -541,19 +789,51 @@ export class ResearchPlannerInputComponent implements OnInit {
     this.showExamples.set(false);
   }
 
-  // KB Dropdown methods
-  toggleKbDropdown(): void {
-    this.kbDropdownOpen.update((v) => !v);
+  getInputValue(event: Event): string {
+    return (event.target as HTMLInputElement).value;
   }
 
-  closeKbDropdown(): void {
+  // Dropdown management
+  toggleDropdown(type: 'kb' | 'ideation' | 'feasibility' | 'businessCase'): void {
+    this.closeAllDropdowns();
+    switch (type) {
+      case 'kb':
+        this.kbDropdownOpen.set(true);
+        break;
+      case 'ideation':
+        this.ideationDropdownOpen.set(true);
+        break;
+      case 'feasibility':
+        this.feasibilityDropdownOpen.set(true);
+        break;
+      case 'businessCase':
+        this.businessCaseDropdownOpen.set(true);
+        break;
+    }
+  }
+
+  closeAllDropdowns(): void {
     this.kbDropdownOpen.set(false);
+    this.ideationDropdownOpen.set(false);
+    this.feasibilityDropdownOpen.set(false);
+    this.businessCaseDropdownOpen.set(false);
   }
 
-  onKbSearchInput(event: Event): void {
-    this.kbSearchFilter.set((event.target as HTMLInputElement).value);
+  clearSelection(type: 'ideation' | 'feasibility' | 'businessCase'): void {
+    switch (type) {
+      case 'ideation':
+        this.selectedIdeationSession.set(null);
+        break;
+      case 'feasibility':
+        this.selectedFeasibilitySession.set(null);
+        break;
+      case 'businessCase':
+        this.selectedBusinessCaseSession.set(null);
+        break;
+    }
   }
 
+  // Knowledge bases (multi-select)
   toggleKnowledgeBase(id: number): void {
     const current = this.selectedKnowledgeBases();
     if (current.includes(id)) {
@@ -568,19 +848,39 @@ export class ResearchPlannerInputComponent implements OnInit {
     return kb?.name || `KB #${id}`;
   }
 
-  setIdeationSession(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.selectedIdeationSession.set(value ? parseInt(value, 10) : null);
+  // Single-select handlers
+  selectIdeation(id: number): void {
+    this.selectedIdeationSession.set(id);
+    this.ideationDropdownOpen.set(false);
+    this.ideationSearchFilter.set('');
   }
 
-  setFeasibilitySession(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.selectedFeasibilitySession.set(value ? parseInt(value, 10) : null);
+  selectFeasibility(id: number): void {
+    this.selectedFeasibilitySession.set(id);
+    this.feasibilityDropdownOpen.set(false);
+    this.feasibilitySearchFilter.set('');
   }
 
-  setBusinessCaseSession(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.selectedBusinessCaseSession.set(value ? parseInt(value, 10) : null);
+  selectBusinessCase(id: number): void {
+    this.selectedBusinessCaseSession.set(id);
+    this.businessCaseDropdownOpen.set(false);
+    this.businessCaseSearchFilter.set('');
+  }
+
+  // Label getters
+  getIdeationLabel(id: number): string {
+    const session = this.contextSources()?.ideationSessions?.find(s => s.id === id);
+    return session?.problemStatement || `Ideation #${id}`;
+  }
+
+  getFeasibilityLabel(id: number): string {
+    const session = this.contextSources()?.feasibilitySessions?.find(s => s.id === id);
+    return session?.featureDescription || `Analysis #${id}`;
+  }
+
+  getBusinessCaseLabel(id: number): string {
+    const session = this.contextSources()?.businessCaseSessions?.find(s => s.id === id);
+    return session?.featureName || `Business Case #${id}`;
   }
 
   formatGoDecision(decision: string): string {
