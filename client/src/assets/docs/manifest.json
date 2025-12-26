@@ -102,6 +102,12 @@
     "summary": "Service file: `flow_service.py`..."
   },
   {
+    "name": "StoryToCodeService",
+    "filename": "story-to-code-service.md",
+    "category": "General",
+    "summary": "Service file: `story_to_code_service.py`..."
+  },
+  {
     "name": "ExperienceGapAnalyzerService",
     "filename": "experience-gap-analyzer-service.md",
     "category": "General",
