@@ -1,12 +1,10 @@
-/**
- * Research Planner Results Component Tests
- */
 import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
+import { vi } from 'vitest';
 
 import { ResearchPlannerResultsComponent } from './research-planner-results.component';
 import { ResearchPlannerService } from './research-planner.service';
@@ -27,7 +25,7 @@ class MockNgIconComponent {
 describe('ResearchPlannerResultsComponent', () => {
     let component: ResearchPlannerResultsComponent;
     let fixture: ComponentFixture<ResearchPlannerResultsComponent>;
-    let service: jasmine.SpyObj<ResearchPlannerService>;
+    let service: any;
 
     const mockSessionDetail: SessionDetail = {
         session: {
@@ -62,12 +60,12 @@ describe('ResearchPlannerResultsComponent', () => {
     };
 
     beforeEach(async () => {
-        const serviceSpy = jasmine.createSpyObj('ResearchPlannerService', [
-            'getSessionDetail',
-            'selectMethods',
-            'generateInstruments',
-            'pollSessionStatus'
-        ]);
+        const serviceSpy = {
+            getSessionDetail: vi.fn(),
+            selectMethods: vi.fn(),
+            generateInstruments: vi.fn(),
+            pollSessionStatus: vi.fn()
+        };
 
         await TestBed.configureTestingModule({
             imports: [
@@ -92,26 +90,26 @@ describe('ResearchPlannerResultsComponent', () => {
             })
             .compileComponents();
 
-        service = TestBed.inject(ResearchPlannerService) as jasmine.SpyObj<ResearchPlannerService>;
+        service = TestBed.inject(ResearchPlannerService);
         fixture = TestBed.createComponent(ResearchPlannerResultsComponent);
         component = fixture.componentInstance;
     });
 
     it('should create', () => {
-        service.getSessionDetail.and.returnValue(Promise.resolve(mockSessionDetail));
+        service.getSessionDetail.mockResolvedValue(mockSessionDetail);
         fixture.detectChanges();
         expect(component).toBeTruthy();
     });
 
     it('should load session detail on init', fakeAsync(() => {
-        service.getSessionDetail.and.returnValue(Promise.resolve(mockSessionDetail));
+        service.getSessionDetail.mockResolvedValue(mockSessionDetail);
 
         component.ngOnInit();
         tick();
 
         expect(service.getSessionDetail).toHaveBeenCalledWith(1);
         expect(component.sessionDetail()).toEqual(mockSessionDetail);
-        expect(component.loading()).toBeFalse();
+        expect(component.loading()).toBe(false);
     }));
 
     it('should toggle method selection', () => {
@@ -128,8 +126,8 @@ describe('ResearchPlannerResultsComponent', () => {
     });
 
     it('should proceed to configuration step if methods selected', fakeAsync(() => {
-        service.getSessionDetail.and.returnValue(Promise.resolve(mockSessionDetail));
-        service.selectMethods.and.returnValue(Promise.resolve({ ...mockSessionDetail.session, selectedMethods: ['user_interviews'] }));
+        service.getSessionDetail.mockResolvedValue(mockSessionDetail);
+        service.selectMethods.mockResolvedValue({ ...mockSessionDetail.session, selectedMethods: ['user_interviews'] });
 
         component.ngOnInit();
         tick();
@@ -143,7 +141,7 @@ describe('ResearchPlannerResultsComponent', () => {
     }));
 
     it('should not proceed if no methods selected', fakeAsync(() => {
-        service.getSessionDetail.and.returnValue(Promise.resolve(mockSessionDetail));
+        service.getSessionDetail.mockResolvedValue(mockSessionDetail);
         component.ngOnInit();
         tick();
 
@@ -156,25 +154,25 @@ describe('ResearchPlannerResultsComponent', () => {
     }));
 
     it('should generate instruments and poll for completion', fakeAsync(() => {
-        service.getSessionDetail.and.returnValue(Promise.resolve(mockSessionDetail));
-        service.generateInstruments.and.returnValue(Promise.resolve({ success: true }));
-        service.pollSessionStatus.and.returnValue(Promise.resolve({
+        service.getSessionDetail.mockResolvedValue(mockSessionDetail);
+        service.generateInstruments.mockResolvedValue({ success: true });
+        service.pollSessionStatus.mockResolvedValue({
             id: 1,
             status: 'completed',
             progressStep: 5
-        }));
+        });
 
         component.ngOnInit();
         tick();
 
         component.generateInstruments();
-        expect(component.isGenerating()).toBeTrue();
+        expect(component.isGenerating()).toBe(true);
         tick(); // Generate call
         tick(); // Poll call
 
         expect(service.generateInstruments).toHaveBeenCalled();
         expect(service.pollSessionStatus).toHaveBeenCalled();
         expect(component.currentStep()).toBe(3);
-        expect(component.isGenerating()).toBeFalse();
+        expect(component.isGenerating()).toBe(false);
     }));
 });

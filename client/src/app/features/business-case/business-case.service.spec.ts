@@ -299,6 +299,7 @@ describe('BusinessCaseService', () => {
             createdAt: new Date().toISOString(),
           },
         ],
+        rates: [],
         feasibility: null,
       };
 

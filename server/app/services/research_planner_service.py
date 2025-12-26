@@ -11,6 +11,16 @@ import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlmodel import Session, select, desc
+from humps import camelize
+
+
+def _camelize_nested(obj: Any) -> Any:
+    """Recursively convert all dict keys from snake_case to camelCase."""
+    if isinstance(obj, dict):
+        return {camelize(k): _camelize_nested(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_camelize_nested(item) for item in obj]
+    return obj
 from app.models.research_planner import (
     ResearchPlanSession,
     RecommendedMethod,
@@ -258,9 +268,9 @@ class ResearchPlannerService:
             select(IdeaCluster).where(IdeaCluster.session_id == session_id)
         ).all())
         if clusters:
-            cluster_names = [c.cluster_name for c in clusters if c.cluster_name]
-            if cluster_names:
-                context_parts.append(f"**Idea Themes:** {', '.join(cluster_names)}")
+            theme_names = [c.theme_name for c in clusters if c.theme_name]
+            if theme_names:
+                context_parts.append(f"**Idea Themes:** {', '.join(theme_names)}")
 
         return {
             "text": "\n\n".join(context_parts) if context_parts else "",
@@ -486,6 +496,7 @@ class ResearchPlannerService:
         self,
         db: Session,
         objective: str,
+        research_context: str = "b2b",
         constraints: Optional[Dict[str, Any]] = None,
         user_id: Optional[int] = None,
         knowledge_base_ids: Optional[List[int]] = None,
@@ -500,6 +511,7 @@ class ResearchPlannerService:
         session_obj = ResearchPlanSession(
             user_id=user_id,
             objective=objective,
+            research_context=research_context,
             constraints=constraints,
             knowledge_base_ids=knowledge_base_ids,
             ideation_session_id=ideation_session_id,
@@ -561,12 +573,26 @@ class ResearchPlannerService:
             .where(RecruitingPlan.session_id == session_id)
         ).all())
 
+        # Transform recruiting plans to ensure nested JSON keys are camelCase
+        # (SQLModel alias_generator only handles top-level fields)
+        transformed_recruiting_plans = []
+        for plan in recruiting_plans:
+            plan_dict = plan.model_dump(by_alias=True)
+            # Camelize nested JSON fields that were stored with snake_case keys
+            if plan_dict.get("detailedCriteria"):
+                plan_dict["detailedCriteria"] = _camelize_nested(plan_dict["detailedCriteria"])
+            if plan_dict.get("screenerQuestions"):
+                plan_dict["screenerQuestions"] = _camelize_nested(plan_dict["screenerQuestions"])
+            if plan_dict.get("emailTemplates"):
+                plan_dict["emailTemplates"] = _camelize_nested(plan_dict["emailTemplates"])
+            transformed_recruiting_plans.append(plan_dict)
+
         return {
             "session": session_obj,
             "recommendedMethods": methods,
             "interviewGuides": interview_guides,
             "surveys": surveys,
-            "recruitingPlans": recruiting_plans
+            "recruitingPlans": transformed_recruiting_plans
         }
 
     def select_methods(
@@ -860,6 +886,13 @@ Analyze the objective and recommend 1-4 research methods. For each method:
 3. Specify participant requirements
 4. Rate confidence in recommendation (0.0-1.0)
 
+Also determine if this is B2B (business/enterprise) or B2C (consumer) research, then provide:
+- 4-6 participant types who would provide valuable insights
+- For B2B: suggest relevant job roles/titles
+- For B2C: suggest demographic or behavioral segments (e.g., "Parents with young children", "Budget-conscious shoppers", "Daily active users")
+- 5-8 focus topics that should be explored during research
+- Appropriate recruiting criteria fields based on context type
+
 Consider these methods:
 - user_interviews: In-depth qualitative interviews
 - surveys: Quantitative data collection
@@ -884,7 +917,17 @@ Return EXACTLY this JSON structure:
       "confidence_score": 0.89
     }}
   ],
-  "suggested_sequence": ["user_interviews", "surveys"]
+  "suggested_sequence": ["user_interviews", "surveys"],
+  "research_context": "b2b OR b2c",
+  "suggested_participants": ["Current enterprise customers", "Recent churned users", "Power users", "New sign-ups in last 30 days"],
+  "suggested_segments": ["For B2B: job roles like Product Manager, Engineering Lead. For B2C: segments like Parents 25-40, Budget-conscious millennials, Daily active users"],
+  "suggested_topics": ["Onboarding friction points", "Feature discovery", "Pain points in current workflow", "Competitor comparisons", "Willingness to pay"],
+  "recruiting_criteria_fields": [
+    {{"field": "role", "label": "Job Title or Role", "placeholder": "e.g., Product Manager", "applies_to": "b2b"}},
+    {{"field": "company_size", "label": "Company Size", "placeholder": "e.g., 200+ employees", "applies_to": "b2b"}},
+    {{"field": "demographic", "label": "Age Range or Life Stage", "placeholder": "e.g., 25-40, Parents", "applies_to": "b2c"}},
+    {{"field": "behavior", "label": "Usage or Behavior", "placeholder": "e.g., Daily users, First-time buyers", "applies_to": "b2c"}}
+  ]
 }}
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences."""
@@ -899,8 +942,15 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
             context="Method Recommendation"
         )
 
-        # Update session with suggested sequence
+        # Update session with suggested sequence and configuration suggestions
         session_obj.suggested_sequence = data.get("suggested_sequence", [])
+        session_obj.generation_metadata = {
+            "research_context": data.get("research_context", "b2b"),  # b2b or b2c
+            "suggested_participants": data.get("suggested_participants", []),
+            "suggested_segments": data.get("suggested_segments", []),
+            "suggested_topics": data.get("suggested_topics", []),
+            "recruiting_criteria_fields": data.get("recruiting_criteria_fields", []),
+        }
         db.add(session_obj)
 
         # Create recommended methods

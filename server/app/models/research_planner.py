@@ -27,6 +27,7 @@ class ResearchPlanSession(SQLModel, table=True):
 
     # Input data
     objective: str = Field(min_length=10)
+    research_context: Optional[str] = Field(default="b2b")  # "b2b" or "b2c"
     constraints: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     # constraints schema: {budget: "limited"|"moderate"|"flexible", timeline: "urgent"|"normal"|"flexible", user_access: bool, remote_only: bool}
 

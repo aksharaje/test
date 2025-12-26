@@ -106,6 +106,36 @@ class TestResearchPlannerAPI:
         assert data["businessCaseSessionId"] == 2
 
     @patch('app.services.research_planner_service.research_planner_service.run_method_recommendation_pipeline')
+    def test_create_session_with_research_context(self, mock_pipeline, clean_db):
+        """Test creating a session with B2B or B2C research context"""
+        # Test B2C context
+        response = client.post(
+            "/api/cx/research-planner/sessions",
+            json={
+                "objective": "Understanding why consumers abandon their shopping carts",
+                "researchContext": "b2c"
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] is not None
+        assert data["researchContext"] == "b2c"
+
+        # Test B2B context (default)
+        response = client.post(
+            "/api/cx/research-planner/sessions",
+            json={
+                "objective": "Why are enterprise customers dropping off during onboarding?",
+                "researchContext": "b2b"
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["researchContext"] == "b2b"
+
+    @patch('app.services.research_planner_service.research_planner_service.run_method_recommendation_pipeline')
     def test_create_session_validation_min_length(self, mock_pipeline, clean_db):
         """Test validation: objective too short"""
         response = client.post(
@@ -363,8 +393,8 @@ class TestResearchPlannerAPI:
         """Test getting available context sources"""
         # Create some test data
         with Session(engine) as session:
-            # Create Knowledge Base
-            kb = KnowledgeBase(name="Test KB", description="Test Desc", index_name="test")
+            # Create Knowledge Base (must be 'ready' status to appear in results)
+            kb = KnowledgeBase(name="Test KB", description="Test Desc", index_name="test", status="ready")
             session.add(kb)
             
             # Create Ideation Session
@@ -384,7 +414,8 @@ class TestResearchPlannerAPI:
             # Create Business Case Session
             # Note: Checking required fields for BusinessCaseSession
             business_case = BusinessCaseSession(
-                feature_name="Test Business Case", 
+                feature_name="Test Business Case",
+                feature_description="Test feature description for business case",
                 status="completed",
                 recommendation="invest"
             )

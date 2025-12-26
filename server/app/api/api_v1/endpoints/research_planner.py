@@ -36,6 +36,7 @@ class CreateSessionRequest(BaseModel):
     model_config = {"populate_by_name": True}
 
     objective: str = Field(min_length=10)
+    research_context: Optional[str] = Field(default="b2b", alias="researchContext")  # "b2b" or "b2c"
     constraints: Optional[ConstraintsModel] = None
     user_id: Optional[int] = Field(default=None, alias="userId")
 
@@ -201,6 +202,7 @@ def create_session(
         session_obj = research_planner_service.create_session(
             db=db_session,
             objective=request.objective,
+            research_context=request.research_context or "b2b",
             constraints=constraints_dict,
             user_id=request.user_id,
             knowledge_base_ids=request.knowledge_base_ids,

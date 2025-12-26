@@ -1,10 +1,8 @@
-/**
- * Research Planner Processing Component Tests
- */
 import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
+import { vi } from 'vitest';
 
 import { ResearchPlannerProcessingComponent } from './research-planner-processing.component';
 import { ResearchPlannerService } from './research-planner.service';
@@ -25,10 +23,13 @@ class MockNgIconComponent {
 describe('ResearchPlannerProcessingComponent', () => {
     let component: ResearchPlannerProcessingComponent;
     let fixture: ComponentFixture<ResearchPlannerProcessingComponent>;
-    let service: jasmine.SpyObj<ResearchPlannerService>;
+    let service: any;
 
     beforeEach(async () => {
-        const serviceSpy = jasmine.createSpyObj('ResearchPlannerService', ['pollSessionStatus', 'retrySession']);
+        const serviceSpy = {
+            pollSessionStatus: vi.fn(),
+            retrySession: vi.fn()
+        };
 
         await TestBed.configureTestingModule({
             imports: [
@@ -51,7 +52,7 @@ describe('ResearchPlannerProcessingComponent', () => {
             })
             .compileComponents();
 
-        service = TestBed.inject(ResearchPlannerService) as jasmine.SpyObj<ResearchPlannerService>;
+        service = TestBed.inject(ResearchPlannerService);
         fixture = TestBed.createComponent(ResearchPlannerProcessingComponent);
         component = fixture.componentInstance;
     });
@@ -67,7 +68,7 @@ describe('ResearchPlannerProcessingComponent', () => {
             status: 'pending',
             progressStep: 0,
         };
-        service.pollSessionStatus.and.returnValue(Promise.resolve(mockStatus));
+        service.pollSessionStatus.mockResolvedValue(mockStatus);
 
         component.ngOnInit();
         tick(); // Initial poll
@@ -91,11 +92,11 @@ describe('ResearchPlannerProcessingComponent', () => {
             progressMessage: 'Working...'
         };
 
-        service.pollSessionStatus.and.returnValue(Promise.resolve(mockStatus1));
+        service.pollSessionStatus.mockResolvedValue(mockStatus1);
         component.ngOnInit();
         tick();
 
-        service.pollSessionStatus.and.returnValue(Promise.resolve(mockStatus2));
+        service.pollSessionStatus.mockResolvedValue(mockStatus2);
         tick(3000); // Wait for interval
 
         expect(component.status()).toBe('recommending');
@@ -111,13 +112,13 @@ describe('ResearchPlannerProcessingComponent', () => {
             status: 'selecting',
             progressStep: 2,
         };
-        service.pollSessionStatus.and.returnValue(Promise.resolve(mockStatus));
+        service.pollSessionStatus.mockResolvedValue(mockStatus);
 
         component.ngOnInit();
         tick();
 
         // Verify polling stopped by advancing time and checking call count
-        service.pollSessionStatus.calls.reset();
+        service.pollSessionStatus.mockClear();
         tick(3000);
         expect(service.pollSessionStatus).not.toHaveBeenCalled();
     }));
@@ -125,28 +126,28 @@ describe('ResearchPlannerProcessingComponent', () => {
     it('should retry session on failure', fakeAsync(() => {
         component.status.set('failed');
 
-        service.retrySession.and.returnValue(Promise.resolve({
+        service.retrySession.mockResolvedValue({
             id: 1,
             status: 'pending',
             progressStep: 0
-        } as any));
+        } as any);
 
         // Must set sessionId manually as ngOnInit sets it from route
         (component as any).sessionId = 1;
 
         // Mock pollSessionStatus for the startPolling call inside retry
-        service.pollSessionStatus.and.returnValue(Promise.resolve({
+        service.pollSessionStatus.mockResolvedValue({
             id: 1,
             status: 'pending',
             progressStep: 0
-        }));
+        });
 
         component.retry();
         tick();
 
         expect(service.retrySession).toHaveBeenCalledWith(1);
         expect(component.status()).toBe('pending');
-        expect(component.isRetrying()).toBeFalse();
+        expect(component.isRetrying()).toBe(false);
 
         discardPeriodicTasks();
     }));

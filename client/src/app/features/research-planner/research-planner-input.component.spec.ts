@@ -1,12 +1,10 @@
-/**
- * Research Planner Input Component Tests
- */
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NgIcon } from '@ng-icons/core';
+import { vi } from 'vitest';
 
 import { ResearchPlannerInputComponent } from './research-planner-input.component';
 import { ResearchPlannerService } from './research-planner.service';
@@ -27,16 +25,19 @@ class MockNgIconComponent {
 describe('ResearchPlannerInputComponent', () => {
     let component: ResearchPlannerInputComponent;
     let fixture: ComponentFixture<ResearchPlannerInputComponent>;
-    let service: jasmine.SpyObj<ResearchPlannerService>;
+    let service: any;
 
     beforeEach(async () => {
-        const serviceSpy = jasmine.createSpyObj('ResearchPlannerService', ['loadContextSources', 'createSession']);
-        serviceSpy.loadContextSources.and.returnValue(Promise.resolve({
+        const serviceSpy = {
+            loadContextSources: vi.fn(),
+            createSession: vi.fn()
+        };
+        serviceSpy.loadContextSources.mockResolvedValue({
             knowledgeBases: [],
             ideationSessions: [],
             feasibilitySessions: [],
             businessCaseSessions: []
-        }));
+        });
 
         await TestBed.configureTestingModule({
             imports: [
@@ -55,7 +56,7 @@ describe('ResearchPlannerInputComponent', () => {
             })
             .compileComponents();
 
-        service = TestBed.inject(ResearchPlannerService) as jasmine.SpyObj<ResearchPlannerService>;
+        service = TestBed.inject(ResearchPlannerService);
         fixture = TestBed.createComponent(ResearchPlannerInputComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
@@ -74,20 +75,20 @@ describe('ResearchPlannerInputComponent', () => {
     it('should mark objective as invalid if empty', () => {
         const objectiveControl = component.form.get('objective');
         objectiveControl?.setValue('');
-        expect(objectiveControl?.valid).toBeFalse();
+        expect(objectiveControl?.valid).toBe(false);
         expect(objectiveControl?.errors?.['required']).toBeTruthy();
     });
 
     it('should mark objective as invalid if less than 10 chars', () => {
         const objectiveControl = component.form.get('objective');
         objectiveControl?.setValue('Short');
-        expect(objectiveControl?.valid).toBeFalse();
+        expect(objectiveControl?.valid).toBe(false);
         expect(objectiveControl?.errors?.['minlength']).toBeTruthy();
     });
 
     it('should mark form as valid when objective is valid', () => {
         component.form.get('objective')?.setValue('This is a valid research objective that is long enough.');
-        expect(component.form.valid).toBeTrue();
+        expect(component.form.valid).toBe(true);
     });
 
     it('should load context sources on init', fakeAsync(() => {
@@ -97,7 +98,7 @@ describe('ResearchPlannerInputComponent', () => {
             feasibilitySessions: [],
             businessCaseSessions: []
         };
-        service.loadContextSources.and.returnValue(Promise.resolve(mockSources));
+        service.loadContextSources.mockResolvedValue(mockSources);
 
         component.ngOnInit();
         tick();
@@ -110,13 +111,13 @@ describe('ResearchPlannerInputComponent', () => {
         const example = "Example objective text";
         component.setExample(example);
         expect(component.form.get('objective')?.value).toBe(example);
-        expect(component.showExamples()).toBeFalse();
+        expect(component.showExamples()).toBe(false);
     });
 
     it('should toggle examples visibility', () => {
-        expect(component.showExamples()).toBeFalse();
+        expect(component.showExamples()).toBe(false);
         component.showExamples.set(true);
-        expect(component.showExamples()).toBeTrue();
+        expect(component.showExamples()).toBe(true);
     });
 
     it('should calculate selected context count correctly', () => {

@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import { MarkdownComponent } from 'ngx-markdown';
 import {
   lucideLoader2,
   lucideCheckCircle,
@@ -44,7 +45,7 @@ import {
 @Component({
   selector: 'app-research-planner-results',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgIcon],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgIcon, MarkdownComponent],
   viewProviders: [
     provideIcons({
       lucideLoader2,
@@ -155,7 +156,7 @@ import {
             }
           </div>
           <span [class]="currentStep() >= 2 ? 'text-foreground' : 'text-muted-foreground'" class="text-sm font-medium">
-            Configure Instruments
+            Set Up Details
           </span>
           <div class="h-0.5 flex-1 bg-muted"></div>
           <div
@@ -172,10 +173,9 @@ import {
         <!-- Step 1: Method Selection -->
         @if (currentStep() === 1) {
           <div class="space-y-4">
-            <h2 class="text-lg font-semibold text-foreground">Recommended Research Methods</h2>
+            <h2 class="text-lg font-semibold text-foreground">Ways to Learn From Your Users</h2>
             <p class="text-sm text-muted-foreground">
-              Select the methods you want to use for your research. We'll generate the appropriate
-              instruments for each.
+              Pick the methods that work best for you. We'll create the materials you need for each one.
             </p>
 
             <!-- Method Cards -->
@@ -247,7 +247,7 @@ import {
                 [disabled]="selectedMethods().length === 0"
                 class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Configure Instruments
+                Continue
                 <ng-icon name="lucideChevronDown" size="16" class="-rotate-90" />
               </button>
             </div>
@@ -259,9 +259,9 @@ import {
           <div class="space-y-6">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-lg font-semibold text-foreground">Configure Research Instruments</h2>
+                <h2 class="text-lg font-semibold text-foreground">Set Up Your Research</h2>
                 <p class="text-sm text-muted-foreground">
-                  Customize the instruments for your selected methods.
+                  Tell us more about who you want to learn from so we can create the right materials.
                 </p>
               </div>
               <button
@@ -277,20 +277,33 @@ import {
               <div class="rounded-lg border border-border bg-card p-6">
                 <h3 class="mb-4 flex items-center gap-2 font-medium text-foreground">
                   <ng-icon name="lucideMessageSquare" size="20" />
-                  Interview Guide Configuration
+                  One-on-One Conversation Setup
                 </h3>
+                <p class="text-sm text-muted-foreground mb-4">Help us prepare questions for your conversations with users.</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Participant Type</label>
+                    <label class="block text-sm font-medium text-foreground">Who will you be talking to?</label>
                     <input
                       type="text"
                       [(ngModel)]="interviewConfig.participantType"
-                      placeholder="e.g., Enterprise customers"
+                      placeholder="Click a suggestion or type your own"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
+                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                      @for (participant of suggestedParticipants(); track participant) {
+                        <button
+                          type="button"
+                          (click)="setParticipantType(participant)"
+                          [class]="interviewConfig.participantType === participant ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+                          class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
+                        >
+                          {{ participant }}
+                        </button>
+                      }
+                    </div>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Duration (minutes)</label>
+                    <label class="block text-sm font-medium text-foreground">How long should each chat be?</label>
                     <select
                       [(ngModel)]="interviewConfig.durationMinutes"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -301,14 +314,27 @@ import {
                     </select>
                   </div>
                   <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-foreground">Focus Areas (optional)</label>
+                    <label class="block text-sm font-medium text-foreground">What topics do you want to cover? (optional)</label>
                     <input
                       type="text"
                       [(ngModel)]="interviewConfig.focusAreasText"
-                      placeholder="e.g., Onboarding experience, Pain points, Feature requests"
+                      placeholder="Click suggestions below or type your own"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
-                    <p class="mt-1 text-xs text-muted-foreground">Comma-separated list</p>
+                    <p class="mt-1 text-xs text-muted-foreground">Separate each topic with a comma</p>
+                    <!-- Suggested topics -->
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <span class="text-xs text-muted-foreground">Suggestions:</span>
+                      @for (topic of suggestedTopics(); track topic) {
+                        <button
+                          type="button"
+                          (click)="addFocusTopic(topic)"
+                          class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                        >
+                          + {{ topic }}
+                        </button>
+                      }
+                    </div>
                   </div>
                 </div>
               </div>
@@ -319,11 +345,12 @@ import {
               <div class="rounded-lg border border-border bg-card p-6">
                 <h3 class="mb-4 flex items-center gap-2 font-medium text-foreground">
                   <ng-icon name="lucideClipboardList" size="20" />
-                  Survey Configuration
+                  Questionnaire Setup
                 </h3>
+                <p class="text-sm text-muted-foreground mb-4">We'll create a questionnaire to collect feedback at scale.</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Target Audience</label>
+                    <label class="block text-sm font-medium text-foreground">Who should answer this?</label>
                     <input
                       type="text"
                       [(ngModel)]="surveyConfig.targetAudience"
@@ -332,14 +359,14 @@ import {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Survey Length</label>
+                    <label class="block text-sm font-medium text-foreground">How long should it be?</label>
                     <select
                       [(ngModel)]="surveyConfig.surveyLength"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                      <option value="short">Short (5-10 questions)</option>
-                      <option value="medium">Medium (10-20 questions)</option>
-                      <option value="long">Long (20+ questions)</option>
+                      <option value="short">Quick (5-10 questions, ~3 min)</option>
+                      <option value="medium">Standard (10-20 questions, ~7 min)</option>
+                      <option value="long">Detailed (20+ questions, ~15 min)</option>
                     </select>
                   </div>
                 </div>
@@ -350,29 +377,109 @@ import {
             <div class="rounded-lg border border-border bg-card p-6">
               <h3 class="mb-4 flex items-center gap-2 font-medium text-foreground">
                 <ng-icon name="lucideUsers" size="20" />
-                Recruiting Plan Configuration
+                Finding the Right People
               </h3>
+              <p class="text-sm text-muted-foreground mb-4">Help us find people who match your target audience.</p>
+
+              <!-- B2B Fields -->
+              @if (!isB2C()) {
+                <div class="grid gap-4 sm:grid-cols-2 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">What's their job title or role?</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="recruitingConfig.role"
+                      placeholder="Click a suggestion or type your own"
+                      class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                      @for (segment of suggestedSegments(); track segment) {
+                        <button
+                          type="button"
+                          (click)="setRole(segment)"
+                          [class]="recruitingConfig.role === segment ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+                          class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
+                        >
+                          {{ segment }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">What size company do they work at?</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="recruitingConfig.companySize"
+                      placeholder="e.g., 200+ employees"
+                      class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                      @for (size of ['Startup (1-50)', '50-200', '200-1000', '1000+', 'Enterprise']; track size) {
+                        <button
+                          type="button"
+                          (click)="recruitingConfig.companySize = size"
+                          [class]="recruitingConfig.companySize === size ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+                          class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
+                        >
+                          {{ size }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- B2C Fields -->
+              @if (isB2C()) {
+                <div class="grid gap-4 sm:grid-cols-2 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">Who are you looking for?</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="recruitingConfig.role"
+                      placeholder="Describe your target segment"
+                      class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                      @for (segment of suggestedSegments(); track segment) {
+                        <button
+                          type="button"
+                          (click)="setRole(segment)"
+                          [class]="recruitingConfig.role === segment ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+                          class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
+                        >
+                          {{ segment }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-foreground">Any demographic requirements?</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="recruitingConfig.companySize"
+                      placeholder="e.g., Ages 25-40, Urban areas"
+                      class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                      @for (demo of ['18-24', '25-34', '35-44', '45-54', '55+', 'All ages']; track demo) {
+                        <button
+                          type="button"
+                          (click)="recruitingConfig.companySize = demo"
+                          [class]="recruitingConfig.companySize === demo ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+                          class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors"
+                        >
+                          {{ demo }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label class="block text-sm font-medium text-foreground">Participant Role</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="recruitingConfig.role"
-                    placeholder="e.g., Product Manager"
-                    class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-foreground">Company Size</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="recruitingConfig.companySize"
-                    placeholder="e.g., 200+ employees"
-                    class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-foreground">Participants Needed</label>
+                  <label class="block text-sm font-medium text-foreground">How many people do you need?</label>
                   <input
                     type="number"
                     [(ngModel)]="recruitingConfig.participantCount"
@@ -398,9 +505,9 @@ import {
               >
                 @if (isGenerating()) {
                   <ng-icon name="lucideLoader2" size="16" class="animate-spin" />
-                  Generating...
+                  Creating...
                 } @else {
-                  Generate Instruments
+                  Create My Research Materials
                 }
               </button>
             </div>
@@ -412,9 +519,9 @@ import {
           <div class="space-y-6">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-lg font-semibold text-foreground">Your Research Instruments</h2>
+                <h2 class="text-lg font-semibold text-foreground">Your Research Materials</h2>
                 <p class="text-sm text-muted-foreground">
-                  Review and edit your generated instruments.
+                  Here's what we created for you. Review and customize as needed.
                 </p>
               </div>
             </div>
@@ -428,7 +535,7 @@ import {
                     [class]="activeTab() === 'interview' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'"
                     class="border-b-2 px-4 py-2 text-sm font-medium"
                   >
-                    Interview Guide
+                    Conversation Guide
                   </button>
                 }
                 @if (sessionDetail()!.surveys.length > 0) {
@@ -437,7 +544,7 @@ import {
                     [class]="activeTab() === 'survey' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'"
                     class="border-b-2 px-4 py-2 text-sm font-medium"
                   >
-                    Survey
+                    Questionnaire
                   </button>
                 }
                 @if (sessionDetail()!.recruitingPlans.length > 0) {
@@ -446,7 +553,7 @@ import {
                     [class]="activeTab() === 'recruiting' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'"
                     class="border-b-2 px-4 py-2 text-sm font-medium"
                   >
-                    Recruiting Plan
+                    Finding People
                   </button>
                 }
               </div>
@@ -456,7 +563,7 @@ import {
             @if (activeTab() === 'interview' && sessionDetail()!.interviewGuides[0]) {
               <div class="rounded-lg border border-border bg-card">
                 <div class="flex items-center justify-between border-b border-border p-4">
-                  <h3 class="font-medium text-foreground">Interview Guide</h3>
+                  <h3 class="font-medium text-foreground">Conversation Guide</h3>
                   <div class="flex gap-2">
                     <button
                       (click)="downloadMarkdown(sessionDetail()!.interviewGuides[0])"
@@ -468,9 +575,10 @@ import {
                   </div>
                 </div>
                 <div class="p-4">
-                  <div class="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">
-                    {{ getGuideContent(sessionDetail()!.interviewGuides[0]) }}
-                  </div>
+                  <markdown
+                    class="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground"
+                    [data]="getGuideContent(sessionDetail()!.interviewGuides[0])"
+                  ></markdown>
                 </div>
               </div>
             }
@@ -479,7 +587,7 @@ import {
             @if (activeTab() === 'survey' && sessionDetail()!.surveys[0]) {
               <div class="rounded-lg border border-border bg-card">
                 <div class="flex items-center justify-between border-b border-border p-4">
-                  <h3 class="font-medium text-foreground">Survey Questions</h3>
+                  <h3 class="font-medium text-foreground">Your Questions</h3>
                   <span class="text-sm text-muted-foreground">
                     {{ sessionDetail()!.surveys[0].estimatedCompletionTime }}
                   </span>
@@ -516,7 +624,7 @@ import {
                 </div>
                 @if (sessionDetail()!.surveys[0].analysisPlan) {
                   <div class="border-t border-border p-4">
-                    <h4 class="mb-2 text-sm font-medium text-foreground">Analysis Plan</h4>
+                    <h4 class="mb-2 text-sm font-medium text-foreground">How to Make Sense of Responses</h4>
                     <p class="text-sm text-muted-foreground">{{ sessionDetail()!.surveys[0].analysisPlan }}</p>
                   </div>
                 }
@@ -528,10 +636,10 @@ import {
               <div class="space-y-4">
                 <!-- Criteria -->
                 <div class="rounded-lg border border-border bg-card p-4">
-                  <h4 class="mb-3 font-medium text-foreground">Participant Criteria</h4>
+                  <h4 class="mb-3 font-medium text-foreground">Who You're Looking For</h4>
                   @if (sessionDetail()!.recruitingPlans[0].detailedCriteria) {
                     <div class="space-y-2 text-sm">
-                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria!.mustHave?.length) {
+                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria!.mustHave.length) {
                         <div>
                           <span class="font-medium text-foreground">Must have:</span>
                           <ul class="mt-1 list-inside list-disc text-muted-foreground">
@@ -541,7 +649,7 @@ import {
                           </ul>
                         </div>
                       }
-                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria!.niceToHave?.length) {
+                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria!.niceToHave.length) {
                         <div>
                           <span class="font-medium text-foreground">Nice to have:</span>
                           <ul class="mt-1 list-inside list-disc text-muted-foreground">
@@ -558,7 +666,7 @@ import {
                 <!-- Screener Questions -->
                 @if (sessionDetail()!.recruitingPlans[0].screenerQuestions?.length) {
                   <div class="rounded-lg border border-border bg-card p-4">
-                    <h4 class="mb-3 font-medium text-foreground">Screener Questions</h4>
+                    <h4 class="mb-3 font-medium text-foreground">Questions to Find the Right People</h4>
                     <div class="space-y-3">
                       @for (q of sessionDetail()!.recruitingPlans[0].screenerQuestions; track q.question; let i = $index) {
                         <div class="text-sm">
@@ -576,22 +684,22 @@ import {
                 <div class="grid gap-4 sm:grid-cols-3">
                   <div class="rounded-lg border border-border bg-card p-4 text-center">
                     <p class="text-2xl font-bold text-foreground">{{ sessionDetail()!.recruitingPlans[0].contactsNeeded }}</p>
-                    <p class="text-sm text-muted-foreground">Contacts Needed</p>
+                    <p class="text-sm text-muted-foreground">People to Reach Out To</p>
                   </div>
                   <div class="rounded-lg border border-border bg-card p-4 text-center">
                     <p class="text-2xl font-bold text-foreground">{{ (sessionDetail()!.recruitingPlans[0].expectedResponseRate * 100).toFixed(0) }}%</p>
-                    <p class="text-sm text-muted-foreground">Expected Response Rate</p>
+                    <p class="text-sm text-muted-foreground">Expected to Say Yes</p>
                   </div>
                   <div class="rounded-lg border border-border bg-card p-4 text-center">
                     <p class="text-lg font-bold text-foreground">{{ sessionDetail()!.recruitingPlans[0].incentiveRecommendation }}</p>
-                    <p class="text-sm text-muted-foreground">Recommended Incentive</p>
+                    <p class="text-sm text-muted-foreground">Thank You Gift</p>
                   </div>
                 </div>
 
                 <!-- Email Templates -->
                 @if (sessionDetail()!.recruitingPlans[0].emailTemplates?.length) {
                   <div class="rounded-lg border border-border bg-card p-4">
-                    <h4 class="mb-3 font-medium text-foreground">Email Templates</h4>
+                    <h4 class="mb-3 font-medium text-foreground">Ready-to-Use Emails</h4>
                     @for (template of sessionDetail()!.recruitingPlans[0].emailTemplates; track template.type) {
                       <div class="rounded-md bg-muted/50 p-3">
                         <p class="text-xs font-medium uppercase text-muted-foreground">{{ template.type }}</p>
@@ -609,13 +717,13 @@ import {
               <div class="rounded-lg border border-border bg-card p-8 text-center">
                 <ng-icon name="lucideClipboardList" size="32" class="mx-auto text-muted-foreground" />
                 <p class="mt-2 text-muted-foreground">
-                  No instruments generated yet. Go back to configure and generate.
+                  No materials created yet. Let's go back and set things up.
                 </p>
                 <button
                   (click)="currentStep.set(1)"
                   class="mt-4 text-sm text-primary hover:underline"
                 >
-                  Select methods and configure
+                  Choose methods to get started
                 </button>
               </div>
             }
@@ -671,6 +779,78 @@ export class ResearchPlannerResultsComponent implements OnInit {
     companySize: '',
     participantCount: 12,
   };
+
+  // Research context from user selection (b2b or b2c)
+  researchContext = computed(() => {
+    return this.sessionDetail()?.session?.researchContext || 'b2b';
+  });
+
+  isB2C = computed(() => this.researchContext() === 'b2c');
+
+  suggestedTopics = computed(() => {
+    const metadata = this.sessionDetail()?.session?.generationMetadata;
+    const topics = metadata?.['suggested_topics'] as string[] | undefined;
+    return topics?.length ? topics : [
+      'Pain points',
+      'Current workflow',
+      'Onboarding experience',
+      'Feature requests',
+      'Unmet needs',
+      'Competitor comparison',
+    ];
+  });
+
+  suggestedParticipants = computed(() => {
+    const metadata = this.sessionDetail()?.session?.generationMetadata;
+    const participants = metadata?.['suggested_participants'] as string[] | undefined;
+    return participants?.length ? participants : [
+      'Current customers',
+      'Prospective users',
+      'Power users',
+      'New users',
+      'Churned users',
+    ];
+  });
+
+  // For recruiting - segments work for both B2B (roles) and B2C (demographics/behaviors)
+  suggestedSegments = computed(() => {
+    const metadata = this.sessionDetail()?.session?.generationMetadata;
+    const segments = metadata?.['suggested_segments'] as string[] | undefined;
+    if (segments?.length) return segments;
+
+    // Fallback based on context
+    return this.isB2C() ? [
+      'Daily active users',
+      'First-time users (last 30 days)',
+      'Churned users',
+      'Power users',
+      'Budget-conscious shoppers',
+    ] : [
+      'Product Manager',
+      'End User',
+      'Team Lead',
+      'Decision Maker',
+      'Technical Lead',
+    ];
+  });
+
+  addFocusTopic(topic: string): void {
+    const current = this.interviewConfig.focusAreasText.trim();
+    if (current.toLowerCase().includes(topic.toLowerCase())) {
+      return; // Already added
+    }
+    this.interviewConfig.focusAreasText = current
+      ? `${current}, ${topic}`
+      : topic;
+  }
+
+  setParticipantType(value: string): void {
+    this.interviewConfig.participantType = value;
+  }
+
+  setRole(value: string): void {
+    this.recruitingConfig.role = value;
+  }
 
   ngOnInit(): void {
     const sessionIdParam = this.route.snapshot.paramMap.get('sessionId');
@@ -853,7 +1033,7 @@ export class ResearchPlannerResultsComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'interview-guide.md';
+    a.download = 'conversation-guide.md';
     a.click();
     URL.revokeObjectURL(url);
   }

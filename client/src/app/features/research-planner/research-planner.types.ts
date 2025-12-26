@@ -44,6 +44,7 @@ export interface ResearchPlanSession {
   id: number;
   userId?: number;
   objective: string;
+  researchContext?: 'b2b' | 'b2c';  // Business or Consumer research
   constraints?: Constraints;
 
   // Optional context sources
@@ -224,6 +225,7 @@ export interface AvailableContextSources {
 
 export interface CreateSessionRequest {
   objective: string;
+  researchContext?: 'b2b' | 'b2c';  // Business or Consumer research
   constraints?: Constraints;
   userId?: number;
 

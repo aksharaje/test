@@ -31,12 +31,18 @@ export class ResearchPlannerService {
   private _loading = signal(false);
   private _error = signal<string | null>(null);
 
+  // Pagination
+  private _page = signal(0);
+  private _hasMore = signal(true);
+  private readonly pageSize = 20;
+
   // Readonly accessors
   readonly currentSession = this._currentSession.asReadonly();
   readonly sessions = this._sessions.asReadonly();
   readonly contextSources = this._contextSources.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly hasMore = this._hasMore.asReadonly();
 
   // --- Context Sources ---
 
@@ -111,19 +117,36 @@ export class ResearchPlannerService {
 
   async loadSessions(reset = false, userId?: number): Promise<void> {
     if (reset) {
+      this._page.set(0);
+      this._hasMore.set(true);
       this._sessions.set([]);
     }
+
+    // Don't load if no more data
+    if (!this._hasMore() && !reset) return;
 
     this._loading.set(true);
     this._error.set(null);
 
     try {
-      let url = `${this.baseUrl}/sessions`;
+      const skip = this._page() * this.pageSize;
+      let url = `${this.baseUrl}/sessions?skip=${skip}&limit=${this.pageSize}`;
       if (userId) {
-        url += `?user_id=${userId}`;
+        url += `&user_id=${userId}`;
       }
+
       const sessions = await firstValueFrom(this.http.get<ResearchPlanSession[]>(url));
-      this._sessions.set(sessions);
+
+      // Check if we got less than page size (no more data)
+      if (sessions.length < this.pageSize) {
+        this._hasMore.set(false);
+      }
+
+      // Append or replace sessions
+      this._sessions.update((current) =>
+        reset ? sessions : [...current, ...sessions]
+      );
+      this._page.update((p) => p + 1);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load sessions';
       this._error.set(message);
@@ -186,6 +209,12 @@ export class ResearchPlannerService {
       const session = await firstValueFrom(
         this.http.post<ResearchPlanSession>(`${this.baseUrl}/sessions/${sessionId}/retry`, {})
       );
+
+      // Update in local sessions list
+      this._sessions.update((sessions) =>
+        sessions.map((s) => (s.id === sessionId ? session : s))
+      );
+
       return session;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to retry session';
