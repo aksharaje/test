@@ -245,7 +245,7 @@ type SourceType = 'custom' | 'artifact' | 'ideation';
                 (input)="onFeatureDescriptionInput($event)"
                 required
               ></textarea>
-              <p class="text-xs mt-1" [class.text-muted-foreground]="charCount() >= 100" [class.text-destructive]="charCount() < 100">
+              <p class="text-xs mt-1" [class.text-muted-foreground]="charCount() === 0 || charCount() >= 100" [class.text-destructive]="charCount() > 0 && charCount() < 100">
                 {{ charCount() }} characters (min 100)
               </p>
             </div>

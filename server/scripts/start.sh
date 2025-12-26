@@ -4,6 +4,33 @@
 echo "=== PS Prototype Server Startup ==="
 echo "Checking database migration status..."
 
+# Self-healing check for feasibility tables (Fix for 500 Error)
+SCHEMA_STATUS=$(python3 -c "
+from sqlalchemy import create_engine, inspect
+import os
+try:
+    engine = create_engine(os.environ['DATABASE_URL'])
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    if 'users' in tables and 'feasibility_sessions' not in tables:
+        print('MISSING_FEASIBILITY')
+    else:
+        print('OK')
+except:
+    print('ERROR')
+" 2>/dev/null || echo "ERROR")
+
+if [ "$SCHEMA_STATUS" = "MISSING_FEASIBILITY" ]; then
+    echo "CRITICAL: Database schema inconsistency detected."
+    echo "Users table exists, but Feasibility tables are missing."
+    echo "Attempting to repair migration history..."
+    # Stamp to the revision BEFORE feasibility tables (0e9c4a51f89b)
+    alembic stamp 0e9c4a51f89b
+    echo "Stamped revision 0e9c4a51f89b. Running upgrade head..."
+    alembic upgrade head
+    echo "Schema repair complete."
+fi
+
 # Try to get current alembic revision
 CURRENT_REV=$(alembic current 2>&1 || echo "ERROR")
 

@@ -343,7 +343,7 @@ type SourceType = 'feasibility' | 'artifact' | 'ideation' | 'custom';
                   (input)="onFeatureDescriptionInput($event)"
                   required
                 ></textarea>
-                <p class="text-xs mt-1" [class.text-muted-foreground]="descCharCount() >= 50" [class.text-destructive]="descCharCount() < 50">
+                <p class="text-xs mt-1" [class.text-muted-foreground]="descCharCount() === 0 || descCharCount() >= 50" [class.text-destructive]="descCharCount() > 0 && descCharCount() < 50">
                   {{ descCharCount() }} characters (min 50)
                 </p>
               </div>
