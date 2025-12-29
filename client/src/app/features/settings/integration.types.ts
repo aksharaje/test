@@ -2,7 +2,7 @@
 
 export interface Integration {
   id: number;
-  provider: 'jira' | 'ado';
+  provider: 'jira' | 'ado' | 'servicenow' | 'zendesk' | 'qualtrics';
   name: string;
   baseUrl: string;
   cloudId: string | null;

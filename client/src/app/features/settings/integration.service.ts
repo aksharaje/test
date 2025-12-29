@@ -134,13 +134,13 @@ export class IntegrationService {
   // OAuth Flow
   // ==================
 
-  async startOAuthFlow(returnUrl?: string): Promise<void> {
+  async startOAuthFlow(returnUrl?: string, provider: 'jira' | 'ado' | 'servicenow' | 'zendesk' | 'qualtrics' = 'jira'): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
 
     try {
       const response = await firstValueFrom(
-        this.http.post<OAuthStartResponse>(`${this.baseUrl}/jira/oauth/start`, {
+        this.http.post<OAuthStartResponse>(`${this.baseUrl}/${provider}/oauth/start`, {
           returnUrl,
         })
       );
@@ -181,7 +181,7 @@ export class IntegrationService {
         err instanceof Error
           ? err.message
           : (err as { error?: { error?: string } })?.error?.error ||
-            'Failed to connect with PAT';
+          'Failed to connect with PAT';
       this._error.set(errorMessage);
       console.error(err);
       return null;

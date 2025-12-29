@@ -40,18 +40,9 @@ import type { Integration } from './integration.types';
         <div>
           <h1 class="text-2xl font-bold">Integrations</h1>
           <p class="text-muted-foreground mt-1">
-            Connect your Jira account to create issues from PRDs and artifacts
+            Connect your project management account to create issues from PRDs and artifacts
           </p>
         </div>
-        <button
-          hlmBtn
-          variant="default"
-          (click)="showConnectDialog.set(true)"
-          [disabled]="service.loading()"
-        >
-          <ng-icon hlmIcon name="lucidePlus" class="mr-2 h-4 w-4" />
-          <span>Connect Jira</span>
-        </button>
       </div>
 
       @if (successMessage()) {
@@ -68,17 +59,45 @@ import type { Integration } from './integration.types';
         </div>
       }
 
-      @if (service.loading() && !service.hasIntegrations()) {
-        <div class="space-y-4">
-          @for (i of [1, 2]; track i) {
-            <div class="bg-card rounded-lg border p-6 animate-pulse">
-              <div class="h-6 bg-muted rounded w-1/3 mb-3"></div>
-              <div class="h-4 bg-muted rounded w-1/2"></div>
+      <!-- Available Integrations -->
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-4">Available Integrations</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          @for (provider of supportedIntegrations; track provider.id) {
+            <div class="bg-card rounded-lg border p-6 flex items-start justify-between">
+              <div class="flex gap-4">
+                  <div
+                    class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center shrink-0"
+                  >
+                    @if (provider.id === 'ado') {
+                         <span class="text-2xl font-bold text-blue-600">A</span>
+                    } @else if (provider.id === 'servicenow') {
+                         <span class="text-2xl font-bold text-green-700">NOW</span>
+                    } @else if (provider.id === 'zendesk') {
+                         <span class="text-2xl font-bold text-green-600">Z</span>
+                    } @else if (provider.id === 'qualtrics') {
+                         <span class="text-2xl font-bold text-blue-500">XM</span>
+                    } @else {
+                      <img [src]="provider.icon" [alt]="provider.name" class="h-6 w-6" />
+                    }
+                  </div>
+                <div>
+                  <h3 class="font-semibold text-lg">{{ provider.name }}</h3>
+                  <p class="text-sm text-muted-foreground">{{ provider.description }}</p>
+                </div>
+              </div>
+              <button hlmBtn variant="outline" size="sm" (click)="initiateConnection(provider.id)">
+                Connect
+              </button>
             </div>
           }
         </div>
-      } @else if (service.hasIntegrations()) {
+      </div>
+
+      <!-- Connected Integrations -->
+      @if (service.hasIntegrations()) {
         <div class="space-y-4">
+            <h2 class="text-lg font-semibold mb-4">Connected Integrations</h2>
           @for (integration of service.integrations(); track integration.id) {
             <div
               class="bg-card rounded-lg border p-6 hover:border-primary/50 transition-colors"
@@ -88,11 +107,21 @@ import type { Integration } from './integration.types';
                   <div
                     class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center"
                   >
-                    <img
-                      src="https://wac-cdn.atlassian.com/assets/img/favicons/atlassian/favicon.png"
-                      alt="Jira"
-                      class="h-6 w-6"
-                    />
+                    @if (integration.provider === 'ado') {
+                         <span class="text-2xl font-bold text-blue-600">A</span>
+                    } @else if (integration.provider === 'servicenow') {
+                         <span class="text-2xl font-bold text-green-700">NOW</span>
+                    } @else if (integration.provider === 'zendesk') {
+                         <span class="text-2xl font-bold text-green-600">Z</span>
+                    } @else if (integration.provider === 'qualtrics') {
+                         <span class="text-2xl font-bold text-blue-500">XM</span>
+                    } @else if (integration.provider === 'jira') {
+                        <img
+                        src="https://wac-cdn.atlassian.com/assets/img/favicons/atlassian/favicon.png"
+                        alt="Jira"
+                        class="h-6 w-6"
+                        />
+                    }
                   </div>
                   <div>
                     <h3 class="font-semibold text-lg">{{ integration.name }}</h3>
@@ -176,18 +205,6 @@ import type { Integration } from './integration.types';
             </div>
           }
         </div>
-      } @else {
-        <div class="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-          <ng-icon hlmIcon name="lucideLink" class="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 class="font-medium text-lg mb-2">No Integrations Yet</h3>
-          <p class="text-muted-foreground mb-4">
-            Connect your Jira account to start creating issues from PRDs and artifacts.
-          </p>
-          <button hlmBtn variant="default" (click)="showConnectDialog.set(true)">
-            <ng-icon hlmIcon name="lucidePlus" class="mr-2 h-4 w-4" />
-            <span>Connect Jira</span>
-          </button>
-        </div>
       }
 
       <!-- Connect Dialog -->
@@ -203,6 +220,7 @@ import type { Integration } from './integration.types';
             <h2 class="text-xl font-semibold mb-4">Connect to Jira</h2>
 
             <div class="space-y-4">
+              <!-- Jira Cloud -->
               <div>
                 <h3 class="font-medium mb-2">Jira Cloud (OAuth)</h3>
                 <p class="text-sm text-muted-foreground mb-3">
@@ -212,7 +230,7 @@ import type { Integration } from './integration.types';
                   hlmBtn
                   variant="default"
                   class="w-full"
-                  (click)="startOAuth()"
+                  (click)="startOAuth('jira')"
                   [disabled]="service.loading()"
                 >
                   <ng-icon hlmIcon name="lucideExternalLink" class="mr-2 h-4 w-4" />
@@ -220,6 +238,7 @@ import type { Integration } from './integration.types';
                 </button>
               </div>
 
+              <!-- Separator -->
               <div class="relative">
                 <div class="absolute inset-0 flex items-center">
                   <div class="w-full border-t"></div>
@@ -229,6 +248,7 @@ import type { Integration } from './integration.types';
                 </div>
               </div>
 
+              <!-- Jira PAT -->
               <div>
                 <h3 class="font-medium mb-2">Jira Server / Data Center (PAT)</h3>
                 <p class="text-sm text-muted-foreground mb-3">
@@ -340,6 +360,44 @@ export class IntegrationsComponent implements OnInit {
     name: '',
   };
 
+  supportedIntegrations = [
+    {
+      id: 'jira',
+      name: 'Jira',
+      description: 'Connect to Jira Cloud or Data Center to sync issues.',
+      icon: 'https://wac-cdn.atlassian.com/assets/img/favicons/atlassian/favicon.png',
+      type: 'pm'
+    },
+    {
+      id: 'ado',
+      name: 'Azure DevOps',
+      description: 'Connect to Azure DevOps Services to sync work items.',
+      icon: 'A', // We'll handle this in template
+      type: 'pm'
+    },
+    {
+      id: 'servicenow',
+      name: 'ServiceNow',
+      description: 'Connect to ServiceNow to sync incidents and requests.',
+      icon: 'https://www.servicenow.com/favicon.ico', // Placeholder
+      type: 'itsm'
+    },
+    {
+      id: 'zendesk',
+      name: 'Zendesk',
+      description: 'Connect to Zendesk to sync support tickets.',
+      icon: 'https://d1eipm3vz40hy0.cloudfront.net/images/logos/favicons/favicon.ico', // Placeholder
+      type: 'support'
+    },
+    {
+      id: 'qualtrics',
+      name: 'Qualtrics',
+      description: 'Connect to Qualtrics to sync survey data.',
+      icon: 'https://www.qualtrics.com/favicon.ico', // Placeholder
+      type: 'cx'
+    }
+  ];
+
   ngOnInit() {
     this.service.loadIntegrations();
 
@@ -360,8 +418,23 @@ export class IntegrationsComponent implements OnInit {
     }
   }
 
-  startOAuth() {
-    this.service.startOAuthFlow('/settings/integrations');
+  initiateConnection(providerId: string) {
+    if (providerId === 'ado') {
+      this.startOAuth('ado');
+    } else if (providerId === 'servicenow') {
+      this.startOAuth('servicenow' as any);
+    } else if (providerId === 'zendesk') {
+      this.startOAuth('zendesk' as any);
+    } else if (providerId === 'qualtrics') {
+      this.startOAuth('qualtrics' as any);
+    } else {
+      // Jira logic (OAuth or PAT)
+      this.showConnectDialog.set(true);
+    }
+  }
+
+  startOAuth(provider: 'jira' | 'ado' | 'servicenow' | 'zendesk' | 'qualtrics' = 'jira') {
+    this.service.startOAuthFlow('/settings/integrations', provider);
   }
 
   async connectWithPAT() {
