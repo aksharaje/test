@@ -42,6 +42,12 @@
     "summary": "Service file: `embedding_service.py`..."
   },
   {
+    "name": "AdoService",
+    "filename": "ado-service.md",
+    "category": "General",
+    "summary": "Service file: `ado_service.py`..."
+  },
+  {
     "name": "BusinessCaseService",
     "filename": "business-case-service.md",
     "category": "Feasibility",
@@ -58,6 +64,12 @@
     "filename": "github-service.md",
     "category": "Core",
     "summary": "Service file: `github_service.py`..."
+  },
+  {
+    "name": "ServiceNowService",
+    "filename": "service-now-service.md",
+    "category": "General",
+    "summary": "Service file: `servicenow_service.py`..."
   },
   {
     "name": "LibraryService",
@@ -84,6 +96,12 @@
     "summary": "Service file: `ideation_service.py`..."
   },
   {
+    "name": "QualtricsService",
+    "filename": "qualtrics-service.md",
+    "category": "General",
+    "summary": "Service file: `qualtrics_service.py`..."
+  },
+  {
     "name": "KnowledgeBaseService",
     "filename": "knowledge-base-service.md",
     "category": "Research",
@@ -106,6 +124,12 @@
     "filename": "flow-service.md",
     "category": "Core",
     "summary": "Service file: `flow_service.py`..."
+  },
+  {
+    "name": "ZendeskService",
+    "filename": "zendesk-service.md",
+    "category": "General",
+    "summary": "Service file: `zendesk_service.py`..."
   },
   {
     "name": "ReleasePrepService",
