@@ -87,9 +87,13 @@
                 </a>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <h1 style="margin: 0; font-size: 24px;">VoC Analysis — Weekly Run (Mar 1)</h1>
-                        <p style="margin: 8px 0 0; color: var(--text-secondary);">Sources: Jira, Surveys | Time range:
-                            Last 7 days</p>
+                        <h1 style="margin: 0; font-size: 24px;">VoC Analysis — Weekly · Defect-Focused (Mar 4)</h1>
+                        <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+                            <div><strong style="color: var(--text-primary);">Sources analyzed:</strong> Jira, Qualtrics
+                            </div>
+                            <div><strong style="color: var(--text-primary);">Sources not included:</strong> App Reviews
+                            </div>
+                        </div>
                     </div>
                     <button class="btn btn-outline"><i class="ph ph-export"></i> Export Report</button>
                 </div>
@@ -106,15 +110,41 @@
             <!-- Overview View -->
             <div id="overview-content">
                 <div class="insight-card">
-                    <h2 style="font-size: 18px; margin-bottom: 16px;">Insight Summary</h2>
-                    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
-                        <li style="margin-bottom: 12px;"><strong>Login issues increasing:</strong> High volume of
-                            tickets related to mobile login timeouts.</li>
-                        <li style="margin-bottom: 12px;"><strong>Password reset confusion:</strong> Users are reporting
-                            "magic link" emails going to spam.</li>
-                        <li><strong>Checkout complaints:</strong> Volume is stable, mostly related to specific payment
-                            gateways.</li>
-                    </ul>
+                    <h2 style="font-size: 18px; margin-bottom: 16px;">Top Hotspots</h2>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Item 1 -->
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+                            <span style="font-weight: 600; font-size: 15px;">Login</span>
+                            <div style="display: flex; gap: 24px; align-items: center; font-size: 14px;">
+                                <span style="color: var(--text-secondary);">23 defects</span>
+                                <span
+                                    style="color: #EF4444; font-weight: 500; display: flex; align-items: center; gap: 4px;">↑
+                                    Rising</span>
+                            </div>
+                        </div>
+                        <!-- Item 2 -->
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+                            <span style="font-weight: 600; font-size: 15px;">Payments</span>
+                            <div style="display: flex; gap: 24px; align-items: center; font-size: 14px;">
+                                <span style="color: var(--text-secondary);">17 defects</span>
+                                <span
+                                    style="color: #EF4444; font-weight: 500; display: flex; align-items: center; gap: 4px;">↑
+                                    Rising</span>
+                            </div>
+                        </div>
+                        <!-- Item 3 -->
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; font-size: 15px;">Checkout</span>
+                            <div style="display: flex; gap: 24px; align-items: center; font-size: 14px;">
+                                <span style="color: var(--text-secondary);">11 defects</span>
+                                <span
+                                    style="color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 4px;">→
+                                    Stable</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="insight-card">
