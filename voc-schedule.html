@@ -101,40 +101,44 @@
                         <input type="checkbox" checked> Jira tickets & defects
                     </label>
 
-                    <!-- Qualtrics: Unauthorized State -->
+                    <!-- Qualtrics Checkbox -->
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" id="qualtrics-check" checked onchange="updateQualtricsState()">
+                        Qualtrics surveys & behavioral signals
+                    </label>
+
+                    <!-- Qualtrics: Unauthorized State (Visible if Checked + !Auth) -->
                     <div id="qualtrics-unauth"
-                        style="margin: 8px 0; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
+                        style="display: block; margin-left: 24px; margin-top: 4px; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
                         <div style="display: flex; gap: 12px; align-items: flex-start;">
                             <i class="ph ph-warning"
                                 style="color: #F59E0B; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
                             <div style="flex: 1;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <span style="font-weight: 600; color: #9A3412;">Qualtrics surveys & behavioral
-                                        signals</span>
+                                <div style="font-size: 13px; color: #DC2626; font-weight: 500;">Access not authorized
                                 </div>
-                                <div style="font-size: 13px; color: #DC2626; margin-top: 4px; font-weight: 500;">Access
-                                    not authorized</div>
+                                <div style="font-size: 13px; color: #9A3412; margin-top: 2px;">You must authorize access
+                                    to include this source.</div>
                                 <button type="button" class="btn btn-outline-sm"
-                                    style="margin-top: 12px; background: white; border-color: #FDBA74; color: #C2410C;"
+                                    style="margin-top: 8px; background: white; border-color: #FDBA74; color: #C2410C;"
                                     onclick="openAuthModal()">Manage Qualtrics Access</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Qualtrics: Authorized State (Hidden) -->
+                    <!-- Qualtrics: Authorized State (Visible if Checked + Auth) -->
                     <div id="qualtrics-auth"
-                        style="display: none; margin: 8px 0; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
+                        style="display: none; margin-left: 24px; margin-top: 4px; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
                         <div style="display: flex; gap: 12px; align-items: flex-start;">
                             <i class="ph ph-check-circle"
                                 style="color: #16A34A; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
                             <div style="flex: 1;">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <span style="font-weight: 600; color: #166534;">Qualtrics — Connected</span>
+                                    <span style="font-weight: 600; color: #166534;">Connected</span>
                                 </div>
                                 <div style="font-size: 13px; color: #15803D; margin-top: 4px;">
                                     Access: Read-only | Surveys: 2 selected | Range: 90 days
                                 </div>
-                                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
                                     <button type="button" class="btn btn-outline-sm"
                                         style="background: white; border-color: #86EFAC; color: #15803D;"
                                         onclick="openAuthModal()">Change Access</button>
@@ -289,6 +293,42 @@
     </div>
 
     <script>
+        let isAuthorized = false;
+
+        function updateQualtricsState() {
+            const checked = document.getElementById('qualtrics-check').checked;
+            const unauthBlock = document.getElementById('qualtrics-unauth');
+            const authBlock = document.getElementById('qualtrics-auth');
+            const saveBtn = document.getElementById('save-btn');
+
+            if (!checked) {
+                // Not selected -> No warnings, Save is enabled (assuming other valid inputs)
+                unauthBlock.style.display = 'none';
+                authBlock.style.display = 'none';
+                saveBtn.disabled = false;
+                saveBtn.style.opacity = '1';
+                saveBtn.style.cursor = 'pointer';
+                saveBtn.title = "";
+            } else {
+                // Selected -> Check Auth status
+                if (!isAuthorized) {
+                    unauthBlock.style.display = 'block';
+                    authBlock.style.display = 'none';
+                    saveBtn.disabled = true;
+                    saveBtn.style.opacity = '0.5';
+                    saveBtn.style.cursor = 'not-allowed';
+                    saveBtn.title = "Please resolve data source permissions";
+                } else {
+                    unauthBlock.style.display = 'none';
+                    authBlock.style.display = 'block';
+                    saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
+                    saveBtn.style.cursor = 'pointer';
+                    saveBtn.title = "";
+                }
+            }
+        }
+
         function openAuthModal() {
             document.getElementById('auth-modal').style.display = 'flex';
         }
@@ -313,25 +353,13 @@
 
         function confirmAuth() {
             closeAuthModal();
-            document.getElementById('qualtrics-unauth').style.display = 'none';
-            document.getElementById('qualtrics-auth').style.display = 'block';
-
-            const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = false;
-            saveBtn.style.opacity = '1';
-            saveBtn.style.cursor = 'pointer';
-            saveBtn.title = "";
+            isAuthorized = true;
+            updateQualtricsState();
         }
 
         function disconnectQualtrics() {
-            document.getElementById('qualtrics-unauth').style.display = 'block';
-            document.getElementById('qualtrics-auth').style.display = 'none';
-
-            const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true;
-            saveBtn.style.opacity = '0.5';
-            saveBtn.style.cursor = 'not-allowed';
-            saveBtn.title = "Please resolve data source permissions";
+            isAuthorized = false;
+            updateQualtricsState();
         }
 
         function saveSchedule(e) {
@@ -345,6 +373,11 @@
                 window.location.href = 'discovery-hub.html';
             }, 1000);
         }
+
+        // Initial check
+        window.addEventListener('DOMContentLoaded', () => {
+            updateQualtricsState();
+        });
     </script>
 </body>
 
