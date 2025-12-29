@@ -181,6 +181,14 @@ export class DocViewerComponent implements OnInit {
       description: 'Plan your program increments with intelligent capacity planning and dependency management.',
       tools: ['PI Planning Board'],
     },
+    {
+      name: 'Development',
+      icon: 'lucideCode',
+      color: '#6366f1',
+      bgColor: '#e0e7ff',
+      description: 'Transform stories into code and prepare release documentation with AI-generated artifacts.',
+      tools: ['Story to Code', 'Release Prep'],
+    },
   ];
 
   ngOnInit() {
