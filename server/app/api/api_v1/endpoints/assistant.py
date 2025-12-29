@@ -12,7 +12,7 @@ class ChatRequest(BaseModel):
     history: List[Dict[str, str]] = []
 
 @router.post("/chat", response_model=Dict[str, Any])
-def chat(
+async def chat(
     request: ChatRequest,
     db: Session = Depends(get_session),
 ):
@@ -20,7 +20,7 @@ def chat(
     Chat with the dashboard assistant.
     """
     try:
-        response = assistant_service.chat(db, None, request.message, request.history)
+        response = await assistant_service.chat(db, None, request.message, request.history)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
