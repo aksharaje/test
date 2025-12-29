@@ -1,56 +1,53 @@
-# Business Case Analysis Tool
+# BusinessCaseService
 
 ## Overview
-This tool helps product managers analyze and evaluate business cases effectively, aiding in making informed decisions that drive business growth and success.
+Service file: `business_case_service.py`
 
-## Key Capabilities
-- Create new business case sessions
-- Retrieve and view existing sessions
-- Update cost and benefit items
-- Delete unnecessary sessions
-- Manage rate assumptions
-- Save corrections for future learning
+Service for managing business case analysis sessions
 
-## How to Use
-To start, create a new business case session to outline your project details. Then, you can update cost and benefit items as needed, manage rate assumptions, and save user corrections for future reference. Finally, run the business case pipeline to orchestrate AI agents for a comprehensive analysis.
+## Methods
+### client
 
-## Configuration & Fields
-- **Feature Name**
-  - **What it's for**: Describes the main feature of the business case
-  - **Example**: "Enhanced Customer Support System"
+### model
 
-- **Feature Description**
-  - **What it's for**: Provides a detailed description of the feature
-  - **Example**: "24/7 customer support with multilingual capabilities"
+### create_session
+Create a new business case session.
 
-- **Business Context**
-  - **What it's for**: Specifies the context or background of the business case
-  - **Example**: "Expanding into new international markets"
+If feasibility_session_id is provided, feature_name and feature_description
+are derived from the feasibility session if not provided.
 
-- **Target Market**
-  - **What it's for**: Identifies the specific market segment for the project
-  - **Example**: "Tech-savvy millennials aged 18-34"
+### get_session
+Get a session by ID
 
-- **Optimistic Amount, Realistic Amount, Pessimistic Amount**
-  - **What it's for**: Allows users to input different financial estimates for cost or benefit items
-  - **Example**: "Optimistic cost estimate: $100,000"
+### list_sessions
+List all sessions, optionally filtered by user
 
-- **Rate Value**
-  - **What it's for**: Sets the rate assumption value for calculations
-  - **Example**: "Annual interest rate: 5%"
+### get_session_detail
+Get complete session with all related data
 
-- **Learning Type**
-  - **What it's for**: Indicates the type of learning correction being saved
-  - **Example**: "Data analysis refinement"
+### update_cost_item
+Update cost item with user override
 
-- **Category**
-  - **What it's for**: Categorizes the type of correction being made
-  - **Example**: "Revenue forecasting"
+### update_benefit_item
+Update benefit item with user override
 
-- **Original Value, Corrected Value**
-  - **What it's for**: Captures the original and corrected values for learning purposes
-  - **Example**: "Original revenue forecast: $500,000"
+### delete_session
+Delete session and all related data
 
-- **Context**
-  - **What it's for**: Describes the context in which the correction was made
-  - **Example**: "Market research insights"
+### update_rate_assumption
+Update a rate assumption with user override
+
+### get_user_rate_preferences
+Get user's previous rate preferences for a company size
+
+### get_rate_assumptions
+Get all rate assumptions for a session
+
+### save_user_learning
+Save a user correction for future learning
+
+### run_business_case_pipeline
+Main pipeline: orchestrates 5 AI agents
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

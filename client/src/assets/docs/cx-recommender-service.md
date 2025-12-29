@@ -1,92 +1,52 @@
-# CX Improvement Recommender
+# CXRecommenderService
 
 ## Overview
-The CX Improvement Recommender helps Product Managers generate prioritized improvement recommendations by synthesizing pain points from customer journey maps and gaps from competitive analysis. It produces categorized recommendations (Quick Wins, High Impact, Strategic) with effort estimates and success metrics.
+Service file: `cx_recommender_service.py`
 
-## Key Capabilities
-- Generate improvement recommendations from journey map pain points
-- Incorporate competitive gap analysis insights
-- Automatically categorize recommendations by impact and effort
-- Provide implementation approaches with pros/cons
-- Generate sprint planning suggestions
-- Export recommendations for stakeholder review
+Service for generating CX improvement recommendations
 
-## How to Use
-1. Start by selecting one or more completed journey maps that contain pain points you want to address
-2. Optionally add completed gap analyses to incorporate competitive insights
-3. Configure your recommendation focus (comprehensive, quick wins, strategic, or parity)
-4. Set timeline constraints if you have specific delivery windows
-5. Add team capacity information for more accurate effort estimates
-6. Click "Generate Recommendations" to start the AI-powered analysis
-7. Review results organized in three columns: Quick Wins, High Impact, and Strategic
+## Methods
+### llm
+Get the strict JSON LLM instance.
 
-## Configuration & Fields
+### create_session
+Create a new recommender session.
 
-### Select Journey Maps (Required)
-- **What it's for**: Choose which completed journey maps to analyze for pain points
-- **How to use**: Check one or more journey maps from the list. Each shows the journey description, number of stages, and pain point count.
-- **Example**: Select "Mobile app onboarding journey" (5 stages, 8 pain points)
-- **Note**: You must have at least one completed journey map with pain points identified
+### get_session
+Get a session by ID.
 
-### Select Gap Analyses (Optional)
-- **What it's for**: Include competitive gap insights to inform recommendations
-- **How to use**: Check any relevant completed gap analyses to add competitive context
-- **Example**: Select "Best Practice Analysis" (12 gaps identified)
-- **Note**: Only shows gap analyses that have been completed with identified gaps
+### list_sessions
+List all sessions, optionally filtered by user.
 
-### Session Name (Optional)
-- **What it's for**: Give your recommendation session a memorable name for easy reference
-- **How to use**: Enter a descriptive name that helps you identify this analysis later
-- **Example**: "Q1 2025 Mobile Onboarding Improvements" or "Enterprise SSO Pain Points"
+### get_session_detail
+Get complete session detail with all recommendations.
 
-### Recommendation Focus
-- **What it's for**: Control what type of recommendations the system prioritizes
-- **Options**:
-  - **Comprehensive**: All recommendations regardless of effort level (default)
-  - **Quick Wins**: High impact, low effort solutions you can implement quickly
-  - **Strategic**: Transformative, long-term improvements requiring significant investment
-  - **Parity**: Focus on closing competitive gaps identified in gap analyses
-- **Example**: Select "Quick Wins" when you need to show progress fast with limited resources
+### delete_session
+Delete a session and all related data.
 
-### Timeline Constraint
-- **What it's for**: Filter recommendations based on when you need to deliver
-- **Options**:
-  - **Flexible**: No time constraint, see all recommendations
-  - **Q1 2025**: Only recommendations achievable in ~12 weeks
-  - **Q2 2025**: Only recommendations achievable in ~24 weeks
-  - **H1 2025**: Only recommendations achievable in ~26 weeks
-  - **H2 2025**: Only recommendations achievable in ~52 weeks
-- **Example**: Select "Q1 2025" if you have a quarterly planning deadline
+### get_recommendation
+Get a single recommendation by ID.
 
-### Team Capacity (Optional)
-- **What it's for**: Help the system estimate more accurate effort and feasibility
-- **How to use**: Describe your available team resources
-- **Example**: "2 designers, 3 frontend engineers, 1 backend engineer"
-- **Note**: More specific capacity information leads to better effort estimates
+### update_recommendation
+Update a recommendation (user edits).
 
-## Understanding Results
+### dismiss_recommendation
+Dismiss (soft delete) a recommendation.
 
-### Quick Wins Column (Yellow)
-Recommendations with high impact (>7) and low effort (<4). These are the fastest path to demonstrable improvements.
+### restore_recommendation
+Restore a dismissed recommendation.
 
-### High Impact Column (Blue)
-Important improvements with significant impact that require moderate effort. Good candidates for medium-term planning.
+### add_custom_recommendation
+Manually add a custom recommendation.
 
-### Strategic Column (Purple)
-Long-term initiatives that may require significant investment but deliver transformative value.
+### run_recommendation_pipeline
+Main pipeline for generating recommendations. Runs in background task.
 
-### Recommendation Cards
-Each recommendation includes:
-- **Title**: Action-oriented description of what to implement
-- **Description**: Brief explanation of the improvement
-- **Scores**: Impact, Effort, and Urgency ratings (1-10)
-- **Opportunity Score**: Calculated as (Impact x Urgency) / Effort
-- **Solution Approaches**: Multiple implementation options with pros/cons
-- **Success Metrics**: How to measure the impact
-- **Effort Estimates**: Design, engineering, and testing days
+### list_available_journey_maps
+List completed journey maps available for selection.
 
-### Sprint Plan
-A suggested implementation sequence:
-- Sprint 1-2: Quick wins to show early progress
-- Sprint 3-4: High impact items for substantial improvements
-- Q2+: Strategic initiatives for long-term roadmap
+### list_available_gap_analyses
+List completed gap analyses available for selection.
+
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.

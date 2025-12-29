@@ -1,34 +1,23 @@
-# Embedding Tool
+# EmbeddingService
 
 ## Overview
-The Embedding Tool helps you analyze and extract meaningful insights from text data, enabling you to make data-driven decisions and enhance your product's performance through text analysis.
+Service file: `embedding_service.py`
 
-## Key Capabilities
-- Generate embeddings for text data
-- Split text into manageable chunks for analysis
-- Estimate token count in text
-- Create query embeddings for specific text queries
+## Methods
+### client
 
-## How to Use
-To start using the Embedding Tool, begin by uploading your text data into the system. Then, choose the specific action you want to perform, such as generating embeddings or splitting text into chunks. The tool will provide you with the results you need to analyze and extract valuable information from your text data.
+### split_text_into_chunks
+Split text into chunks with overlap, respecting sentence/paragraph boundaries.
+Returns a list of dicts with content and metadata.
 
-## Configuration & Fields
-- **Text**: Input text data
-  - **What it's for**: Represents the text data you want to analyze or process.
-  - **Example**: Upload a customer review for sentiment analysis.
+### generate_embeddings
+Generate embeddings for a list of texts.
 
-- **Chunk Size**: Size of the text chunks
-  - **What it's for**: Determines the length of each text chunk for analysis.
-  - **Example**: Set the chunk size to 100 characters to analyze short segments of text.
+### generate_query_embedding
+Generate a single embedding for a query.
 
-- **Chunk Overlap**: Overlapping content between text chunks
-  - **What it's for**: Controls the overlap between consecutive text chunks for more comprehensive analysis.
-  - **Example**: Specify a 20-character overlap to ensure continuity between text chunks.
+### estimate_token_count
+Estimate token count (rough approximation: ~4 chars per token).
 
-- **Model**: Embedding model to use
-  - **What it's for**: Selects the specific model for generating embeddings.
-  - **Example**: Choose the "BERT" model for advanced text representation.
-
-- **Dimensions**: Embedding dimensions
-  - **What it's for**: Defines the number of dimensions for the generated embeddings.
-  - **Example**: Set the dimensions to 100 for detailed embedding analysis.
+> [!NOTE]
+> This documentation was auto-generated without AI enhancement.
