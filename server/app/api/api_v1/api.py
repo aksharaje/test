@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code, cx_recommender, release_prep, assistant, integrations_ado, integrations_servicenow, integrations_zendesk, integrations_qualtrics, roadmap_planner
+from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code, cx_recommender, release_prep, assistant, integrations_ado, integrations_servicenow, integrations_zendesk, integrations_qualtrics, roadmap_planner, activity
 from app.api.api_v1.endpoints.story_gen_endpoint import router as story_generator_router
 
 api_router = APIRouter()
@@ -9,6 +9,7 @@ api_router.include_router(integrations_ado.router, prefix="/integrations/ado", t
 api_router.include_router(integrations_servicenow.router, prefix="/integrations/servicenow", tags=["integrations-servicenow"])
 api_router.include_router(integrations_zendesk.router, prefix="/integrations/zendesk", tags=["integrations-zendesk"])
 api_router.include_router(integrations_qualtrics.router, prefix="/integrations/qualtrics", tags=["integrations-qualtrics"])
+api_router.include_router(activity.router, prefix="/activity", tags=["activity"])
 api_router.include_router(agents.router, prefix="/agents", tags=["agents"])
 api_router.include_router(knowledge_bases.router, prefix="/knowledge-bases", tags=["knowledge-bases"])
 api_router.include_router(story_generator_router, prefix="/story-generator", tags=["story-generator"])

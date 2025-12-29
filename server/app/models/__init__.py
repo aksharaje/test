@@ -44,3 +44,19 @@ from .journey_mapper import (
     JourneyDivergencePoint,
     CompetitorJourneyObservation
 )
+from .release_prep import (
+    ReleasePrepSession,
+    ReleaseStory,
+    ReleaseNote,
+    Decision,
+    TechnicalDebtItem
+)
+from .roadmap_planner import (
+    RoadmapSession,
+    RoadmapItem,
+    RoadmapDependency,
+    RoadmapTheme,
+    RoadmapMilestone,
+    JiraFieldMapping,
+    JiraSyncLog
+)

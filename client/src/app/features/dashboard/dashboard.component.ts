@@ -8,9 +8,20 @@ import {
   lucideTrendingUp,
   lucideArrowRight,
   lucideCalendar,
-  lucideLoader2
+  lucideLoader2,
+  lucideFileText,
+  lucideCode,
+  lucideSearch,
+  lucideMap,
+  lucideLightbulb,
+  lucideBriefcase,
+  lucideCheckCircle,
+  lucideRocket,
+  lucideLayoutDashboard,
+  lucideTrendingDown
 } from '@ng-icons/lucide';
 import { DashboardService, DashboardStats } from './dashboard.service';
+import { ActivityService } from '../../core/services/activity.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,7 +35,17 @@ import { DashboardService, DashboardStats } from './dashboard.service';
       lucideTrendingUp,
       lucideArrowRight,
       lucideCalendar,
-      lucideLoader2
+      lucideLoader2,
+      lucideFileText,
+      lucideCode,
+      lucideSearch,
+      lucideMap,
+      lucideLightbulb,
+      lucideBriefcase,
+      lucideCheckCircle,
+      lucideRocket,
+      lucideLayoutDashboard,
+      lucideTrendingDown
     }),
   ],
   template: `
@@ -172,6 +193,50 @@ import { DashboardService, DashboardStats } from './dashboard.service';
       </div>
       }
 
+      <!-- Combined Activity Section -->
+      @if (recentOutputs().length > 0 || shortcuts().length > 0) {
+        <div class="grid gap-6 md:grid-cols-3">
+            <!-- Recent Outputs (Left, spanning 2 cols) -->
+            <div class="md:col-span-2 rounded-xl border bg-card text-card-foreground shadow-sm">
+                <div class="p-6 pb-3 border-b flex items-center justify-between">
+                    <h3 class="font-semibold text-lg">Recent Output</h3>
+                </div>
+                <div class="divide-y">
+                     @for (output of recentOutputs(); track output.id + output.type) {
+                        <a [href]="output.url" class="flex items-center justify-between p-4 py-3 hover:bg-muted/50 transition-colors group">
+                           <div class="min-w-0 pr-4">
+                              <div class="font-medium text-sm group-hover:text-primary transition-colors truncate">{{ output.title }}</div>
+                              <div class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mt-0.5">{{ output.type.replace('_', ' ') }}</div>
+                           </div>
+                           <div class="text-xs text-muted-foreground font-mono whitespace-nowrap text-right">
+                              <div>{{ (output.updated_at.endsWith('Z') ? output.updated_at : output.updated_at + 'Z') | date:'mediumDate' }}</div>
+                              <div class="text-[10px] opacity-70">{{ (output.updated_at.endsWith('Z') ? output.updated_at : output.updated_at + 'Z') | date:'shortTime' }}</div>
+                           </div>
+                        </a>
+                     }
+                </div>
+            </div>
+
+            <!-- Frequent Shortcuts (Right, 1 col) -->
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm h-fit">
+                <div class="p-6 pb-3 border-b">
+                   <h3 class="font-semibold text-lg flex items-center gap-2">
+                       Quick Access
+                   </h3>
+                </div>
+                <div class="p-2 space-y-1">
+                    @for (item of shortcuts(); track item.id) {
+                        <a [href]="item.url" class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+                            <span>{{ item.name }}</span>
+                            <!-- Optional count badge if desired, or simpler text -->
+                            <span class="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-mono">{{ item.count }}</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+      }
+
        <!-- Supporting Section -->
       <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-8 hidden">
          <div class="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -193,16 +258,21 @@ import { DashboardService, DashboardStats } from './dashboard.service';
 })
 export class DashboardComponent {
   private service = inject(DashboardService);
+  private activityService = inject(ActivityService);
 
   timeframe = signal<'30d' | 'all'>('30d');
 
   loading = signal(true);
   error = signal<string | null>(null);
   stats = signal<DashboardStats | null>(null);
+  shortcuts = this.activityService.shortcuts;
+  recentOutputs = signal<any[]>([]);
 
   constructor() {
     effect(() => {
       this.loadData(this.timeframe());
+      this.activityService.loadShortcuts();
+      this.loadRecentOutputs();
     });
   }
 
@@ -222,6 +292,15 @@ export class DashboardComponent {
     });
   }
 
+  async loadRecentOutputs() {
+    try {
+      const outputs = await this.activityService.getRecentOutputs(5);
+      this.recentOutputs.set(outputs);
+    } catch (err) {
+      console.error('Failed to load recent outputs', err);
+    }
+  }
+
   setTimeframe(tf: '30d' | 'all') {
     this.timeframe.set(tf);
   }
@@ -234,4 +313,3 @@ export class DashboardComponent {
     return Math.min(Math.max(val, 30), 100);
   }
 }
-// Force rebuild for clean state

@@ -400,6 +400,32 @@ export const routes: Routes = [
             (m) => m.ReleasePrepResultsComponent
           ),
       },
+      {
+        path: 'roadmapping',
+        children: [
+          {
+            path: '',
+            redirectTo: 'planner',
+            pathMatch: 'full',
+          },
+          {
+            path: 'planner',
+            title: 'Roadmap Planner | Product Studio',
+            loadComponent: () =>
+              import('./features/roadmap-planner/roadmap-planner-input.component').then(
+                (m) => m.RoadmapPlannerInputComponent
+              ),
+          },
+          {
+            path: 'planner/session/:id',
+            title: 'Roadmap | Product Studio',
+            loadComponent: () =>
+              import('./features/roadmap-planner/roadmap-planner-results.component').then(
+                (m) => m.RoadmapPlannerResultsComponent
+              ),
+          },
+        ],
+      },
     ],
   },
   {

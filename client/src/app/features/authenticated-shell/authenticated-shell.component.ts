@@ -63,7 +63,13 @@ export class AuthenticatedShellComponent {
         { label: 'Business Case Builder', path: '/business-case' },
       ],
     },
-    { label: 'Roadmapping', path: '/roadmapping', children: [] },
+    {
+      label: 'Roadmapping',
+      path: '/roadmapping',
+      children: [
+        { label: 'Roadmap Planner', path: '/roadmapping/planner' },
+      ],
+    },
     {
       label: 'Customer Experience',
       path: '/customer-experience-section',
