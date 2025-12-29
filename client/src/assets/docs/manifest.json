@@ -18,6 +18,12 @@
     "summary": "Service file: `feedback_service.py`..."
   },
   {
+    "name": "RoadmapPlannerService",
+    "filename": "roadmap-planner-service.md",
+    "category": "General",
+    "summary": "Service file: `roadmap_planner_service.py`..."
+  },
+  {
     "name": "StoryGeneratorService",
     "filename": "story-generator-service.md",
     "category": "Backlog Authoring",
@@ -154,6 +160,12 @@
     "filename": "journey-mapper-service.md",
     "category": "Customer Experience",
     "summary": "Service file: `journey_mapper_service.py`..."
+  },
+  {
+    "name": "ActivityService",
+    "filename": "activity-service.md",
+    "category": "General",
+    "summary": "Service file: `activity_service.py`..."
   },
   {
     "name": "PiPlanningService",
