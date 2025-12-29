@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run Analysis - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .wizard-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 40px;
+        }
+
+        .step-section {
+            margin-bottom: 32px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .step-section:last-child {
+            border-bottom: none;
+        }
+
+        .step-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            background: var(--primary-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .list-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .list-option:hover {
+            background: #F8FAFC;
+        }
+
+        .list-option input[type="checkbox"],
+        .list-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+
+        .select-input,
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+
+    <div class="wizard-container">
+        <div style="margin-bottom: 32px;">
+            <a href="discovery-hub.html"
+                style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 16px;">
+                <i class="ph ph-arrow-left"></i> Back to Dashboard
+            </a>
+            <h1 style="margin: 0;">Run Voice of Customer Analysis</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Trigger a new investigation across your data
+                sources.</p>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                Select Sources
+            </div>
+            <div class="checkbox-group">
+                <label class="list-option">
+                    <input type="checkbox" checked>
+                    <span><strong>Jira</strong> (2 projects connected)</span>
+                </label>
+                <label class="list-option">
+                    <input type="checkbox">
+                    <span><strong>Surveys</strong> (Qualtrics)</span>
+                </label>
+                <label class="list-option">
+                    <input type="checkbox">
+                    <span><strong>App Reviews</strong> (iOS/Android)</span>
+                </label>
+            </div>
+            <button class="btn btn-outline-sm" style="margin-top: 12px;">+ Connect new source</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                Scope the Analysis
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Projects /
+                        Areas</label>
+                    <div class="checkbox-group">
+                        <label class="list-option" style="padding: 8px;">
+                            <input type="checkbox" checked> Mobile App
+                        </label>
+                        <label class="list-option" style="padding: 8px;">
+                            <input type="checkbox"> Admin Dashboard
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Time
+                        Range</label>
+                    <select class="select-input">
+                        <option>Last 30 days</option>
+                        <option>Last 7 days</option>
+                        <option>Last Quarter</option>
+                    </select>
+
+                    <label style="display: block; margin: 16px 0 8px; font-size: 14px; font-weight: 500;">Issue Types
+                        (Optional)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" checked> Bugs</label>
+                        <label><input type="checkbox" checked> Support issues</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                Optional Focus
+            </div>
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Focus Question</label>
+            <input type="text" class="text-input" placeholder="e.g., Investigate login and authentication issues">
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Leave empty for a broad analysis.
+            </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                Comparison
+            </div>
+            <div class="checkbox-group">
+                <label class="list-option">
+                    <input type="radio" name="compare" checked>
+                    <span>Compare with <strong>Last weekly run</strong></span>
+                </label>
+                <label class="list-option">
+                    <input type="radio" name="compare">
+                    <span>Compare with <strong>Last monthly run</strong></span>
+                </label>
+                <label class="list-option">
+                    <input type="radio" name="compare">
+                    <span>No comparison</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px;">
+            <button class="btn btn-outline" onclick="window.location.href='discovery-hub.html'">Cancel</button>
+            <button class="btn btn-primary" onclick="startAnalysis()">
+                <i class="ph ph-lightning"></i> Run Analysis
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function startAnalysis() {
+            const btn = document.querySelector('.btn-primary');
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Running...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                window.location.href = 'voc-results.html?id=new';
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

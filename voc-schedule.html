@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Analysis - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .schedule-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .radio-pills {
+            display: flex;
+            gap: 12px;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 8px;
+            display: inline-flex;
+        }
+
+        .radio-pill-label {
+            padding: 8px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .radio-pill-input {
+            display: none;
+        }
+
+        .radio-pill-input:checked+.radio-pill-label {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+
+    <div class="schedule-container">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <div
+                style="width: 48px; height: 48px; background: #EFF6FF; color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px;">
+                <i class="ph ph-calendar-check"></i>
+            </div>
+            <h1 style="margin: 0;">Schedule Analysis</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Automate your Voice of Customer monitoring.</p>
+        </div>
+
+        <form onsubmit="saveSchedule(event)">
+            <div class="form-section">
+                <label class="form-label">Frequency</label>
+                <div class="radio-pills">
+                    <label>
+                        <input type="radio" name="freq" class="radio-pill-input" checked>
+                        <span class="radio-pill-label">Weekly</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="freq" class="radio-pill-input">
+                        <span class="radio-pill-label">Monthly</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label class="form-label">Day</label>
+                <select class="select-input" style="max-width: 200px;">
+                    <option>Monday</option>
+                    <option>Tuesday</option>
+                    <option>Wednesday</option>
+                    <option>Thursday</option>
+                    <option>Friday</option>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <label class="form-label">Sources to Include</label>
+                <div class="checkbox-group">
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Jira (Mobile App)
+                    </label>
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Surveys (NPS Q1)
+                    </label>
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox"> App Reviews
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label class="form-label">Time Window</label>
+                <select class="select-input">
+                    <option>Last 7 days (auto-adjusts)</option>
+                    <option>Last 30 days</option>
+                </select>
+            </div>
+
+            <div class="form-section" style="border-top: 1px solid var(--border-color); padding-top: 24px;">
+                <label class="form-label">Notifications</label>
+                <div class="checkbox-group">
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Save results automatically
+                    </label>
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Show summary on dashboard
+                    </label>
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox"> Send email alerts
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 32px;">
+                <button type="button" class="btn btn-outline full-width"
+                    onclick="window.location.href='discovery-hub.html'">Cancel</button>
+                <button type="submit" class="btn btn-primary full-width">Save Schedule</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function saveSchedule(e) {
+            e.preventDefault();
+            const btn = document.querySelector('button[type="submit"]');
+            btn.textContent = 'Saving...';
+
+            setTimeout(() => {
+                window.location.href = 'discovery-hub.html';
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>

@@ -4,124 +4,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discovery - Voice of Customer</title>
+    <title>Voice of Customer - Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        .container-centered {
-            max-width: 900px;
-            margin: 0 auto;
-            display: block !important;
+        /* Specific Dashboard Styles */
+        .hero-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 32px;
         }
 
-        .action-bar {
+        .action-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            background: white;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
             display: flex;
-            gap: 12px;
-            margin-top: 24px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 160px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary-color);
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: #EFF6FF;
+            color: var(--primary-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .recent-runs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .recent-runs-table th {
+            text-align: left;
+            padding: 16px 24px;
+            background: #F8FAFC;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .recent-runs-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .recent-runs-table tr:hover {
+            background-color: #f8fafc;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-ready {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .status-processing {
+            background: #DBEAFE;
+            color: #1E40AF;
         }
     </style>
 </head>
 
 <body>
-    <div class="app-container container-centered">
-        <!-- Header -->
-        <header class="app-header">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-                <button class="btn btn-outline-sm" onclick="window.location.href='research-hub.html'"><i
-                        class="ph ph-arrow-left"></i> Back to Hub</button>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-outline-sm" onclick="alert('Skipping...')">Skip to Next Feature</button>
-                </div>
-            </div>
-
-            <div class="summary-card"
-                style="background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%); color: white; border: none; margin-bottom: 32px; padding: 32px;">
-                <h1 style="color: white; font-size: 24px; margin-bottom: 8px;">Discovery</h1>
-                <p style="color: rgba(255,255,255,0.9); font-size: 16px;">Understand real client problems using feedback
-                    and evidence.</p>
-            </div>
-        </header>
-
-        <main>
-            <div class="section-header">
-                <h2>Active Problem Threads</h2>
-                <div class="action-bar" style="margin-top: 0;">
-                    <button class="btn btn-secondary" onclick="window.location.href='voc-log-feedback.html'"><i
-                            class="ph ph-plus"></i> Log New Feedback</button>
-                    <button class="btn btn-secondary" onclick="window.location.href='voc-add-analytics.html'"><i
-                            class="ph ph-plus"></i> Add Analytics Signal</button>
-                </div>
-            </div>
-
-            <div class="threads-list">
-                <!-- Thread 1 -->
-                <a href="voc-problem-thread.html?id=login" class="voc-thread-card">
-                    <div class="thread-info">
-                        <span class="status-dot dot-red"></span>
-                        <span class="thread-name">Login error confusion</span>
-                    </div>
-                    <div class="thread-meta">
-                        <span class="meta-item">Confidence: <span class="confidence-badge conf-high">High</span></span>
-                        <span class="meta-item">Evidence: <span class="evidence-badge">3 sources</span></span>
-                        <i class="ph ph-caret-right"></i>
-                    </div>
-                </a>
-
-                <!-- Thread 2 -->
-                <a href="voc-problem-thread.html?id=onboarding" class="voc-thread-card">
-                    <div class="thread-info">
-                        <span class="status-dot dot-red"></span>
-                        <span class="thread-name">Onboarding takes too long</span>
-                    </div>
-                    <div class="thread-meta">
-                        <span class="meta-item">Confidence: <span class="confidence-badge conf-high">High</span></span>
-                        <span class="meta-item">Evidence: <span class="evidence-badge">4 sources</span></span>
-                        <i class="ph ph-caret-right"></i>
-                    </div>
-                </a>
-
-                <!-- Thread 3 -->
-                <a href="voc-problem-thread.html?id=password" class="voc-thread-card">
-                    <div class="thread-info">
-                        <span class="status-dot dot-green"></span>
-                        <span class="thread-name">Password reset delays</span>
-                    </div>
-                    <div class="thread-meta">
-                        <span class="meta-item">Confidence: <span class="confidence-badge"
-                                style="background: #ECFDF5; color: #059669;">Improving</span></span>
-                        <span class="meta-item">Evidence: <span class="evidence-badge">2 sources</span></span>
-                        <i class="ph ph-caret-right"></i>
-                    </div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar-nav">
+            <div class="nav-item">
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <i class="ph ph-arrow-left"></i> Back to Strategy
                 </a>
             </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="max-width: 1200px; margin: 0 auto; padding: 32px;">
+            <!-- Hero -->
+            <div class="hero-banner">
+                <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Voice of Customer</h1>
+                <p style="margin: 8px 0 0; opacity: 0.9;">Discover recurring customer problems using evidence from your
+                    connected sources.</p>
+            </div>
+
+            <!-- Primary Actions -->
+            <h2 style="font-size: 18px; margin-bottom: 16px;">Primary Actions</h2>
+            <div class="action-cards">
+                <a href="voc-run-analysis.html" class="action-card">
+                    <div class="action-icon">
+                        <i class="ph ph-lightning"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">Run New Analysis</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Trigger a fresh investigation
+                    </p>
+                </a>
+
+                <a href="voc-schedule.html" class="action-card">
+                    <div class="action-icon">
+                        <i class="ph ph-calendar-check"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">Schedule Analysis</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Set up automated weekly runs
+                    </p>
+                </a>
+
+                <a href="voc-manage-sources.html" class="action-card">
+                    <div class="action-icon">
+                        <i class="ph ph-plugs"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">Manage Sources</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Connect Jira, Qualtrics, etc.
+                    </p>
+                </a>
+            </div>
+
+            <!-- Recent Runs -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 18px; margin: 0;">Recent Analyses</h2>
+                <a href="voc-saved-insights.html" class="text-link" style="font-size: 14px;">View Saved Insights →</a>
+            </div>
+
+            <table class="recent-runs-table">
+                <thead>
+                    <tr>
+                        <th>Run Name</th>
+                        <th>Date</th>
+                        <th>Sources</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr onclick="window.location.href='voc-results.html?id=weekly-mar1'">
+                        <td>
+                            <div style="font-weight: 600;">Weekly Run</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">Mar 1</td>
+                        <td style="color: var(--text-secondary);">Jira, Surveys</td>
+                        <td>
+                            <span class="status-badge status-ready">
+                                <i class="ph ph-check"></i> Ready
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <i class="ph ph-caret-right" style="color: var(--gray-400);"></i>
+                        </td>
+                    </tr>
+                    <tr onclick="window.location.href='voc-results.html?id=adhoc-feb25'">
+                        <td>
+                            <div style="font-weight: 600;">Ad-hoc Investigation</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">Feb 25</td>
+                        <td style="color: var(--text-secondary);">Jira</td>
+                        <td>
+                            <span class="status-badge status-ready">
+                                <i class="ph ph-check"></i> Ready
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <i class="ph ph-caret-right" style="color: var(--gray-400);"></i>
+                        </td>
+                    </tr>
+                    <tr onclick="window.location.href='voc-results.html?id=monthly-feb'">
+                        <td>
+                            <div style="font-weight: 600;">Monthly Run</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">Feb 1</td>
+                        <td style="color: var(--text-secondary);">Jira, Reviews</td>
+                        <td>
+                            <span class="status-badge status-ready">
+                                <i class="ph ph-check"></i> Ready
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <i class="ph ph-caret-right" style="color: var(--gray-400);"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </main>
     </div>
-    </div>
-
-    <script>
-        // Load dynamic threads
-        const threads = JSON.parse(localStorage.getItem('voc_threads') || '[]');
-        const container = document.querySelector('.threads-list');
-
-        threads.forEach(thread => {
-            const html = `
-                <a href="voc-problem-thread.html?id=${thread.id}" class="voc-thread-card">
-                    <div class="thread-info">
-                        <span class="status-dot dot-yellow"></span>
-                        <span class="thread-name">${thread.title}</span>
-                    </div>
-                    <div class="thread-meta">
-                        <span class="meta-item">Confidence: <span class="confidence-badge conf-low">Low</span></span>
-                        <span class="meta-item">Evidence: <span class="evidence-badge">1 source</span></span>
-                        <i class="ph ph-caret-right"></i>
-                    </div>
-                </a>
-            `;
-            // Insert after static threads (or append)
-            container.insertAdjacentHTML('beforeend', html);
-        });
-    </script>
 </body>
 
 </html>

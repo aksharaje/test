@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Insights - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .insights-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .insights-table th {
+            text-align: left;
+            padding: 16px 24px;
+            background: #F8FAFC;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .insights-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+
+    <div class="app-container" style="max-width: 1000px; margin: 40px auto; padding: 0 24px;">
+        <a href="discovery-hub.html"
+            style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 16px;">
+            <i class="ph ph-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 style="margin: 0;">Saved Insights & Problem Threads</h1>
+            <div style="position: relative;">
+                <input type="text" placeholder="Search threads..."
+                    style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); width: 240px;">
+            </div>
+        </div>
+
+        <table class="insights-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Problem Thread</th>
+                    <th>Status</th>
+                    <th>Date Saved</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong style="color: var(--primary-color);">Login issues</strong>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Auth, Mobile</div>
+                    </td>
+                    <td>
+                        <span class="status-badge" style="background: #E0E7FF; color: #3730A3;">Validated</span>
+                    </td>
+                    <td>Mar 5</td>
+                    <td><button class="btn btn-outline-sm">View</button></td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Password reset confusion</strong>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Auth, Email</div>
+                    </td>
+                    <td>
+                        <span class="status-badge" style="background: #F1F5F9; color: #475569;">Understood</span>
+                    </td>
+                    <td>Mar 5</td>
+                    <td><button class="btn btn-outline-sm">View</button></td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Checkout performance</strong>
+                    </td>
+                    <td>
+                        <span class="status-badge" style="background: #FEF3C7; color: #92400E;">Observed</span>
+                    </td>
+                    <td>Mar 1</td>
+                    <td><button class="btn btn-outline-sm">View</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>

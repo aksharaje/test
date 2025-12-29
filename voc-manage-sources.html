@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sources - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .sources-container {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .source-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 24px;
+        }
+
+        .source-icon {
+            width: 56px;
+            height: 56px;
+            background: #F8FAFC;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .source-content {
+            flex: 1;
+        }
+
+        .source-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .connection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-connected {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .badge-disconnected {
+            background: #F1F5F9;
+            color: #64748B;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 24px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .details-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .privacy-box {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            font-size: 14px;
+            color: #0369A1;
+            margin-top: 32px;
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+
+    <div class="sources-container">
+        <div style="margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <a href="discovery-hub.html"
+                    style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                    <i class="ph ph-arrow-left"></i> Back to Dashboard
+                </a>
+                <h1 style="margin: 0;">Connected Sources</h1>
+                <p style="color: var(--text-secondary); margin-top: 4px;">Manage integrations and permissions.</p>
+            </div>
+            <button class="btn btn-primary"><i class="ph ph-plus"></i> Add New Source</button>
+        </div>
+
+        <!-- Jira - Connected -->
+        <div class="source-card">
+            <div class="source-icon" style="color: #0052CC;">
+                <i class="ph ph-kanban"></i>
+            </div>
+            <div class="source-content">
+                <div class="source-header">
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px;">Jira</h2>
+                        <span class="connection-badge badge-connected" style="margin-top: 8px;">
+                            <i class="ph ph-check-circle"></i> Connected
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-outline-sm">Edit Scope</button>
+                        <button class="btn btn-outline-sm"
+                            style="color: #EF4444; border-color: #EF4444;">Disconnect</button>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <span class="details-label">Access:</span>
+                    <span>Read-only</span>
+
+                    <span class="details-label">Projects:</span>
+                    <span>Mobile App, Checkout</span>
+
+                    <span class="details-label">Fields:</span>
+                    <span>Summary, Description, Comments</span>
+
+                    <span class="details-label">Last synced:</span>
+                    <span>Today at 10:42 AM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Qualtrics - Not Connected -->
+        <div class="source-card">
+            <div class="source-icon" style="color: #00B4EF;">
+                <i class="ph ph-chats-circle"></i>
+            </div>
+            <div class="source-content">
+                <div class="source-header">
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px;">Qualtrics</h2>
+                        <span class="connection-badge badge-disconnected" style="margin-top: 8px;">
+                            <i class="ph ph-x-circle"></i> Not Connected
+                        </span>
+                    </div>
+                </div>
+
+                <p style="color: var(--text-secondary); font-size: 14px; margin: 0 0 16px;">
+                    Connect Qualtrics to import survey responses and NPS feedback automatically.
+                </p>
+
+                <button class="btn btn-primary">Connect Qualtrics</button>
+            </div>
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="privacy-box">
+            <i class="ph ph-shield-check" style="font-size: 24px; flex-shrink: 0;"></i>
+            <div>
+                <strong>Data Privacy & Security</strong>
+                <p style="margin: 4px 0 0;">
+                    We only read selected data specific to your analysis runs. We do not monitor continuously or modify
+                    any source data.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
