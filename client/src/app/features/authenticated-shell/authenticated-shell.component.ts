@@ -5,11 +5,12 @@ import {
   type NavItem,
 } from '../../shared/layouts/authenticated-layout';
 import type { User } from '../../shared/components/user-menu';
+import { AssistantWidgetComponent } from '../assistant/assistant-widget.component';
 
 @Component({
   selector: 'app-authenticated-shell',
   standalone: true,
-  imports: [AuthenticatedLayoutComponent],
+  imports: [AuthenticatedLayoutComponent, AssistantWidgetComponent],
   template: `
     <app-authenticated-layout
       [user]="currentUser()"
@@ -20,6 +21,7 @@ import type { User } from '../../shared/components/user-menu';
       (onSettings)="handleSettings()"
       (onLogout)="handleLogout()"
     />
+    <app-assistant-widget />
   `,
 })
 export class AuthenticatedShellComponent {
@@ -95,6 +97,7 @@ export class AuthenticatedShellComponent {
       path: '/development-section',
       children: [
         { label: 'Story to Code', path: '/story-to-code' },
+        { label: 'Release Prep', path: '/release-prep' },
       ],
     },
     { label: 'Testing', path: '/testing', children: [] },

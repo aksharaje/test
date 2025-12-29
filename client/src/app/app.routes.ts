@@ -376,6 +376,30 @@ export const routes: Routes = [
             (m) => m.CxRecommenderResultsComponent
           ),
       },
+      {
+        path: 'release-prep',
+        title: 'Release Prep | Product Studio',
+        loadComponent: () =>
+          import('./features/release-prep/release-prep-input.component').then(
+            (m) => m.ReleasePrepInputComponent
+          ),
+      },
+      {
+        path: 'release-prep/:id/processing',
+        title: 'Generating Artifacts | Product Studio',
+        loadComponent: () =>
+          import('./features/release-prep/release-prep-processing.component').then(
+            (m) => m.ReleasePrepProcessingComponent
+          ),
+      },
+      {
+        path: 'release-prep/:id/results',
+        title: 'Release Artifacts | Product Studio',
+        loadComponent: () =>
+          import('./features/release-prep/release-prep-results.component').then(
+            (m) => m.ReleasePrepResultsComponent
+          ),
+      },
     ],
   },
   {

@@ -62,6 +62,8 @@ class GeneratedArtifact(GeneratedArtifactBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    released_at: Optional[datetime] = Field(default=None)  # When included in a release
+    released_in_session_id: Optional[int] = Field(default=None, foreign_key="release_prep_sessions.id")
 
 class GenerationFeedbackBase(SQLModel):
     model_config = {
