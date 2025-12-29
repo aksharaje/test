@@ -100,21 +100,24 @@
                     <label style="display: flex; gap: 8px;">
                         <input type="checkbox" checked> Jira tickets & defects
                     </label>
-                    <label style="display: flex; gap: 8px;" id="qualtrics-option">
-                        <input type="checkbox" id="qualtrics-check" onchange="togglePermissionBox()"> Qualtrics surveys
-                        & behavioral signals
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Jira tickets & defects
                     </label>
 
-                    <!-- Permission Prompt -->
-                    <div id="qualtrics-permission"
-                        style="display: none; background: #FFF7ED; border: 1px solid #FFEDD5; padding: 12px; border-radius: 6px; margin-left: 24px; margin-top: 4px;">
-                        <strong
-                            style="color: #9A3412; font-size: 13px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i
-                                class="ph ph-warning"></i> Qualtrics not authorized</strong>
-                        <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px;">
-                            <input type="checkbox" id="qualtrics-auth" onchange="checkSaveButton()">
-                            <span>Authorize Product Studio to read Qualtrics data (read-only)</span>
-                        </label>
+                    <!-- Unauthorized Source Block -->
+                    <div style="margin-top: 8px; margin-bottom: 8px;">
+                        <div style="display: flex; gap: 8px; align-items: flex-start; color: var(--text-secondary);">
+                            <i class="ph ph-warning" style="color: #F59E0B; font-size: 18px; margin-top: 1px;"></i>
+                            <div>
+                                <span style="font-weight: 500; color: var(--text-primary);">Qualtrics surveys &
+                                    behavioral signals</span>
+                                <div style="font-size: 13px; color: #DC2626; margin-top: 2px;">Access not authorized
+                                </div>
+                                <button type="button" class="btn btn-outline-sm" style="margin-top: 8px;"
+                                    onclick="window.location.href='voc-manage-sources.html'">Manage Qualtrics
+                                    Access</button>
+                            </div>
+                        </div>
                     </div>
 
                     <label style="display: flex; gap: 8px;">
@@ -181,36 +184,6 @@
     </div>
 
     <script>
-        function togglePermissionBox() {
-            setTimeout(() => {
-                const qCheck = document.getElementById('qualtrics-check').checked;
-                const permBox = document.getElementById('qualtrics-permission');
-
-                if (qCheck) {
-                    permBox.style.display = 'block';
-                } else {
-                    permBox.style.display = 'none';
-                }
-                checkSaveButton();
-            }, 0);
-        }
-
-        function checkSaveButton() {
-            const qCheck = document.getElementById('qualtrics-check').checked;
-            const authCheck = document.getElementById('qualtrics-auth').checked;
-            const btn = document.getElementById('save-btn');
-
-            if (qCheck && !authCheck) {
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.textContent = 'Auth Required';
-            } else {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.textContent = 'Save Schedule';
-            }
-        }
-
         function saveSchedule(e) {
             e.preventDefault();
             const btn = document.getElementById('save-btn');
@@ -222,11 +195,6 @@
                 window.location.href = 'discovery-hub.html';
             }, 1000);
         }
-
-        // Initial state: Uncheck Qualtrics to be clean
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('qualtrics-check').checked = false;
-        });
     </script>
 </body>
 
