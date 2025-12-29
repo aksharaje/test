@@ -102,97 +102,136 @@
                 sources.</p>
         </div>
 
-        <!-- Step 1 -->
+        <!-- Step 1: Sources -->
         <div class="step-section">
             <div class="step-header">
                 <span class="step-number">1</span>
-                Select Sources
+                Data source to analyse
             </div>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Select the data you want to
+                analyze. Choose only the sources relevant to this investigation.</p>
+
             <div class="checkbox-group">
+                <label class="list-option" onclick="togglePermissionBox()" id="jira-option">
+                    <input type="checkbox" id="jira-check" onchange="togglePermissionBox()">
+                    <span><strong>Jira tickets & defects</strong></span>
+                </label>
+
+                <!-- Permission Prompt -->
+                <div id="jira-permission"
+                    style="display: none; background: #FFF7ED; border: 1px solid #FFEDD5; padding: 16px; border-radius: 8px; margin-left: 32px;">
+                    <strong style="color: #9A3412; font-size: 13px; display: block; margin-bottom: 8px;">Jira —
+                        Permission Required</strong>
+                    <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px;">
+                        <input type="checkbox" id="jira-auth" onchange="checkRunButton()">
+                        <span>I authorize Product Studio to read selected Jira data<br>
+                            <span style="color: var(--text-secondary);">(read-only access, scoped to chosen
+                                projects)</span>
+                        </span>
+                    </label>
+                    <a href="#"
+                        style="font-size: 12px; color: var(--primary-color); margin-top: 8px; display: inline-block;">[
+                        View data access details ]</a>
+                </div>
+
                 <label class="list-option">
                     <input type="checkbox" checked>
-                    <span><strong>Jira</strong> (2 projects connected)</span>
+                    <span><strong>Qualtrics surveys & behavioral signals</strong></span>
                 </label>
                 <label class="list-option">
                     <input type="checkbox">
-                    <span><strong>Surveys</strong> (Qualtrics)</span>
-                </label>
-                <label class="list-option">
-                    <input type="checkbox">
-                    <span><strong>App Reviews</strong> (iOS/Android)</span>
+                    <span><strong>App store reviews</strong></span>
                 </label>
             </div>
-            <button class="btn btn-outline-sm" style="margin-top: 12px;">+ Connect new source</button>
         </div>
 
-        <!-- Step 2 -->
+        <!-- Step 2: Scope -->
         <div class="step-section">
             <div class="step-header">
                 <span class="step-number">2</span>
-                Scope the Analysis
+                Scope and Time
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
                 <div>
-                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Projects /
-                        Areas</label>
-                    <div class="checkbox-group">
-                        <label class="list-option" style="padding: 8px;">
-                            <input type="checkbox" checked> Mobile App
-                        </label>
-                        <label class="list-option" style="padding: 8px;">
-                            <input type="checkbox"> Admin Dashboard
-                        </label>
-                    </div>
+                    <label class="form-label">Product / Area</label>
+                    <select class="select-input">
+                        <option>Mobile App</option>
+                        <option>Web Dashboard</option>
+                    </select>
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Time
-                        Range</label>
+                    <label class="form-label">Functional Areas</label>
                     <select class="select-input">
-                        <option>Last 30 days</option>
-                        <option>Last 7 days</option>
-                        <option>Last Quarter</option>
+                        <option>Login, Payments, Checkout</option>
+                        <option>Onboarding</option>
+                        <option>Profile Management</option>
                     </select>
-
-                    <label style="display: block; margin: 16px 0 8px; font-size: 14px; font-weight: 500;">Issue Types
-                        (Optional)</label>
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" checked> Bugs</label>
-                        <label><input type="checkbox" checked> Support issues</label>
-                    </div>
                 </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <label class="form-label">Time Range</label>
+                <select class="select-input" style="max-width: 200px;">
+                    <option>Last 30 days</option>
+                    <option>Last 7 days</option>
+                    <option>Last Quarter</option>
+                </select>
             </div>
         </div>
 
-        <!-- Step 3 -->
+        <!-- Step 3: Focus -->
         <div class="step-section">
             <div class="step-header">
                 <span class="step-number">3</span>
-                Optional Focus
-            </div>
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">Focus Question</label>
-            <input type="text" class="text-input" placeholder="e.g., Investigate login and authentication issues">
-            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Leave empty for a broad analysis.
-            </p>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="step-section">
-            <div class="step-header">
-                <span class="step-number">4</span>
-                Comparison
+                Analysis Focus
             </div>
             <div class="checkbox-group">
                 <label class="list-option">
-                    <input type="radio" name="compare" checked>
-                    <span>Compare with <strong>Last weekly run</strong></span>
+                    <input type="radio" name="focus" checked>
+                    <span><strong>Customer Themes</strong></span>
                 </label>
                 <label class="list-option">
-                    <input type="radio" name="compare">
-                    <span>Compare with <strong>Last monthly run</strong></span>
+                    <input type="radio" name="focus">
+                    <span><strong>Defect-Focused Analysis</strong></span>
                 </label>
-                <label class="list-option">
-                    <input type="radio" name="compare">
-                    <span>No comparison</span>
+            </div>
+        </div>
+
+        <!-- Step 4: Classification -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                Classification Goals
+            </div>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Help VoC classify issues as:
+            </p>
+            <div class="checkbox-group">
+                <label style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" checked> Likely System Failure
+                </label>
+                <label style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" checked> Likely UX / Design Friction
+                </label>
+                <label style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" checked> Likely User Misunderstanding
+                </label>
+                <label style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" checked> Likely Configuration / Edge Case
+                </label>
+            </div>
+        </div>
+
+        <!-- Step 5: Comparison -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">5</span>
+                Comparison
+            </div>
+            <div class="checkbox-group">
+                <label style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" checked> Compare with <strong>Last weekly run</strong>
+                </label>
+                <label style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox"> Compare with <strong>Last defect-focused run</strong>
                 </label>
             </div>
         </div>
@@ -200,15 +239,51 @@
         <!-- Actions -->
         <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px;">
             <button class="btn btn-outline" onclick="window.location.href='discovery-hub.html'">Cancel</button>
-            <button class="btn btn-primary" onclick="startAnalysis()">
+            <button id="run-btn" class="btn btn-primary" onclick="startAnalysis()">
                 <i class="ph ph-lightning"></i> Run Analysis
             </button>
         </div>
     </div>
 
     <script>
+        function togglePermissionBox() {
+            // Give slight delay to allow checkbox state to update
+            setTimeout(() => {
+                const jiraChecked = document.getElementById('jira-check').checked;
+                const permBox = document.getElementById('jira-permission');
+
+                if (jiraChecked) {
+                    permBox.style.display = 'block';
+                } else {
+                    permBox.style.display = 'none';
+                }
+                checkRunButton();
+            }, 0);
+        }
+
+        function checkRunButton() {
+            const jiraChecked = document.getElementById('jira-check').checked;
+            const authChecked = document.getElementById('jira-auth').checked;
+            const btn = document.getElementById('run-btn');
+
+            // If Jira is checked but NOT authorized, disable button
+            if (jiraChecked && !authChecked) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                btn.title = "Please authorize data access to proceed";
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                btn.title = "";
+            }
+        }
+
         function startAnalysis() {
-            const btn = document.querySelector('.btn-primary');
+            const btn = document.getElementById('run-btn');
+            if (btn.disabled) return;
+
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Running...';
             btn.disabled = true;
 
@@ -216,6 +291,15 @@
                 window.location.href = 'voc-results.html?id=new';
             }, 1500);
         }
+
+        // Initial check
+        window.addEventListener('DOMContentLoaded', () => {
+            // Uncheck Jira by default so we can demonstrate the flow, or check it and show permission
+            // Let's uncheck it to be clean, or check it and show the box immediately?
+            // Prompt says: "When a source is selected but not yet authorised"
+            // Let's default unchecked
+            document.getElementById('jira-check').checked = false;
+        });
     </script>
 </body>
 
