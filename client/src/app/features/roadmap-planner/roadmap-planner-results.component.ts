@@ -15,6 +15,9 @@ import {
   lucideAlertTriangle,
   lucideCheckCircle,
   lucideAlertCircle,
+  lucideLink,
+  lucideArrowRight,
+  lucideClipboardList,
 } from '@ng-icons/lucide';
 import { RoadmapPlannerService } from './roadmap-planner.service';
 import {
@@ -61,6 +64,9 @@ interface SprintColumn {
       lucideAlertTriangle,
       lucideCheckCircle,
       lucideAlertCircle,
+      lucideLink,
+      lucideArrowRight,
+      lucideClipboardList,
     }),
   ],
   template: `
@@ -262,22 +268,44 @@ interface SprintColumn {
                                   class="absolute h-12 rounded-lg shadow-sm border cursor-grab hover:shadow-md transition-shadow overflow-hidden flex items-center px-3 gap-2 pointer-events-auto"
                                   [class.opacity-50]="draggedSegment()?.id === segment.id"
                                   [class.cursor-grabbing]="draggedSegment()?.id === segment.id"
+                                  [class.ring-2]="hasBlockingDependency(segment.item.id)"
+                                  [class.ring-amber-400]="hasBlockingDependency(segment.item.id)"
                                   [style.left.px]="getSegmentLeft(segment)"
                                   [style.width.px]="getSegmentWidth(segment)"
                                   [style.top.px]="8 + (i * 52)"
                                   [style.background-color]="segment.displayColor"
                                   [style.border-color]="darkenColor(segment.displayColor, 20)"
-                                  [title]="segment.item.title + (segment.label ? ' - ' + segment.label : '') + ' (' + segment.effortPoints + ' pts, ' + segment.sprintCount + ' sprint' + (segment.sprintCount > 1 ? 's' : '') + ')'"
+                                  [title]="getSegmentTooltip(segment)"
                                   draggable="true"
                                   (dragstart)="onDragStart($event, segment)"
                                   (dragend)="onDragEnd($event)"
                                 >
+                                  <!-- Dependency indicator (left side - what this depends on) -->
+                                  @if (getBlockedByCount(segment.item.id) > 0) {
+                                    <div class="flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center" title="Blocked by {{ getBlockedByCount(segment.item.id) }} item(s)">
+                                      <span class="text-[10px] font-bold text-amber-700">{{ getBlockedByCount(segment.item.id) }}</span>
+                                    </div>
+                                  }
                                   <div class="flex-1 min-w-0">
                                     <div class="font-medium text-slate-900 text-sm truncate">
                                       {{ segment.label || segment.item.title }}
                                     </div>
                                     <div class="text-xs text-slate-600">{{ segment.effortPoints }} pts</div>
                                   </div>
+                                  <!-- Blocks indicator (right side - what this blocks) -->
+                                  @if (getBlocksCount(segment.item.id) > 0) {
+                                    <div class="flex-shrink-0 flex items-center gap-0.5" title="Blocks {{ getBlocksCount(segment.item.id) }} item(s)">
+                                      <ng-icon name="lucideArrowRight" class="h-3 w-3 text-blue-600" />
+                                      <span class="text-[10px] font-bold text-blue-700">{{ getBlocksCount(segment.item.id) }}</span>
+                                    </div>
+                                  }
+                                  <!-- External prerequisites indicator -->
+                                  @if (getExternalPrereqCount(segment.item.id) > 0) {
+                                    <div class="flex-shrink-0 flex items-center gap-0.5 bg-purple-100 rounded px-1" [title]="getExternalPrereqTooltip(segment.item.id)">
+                                      <ng-icon name="lucideClipboardList" class="h-3 w-3 text-purple-600" />
+                                      <span class="text-[10px] font-bold text-purple-700">{{ getExternalPrereqCount(segment.item.id) }}</span>
+                                    </div>
+                                  }
                                   @if (segment.sprintCount > 1) {
                                     <div class="flex-shrink-0 text-xs text-slate-500 bg-white/50 px-1.5 py-0.5 rounded">
                                       {{ segment.sprintCount }}s
@@ -294,7 +322,7 @@ interface SprintColumn {
                 </div>
 
                 <!-- Legend -->
-                <div class="mt-4 flex items-center gap-6 text-sm text-slate-600">
+                <div class="mt-4 flex flex-wrap items-center gap-6 text-sm text-slate-600">
                   <div class="flex items-center gap-2">
                     <div class="w-4 h-4 rounded bg-slate-200 border border-slate-300"></div>
                     <span>No theme</span>
@@ -308,6 +336,26 @@ interface SprintColumn {
                       <span>{{ theme.name }}</span>
                     </div>
                   }
+                  <div class="border-l border-slate-300 pl-4 flex items-center gap-4">
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center">
+                        <span class="text-[10px] font-bold text-amber-700">#</span>
+                      </div>
+                      <span>Blocked by</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <ng-icon name="lucideArrowRight" class="h-3 w-3 text-blue-600" />
+                      <span class="text-[10px] font-bold text-blue-700">#</span>
+                      <span class="ml-1">Blocks</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-0.5 bg-purple-100 rounded px-1">
+                        <ng-icon name="lucideClipboardList" class="h-3 w-3 text-purple-600" />
+                        <span class="text-[10px] font-bold text-purple-700">#</span>
+                      </div>
+                      <span>External prereqs</span>
+                    </div>
+                  </div>
                 </div>
               } @else {
                 <div class="text-center py-12 text-slate-500">
@@ -339,7 +387,7 @@ interface SprintColumn {
                             {{ dep.dependencyType }}
                           </div>
                           <div class="flex-1 text-right">
-                            <span class="font-medium">{{ getItemTitle(dep.toItemId) }}</span>
+                            <span class="font-medium">{{ getItemTitle(dep.toItemId!) }}</span>
                           </div>
                         </div>
                       }
@@ -706,6 +754,94 @@ export class RoadmapPlannerResultsComponent implements OnInit {
       .replace('requires_', '')
       .replace(/_/g, ' ')
       .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // Dependency helper methods for Gantt visualization
+  hasBlockingDependency(itemId: number): boolean {
+    const deps = this.internalDependencies();
+    // Check if this item is blocked by anything (it's the toItemId in a blocks/depends_on relationship)
+    return deps.some(d =>
+      d.toItemId === itemId &&
+      (d.dependencyType === 'blocks' || d.dependencyType === 'depends_on')
+    );
+  }
+
+  getBlockedByCount(itemId: number): number {
+    const deps = this.internalDependencies();
+    // Count how many items block this item
+    return deps.filter(d =>
+      d.toItemId === itemId &&
+      (d.dependencyType === 'blocks' || d.dependencyType === 'depends_on')
+    ).length;
+  }
+
+  getBlocksCount(itemId: number): number {
+    const deps = this.internalDependencies();
+    // Count how many items this item blocks
+    return deps.filter(d =>
+      d.fromItemId === itemId &&
+      (d.dependencyType === 'blocks' || d.dependencyType === 'depends_on')
+    ).length;
+  }
+
+  getBlockedByItems(itemId: number): RoadmapItem[] {
+    const deps = this.internalDependencies();
+    const items = this.currentSession()?.items || [];
+    const blockerIds = deps
+      .filter(d => d.toItemId === itemId && (d.dependencyType === 'blocks' || d.dependencyType === 'depends_on'))
+      .map(d => d.fromItemId);
+    return items.filter(i => blockerIds.includes(i.id));
+  }
+
+  // External prerequisites count for an item
+  getExternalPrereqCount(itemId: number): number {
+    const deps = this.externalDependencies();
+    return deps.filter(d => d.fromItemId === itemId).length;
+  }
+
+  getExternalPrereqs(itemId: number): RoadmapDependency[] {
+    const deps = this.externalDependencies();
+    return deps.filter(d => d.fromItemId === itemId);
+  }
+
+  getExternalPrereqTooltip(itemId: number): string {
+    const prereqs = this.getExternalPrereqs(itemId);
+    if (prereqs.length === 0) return '';
+
+    const lines = ['External Prerequisites:'];
+    for (const prereq of prereqs) {
+      const type = this.formatPrerequisiteType(prereq.dependencyType);
+      const desc = prereq.rationale ? `: ${prereq.rationale}` : '';
+      lines.push(`• ${type}${desc}`);
+    }
+    return lines.join('\n');
+  }
+
+  getSegmentTooltip(segment: GanttSegment): string {
+    const parts = [segment.item.title];
+    if (segment.label && segment.label !== segment.item.title) {
+      parts[0] += ` - ${segment.label}`;
+    }
+    parts.push(`${segment.effortPoints} pts, ${segment.sprintCount} sprint${segment.sprintCount > 1 ? 's' : ''}`);
+
+    const blockedByCount = this.getBlockedByCount(segment.item.id);
+    const blocksCount = this.getBlocksCount(segment.item.id);
+    const externalCount = this.getExternalPrereqCount(segment.item.id);
+
+    if (blockedByCount > 0) {
+      const blockers = this.getBlockedByItems(segment.item.id);
+      parts.push(`⚠️ Blocked by: ${blockers.map(i => i.title).join(', ')}`);
+    }
+    if (blocksCount > 0) {
+      parts.push(`→ Blocks ${blocksCount} other item${blocksCount > 1 ? 's' : ''}`);
+    }
+    if (externalCount > 0) {
+      const prereqs = this.getExternalPrereqs(segment.item.id);
+      const types = [...new Set(prereqs.map(p => this.formatPrerequisiteType(p.dependencyType)))];
+      parts.push(`📋 ${externalCount} external prereq${externalCount > 1 ? 's' : ''}: ${types.join(', ')}`);
+    }
+
+    return parts.join('\n');
   }
 
   retry(): void {

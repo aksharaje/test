@@ -124,22 +124,36 @@ class RoadmapPlannerService:
             return False
 
         # Delete in order of foreign key dependencies
+        # 1. JiraSyncLog (references session)
         for log in self.db.exec(select(JiraSyncLog).where(JiraSyncLog.session_id == session_id)).all():
             self.db.delete(log)
-        for dep in self.db.exec(select(RoadmapDependency).where(RoadmapDependency.session_id == session_id)).all():
-            self.db.delete(dep)
+
+        # 2. Milestones (references session and optionally theme)
         for milestone in self.db.exec(select(RoadmapMilestone).where(RoadmapMilestone.session_id == session_id)).all():
             self.db.delete(milestone)
-        # Delete segments before items (segments reference items)
+
+        # 3. Dependencies (references session and items)
+        for dep in self.db.exec(select(RoadmapDependency).where(RoadmapDependency.session_id == session_id)).all():
+            self.db.delete(dep)
+
+        # 4. Segments (references items)
         items = self.db.exec(select(RoadmapItem).where(RoadmapItem.session_id == session_id)).all()
         for item in items:
             for segment in self.db.exec(select(RoadmapItemSegment).where(RoadmapItemSegment.item_id == item.id)).all():
                 self.db.delete(segment)
+
+        # 5. Items (references session and optionally theme)
         for item in items:
             self.db.delete(item)
+
+        # 6. Themes (references session)
         for theme in self.db.exec(select(RoadmapTheme).where(RoadmapTheme.session_id == session_id)).all():
             self.db.delete(theme)
 
+        # Flush to ensure all child records are deleted before the session
+        self.db.flush()
+
+        # 7. Finally delete the session
         self.db.delete(session)
         self.db.commit()
         return True
@@ -895,47 +909,56 @@ class RoadmapPlannerService:
         if not all_items:
             return
 
+        # Create example output using the first item if available
+        example_item = None
+        if all_items:
+            first = all_items[0]
+            example_item = {
+                "source_id": first["source_id"],
+                "source_type": first["source_type"],
+                "sequence_order": 1,
+                "priority": 2,
+                "effort_points": first.get("effort_estimate") or 5,
+                "risk_level": "medium",
+                "value_score": 7,
+                "rationale": "Example: High value, moderate complexity"
+            }
+
         # Use LLM to analyze and sequence all items together
-        prompt = create_json_prompt(
-            task_description=f"""Analyze these {len(all_items)} backlog items from various sources and determine optimal sequencing.
+        prompt = f"""Analyze these {len(all_items)} backlog items and determine optimal sequencing.
 
-The items come from:
-- Story Generator (epics/features)
-- Feasibility Analysis (analyzed features with estimates)
-- Ideation (brainstormed ideas with impact/effort)
-- Custom entries (user-defined items)
+INPUT ITEMS:
+{json.dumps(all_items, indent=2)}
 
-Consider:
-- Business value and priority
-- Risk level (high-risk items may need to be earlier for learning)
-- Effort required (use existing estimates as hints where provided)
-- Natural groupings and dependencies
+TASK: For EACH item above, provide sequencing information.
 
-ITEMS:
-{json.dumps(all_items, indent=2)}""",
-            json_schema={
-                "sequenced_items": [
-                    {
-                        "source_id": "Original source ID",
-                        "source_type": "Source type: artifact, feasibility, ideation, or custom",
-                        "sequence_order": "1-based sequence position",
-                        "priority": "1 (highest) to 5 (lowest)",
-                        "effort_points": "Story points estimate (1-13 fibonacci-ish scale). Use provided effort_estimate as baseline if available.",
-                        "risk_level": "One of: low, medium, high",
-                        "value_score": "Business value 1-10",
-                        "rationale": "Why this position in sequence"
-                    }
-                ]
-            },
-            additional_rules=[
-                "Higher value items should generally come earlier",
-                "Consider risk-first vs value-first trade-offs",
-                "Use Fibonacci-like story points: 1, 2, 3, 5, 8, 13",
-                "When effort_estimate is provided, use it as a baseline but adjust if needed",
-                "Be realistic about effort estimates",
-                "Return exactly one entry per input item",
-            ]
-        )
+REQUIRED JSON OUTPUT FORMAT:
+{{
+  "sequenced_items": [
+    {{
+      "source_id": <same source_id from input item>,
+      "source_type": "<same source_type from input: artifact|feasibility|ideation|custom>",
+      "sequence_order": <integer 1 to {len(all_items)}, unique for each item>,
+      "priority": <integer 1-5, where 1=highest priority>,
+      "effort_points": <integer using fibonacci: 1, 2, 3, 5, 8, 13>,
+      "risk_level": "low|medium|high",
+      "value_score": <integer 1-10>,
+      "rationale": "<brief explanation>"
+    }}
+  ]
+}}
+
+EXAMPLE (for first item):
+{json.dumps({"sequenced_items": [example_item] if example_item else []}, indent=2)}
+
+RULES:
+1. Return EXACTLY {len(all_items)} items - one for each input item
+2. Each source_id and source_type must match an input item exactly
+3. sequence_order must be unique integers from 1 to {len(all_items)}
+4. Use Fibonacci story points: 1, 2, 3, 5, 8, 13
+5. If effort_estimate is provided in input, use it as baseline
+6. Higher value items should come earlier in sequence
+7. Return ONLY valid JSON, no markdown or explanations"""
 
         result = self.llm.call(
             prompt=prompt,
@@ -960,12 +983,24 @@ ITEMS:
             key = (source_type, source_id)
             seq_data = sequence_map.get(key, {})
 
-            # Determine effort points: LLM estimate > source estimate > default
-            effort_points = self._safe_int(seq_data.get("effort_points"))
-            if not effort_points and source_item.get("effort_estimate"):
+            # Determine effort points based on source type
+            # For feasibility items: ALWAYS use the calculated effort (based on actual analysis)
+            # For artifacts with estimates: prefer source estimate, fallback to LLM
+            # For others: use LLM estimate or default
+            effort_points = None
+
+            if source_type == "feasibility" and source_item.get("effort_estimate"):
+                # Feasibility estimates are based on actual timeline analysis - always use them
                 effort_points = source_item["effort_estimate"]
+            elif source_item.get("effort_estimate"):
+                # Artifacts have effort estimates from story points - prefer these
+                effort_points = source_item["effort_estimate"]
+            else:
+                # Fallback to LLM estimate
+                effort_points = self._safe_int(seq_data.get("effort_points"))
+
             if not effort_points:
-                effort_points = 3  # Default
+                effort_points = 5  # Default to medium effort
 
             item = RoadmapItem(
                 session_id=session.id,
@@ -1056,50 +1091,81 @@ ITEMS:
         if not items:
             return
 
-        # Prepare items for LLM
+        # Prepare items for LLM with explicit ID list
         item_data = [
             {"id": item.id, "title": item.title, "description": item.description or "", "type": item.item_type}
             for item in items
         ]
 
-        prompt = create_json_prompt(
-            task_description=f"""Analyze these {len(item_data)} roadmap items and identify:
-1. Dependencies BETWEEN these items
-2. External prerequisites that may be needed but are NOT in this list
+        # Create a clear list of valid IDs for the LLM
+        valid_ids = [item.id for item in items]
 
-ITEMS:
-{json.dumps(item_data, indent=2)}""",
-            json_schema={
-                "internal_dependencies": [
-                    {
-                        "from_item_id": "ID of the item that blocks or enables another",
-                        "to_item_id": "ID of the dependent item",
-                        "dependency_type": "One of: blocks, depends_on, related_to, enables",
-                        "confidence": "0.0-1.0 confidence score",
-                        "rationale": "Brief explanation of why this dependency exists"
-                    }
-                ],
-                "external_prerequisites": [
-                    {
-                        "item_id": "ID of the item that needs this prerequisite",
-                        "prerequisite_type": "One of: backend_system, api, ux_design, infrastructure, data_migration, third_party, security, compliance, other",
-                        "description": "What external work/system/resource is needed",
-                        "rationale": "Why this prerequisite is needed for the item",
-                        "criticality": "One of: blocking, important, nice_to_have"
-                    }
-                ]
-            },
-            additional_rules=[
-                "Only identify real dependencies, not just thematic relationships",
-                "'blocks' means from_item must complete before to_item can start",
-                "'depends_on' is the inverse - to_item depends on from_item",
-                "'enables' means from_item makes to_item easier but isn't required",
-                "'related_to' is informational only, no sequencing constraint",
-                "Be conservative with internal dependencies - false ones are worse than missing",
-                "For external prerequisites, think about: backend APIs needed, UX designs required, infrastructure setup, data migrations, third-party integrations, security requirements, compliance needs",
-                "External prerequisites should be work NOT included in the items list above",
-            ]
-        )
+        # Build example using actual IDs from the items if we have at least 2
+        example_deps = []
+        example_prereqs = []
+        if len(valid_ids) >= 2:
+            example_deps = [{
+                "from_item_id": valid_ids[0],
+                "to_item_id": valid_ids[1],
+                "dependency_type": "blocks",
+                "confidence": 0.8,
+                "rationale": "Example: Item A must complete before Item B can start"
+            }]
+        if len(valid_ids) >= 1:
+            example_prereqs = [{
+                "item_id": valid_ids[0],
+                "prerequisite_type": "api",
+                "description": "Example: Backend API endpoint required",
+                "rationale": "Example: Needs API for data retrieval",
+                "criticality": "important"
+            }]
+
+        prompt = f"""Analyze these {len(item_data)} roadmap items and identify dependencies.
+
+AVAILABLE ITEMS (use these exact integer IDs):
+{json.dumps(item_data, indent=2)}
+
+VALID ITEM IDs: {valid_ids}
+
+TASK:
+1. Identify dependencies BETWEEN these items (internal dependencies)
+2. Identify external prerequisites needed but NOT in this list
+
+REQUIRED JSON OUTPUT FORMAT:
+{{
+  "internal_dependencies": [
+    {{
+      "from_item_id": <integer ID from the list above>,
+      "to_item_id": <integer ID from the list above>,
+      "dependency_type": "blocks|depends_on|related_to|enables",
+      "confidence": <number 0.0-1.0>,
+      "rationale": "<brief explanation>"
+    }}
+  ],
+  "external_prerequisites": [
+    {{
+      "item_id": <integer ID from the list above>,
+      "prerequisite_type": "backend_system|api|ux_design|infrastructure|data_migration|third_party|security|compliance|other",
+      "description": "<what external work is needed>",
+      "rationale": "<why needed>",
+      "criticality": "blocking|important|nice_to_have"
+    }}
+  ]
+}}
+
+EXAMPLE OUTPUT:
+{json.dumps({"internal_dependencies": example_deps, "external_prerequisites": example_prereqs}, indent=2)}
+
+RULES:
+1. Use ONLY integer IDs from the valid IDs list: {valid_ids}
+2. from_item_id and to_item_id MUST be different items
+3. Return empty arrays if no dependencies/prerequisites found
+4. 'blocks' = from_item must complete before to_item starts
+5. 'depends_on' = to_item depends on from_item (inverse of blocks)
+6. 'enables' = from_item makes to_item easier but not required
+7. 'related_to' = informational only, no sequencing constraint
+8. Be conservative - false dependencies are worse than missing ones
+9. Return ONLY valid JSON, no markdown or explanations"""
 
         result = self.llm.call(
             prompt=prompt,
@@ -1177,29 +1243,47 @@ ITEMS:
             for item in items
         ]
 
-        prompt = create_json_prompt(
-            task_description=f"""Analyze these {len(item_data)} roadmap items and group them into 3-7 strategic themes.
+        valid_ids = [item.id for item in items]
 
-ITEMS:
-{json.dumps(item_data, indent=2)}""",
-            json_schema={
-                "themes": [
-                    {
-                        "name": "Short, descriptive theme name",
-                        "description": "What this theme encompasses",
-                        "business_objective": "What business goal this theme serves",
-                        "success_metrics": ["List of metrics to measure success"],
-                        "item_ids": ["List of item IDs belonging to this theme"]
-                    }
-                ]
-            },
-            additional_rules=[
-                "Create 3-7 themes based on natural groupings",
-                "Each item should belong to exactly one theme",
-                "Themes should align with business objectives",
-                "Use clear, stakeholder-friendly theme names",
-            ]
-        )
+        # Build example theme using actual IDs
+        example_theme = {
+            "name": "Core Platform",
+            "description": "Foundational platform capabilities",
+            "business_objective": "Enable core product functionality",
+            "success_metrics": ["Feature adoption rate", "User satisfaction"],
+            "item_ids": valid_ids[:min(2, len(valid_ids))]  # First 2 IDs as example
+        }
+
+        prompt = f"""Analyze these {len(item_data)} roadmap items and group them into strategic themes.
+
+ITEMS TO CLUSTER:
+{json.dumps(item_data, indent=2)}
+
+VALID ITEM IDs: {valid_ids}
+
+REQUIRED JSON OUTPUT FORMAT:
+{{
+  "themes": [
+    {{
+      "name": "<short descriptive theme name>",
+      "description": "<what this theme encompasses>",
+      "business_objective": "<business goal this theme serves>",
+      "success_metrics": ["<metric 1>", "<metric 2>"],
+      "item_ids": [<integer IDs from valid list above>]
+    }}
+  ]
+}}
+
+EXAMPLE:
+{json.dumps({"themes": [example_theme]}, indent=2)}
+
+RULES:
+1. Create 3-7 themes based on natural groupings
+2. EVERY item ID from {valid_ids} must appear in EXACTLY ONE theme
+3. item_ids must contain ONLY integers from the valid IDs list
+4. Each theme should have a clear business objective
+5. Use stakeholder-friendly theme names
+6. Return ONLY valid JSON, no markdown or explanations"""
 
         result = self.llm.call(
             prompt=prompt,
@@ -1486,57 +1570,108 @@ ITEMS:
         themes = self.get_themes(session.id)
         items = self.get_items(session.id)
 
-        if not themes or not items:
+        # Early exit if no items - nothing to create milestones for
+        if not items:
+            return
+
+        # Calculate total sprints from items
+        assigned_sprints = [item.assigned_sprint for item in items if item.assigned_sprint]
+        total_sprints = max(assigned_sprints) if assigned_sprints else 1
+
+        # If no themes, create a simple default milestone and return
+        if not themes:
+            milestone = RoadmapMilestone(
+                session_id=session.id,
+                name="Project Completion",
+                description="All planned items completed",
+                target_sprint=total_sprints,
+                target_date=session.start_date + timedelta(days=total_sprints * session.sprint_length_weeks * 7) if session.start_date else None,
+                criteria=["All items delivered", "Testing complete"],
+            )
+            self.db.add(milestone)
+            self.db.commit()
             return
 
         # Prepare theme and sprint data
         theme_data = []
         for theme in themes:
             theme_items = [item for item in items if item.theme_id == theme.id]
-            if theme_items:
-                sprints = [item.assigned_sprint for item in theme_items if item.assigned_sprint]
-                theme_data.append({
-                    "id": theme.id,
-                    "name": theme.name,
-                    "description": theme.description,
-                    "start_sprint": min(sprints) if sprints else 1,
-                    "end_sprint": max(sprints) if sprints else 1,
-                    "total_points": sum(item.effort_points for item in theme_items),
-                })
+            sprints = [item.assigned_sprint for item in theme_items if item.assigned_sprint]
+            theme_data.append({
+                "id": theme.id,
+                "name": theme.name,
+                "description": theme.description,
+                "start_sprint": min(sprints) if sprints else 1,
+                "end_sprint": max(sprints) if sprints else 1,
+                "item_count": len(theme_items),
+                "total_points": sum(item.effort_points for item in theme_items),
+            })
 
-        prompt = create_json_prompt(
-            task_description=f"""Based on these themes and their sprint spans, suggest meaningful milestones.
+        valid_theme_ids = [t["id"] for t in theme_data]
+
+        # Build example milestone
+        example_milestone = {
+            "name": "MVP Release",
+            "description": "Initial product release with core features",
+            "target_sprint": min(3, total_sprints),
+            "theme_id": valid_theme_ids[0] if valid_theme_ids else None,
+            "criteria": ["All core features functional", "Basic testing complete"]
+        }
+
+        prompt = f"""Based on these themes, suggest meaningful milestones.
 
 THEMES:
 {json.dumps(theme_data, indent=2)}
 
-Total sprints in roadmap: {max(item.assigned_sprint or 1 for item in items)}""",
-            json_schema={
-                "milestones": [
-                    {
-                        "name": "Milestone name",
-                        "description": "What this milestone represents",
-                        "target_sprint": "Sprint number when milestone should be achieved",
-                        "theme_id": "ID of primary theme (optional)",
-                        "criteria": ["List of completion criteria"]
-                    }
-                ]
-            },
-            additional_rules=[
-                "Suggest 2-5 meaningful milestones",
-                "Milestones should mark significant deliverables",
-                "Space milestones reasonably across the roadmap",
-                "Include clear success criteria",
-            ]
-        )
+VALID THEME IDs: {valid_theme_ids}
+Total sprints in roadmap: {total_sprints}
 
-        result = self.llm.call(
-            prompt=prompt,
-            context="Milestones",
-            max_tokens=2000,
-            required_keys=["milestones"],
-            fallback_value={"milestones": []}
-        )
+REQUIRED JSON OUTPUT FORMAT:
+{{
+  "milestones": [
+    {{
+      "name": "<milestone name>",
+      "description": "<what this milestone represents>",
+      "target_sprint": <integer 1 to {total_sprints}>,
+      "theme_id": <integer from valid theme IDs or null>,
+      "criteria": ["<criterion 1>", "<criterion 2>"]
+    }}
+  ]
+}}
+
+EXAMPLE:
+{json.dumps({"milestones": [example_milestone]}, indent=2)}
+
+RULES:
+1. Create 2-5 meaningful milestones
+2. target_sprint must be an integer from 1 to {total_sprints}
+3. theme_id must be from {valid_theme_ids} or null
+4. Space milestones reasonably across the roadmap
+5. Include clear, measurable success criteria
+6. Return ONLY valid JSON, no markdown or explanations"""
+
+        try:
+            result = self.llm.call(
+                prompt=prompt,
+                context="Milestones",
+                max_tokens=2000,
+                required_keys=["milestones"],
+                fallback_value={"milestones": []}
+            )
+        except Exception as e:
+            print(f"[Milestones] LLM call failed: {e}, creating default milestone")
+            # Create a default milestone if LLM fails
+            milestone = RoadmapMilestone(
+                session_id=session.id,
+                name="Project Completion",
+                description="All planned items completed",
+                target_sprint=total_sprints,
+                target_date=session.start_date + timedelta(days=total_sprints * session.sprint_length_weeks * 7) if session.start_date else None,
+                criteria=["All items delivered"],
+            )
+            self.db.add(milestone)
+            self.db.commit()
+            return
 
         # Create milestone records
         milestones_data = result.get("milestones", [])
