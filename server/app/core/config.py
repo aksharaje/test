@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "anthropic/claude-sonnet-4"
+    OPENROUTER_MODEL: str = "openai/gpt-oss-120b"
 
     # Jira
     JIRA_CLIENT_ID: str = ""

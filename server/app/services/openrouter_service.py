@@ -14,7 +14,8 @@ class OpenRouterService:
             "Content-Type": "application/json"
         }
 
-    async def chat(self, messages: List[Dict[str, str]], model: str = "anthropic/claude-3-haiku", temperature: float = 0.7, max_tokens: Optional[int] = None) -> Dict[str, Any]:
+    async def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None, temperature: float = 0.7, max_tokens: Optional[int] = None) -> Dict[str, Any]:
+        model = model or settings.OPENROUTER_MODEL
         async with httpx.AsyncClient() as client:
             payload = {
                 "model": model,

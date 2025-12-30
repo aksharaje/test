@@ -38,8 +38,7 @@ class StoryToCodeService:
 
     @property
     def model(self) -> str:
-        # Using a capable model for code generation
-        return "openai/gpt-4o"
+        return settings.OPENROUTER_MODEL
 
     # --- Session Management ---
 

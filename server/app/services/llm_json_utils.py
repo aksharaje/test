@@ -52,7 +52,7 @@ class StrictJSONLLM:
     - Detailed error reporting
     """
 
-    def __init__(self, api_key: str, base_url: str = "https://openrouter.ai/api/v1", model: str = "openai/gpt-4o-mini"):
+    def __init__(self, api_key: str, base_url: str = "https://openrouter.ai/api/v1", model: str = "openai/gpt-oss-120b"):
         self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=120.0)  # 2 minute timeout
         self.model = model
 
