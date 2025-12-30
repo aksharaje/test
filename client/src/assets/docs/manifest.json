@@ -84,6 +84,12 @@
     "summary": "Service file: `library_service.py`..."
   },
   {
+    "name": "RoadmapCommunicatorService",
+    "filename": "roadmap-communicator-service.md",
+    "category": "General",
+    "summary": "Service file: `roadmap_communicator_service.py`..."
+  },
+  {
     "name": "JiraService",
     "filename": "jira-service.md",
     "category": "Core",
@@ -94,6 +100,12 @@
     "filename": "settings-service.md",
     "category": "Core",
     "summary": "Service file: `settings_service.py`..."
+  },
+  {
+    "name": "ScenarioModelerService",
+    "filename": "scenario-modeler-service.md",
+    "category": "General",
+    "summary": "Service file: `scenario_modeler_service.py`..."
   },
   {
     "name": "IdeationService",
