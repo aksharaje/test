@@ -43,6 +43,16 @@ async def jira_oauth_callback(
 def list_integrations(session: Session = Depends(get_session)) -> Any:
     return jira_service.list_integrations(session)
 
+@router.post("/{integration_id}/sync")
+async def sync_integration(
+    integration_id: int,
+    session: Session = Depends(get_session)
+) -> Any:
+    integration = await jira_service.sync_integration(session, integration_id)
+    if not integration:
+        raise HTTPException(status_code=404, detail="Integration not found")
+    return integration
+
 @router.get("/jira/{integration_id}/projects")
 def list_jira_projects(integration_id: int) -> Any:
     # return jira_service.list_projects(session, integration_id)

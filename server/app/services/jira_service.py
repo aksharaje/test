@@ -147,4 +147,67 @@ class JiraService:
         statement = select(Integration).order_by(Integration.created_at.desc())
         return session.exec(statement).all()
 
+    async def sync_integration(self, session: Session, integration_id: int) -> Optional[Integration]:
+        integration = session.get(Integration, integration_id)
+        if not integration:
+            return None
+
+        # Verify connection by calling Jira API
+        try:
+            async with httpx.AsyncClient() as client:
+                # First try with current access token
+                headers = {
+                    "Authorization": f"Bearer {integration.access_token}",
+                    "Accept": "application/json"
+                }
+                response = await client.get("https://api.atlassian.com/me", headers=headers)
+
+                if response.status_code == 401:
+                    # Token expired, try to refresh
+                    if integration.refresh_token:
+                        refresh_response = await client.post(
+                            "https://auth.atlassian.com/oauth/token",
+                            json={
+                                "grant_type": "refresh_token",
+                                "client_id": settings.JIRA_CLIENT_ID,
+                                "client_secret": settings.JIRA_CLIENT_SECRET,
+                                "refresh_token": integration.refresh_token,
+                            }
+                        )
+                        
+                        if refresh_response.status_code == 200:
+                            tokens = refresh_response.json()
+                            integration.access_token = tokens["access_token"]
+                            if "refresh_token" in tokens:
+                                integration.refresh_token = tokens["refresh_token"]
+                            integration.token_expires_at = datetime.utcnow() + timedelta(seconds=tokens.get("expires_in", 3600))
+                            
+                            # Retry the API call with new token
+                            headers["Authorization"] = f"Bearer {integration.access_token}"
+                            response = await client.get("https://api.atlassian.com/me", headers=headers)
+                        else:
+                            raise ValueError("Failed to refresh token")
+                    else:
+                        raise ValueError("No refresh token available")
+
+                if response.status_code != 200:
+                    raise ValueError(f"Jira API returned {response.status_code}")
+
+                # If we get here, connection is good
+                integration.status = "connected"
+                integration.error_message = None
+                integration.last_sync_at = datetime.utcnow()
+                session.add(integration)
+                session.commit()
+                session.refresh(integration)
+                return integration
+
+        except Exception as e:
+            integration.status = "error"
+            integration.error_message = str(e)
+            session.add(integration)
+            session.commit()
+            session.refresh(integration)
+            return integration
+
 jira_service = JiraService()
