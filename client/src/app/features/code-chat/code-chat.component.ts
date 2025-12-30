@@ -10,6 +10,7 @@ import {
   lucidePlus,
   lucideTrash2,
   lucideChevronRight,
+  lucideChevronLeft,
   lucideCode,
   lucideFileCode,
   lucideInfo,
@@ -38,6 +39,7 @@ import { HlmButtonDirective } from '../../ui/button';
       lucidePlus,
       lucideTrash2,
       lucideChevronRight,
+      lucideChevronLeft,
       lucideCode,
       lucideFileCode,
       lucideInfo,
@@ -49,173 +51,9 @@ import { HlmButtonDirective } from '../../ui/button';
     }),
   ],
   template: `
-    <div class="flex h-full">
-      <!-- Left Sidebar: Sessions List -->
-      <div class="w-72 border-r flex flex-col bg-muted/30">
-        <!-- Knowledge Base Selection Dropdown -->
-        <div class="p-4 border-b">
-          <div class="flex items-center gap-2 mb-2">
-            <ng-icon name="lucideDatabase" class="h-4 w-4 text-muted-foreground" />
-            <span class="text-sm font-medium">Code Repositories</span>
-          </div>
-
-          <!-- Dropdown trigger -->
-          <div class="relative">
-            <button
-              type="button"
-              class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
-              (click)="toggleKbDropdown()"
-            >
-              <span class="truncate text-left">
-                @if (service.selectedKbIds().length === 0) {
-                  <span class="text-muted-foreground">Select repositories...</span>
-                } @else if (service.selectedKbIds().length === 1) {
-                  {{ service.selectedKnowledgeBases()[0]?.name }}
-                } @else {
-                  {{ service.selectedKbIds().length }} repositories selected
-                }
-              </span>
-              <ng-icon
-                name="lucideChevronDown"
-                class="h-4 w-4 text-muted-foreground transition-transform"
-                [class.rotate-180]="kbDropdownOpen()"
-              />
-            </button>
-
-            <!-- Dropdown panel -->
-            @if (kbDropdownOpen()) {
-              <!-- Backdrop to close on outside click -->
-              <div
-                class="fixed inset-0 z-40"
-                (click)="closeKbDropdown()"
-              ></div>
-
-              <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
-                <!-- Search input -->
-                <div class="p-2 border-b">
-                  <div class="relative">
-                    <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="Filter repositories..."
-                      class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      [value]="kbSearchFilter()"
-                      (input)="onKbSearchInput($event)"
-                      (click)="$event.stopPropagation()"
-                    />
-                  </div>
-                </div>
-
-                <!-- Options list -->
-                <div class="max-h-48 overflow-y-auto p-1">
-                  @for (kb of filteredKnowledgeBases(); track kb.id) {
-                    <button
-                      type="button"
-                      class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
-                      [class.bg-primary/10]="service.selectedKbIds().includes(kb.id)"
-                      (click)="service.toggleKnowledgeBase(kb.id); $event.stopPropagation()"
-                    >
-                      <div
-                        class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
-                        [class.bg-primary]="service.selectedKbIds().includes(kb.id)"
-                        [class.border-primary]="service.selectedKbIds().includes(kb.id)"
-                      >
-                        @if (service.selectedKbIds().includes(kb.id)) {
-                          <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
-                        }
-                      </div>
-                      <span class="truncate">{{ kb.name }}</span>
-                    </button>
-                  } @empty {
-                    <p class="px-2 py-4 text-sm text-muted-foreground text-center">
-                      @if (kbSearchFilter()) {
-                        No repositories match "{{ kbSearchFilter() }}"
-                      } @else {
-                        No code repositories available
-                      }
-                    </p>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-
-          <!-- Selected tags -->
-          @if (service.selectedKbIds().length > 0) {
-            <div class="flex flex-wrap gap-1 mt-2">
-              @for (kb of service.selectedKnowledgeBases(); track kb.id) {
-                <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                  {{ kb.name }}
-                  <button
-                    type="button"
-                    class="hover:text-primary/70"
-                    (click)="service.toggleKnowledgeBase(kb.id)"
-                  >
-                    <ng-icon name="lucideX" class="h-3 w-3" />
-                  </button>
-                </span>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- New Chat Button -->
-        <div class="p-4 border-b">
-          <button
-            hlmBtn
-            class="w-full"
-            [disabled]="!service.hasSelectedKbs()"
-            [title]="!service.hasSelectedKbs() ? 'Please select at least one code repository first' : ''"
-            (click)="startNewChat()"
-          >
-            <ng-icon name="lucidePlus" class="mr-2 h-4 w-4" />
-            New Chat
-          </button>
-        </div>
-
-        <!-- Sessions List -->
-        <div class="flex-1 overflow-y-auto">
-          <div class="p-2">
-            <p class="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Chat History
-            </p>
-            @if (service.loading()) {
-              <div class="p-4 text-center">
-                <ng-icon name="lucideLoader2" class="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-              </div>
-            } @else if (!service.hasSessions()) {
-              <p class="px-2 py-4 text-sm text-muted-foreground text-center">
-                No chat history yet
-              </p>
-            } @else {
-              @for (session of service.sessions(); track session.id) {
-                <div
-                  class="group flex items-center gap-2 rounded-md px-2 py-2 cursor-pointer transition-colors"
-                  [class.bg-primary/10]="service.currentSession()?.id === session.id"
-                  [class.hover:bg-muted]="service.currentSession()?.id !== session.id"
-                  (click)="loadSession(session.id)"
-                >
-                  <ng-icon name="lucideMessageSquare" class="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span class="flex-1 text-sm truncate">
-                    {{ session.title || 'New Chat' }}
-                  </span>
-                  <button
-                    type="button"
-                    class="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                    (click)="deleteSession($event, session.id)"
-                    title="Delete"
-                  >
-                    <ng-icon name="lucideTrash2" class="h-3 w-3" />
-                  </button>
-                </div>
-              }
-            }
-          </div>
-        </div>
-      </div>
-
+    <div class="flex flex-1 overflow-hidden">
       <!-- Main Chat Area -->
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 flex flex-col min-w-0">
         @if (!service.currentSession() && !showWelcome()) {
           <!-- Welcome Screen -->
           <div class="flex-1 flex items-center justify-center p-6">
@@ -267,7 +105,7 @@ import { HlmButtonDirective } from '../../ui/button';
                 </div>
               </div>
               <p class="mt-6 text-sm text-muted-foreground">
-                Select a code repository from the left panel and click "New Chat" to begin.
+                Select a code repository from the right panel and click "New Chat" to begin.
               </p>
             </div>
           </div>
@@ -457,12 +295,204 @@ import { HlmButtonDirective } from '../../ui/button';
           </div>
         }
       </div>
+
+      <!-- Right Sidebar: Sessions List & Controls -->
+      <div class="w-72 border-l flex flex-col bg-muted/30">
+        <!-- Knowledge Base Selection Dropdown -->
+        <div class="p-4 border-b">
+          <div class="flex items-center gap-2 mb-2">
+            <ng-icon name="lucideDatabase" class="h-4 w-4 text-muted-foreground" />
+            <span class="text-sm font-medium">Code Repositories</span>
+          </div>
+
+          <!-- Dropdown trigger -->
+          <div class="relative">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+              (click)="toggleKbDropdown()"
+            >
+              <span class="truncate text-left">
+                @if (service.selectedKbIds().length === 0) {
+                  <span class="text-muted-foreground">Select repositories...</span>
+                } @else if (service.selectedKbIds().length === 1) {
+                  {{ service.selectedKnowledgeBases()[0]?.name }}
+                } @else {
+                  {{ service.selectedKbIds().length }} repositories selected
+                }
+              </span>
+              <ng-icon
+                name="lucideChevronDown"
+                class="h-4 w-4 text-muted-foreground transition-transform"
+                [class.rotate-180]="kbDropdownOpen()"
+              />
+            </button>
+
+            <!-- Dropdown panel -->
+            @if (kbDropdownOpen()) {
+              <!-- Backdrop to close on outside click -->
+              <div
+                class="fixed inset-0 z-40"
+                (click)="closeKbDropdown()"
+              ></div>
+
+              <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                <!-- Search input -->
+                <div class="p-2 border-b">
+                  <div class="relative">
+                    <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Filter repositories..."
+                      class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      [value]="kbSearchFilter()"
+                      (input)="onKbSearchInput($event)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </div>
+                </div>
+
+                <!-- Options list -->
+                <div class="max-h-48 overflow-y-auto p-1">
+                  @for (kb of filteredKnowledgeBases(); track kb.id) {
+                    <button
+                      type="button"
+                      class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+                      [class.bg-primary/10]="service.selectedKbIds().includes(kb.id)"
+                      (click)="service.toggleKnowledgeBase(kb.id); $event.stopPropagation()"
+                    >
+                      <div
+                        class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
+                        [class.bg-primary]="service.selectedKbIds().includes(kb.id)"
+                        [class.border-primary]="service.selectedKbIds().includes(kb.id)"
+                      >
+                        @if (service.selectedKbIds().includes(kb.id)) {
+                          <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
+                        }
+                      </div>
+                      <span class="truncate">{{ kb.name }}</span>
+                    </button>
+                  } @empty {
+                    <p class="px-2 py-4 text-sm text-muted-foreground text-center">
+                      @if (kbSearchFilter()) {
+                        No repositories match "{{ kbSearchFilter() }}"
+                      } @else {
+                        No code repositories available
+                      }
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Selected tags -->
+          @if (service.selectedKbIds().length > 0) {
+            <div class="flex flex-wrap gap-1 mt-2">
+              @for (kb of service.selectedKnowledgeBases(); track kb.id) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {{ kb.name }}
+                  <button
+                    type="button"
+                    class="hover:text-primary/70"
+                    (click)="service.toggleKnowledgeBase(kb.id)"
+                  >
+                    <ng-icon name="lucideX" class="h-3 w-3" />
+                  </button>
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- New Chat Button -->
+        <div class="p-4 border-b">
+          <button
+            hlmBtn
+            class="w-full"
+            [disabled]="!service.hasSelectedKbs()"
+            [title]="!service.hasSelectedKbs() ? 'Please select at least one code repository first' : ''"
+            (click)="startNewChat()"
+          >
+            <ng-icon name="lucidePlus" class="mr-2 h-4 w-4" />
+            New Chat
+          </button>
+        </div>
+
+        <!-- Sessions List -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="p-2">
+            <p class="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Chat History
+            </p>
+            @if (service.loading()) {
+              <div class="p-4 text-center">
+                <ng-icon name="lucideLoader2" class="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+              </div>
+            } @else if (!service.hasSessions()) {
+              <p class="px-2 py-4 text-sm text-muted-foreground text-center">
+                No chat history yet
+              </p>
+            } @else {
+              @for (session of paginatedSessions(); track session.id) {
+                <div
+                  class="group flex items-center gap-2 rounded-md px-2 py-2 cursor-pointer transition-colors"
+                  [class.bg-primary/10]="service.currentSession()?.id === session.id"
+                  [class.hover:bg-muted]="service.currentSession()?.id !== session.id"
+                  (click)="loadSession(session.id)"
+                >
+                  <ng-icon name="lucideMessageSquare" class="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span class="flex-1 text-sm truncate">
+                    {{ session.title || 'New Chat' }}
+                  </span>
+                  <button
+                    type="button"
+                    class="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    (click)="deleteSession($event, session.id)"
+                    title="Delete"
+                  >
+                    <ng-icon name="lucideTrash2" class="h-3 w-3" />
+                  </button>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Pagination controls -->
+        <div class="p-2 border-t flex items-center justify-between bg-muted/30">
+          <button
+              type="button"
+              class="p-1 rounded hover:bg-muted disabled:opacity-50 text-muted-foreground hover:text-foreground transition-colors"
+              [disabled]="currentPage() === 1"
+              (click)="prevPage()"
+              title="Previous Page"
+            >
+              <ng-icon name="lucideChevronLeft" class="h-4 w-4" />
+            </button>
+            <span class="text-xs text-muted-foreground">
+              Page {{ currentPage() }} of {{ totalPages() }}
+            </span>
+            <button
+              type="button"
+              class="p-1 rounded hover:bg-muted disabled:opacity-50 text-muted-foreground hover:text-foreground transition-colors"
+              [disabled]="currentPage() === totalPages()"
+              (click)="nextPage()"
+              title="Next Page"
+            >
+              <ng-icon name="lucideChevronRight" class="h-4 w-4" />
+            </button>
+        </div>
+      </div>
     </div>
   `,
   styles: `
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
       height: 100%;
+      min-height: 0; /* Important for nested flex scrolling */
     }
 
     /* Base prose styling for better readability */
@@ -669,6 +699,22 @@ export class CodeChatComponent implements OnInit, AfterViewChecked {
   protected kbDropdownOpen = signal(false);
   protected kbSearchFilter = signal('');
 
+  // Pagination
+  protected currentPage = signal(1);
+  protected pageSize = 10;
+
+  protected paginatedSessions = computed(() => {
+    const sessions = this.service.sessions();
+    const start = (this.currentPage() - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return sessions.slice(start, end);
+  });
+
+  protected totalPages = computed(() => {
+    const count = this.service.sessions().length;
+    return count === 0 ? 1 : Math.ceil(count / this.pageSize);
+  });
+
   protected filteredKnowledgeBases = computed(() => {
     const filter = this.kbSearchFilter().toLowerCase().trim();
     const kbs = this.service.knowledgeBases();
@@ -687,6 +733,18 @@ export class CodeChatComponent implements OnInit, AfterViewChecked {
     if (this.shouldScrollToBottom) {
       this.scrollToBottom();
       this.shouldScrollToBottom = false;
+    }
+  }
+
+  protected prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.update(p => p - 1);
+    }
+  }
+
+  protected nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update(p => p + 1);
     }
   }
 

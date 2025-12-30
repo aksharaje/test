@@ -520,7 +520,8 @@ class FeasibilityService:
         for attempt in range(max_retries):
             try:
                 # On last attempt, try without response_format in case model doesn't support it well
-                use_json_mode = attempt < (max_retries - 1)
+                # Update: Only use JSON mode on first attempt. If it fails (e.g. empty string), try without it.
+                use_json_mode = attempt == 0
                 
                 kwargs = {
                     "model": self.model,
@@ -532,10 +533,12 @@ class FeasibilityService:
                     kwargs["response_format"] = {"type": "json_object"}
 
                 response = self.client.chat.completions.create(**kwargs)
-                content = response.choices[0].message.content
+                choice = response.choices[0]
+                content = choice.message.content
+                finish_reason = choice.finish_reason
                 
                 if not content or not content.strip():
-                    raise ValueError("Received empty string content from LLM API")
+                    raise ValueError(f"Received empty string content from LLM API. Finish reason: {finish_reason}")
                 
                 return self._parse_llm_json(content, context)
                 
@@ -611,7 +614,7 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=3000,
+            max_tokens=10000,
             context="Decomposition Agent"
         )
 
@@ -776,7 +779,7 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
                 {"role": "user", "content": prompt}
             ],
             temperature=0.2,
-            max_tokens=2000,
+            max_tokens=10000,
             context="Timeline Agent"
         )
 

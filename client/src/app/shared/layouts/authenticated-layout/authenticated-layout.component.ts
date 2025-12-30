@@ -301,8 +301,8 @@ export interface NavItem {
     </aside>
 
     <!-- Main content -->
-    <main class="lg:pl-64">
-      <div class="min-h-screen">
+    <main class="lg:pl-64 h-screen flex flex-col overflow-hidden">
+      <div class="flex-1 flex flex-col overflow-auto">
         <router-outlet />
       </div>
     </main>
