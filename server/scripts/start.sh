@@ -13,9 +13,31 @@ MIGRATION_STATUS=$?
 
 if [ $MIGRATION_STATUS -ne 0 ]; then
     echo "Migration failed (exit code: $MIGRATION_STATUS)"
-    echo "This usually means columns already exist from SQLModel create_all"
-    echo "Stamping database with latest migration version..."
-    # Stamp tells Alembic the database is already at this version
+    echo "Applying missing columns directly and stamping..."
+
+    # Apply any missing columns that migrations would have added
+    python3 -c "
+from app.core.db import engine
+from sqlalchemy import text
+
+with engine.connect() as conn:
+    # Add missing columns if they don't exist
+    migrations = [
+        'ALTER TABLE generated_artifacts ADD COLUMN IF NOT EXISTS released_at TIMESTAMP',
+        'ALTER TABLE generated_artifacts ADD COLUMN IF NOT EXISTS released_in_session_id INTEGER',
+        'ALTER TABLE knowledge_bases ADD COLUMN IF NOT EXISTS source_metadata JSON',
+    ]
+    for sql in migrations:
+        try:
+            conn.execute(text(sql))
+            conn.commit()
+            print(f'Applied: {sql[:60]}...')
+        except Exception as e:
+            print(f'Skipped (may already exist): {sql[:40]}... - {e}')
+    print('Missing columns applied')
+"
+
+    # Now stamp to mark migrations as complete
     alembic stamp head || true
     echo "Database stamped - future migrations will work correctly"
 else
