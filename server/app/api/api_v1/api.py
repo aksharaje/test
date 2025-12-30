@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code, cx_recommender, release_prep, assistant, integrations_ado, integrations_servicenow, integrations_zendesk, integrations_qualtrics, roadmap_planner, activity
+from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code, cx_recommender, release_prep, assistant, integrations_ado, integrations_servicenow, integrations_zendesk, integrations_qualtrics, roadmap_planner, scenario_modeler, roadmap_communicator, activity
 from app.api.api_v1.endpoints.story_gen_endpoint import router as story_generator_router
 
 api_router = APIRouter()
@@ -35,4 +35,6 @@ api_router.include_router(settings.router, prefix="/settings", tags=["settings"]
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(release_prep.router, prefix="/release-prep", tags=["release-prep"])
 api_router.include_router(roadmap_planner.router, prefix="/roadmap-planner", tags=["roadmap-planner"])
+api_router.include_router(scenario_modeler.router, prefix="/scenario-modeler", tags=["scenario-modeler"])
+api_router.include_router(roadmap_communicator.router, prefix="/roadmap-communicator", tags=["roadmap-communicator"])
 api_router.include_router(placeholders.router, prefix="", tags=["placeholders"])

@@ -424,6 +424,38 @@ export const routes: Routes = [
                 (m) => m.RoadmapPlannerResultsComponent
               ),
           },
+          {
+            path: 'scenario-modeler',
+            title: 'Scenario Modeler | Product Studio',
+            loadComponent: () =>
+              import('./features/scenario-modeler/scenario-modeler-input.component').then(
+                (m) => m.ScenarioModelerInputComponent
+              ),
+          },
+          {
+            path: 'scenario-modeler/session/:id',
+            title: 'Scenario Analysis | Product Studio',
+            loadComponent: () =>
+              import('./features/scenario-modeler/scenario-modeler-results.component').then(
+                (m) => m.ScenarioModelerResultsComponent
+              ),
+          },
+          {
+            path: 'communicator',
+            title: 'Roadmap Communicator | Product Studio',
+            loadComponent: () =>
+              import('./features/roadmap-communicator/roadmap-communicator-input.component').then(
+                (m) => m.RoadmapCommunicatorInputComponent
+              ),
+          },
+          {
+            path: 'communicator/session/:id',
+            title: 'Presentations | Product Studio',
+            loadComponent: () =>
+              import('./features/roadmap-communicator/roadmap-communicator-results.component').then(
+                (m) => m.RoadmapCommunicatorResultsComponent
+              ),
+          },
         ],
       },
     ],

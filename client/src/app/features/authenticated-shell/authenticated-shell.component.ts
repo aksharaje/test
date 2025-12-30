@@ -68,6 +68,8 @@ export class AuthenticatedShellComponent {
       path: '/roadmapping',
       children: [
         { label: 'Roadmap Planner', path: '/roadmapping/planner' },
+        { label: 'Scenario Modeler', path: '/roadmapping/scenario-modeler' },
+        { label: 'Roadmap Communicator', path: '/roadmapping/communicator' },
       ],
     },
     {

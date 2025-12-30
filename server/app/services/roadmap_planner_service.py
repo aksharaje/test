@@ -119,39 +119,66 @@ class RoadmapPlannerService:
 
     def delete_session(self, session_id: int) -> bool:
         """Delete a session and all related data"""
+        from app.models.scenario_modeler import ScenarioSession, ScenarioVariant
+        from app.models.roadmap_communicator import CommunicatorSession, GeneratedPresentation
+
         session = self.get_session(session_id)
         if not session:
             return False
 
         # Delete in order of foreign key dependencies
+
+        # 0a. Delete Communicator sessions and their presentations (references roadmap_session)
+        comm_sessions = self.db.exec(select(CommunicatorSession).where(CommunicatorSession.roadmap_session_id == session_id)).all()
+        for comm_session in comm_sessions:
+            for pres in self.db.exec(select(GeneratedPresentation).where(GeneratedPresentation.session_id == comm_session.id)).all():
+                self.db.delete(pres)
+        self.db.commit()  # Commit presentation deletions first
+        for comm_session in comm_sessions:
+            self.db.delete(comm_session)
+        self.db.commit()  # Then commit session deletions
+
+        # 0b. Delete Scenario sessions and their variants (references roadmap_session)
+        scenario_sessions = self.db.exec(select(ScenarioSession).where(ScenarioSession.roadmap_session_id == session_id)).all()
+        for scenario_session in scenario_sessions:
+            for variant in self.db.exec(select(ScenarioVariant).where(ScenarioVariant.session_id == scenario_session.id)).all():
+                self.db.delete(variant)
+        self.db.commit()  # Commit variant deletions first
+        for scenario_session in scenario_sessions:
+            self.db.delete(scenario_session)
+        self.db.commit()  # Then commit session deletions
+
         # 1. JiraSyncLog (references session)
         for log in self.db.exec(select(JiraSyncLog).where(JiraSyncLog.session_id == session_id)).all():
             self.db.delete(log)
+        self.db.commit()
 
-        # 2. Milestones (references session and optionally theme)
-        for milestone in self.db.exec(select(RoadmapMilestone).where(RoadmapMilestone.session_id == session_id)).all():
-            self.db.delete(milestone)
-
-        # 3. Dependencies (references session and items)
+        # 2. Dependencies (references session and items) - must be before items
         for dep in self.db.exec(select(RoadmapDependency).where(RoadmapDependency.session_id == session_id)).all():
             self.db.delete(dep)
+        self.db.commit()
 
-        # 4. Segments (references items)
+        # 3. Segments (references items) - must be before items
         items = self.db.exec(select(RoadmapItem).where(RoadmapItem.session_id == session_id)).all()
         for item in items:
             for segment in self.db.exec(select(RoadmapItemSegment).where(RoadmapItemSegment.item_id == item.id)).all():
                 self.db.delete(segment)
+        self.db.commit()
 
-        # 5. Items (references session and optionally theme)
+        # 4. Items (references session and optionally theme)
         for item in items:
             self.db.delete(item)
+        self.db.commit()
+
+        # 5. Milestones (references session and optionally theme)
+        for milestone in self.db.exec(select(RoadmapMilestone).where(RoadmapMilestone.session_id == session_id)).all():
+            self.db.delete(milestone)
+        self.db.commit()
 
         # 6. Themes (references session)
         for theme in self.db.exec(select(RoadmapTheme).where(RoadmapTheme.session_id == session_id)).all():
             self.db.delete(theme)
-
-        # Flush to ensure all child records are deleted before the session
-        self.db.flush()
+        self.db.commit()
 
         # 7. Finally delete the session
         self.db.delete(session)
