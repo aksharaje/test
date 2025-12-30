@@ -1056,22 +1056,38 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=500,
-            response_format={"type": "json_object"}
-        )
-
-        content = response.choices[0].message.content
-        data = self._parse_llm_json(content, "Executive Summary")
+        try:
+            data = self._call_llm(
+                messages=[
+                    {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=500,
+                context="Executive Summary Agent"
+            )
+            
+            # Robust key checking
+            summary = data.get("executive_summary") or \
+                      data.get("summary") or \
+                      data.get("executiveSummary") or \
+                      data.get("overview")
+            
+            if not summary:
+                raise ValueError("No summary key found in LLM response")
+                
+        except Exception as e:
+            print(f"Failed to generate AI executive summary: {e}. Falling back to constructed summary.")
+            # Fallback to constructed summary
+            summary = (
+                f"Feasibility analysis for '{feature_desc[:50]}...' estimates {total_realistic_hours:.0f} hours of effort "
+                f"over approximately {realistic_scenario.total_weeks if realistic_scenario else 'unknown'} weeks. "
+                f"We identified {len(components)} key components and {len(high_impact_risks)} high-impact risks. "
+                f"Recommendation is {recommendation.upper().replace('_', '-').replace('CONDITIONAL', 'CONDITIONAL APPROVAL')}: {rationale}"
+            )
 
         # Update session (session_obj already fetched above for prompt context)
-        session_obj.executive_summary = data.get("executive_summary", "Analysis complete. Review the detailed findings above.")
+        session_obj.executive_summary = summary
         session_obj.go_no_go_recommendation = recommendation
 
         # Set confidence based on estimate variance
