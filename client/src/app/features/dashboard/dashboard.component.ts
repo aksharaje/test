@@ -122,13 +122,6 @@ import { ActivityService } from '../../core/services/activity.service';
           <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
             <div class="flex items-center gap-2">
               <h3 class="tracking-tight text-sm font-medium text-muted-foreground group-hover/card:text-primary transition-colors">Productivity</h3>
-              <div class="flex items-center">
-                 <!-- Tooltip preserved but updated context -->
-                 <ng-icon name="lucideInfo" class="h-3 w-3 text-muted-foreground/50 hover:text-foreground cursor-help" />
-                 <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-md border z-50 pointer-events-none">
-                    Click to see itemized report of time saved per module.
-                 </div>
-              </div>
             </div>
             <ng-icon name="lucidePieChart" class="h-4 w-4 text-muted-foreground group-hover/card:text-primary" />
           </div>
@@ -153,12 +146,6 @@ import { ActivityService } from '../../core/services/activity.service';
           <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
             <div class="flex items-center gap-2">
                <h3 class="tracking-tight text-sm font-medium text-muted-foreground group-hover/card:text-primary transition-colors">Velocity Multiplier</h3>
-               <div class="flex items-center">
-                 <ng-icon name="lucideInfo" class="h-3 w-3 text-muted-foreground/50 hover:text-foreground cursor-help" />
-                 <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-56 p-2 bg-popover text-popover-foreground text-xs rounded shadow-md border z-50 pointer-events-none">
-                    Click to compare detailed volume against baseline.
-                 </div>
-              </div>
             </div>
             <ng-icon name="lucideBarChart3" class="h-4 w-4 text-muted-foreground group-hover/card:text-primary" />
           </div>
@@ -221,7 +208,7 @@ import { ActivityService } from '../../core/services/activity.service';
             <!-- Recent Outputs (Left, spanning 2 cols) -->
             <div class="md:col-span-2 rounded-xl border bg-card text-card-foreground shadow-sm">
                 <div class="p-6 pb-3 border-b flex items-center justify-between">
-                    <h3 class="font-semibold text-lg">Recent Output</h3>
+                    <h3 class="font-semibold text-lg">Recent Artifacts</h3>
                 </div>
                 <div class="divide-y">
                      @for (output of recentOutputs(); track output.id + output.type) {
@@ -248,10 +235,8 @@ import { ActivityService } from '../../core/services/activity.service';
                 </div>
                 <div class="p-2 space-y-1">
                     @for (item of shortcuts(); track item.id) {
-                        <a [href]="item.url" class="flex items-center justify-between px-4 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+                        <a [href]="item.url" class="flex items-center px-4 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
                             <span>{{ item.name }}</span>
-                            <!-- Optional count badge if desired, or simpler text -->
-                            <span class="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full font-mono">{{ item.count }}</span>
                         </a>
                     }
                 </div>
@@ -294,7 +279,7 @@ import { ActivityService } from '../../core/services/activity.service';
                     {{ reportType() === 'productivity' ? 'Productivity Report' : 'Velocity Report' }}
                   </h2>
                    <p class="text-sm text-muted-foreground">
-                    {{ reportType() === 'productivity' ? 'Total Time Saved Breakdown' : 'Volume of artifacts created versus the traditional approach baseline of 20' }}
+                    {{ reportType() === 'productivity' ? 'Total Time Saved Breakdown' : 'Volume of artifacts created versus the traditional approach baseline of 40' }}
                   </p>
               </div>
               <button (click)="closeReport()" class="p-2 rounded-full hover:bg-muted transition-colors">
@@ -319,7 +304,7 @@ import { ActivityService } from '../../core/services/activity.service';
                         <span class="text-2xl font-bold">{{ data.total_count }} artifacts</span>
                     </div>
                     <div class="text-xs text-muted-foreground">
-                        Vs Baseline of {{ data.groups.length > 0 ? '20.0' : '0' }} / month
+                        Vs Baseline of {{ reportData()?.baseline || 40 }} / month
                     </div>
                 }
              </div>
@@ -349,10 +334,10 @@ import { ActivityService } from '../../core/services/activity.service';
                                  </div>
                                  <div class="divide-y">
                                      @for (item of group.items; track item.id) {
-                                         <div class="p-3 pl-9 flex flex-col gap-0.5 hover:bg-muted/30">
+                                         <a [href]="getItemUrl(item, group.id)" class="p-3 pl-9 flex flex-col gap-0.5 hover:bg-muted/30 cursor-pointer transition-colors block">
                                              <span class="text-sm font-medium truncate">{{ item.title }}</span>
                                              <span class="text-[10px] text-muted-foreground">{{ item.date | date:'medium' }}</span>
-                                         </div>
+                                         </a>
                                      }
                                  </div>
                              </div>
@@ -468,5 +453,34 @@ export class DashboardComponent {
 
   isExpanded(id: string): boolean {
     return this.expandedGroups().has(id);
+  }
+
+  getItemUrl(item: any, groupId: string): string {
+    // Map group IDs to their appropriate URL patterns
+    const urlMap: Record<string, string> = {
+      'prd': '/prd-generator/output',
+      'ideation': '/ideation/results',
+      'feasibility': '/feasibility/results',
+      'business_case': '/business-case/results',
+      'journey_mapper': '/journey-mapper/results',
+      'research_planner': '/research-planner/results',
+      'release_prep': '/release-prep',
+      'roadmap_planner': '/roadmapping/planner/session',
+      'story_to_code': '/story-to-code/results',
+      'competitive_analysis': '/research/competitive-analysis/results',
+      'scope_definition': '/scoping/definition/results',
+      'scope_monitor': '/scoping/monitor/results',
+      'okr_generator': '/measurements/okr-generator/results',
+      'goal_setting': '/goals/setting/results',
+      'measurement_framework': '/measurements/framework/results',
+      'scenario_modeler': '/roadmapping/scenario-modeler/session',
+      'gap_analyzer': '/gap-analyzer/results',
+      'cx_recommender': '/cx-recommender/results',
+      'roadmap_communicator': '/roadmapping/communicator/session',
+      'kpi_assignment': '/measurements/kpi-assignment/results'
+    };
+
+    const basePath = urlMap[groupId] || `/${groupId}/results`;
+    return `${basePath}/${item.id}`;
   }
 }

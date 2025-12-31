@@ -125,7 +125,7 @@ def get_dashboard_stats(
     # Velocity Multiplier
     # Baseline: 2 artifacts per sprint (2 weeks).
     # If timeframe is 30d (~4.3 weeks), baseline is ~4.3 artifacts.
-    standard_monthly_output = 20.0
+    standard_monthly_output = 40.0
     
     if timeframe == "30d":
         baseline = standard_monthly_output
@@ -333,6 +333,7 @@ class DashboardReport(BaseModel):
     total_hours: float
     total_count: int
     velocity_multiplier: float = 0.0
+    baseline: float = 40.0
 
 @router.get("/report", response_model=DashboardReport)
 def get_dashboard_report(
@@ -440,7 +441,7 @@ def get_dashboard_report(
         delta = datetime.utcnow() - start_date
         months_diff = max(delta.days / 30.0, 1.0)
     
-    standard_monthly_output = 20.0 
+    standard_monthly_output = 40.0
     velocity_multiplier = 0.0
     if months_diff > 0:
         monthly_run_rate = grand_total_count / months_diff
@@ -451,7 +452,8 @@ def get_dashboard_report(
         groups=groups,
         total_hours=grand_total_hours,
         total_count=grand_total_count,
-        velocity_multiplier=velocity_multiplier
+        velocity_multiplier=velocity_multiplier,
+        baseline=standard_monthly_output
     )
 
 def _get_artifact_title(r: Any) -> str:

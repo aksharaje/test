@@ -67,6 +67,8 @@ export interface DashboardReport {
     groups: ReportGroup[];
     total_hours: number;
     total_count: number;
+    velocity_multiplier: number;
+    baseline: number;
 }
 
 @Injectable({

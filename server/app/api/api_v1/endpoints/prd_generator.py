@@ -2,6 +2,8 @@ from typing import List, Any, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Response, Form, UploadFile, File, BackgroundTasks
 from sqlmodel import Session, select
 from app.core.db import get_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.prd import GeneratedPrd, PrdTemplate
 from app.services.prd_generator_service import prd_generator_service
 import json
@@ -24,6 +26,7 @@ def generate_prd(
     templateId: Optional[str] = Form(None),
     files: List[UploadFile] = Form(default=[]),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
     background_tasks: BackgroundTasks = BackgroundTasks()
 ) -> Any:
     try:
@@ -40,6 +43,7 @@ def generate_prd(
         })
 
     request = {
+        "userId": current_user.id,
         "concept": concept,
         "targetProject": targetProject,
         "targetPersona": targetPersona,
@@ -73,9 +77,9 @@ def list_prds(
     skip: int = 0,
     limit: int = 20,
     session: Session = Depends(get_session),
-    user_id: Optional[int] = None
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    return prd_generator_service.list_prds(session, skip=skip, limit=limit, user_id=user_id)
+    return prd_generator_service.list_prds(session, skip=skip, limit=limit, user_id=current_user.id)
 
 @router.get("/{id}/status")
 def get_prd_status(

@@ -58,6 +58,9 @@ class ActivityService:
         
         shortcuts = []
         for feature_key, count in results:
+            # Exclude dashboard from shortcuts
+            if feature_key == "dashboard":
+                continue
             details = self._get_feature_details(feature_key)
             if details:
                 shortcuts.append({
@@ -257,7 +260,7 @@ class ActivityService:
                     "type": type_key,
                     "title": title,
                     "updated_at": item.updated_at,
-                    "url": f"{url_prefix}/{item.id}",
+                    "url": f"{url_prefix}/results/{item.id}" if type_key != "prd" else f"{url_prefix}/output/{item.id}",
                     "icon": icon
                 })
 
