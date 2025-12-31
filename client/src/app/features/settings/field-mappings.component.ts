@@ -256,51 +256,47 @@ export class FieldMappingsComponent implements OnInit {
   }
 
   filteredFields(field: MappableField): JiraField[] {
-    // Filter fields based on expected type
+    // Filter fields based on expected type, but always show suggested matches first
     const allFields = this.service.availableFields();
 
-    switch (field) {
-      case 'story_points':
-        return allFields.filter(
-          (f) => f.schema?.type === 'number' || f.name.toLowerCase().includes('point')
-        );
-      case 'sprint':
-        return allFields.filter(
-          (f) =>
-            f.schema?.custom?.includes('sprint') ||
-            f.name.toLowerCase().includes('sprint')
-        );
-      case 'parent':
-        return allFields.filter(
-          (f) =>
-            f.id === 'parent' ||
-            f.schema?.custom?.includes('epic') ||
-            f.name.toLowerCase().includes('epic') ||
-            f.name.toLowerCase().includes('parent')
-        );
-      case 'team':
-        return allFields.filter(
-          (f) =>
-            f.name.toLowerCase().includes('team') ||
-            f.name.toLowerCase().includes('squad')
-        );
-      case 'priority':
-        return allFields.filter(
-          (f) =>
-            f.key === 'priority' || f.name.toLowerCase().includes('priority')
-        );
-      case 'labels':
-        return allFields.filter(
-          (f) => f.key === 'labels' || f.schema?.type === 'array'
-        );
-      case 'components':
-        return allFields.filter(
-          (f) =>
-            f.key === 'components' || f.name.toLowerCase().includes('component')
-        );
-      default:
-        return allFields;
+    // Helper to check if field matches criteria
+    const matchesCriteria = (f: JiraField, field: MappableField): boolean => {
+      const name = f.name.toLowerCase();
+      const key = f.key?.toLowerCase() || '';
+      const schemaType = f.schema?.type || '';
+      const schemaCustom = f.schema?.custom || '';
+
+      switch (field) {
+        case 'story_points':
+          return schemaType === 'number' || name.includes('point') || name.includes('estimate');
+        case 'sprint':
+          return schemaCustom.includes('sprint') || name.includes('sprint') || name.includes('iteration');
+        case 'parent':
+          return f.id === 'parent' || key === 'parent' || schemaCustom.includes('epic') ||
+                 name.includes('epic') || name.includes('parent');
+        case 'team':
+          return schemaType === 'team' || name.includes('team') || name.includes('squad') || name.includes('area');
+        case 'priority':
+          return key === 'priority' || schemaType === 'priority' || name.includes('priority');
+        case 'labels':
+          return key === 'labels' || name.includes('label') || name.includes('tag');
+        case 'components':
+          return key === 'components' || name.includes('component');
+        default:
+          return false;
+      }
+    };
+
+    // Get matching fields
+    const matching = allFields.filter((f) => matchesCriteria(f, field));
+
+    // If we have matches, return them; otherwise return all fields so user can pick manually
+    if (matching.length > 0) {
+      return matching;
     }
+
+    // Fallback: return all fields for manual selection
+    return allFields;
   }
 
   onFieldChange(ourField: MappableField, providerFieldId: string) {

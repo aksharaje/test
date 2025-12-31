@@ -322,7 +322,7 @@ async def auto_detect_mappings(
     integration_id: int,
     session: Session = Depends(get_session)
 ) -> Any:
-    """Use LLM to automatically detect field mappings based on field names."""
+    """Automatically detect field mappings based on field names using rule-based matching."""
     integration = session.get(Integration, integration_id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
@@ -351,84 +351,112 @@ async def auto_detect_mappings(
                 headers=headers
             )
             if response.status_code == 200:
-                provider_fields = [{"id": f["id"], "name": f["name"]} for f in response.json()]
+                provider_fields = [
+                    {"id": f["id"], "name": f["name"], "schema": f.get("schema", {})}
+                    for f in response.json()
+                ]
 
     if not provider_fields:
         return {"mappings": [], "message": "No provider fields found"}
 
-    # Our standard fields
-    our_fields = [
-        {"id": "story_points", "name": "Story Points", "description": "Numeric estimate of effort"},
-        {"id": "sprint", "name": "Sprint/Iteration", "description": "The sprint or iteration the work belongs to"},
-        {"id": "parent", "name": "Parent", "description": "Parent epic or feature"},
-        {"id": "team", "name": "Team", "description": "The team responsible for the work"},
-        {"id": "priority", "name": "Priority", "description": "Priority level of the work"},
-        {"id": "labels", "name": "Labels/Tags", "description": "Tags or labels for categorization"},
-        {"id": "components", "name": "Components", "description": "System components"},
-    ]
+    # Rule-based matching for common field patterns
+    def find_best_match(our_field: str, provider_fields: List[dict]) -> Optional[dict]:
+        """Find the best matching provider field for our standard field."""
+        rules = {
+            "story_points": [
+                lambda f: "story" in f["name"].lower() and "point" in f["name"].lower(),
+                lambda f: f.get("schema", {}).get("custom", "").endswith(":jsw-story-points"),
+                lambda f: "point" in f["name"].lower() and f.get("schema", {}).get("type") == "number",
+                lambda f: "estimate" in f["name"].lower() and f.get("schema", {}).get("type") == "number",
+            ],
+            "sprint": [
+                lambda f: f["name"].lower() == "sprint",
+                lambda f: "sprint" in f.get("schema", {}).get("custom", "").lower(),
+                lambda f: "iteration" in f["name"].lower(),
+            ],
+            "parent": [
+                lambda f: f["id"] == "parent",
+                lambda f: f["name"].lower() == "parent",
+                lambda f: "epic" in f["name"].lower() and "link" in f["name"].lower(),
+            ],
+            "team": [
+                lambda f: f["name"].lower() == "team",
+                lambda f: f.get("schema", {}).get("type") == "team",
+                lambda f: "area" in f["name"].lower() and "path" in f["name"].lower(),
+            ],
+            "priority": [
+                lambda f: f["id"] == "priority" or f.get("key") == "priority",
+                lambda f: f["name"].lower() == "priority",
+            ],
+            "labels": [
+                lambda f: f["id"] == "labels" or f.get("key") == "labels",
+                lambda f: f["name"].lower() == "labels",
+                lambda f: f["name"].lower() == "tags",
+            ],
+            "components": [
+                lambda f: f["id"] == "components" or f.get("key") == "components",
+                lambda f: f["name"].lower() == "components",
+            ],
+        }
 
-    # Use LLM to match fields
-    prompt = f"""Match the following source fields to target fields based on their names and purposes.
+        field_rules = rules.get(our_field, [])
+        for rule in field_rules:
+            for pf in provider_fields:
+                try:
+                    if rule(pf):
+                        return pf
+                except:
+                    continue
+        return None
 
-Source fields (our standard fields):
-{[{"id": f["id"], "name": f["name"]} for f in our_fields]}
+    # Find matches for each of our standard fields
+    suggested_mappings = []
+    our_fields = ["story_points", "sprint", "parent", "team", "priority", "labels", "components"]
 
-Target fields (provider fields):
-{[{"id": f["id"], "name": f["name"]} for f in provider_fields[:50]]}
+    for our_field in our_fields:
+        match = find_best_match(our_field, provider_fields)
+        if match:
+            confidence = 90  # High confidence for rule-based matches
+            suggested_mappings.append({
+                "ourField": our_field,
+                "providerFieldId": match["id"],
+                "providerFieldName": match["name"],
+                "confidence": confidence
+            })
 
-For each source field, find the best matching target field. Return a JSON array with objects containing:
-- "ourField": the source field id
-- "providerFieldId": the matched target field id (or null if no good match)
-- "providerFieldName": the matched target field name (or null if no good match)
-- "confidence": 0-100 score of how confident the match is
-
-Only include matches with confidence >= 70. Return valid JSON array only, no explanation."""
-
-    try:
-        result = await llm_service.generate_json(
-            prompt=prompt,
-            system_message="You are a field mapping assistant. Match fields based on semantic similarity of names and purposes. Return only valid JSON."
+    # Save mappings (but don't overwrite admin-confirmed ones)
+    for mapping in suggested_mappings:
+        statement = select(FieldMapping).where(
+            FieldMapping.integration_id == integration_id,
+            FieldMapping.our_field == mapping["ourField"]
         )
+        existing = session.exec(statement).first()
 
-        suggested_mappings = result if isinstance(result, list) else []
+        if existing and existing.admin_confirmed:
+            continue  # Don't overwrite user-confirmed mappings
 
-        # Save high-confidence mappings (but don't overwrite admin-confirmed ones)
-        for mapping in suggested_mappings:
-            if mapping.get("confidence", 0) >= 80 and mapping.get("providerFieldId"):
-                statement = select(FieldMapping).where(
-                    FieldMapping.integration_id == integration_id,
-                    FieldMapping.our_field == mapping["ourField"]
-                )
-                existing = session.exec(statement).first()
+        if existing:
+            existing.provider_field_id = mapping["providerFieldId"]
+            existing.provider_field_name = mapping.get("providerFieldName", "")
+            existing.confidence = mapping["confidence"]
+            existing.updated_at = datetime.utcnow()
+            session.add(existing)
+        else:
+            new_mapping = FieldMapping(
+                integration_id=integration_id,
+                our_field=mapping["ourField"],
+                provider_field_id=mapping["providerFieldId"],
+                provider_field_name=mapping.get("providerFieldName", ""),
+                confidence=mapping["confidence"],
+                admin_confirmed=False,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            session.add(new_mapping)
 
-                if existing and existing.admin_confirmed:
-                    continue  # Don't overwrite user-confirmed mappings
+    session.commit()
 
-                if existing:
-                    existing.provider_field_id = mapping["providerFieldId"]
-                    existing.provider_field_name = mapping.get("providerFieldName", "")
-                    existing.confidence = mapping["confidence"]
-                    existing.updated_at = datetime.utcnow()
-                    session.add(existing)
-                else:
-                    new_mapping = FieldMapping(
-                        integration_id=integration_id,
-                        our_field=mapping["ourField"],
-                        provider_field_id=mapping["providerFieldId"],
-                        provider_field_name=mapping.get("providerFieldName", ""),
-                        confidence=mapping["confidence"],
-                        admin_confirmed=False,
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
-                    )
-                    session.add(new_mapping)
-
-        session.commit()
-
-        return {"mappings": suggested_mappings, "message": "Auto-detection complete"}
-
-    except Exception as e:
-        return {"mappings": [], "message": f"Auto-detection failed: {str(e)}"}
+    return {"mappings": suggested_mappings, "message": f"Auto-detected {len(suggested_mappings)} field mappings"}
 
 @router.get("/jira/{integration_id}/projects")
 def list_jira_projects(integration_id: int) -> Any:

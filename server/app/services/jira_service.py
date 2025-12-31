@@ -160,7 +160,11 @@ class JiraService:
                     "Authorization": f"Bearer {integration.access_token}",
                     "Accept": "application/json"
                 }
-                response = await client.get("https://api.atlassian.com/me", headers=headers)
+                # Use accessible-resources endpoint (works with OAuth) instead of /me (requires read:me scope)
+                response = await client.get(
+                    "https://api.atlassian.com/oauth/token/accessible-resources",
+                    headers=headers
+                )
 
                 if response.status_code == 401:
                     # Token expired, try to refresh
@@ -174,17 +178,20 @@ class JiraService:
                                 "refresh_token": integration.refresh_token,
                             }
                         )
-                        
+
                         if refresh_response.status_code == 200:
                             tokens = refresh_response.json()
                             integration.access_token = tokens["access_token"]
                             if "refresh_token" in tokens:
                                 integration.refresh_token = tokens["refresh_token"]
                             integration.token_expires_at = datetime.utcnow() + timedelta(seconds=tokens.get("expires_in", 3600))
-                            
+
                             # Retry the API call with new token
                             headers["Authorization"] = f"Bearer {integration.access_token}"
-                            response = await client.get("https://api.atlassian.com/me", headers=headers)
+                            response = await client.get(
+                                "https://api.atlassian.com/oauth/token/accessible-resources",
+                                headers=headers
+                            )
                         else:
                             raise ValueError("Failed to refresh token")
                     else:
