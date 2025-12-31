@@ -630,6 +630,33 @@ export const routes: Routes = [
           },
         ],
       },
+      // Testing Section
+      {
+        path: 'testing',
+        children: [
+          {
+            path: '',
+            redirectTo: 'test-script-writer',
+            pathMatch: 'full',
+          },
+          {
+            path: 'test-script-writer',
+            title: 'Test Script Writer | Product Studio',
+            loadComponent: () =>
+              import('./features/test-script-writer/test-script-writer-input.component').then(
+                (m) => m.TestScriptWriterInputComponent
+              ),
+          },
+          {
+            path: 'test-script-writer/results/:id',
+            title: 'Test Scripts | Product Studio',
+            loadComponent: () =>
+              import('./features/test-script-writer/test-script-writer-results.component').then(
+                (m) => m.TestScriptWriterResultsComponent
+              ),
+          },
+        ],
+      },
     ],
   },
 ];
