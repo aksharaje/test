@@ -458,11 +458,135 @@ export const routes: Routes = [
           },
         ],
       },
+      // Goals Section
+      {
+        path: 'goals',
+        children: [
+          {
+            path: '',
+            redirectTo: 'setting',
+            pathMatch: 'full',
+          },
+          {
+            path: 'setting',
+            title: 'Goal Setting Assistant | Product Studio',
+            loadComponent: () =>
+              import('./features/goal-setting/goal-setting-input.component').then(
+                (m) => m.GoalSettingInputComponent
+              ),
+          },
+          {
+            path: 'setting/results/:id',
+            title: 'Goals | Product Studio',
+            loadComponent: () =>
+              import('./features/goal-setting/goal-setting-results.component').then(
+                (m) => m.GoalSettingResultsComponent
+              ),
+          },
+        ],
+      },
+      // Measurements Section
+      {
+        path: 'measurements',
+        children: [
+          {
+            path: '',
+            redirectTo: 'okr-generator',
+            pathMatch: 'full',
+          },
+          {
+            path: 'okr-generator',
+            title: 'OKR Generator | Product Studio',
+            loadComponent: () =>
+              import('./features/okr-generator/okr-generator-input.component').then(
+                (m) => m.OkrGeneratorInputComponent
+              ),
+          },
+          {
+            path: 'okr-generator/results/:id',
+            title: 'OKRs | Product Studio',
+            loadComponent: () =>
+              import('./features/okr-generator/okr-generator-results.component').then(
+                (m) => m.OkrGeneratorResultsComponent
+              ),
+          },
+          {
+            path: 'kpi-assignment',
+            title: 'KPI Assignment | Product Studio',
+            loadComponent: () =>
+              import('./features/kpi-assignment/kpi-assignment-input.component').then(
+                (m) => m.KpiAssignmentInputComponent
+              ),
+          },
+          {
+            path: 'kpi-assignment/results/:id',
+            title: 'KPI Assignment | Product Studio',
+            loadComponent: () =>
+              import('./features/kpi-assignment/kpi-assignment-results.component').then(
+                (m) => m.KpiAssignmentResultsComponent
+              ),
+          },
+          {
+            path: 'framework',
+            title: 'Measurement Framework Builder | Product Studio',
+            loadComponent: () =>
+              import('./features/measurement-framework/measurement-framework-input.component').then(
+                (m) => m.MeasurementFrameworkInputComponent
+              ),
+          },
+          {
+            path: 'framework/results/:id',
+            title: 'Measurement Framework | Product Studio',
+            loadComponent: () =>
+              import('./features/measurement-framework/measurement-framework-results.component').then(
+                (m) => m.MeasurementFrameworkResultsComponent
+              ),
+          },
+        ],
+      },
+      // Scoping Section
+      {
+        path: 'scoping',
+        children: [
+          {
+            path: '',
+            redirectTo: 'definition',
+            pathMatch: 'full',
+          },
+          {
+            path: 'definition',
+            title: 'Scope Definition Agent | Product Studio',
+            loadComponent: () =>
+              import('./features/scope-definition/scope-definition-input.component').then(
+                (m) => m.ScopeDefinitionInputComponent
+              ),
+          },
+          {
+            path: 'definition/results/:id',
+            title: 'Scope Definition | Product Studio',
+            loadComponent: () =>
+              import('./features/scope-definition/scope-definition-results.component').then(
+                (m) => m.ScopeDefinitionResultsComponent
+              ),
+          },
+          {
+            path: 'monitor',
+            title: 'Scope Monitor | Product Studio',
+            loadComponent: () =>
+              import('./features/scope-monitor/scope-monitor-input.component').then(
+                (m) => m.ScopeMonitorInputComponent
+              ),
+          },
+          {
+            path: 'monitor/results/:id',
+            title: 'Scope Analysis | Product Studio',
+            loadComponent: () =>
+              import('./features/scope-monitor/scope-monitor-results.component').then(
+                (m) => m.ScopeMonitorResultsComponent
+              ),
+          },
+        ],
+      },
     ],
   },
-  {
-    path: 'docs',
-    title: 'Documentation | Product Studio',
-    loadChildren: () => import('./features/docs/docs.routes').then(m => m.DOCS_ROUTES)
-  }
 ];

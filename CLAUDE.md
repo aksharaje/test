@@ -110,6 +110,63 @@ This project uses specialized agents for different SDLC phases. Agents are locat
 - Consistent error handling with HTTPException
 - Springboard SDK for AI/document processing workflows
 
+### API Naming Convention (CRITICAL)
+Frontend uses **camelCase**, backend uses **snake_case**. This applies to ALL API responses - both Pydantic models AND manually constructed dictionaries.
+
+**1. Pydantic/SQLModel classes** - Add alias configuration:
+
+```python
+from humps import camelize
+
+def to_camel(string):
+    return camelize(string)
+
+class MyModel(SQLModel):
+    user_name: str
+    goal_description: str
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True  # Accepts both camelCase and snake_case
+```
+
+**2. Manually constructed dictionaries** - Use camelCase keys directly:
+
+```python
+# WRONG - snake_case keys will break frontend
+return {
+    "session_id": obj.session_id,
+    "key_results": [...]
+}
+
+# CORRECT - camelCase keys
+return {
+    "sessionId": obj.session_id,
+    "keyResults": [...]
+}
+```
+
+**3. Nested objects** - Convert ALL nested properties too:
+
+```python
+# When building response dicts manually, convert EVERY field:
+return {
+    "id": item.id,
+    "sessionId": item.session_id,        # NOT session_id
+    "displayOrder": item.display_order,  # NOT display_order
+    "keyResults": [
+        {
+            "objectiveId": kr.objective_id,      # NOT objective_id
+            "baselineValue": kr.baseline_value,  # NOT baseline_value
+            "kpiName": kr.kpi_name,              # NOT kpi_name
+        }
+        for kr in key_results
+    ]
+}
+```
+
+This ensures the frontend receives `{ "sessionId": 1, "keyResults": [...] }` not `{ "session_id": 1, "key_results": [...] }`.
+
 ### Testing
 - Jest for frontend unit tests
 - Angular Testing Library for component tests

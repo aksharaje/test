@@ -37,9 +37,30 @@ export class AuthenticatedShellComponent {
 
   navItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Goals', path: '/goals', children: [] },
-    { label: 'Measurements', path: '/measurements', children: [] },
-    { label: 'Scoping', path: '/scoping', children: [] },
+    {
+      label: 'Goals',
+      path: '/goals',
+      children: [
+        { label: 'Goal Setting Assistant', path: '/goals/setting' },
+      ],
+    },
+    {
+      label: 'Measurements',
+      path: '/measurements',
+      children: [
+        { label: 'OKR Generator', path: '/measurements/okr-generator' },
+        { label: 'KPI Assignment', path: '/measurements/kpi-assignment' },
+        { label: 'Measurement Framework', path: '/measurements/framework' },
+      ],
+    },
+    {
+      label: 'Scoping',
+      path: '/scoping',
+      children: [
+        { label: 'Scope Definition', path: '/scoping/definition' },
+        { label: 'Scope Monitor', path: '/scoping/monitor' },
+      ],
+    },
     {
       label: 'Research',
       path: '/research',
@@ -121,7 +142,6 @@ export class AuthenticatedShellComponent {
         { label: 'Knowledge Bases', path: '/knowledge-bases' },
         { label: 'Library', path: '/library' },
         { label: 'Optimize', path: '/optimize' },
-        { label: 'Docs', path: '/docs', external: true },
       ],
     },
     {
