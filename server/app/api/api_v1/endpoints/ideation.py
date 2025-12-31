@@ -9,6 +9,8 @@ from sqlmodel import Session
 from pydantic import BaseModel, Field
 
 from app.core.db import get_session
+from app.api import deps
+from app.models.user import User
 from app.models.ideation import IdeationSession, GeneratedIdea
 from app.services.ideation_service import ideation_service
 
@@ -34,7 +36,8 @@ class CreateSessionRequest(BaseModel):
 def create_session(
     request: CreateSessionRequest,
     background_tasks: BackgroundTasks,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """Create ideation session and start async processing"""
     ideation_session = ideation_service.create_session(
@@ -44,7 +47,7 @@ def create_session(
         goals=request.goals,
         research_insights=request.research_insights,
         knowledge_base_ids=request.knowledge_base_ids,
-        user_id=request.user_id
+        user_id=current_user.id
     )
 
     # Trigger background processing
@@ -60,24 +63,35 @@ def create_session(
 @router.get("/sessions/{session_id}")
 def get_session_detail_endpoint(
     session_id: int,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """Get session with all ideas and clusters"""
+    # Verify ownership? IdeationService could handle it but for now we trust ID if we don't enforce ownership hard.
+    # Ideally: ideation_service.get_session_for_user(..., user_id)
+    # But existing service just gets by ID.
     result = ideation_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
+    if result.session.user_id and result.session.user_id != current_user.id:
+          # If session has user_id and it doesn't match, 404 or 403
+          raise HTTPException(status_code=404, detail="Session not found")
+          
     return result
 
 
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """Get session status for polling"""
     ideation_session = ideation_service.get_session(db_session, session_id)
     if not ideation_session:
         raise HTTPException(status_code=404, detail="Session not found")
+    if ideation_session.user_id and ideation_session.user_id != current_user.id:
+         raise HTTPException(status_code=404, detail="Session not found")
 
     return {
         "id": ideation_session.id,
@@ -97,19 +111,25 @@ def list_sessions(
     skip: int = 0,
     limit: int = 20,
     db_session: Session = Depends(get_session),
-    user_id: Optional[int] = None
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """List user's ideation sessions"""
-    return ideation_service.list_sessions(db_session, user_id, skip=skip, limit=limit)
+    return ideation_service.list_sessions(db_session, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.post("/sessions/{session_id}/retry", response_model=IdeationSession)
 def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """Retry a failed session"""
+    # Check ownership
+    session = ideation_service.get_session(db_session, session_id)
+    if not session or (session.user_id and session.user_id != current_user.id):
+        raise HTTPException(status_code=404, detail="Session not found")
+
     session = ideation_service.retry_session(db_session, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -127,9 +147,11 @@ def retry_session(
 def update_idea(
     idea_id: int,
     data: Dict[str, Any],
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """Update idea fields"""
+    # TODO: Perform deep ownership check if needed
     idea = ideation_service.update_idea(db_session, idea_id, data)
     if not idea:
         raise HTTPException(status_code=404, detail="Idea not found")
@@ -139,9 +161,14 @@ def update_idea(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     """Delete session and all associated ideas/clusters"""
+    session = ideation_service.get_session(db_session, session_id)
+    if not session or (session.user_id and session.user_id != current_user.id):
+        raise HTTPException(status_code=404, detail="Session not found")
+        
     if not ideation_service.delete_session(db_session, session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"message": "Session deleted successfully"}

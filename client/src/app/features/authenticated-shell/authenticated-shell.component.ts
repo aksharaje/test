@@ -127,6 +127,7 @@ export class AuthenticatedShellComponent {
       path: '/development-section',
       children: [
         { label: 'Story to Code', path: '/story-to-code' },
+        { label: 'Progress Tracker', path: '/progress-tracker' },
         { label: 'Release Prep', path: '/release-prep' },
       ],
     },

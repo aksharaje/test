@@ -13,9 +13,11 @@ pgvector
 pyhumps
 httpx
 python-multipart
-python-multipart
 pytest-asyncio
 GitPython
 scikit-learn
 numpy
 cryptography
+python-jose[cryptography]
+passlib[bcrypt]
+fastapi-mail

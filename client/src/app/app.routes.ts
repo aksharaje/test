@@ -1,8 +1,30 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
+    path: 'auth',
+    children: [
+      {
+        path: 'login',
+        title: 'Login | Product Studio',
+        loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
+      },
+      {
+        path: 'verify',
+        title: 'Verifying | Product Studio',
+        loadComponent: () => import('./features/auth/verify.component').then(m => m.VerifyComponent)
+      },
+      {
+        path: 'join',
+        title: 'Join Team | Product Studio',
+        loadComponent: () => import('./features/auth/join.component').then(m => m.JoinComponent)
+      }
+    ]
+  },
+  {
     path: '',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/authenticated-shell/authenticated-shell.component').then(
         (m) => m.AuthenticatedShellComponent
@@ -12,6 +34,16 @@ export const routes: Routes = [
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full',
+      },
+      {
+        path: 'settings/team',
+        title: 'Team Management | Product Studio',
+        loadComponent: () => import('./features/settings/team-management.component').then(m => m.TeamManagementComponent)
+      },
+      {
+        path: 'profile',
+        title: 'Profile Settings | Product Studio',
+        loadComponent: () => import('./features/settings/profile-settings.component').then(m => m.ProfileSettingsComponent)
       },
       {
         path: 'dashboard',
@@ -350,6 +382,30 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/story-to-code/story-to-code-results.component').then(
             (m) => m.StoryToCodeResultsComponent
+          ),
+      },
+      {
+        path: 'progress-tracker',
+        title: 'Progress Tracker | Product Studio',
+        loadComponent: () =>
+          import('./features/progress-tracker/progress-tracker.component').then(
+            (m) => m.ProgressTrackerComponent
+          ),
+      },
+      {
+        path: 'progress-tracker/new',
+        title: 'New Progress Tracker | Product Studio',
+        loadComponent: () =>
+          import('./features/progress-tracker/progress-tracker-setup.component').then(
+            (m) => m.ProgressTrackerSetupComponent
+          ),
+      },
+      {
+        path: 'progress-tracker/:id',
+        title: 'Progress Dashboard | Product Studio',
+        loadComponent: () =>
+          import('./features/progress-tracker/progress-tracker-dashboard.component').then(
+            (m) => m.ProgressTrackerDashboardComponent
           ),
       },
       {

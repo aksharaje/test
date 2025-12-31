@@ -60,3 +60,5 @@ from .roadmap_planner import (
     JiraFieldMapping,
     JiraSyncLog
 )
+from .account import Account, AccountInvite
+from .magic_link import MagicLink

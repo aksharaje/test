@@ -1,10 +1,14 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code, cx_recommender, release_prep, assistant, integrations_ado, integrations_servicenow, integrations_zendesk, integrations_qualtrics, roadmap_planner, scenario_modeler, roadmap_communicator, activity, goal_setting, okr_generator, kpi_assignment, measurement_framework, scope_definition, scope_monitor, competitive_analysis, market_research
+from app.api.api_v1.endpoints import agents, knowledge_bases, code_chat, prd_generator, library, flows, feedback, placeholders, optimize, integrations, pi_planning, ideation, opportunity_linker, webhooks, feasibility, business_case, settings, research_planner, journey_mapper, dashboard, experience_gap_analyzer, story_to_code, cx_recommender, release_prep, assistant, integrations_ado, integrations_servicenow, integrations_zendesk, integrations_qualtrics, roadmap_planner, scenario_modeler, roadmap_communicator, activity, goal_setting, okr_generator, kpi_assignment, measurement_framework, scope_definition, scope_monitor, competitive_analysis, market_research, progress_tracker, defect_manager, release_readiness, auth, users
 from app.api.api_v1.endpoints.story_gen_endpoint import router as story_generator_router
 
 api_router = APIRouter()
+
+# Auth routes - MUST BE FIRST
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(users.router, prefix="/users", tags=["users"])
+
 # Force reload for assistant updates
-api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
 api_router.include_router(integrations_ado.router, prefix="/integrations/ado", tags=["integrations-ado"])
 api_router.include_router(integrations_servicenow.router, prefix="/integrations/servicenow", tags=["integrations-servicenow"])
 api_router.include_router(integrations_zendesk.router, prefix="/integrations/zendesk", tags=["integrations-zendesk"])
@@ -46,4 +50,8 @@ api_router.include_router(scope_definition.router, prefix="/scope-definition", t
 api_router.include_router(scope_monitor.router, prefix="/scope-monitor", tags=["scope-monitor"])
 api_router.include_router(competitive_analysis.router, prefix="/competitive-analysis", tags=["competitive-analysis"])
 api_router.include_router(market_research.router, prefix="/market-research", tags=["market-research"])
+api_router.include_router(progress_tracker.router, prefix="/progress-tracker", tags=["progress-tracker"])
+# Testing flows
+api_router.include_router(defect_manager.router, prefix="/defect-manager", tags=["defect-manager"])
+api_router.include_router(release_readiness.router, prefix="/release-readiness", tags=["release-readiness"])
 api_router.include_router(placeholders.router, prefix="", tags=["placeholders"])
