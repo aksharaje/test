@@ -239,29 +239,52 @@ class MarketResearchService:
 
     def _validate_analysis(self, data: Dict[str, Any]) -> None:
         """Validate the parsed analysis has required fields"""
-        required_fields = [
-            "executive_summary",
-            "market_trends",
-            "expectation_shifts",
-            "market_risks",
-            "implications",
-        ]
+        # Handle alternate field names the LLM might use
+        field_aliases = {
+            "expectation_shifts": ["expectation_shifts", "user_expectation_shifts", "user_expectations", "expectations"],
+            "market_trends": ["market_trends", "trends"],
+            "market_risks": ["market_risks", "risks"],
+            "implications": ["implications", "strategic_implications", "recommendations"],
+            "executive_summary": ["executive_summary", "summary", "overview"],
+        }
 
-        for field in required_fields:
-            if field not in data:
-                raise ValueError(f"Missing required field: {field}")
+        # Normalize field names and provide defaults
+        for canonical_name, aliases in field_aliases.items():
+            found = False
+            for alias in aliases:
+                if alias in data and alias != canonical_name:
+                    data[canonical_name] = data.pop(alias)
+                    found = True
+                    break
+                elif alias in data:
+                    found = True
+                    break
+
+            # Provide default empty values for missing fields
+            if not found:
+                if canonical_name == "executive_summary":
+                    data[canonical_name] = "Analysis completed. See detailed sections below."
+                else:
+                    data[canonical_name] = []
+                logger.warning(f"Missing field '{canonical_name}', using default value")
 
         # Validate insight structures
         for field in ["market_trends", "expectation_shifts", "market_risks"]:
-            for insight in data.get(field, []):
+            insights = data.get(field, [])
+            if not isinstance(insights, list):
+                data[field] = []
+                continue
+            for insight in insights:
                 if not isinstance(insight, dict):
-                    raise ValueError(f"{field} items must be objects")
+                    continue
                 if "text" not in insight:
-                    raise ValueError(f"{field} items must have 'text' field")
+                    continue
                 if "confidence" not in insight:
                     insight["confidence"] = "MEDIUM"
                 if "source_count" not in insight:
                     insight["source_count"] = 0
+                if "sources" not in insight:
+                    insight["sources"] = []
 
     def _build_analysis_prompt(self, session: MarketResearchSession) -> str:
         """Build the LLM prompt for market research synthesis"""

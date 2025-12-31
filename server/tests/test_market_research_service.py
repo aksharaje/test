@@ -290,8 +290,8 @@ class TestResponseParsing:
 
         assert result["market_trends"][0]["confidence"] == "MEDIUM"
 
-    def test_parse_response_missing_field(self, service):
-        """Test that missing required field raises error"""
+    def test_parse_response_missing_field_uses_defaults(self, service):
+        """Test that missing fields get default values"""
         response = """
         {
             "executive_summary": "Test",
@@ -300,10 +300,12 @@ class TestResponseParsing:
         """
 
         result = service._parse_llm_json(response)
-        with pytest.raises(ValueError) as exc_info:
-            service._validate_analysis(result)
+        service._validate_analysis(result)
 
-        assert "Missing required field" in str(exc_info.value)
+        # Missing fields should get default empty values
+        assert result["expectation_shifts"] == []
+        assert result["market_risks"] == []
+        assert result["implications"] == []
 
     def test_parse_response_invalid_json(self, service):
         """Test that invalid JSON raises error"""
