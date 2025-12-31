@@ -201,14 +201,6 @@ import { HlmButtonDirective } from '../../ui/button';
               }
             }
           </div>
-
-          <!-- Metadata footer -->
-          <div class="mt-6 text-center text-xs text-muted-foreground">
-            Generated {{ formatDate(artifact()!.createdAt) }}
-            @if (artifact()!.generationMetadata?.model) {
-              · Model: {{ artifact()!.generationMetadata!.model }}
-            }
-          </div>
         } @else if (artifact() && !structured()) {
           <!-- Fallback for non-JSON content (legacy) -->
           <div class="rounded-lg border bg-card p-6 shadow-sm">
@@ -655,16 +647,5 @@ export class StoryGeneratorOutputComponent implements OnInit {
     }
 
     return md;
-  }
-
-  protected formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
   }
 }
