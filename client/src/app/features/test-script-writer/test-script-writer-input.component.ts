@@ -327,84 +327,99 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
       </div>
 
       <!-- Right Panel: History -->
-      <div class="w-1/2 bg-muted/30 p-6 overflow-y-auto">
-        <div class="flex items-center justify-between mb-4">
+      <div class="w-1/2 flex flex-col bg-muted/30">
+        <!-- History Header -->
+        <div class="border-b bg-background p-4">
           <div class="flex items-center gap-2">
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
-            <h2 class="font-semibold">History</h2>
+            <h2 class="font-semibold">Test Script History</h2>
           </div>
-          @if (service.sessions().length > 0) {
-            <button
-              type="button"
-              hlmBtn
-              variant="ghost"
-              size="sm"
-              (click)="refreshHistory()"
-            >
-              <ng-icon name="lucideRotateCw" class="h-4 w-4" />
-            </button>
-          }
+          <p class="mt-1 text-sm text-muted-foreground">
+            View and manage your generated test scripts
+          </p>
         </div>
 
-        @if (service.sessions().length === 0) {
-          <div class="text-center py-12 text-muted-foreground">
-            <ng-icon name="lucideTestTube2" class="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>No test scripts generated yet</p>
-            <p class="text-sm">Your history will appear here</p>
-          </div>
-        } @else {
-          <div class="space-y-3">
-            @for (session of service.sessions(); track session.id) {
-              <div
-                class="rounded-lg border bg-card p-4 cursor-pointer hover:border-primary transition-colors"
-                (click)="viewSession(session)"
-              >
-                <div class="flex items-start justify-between">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                      @if (session.status === 'completed') {
-                        <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
-                      } @else if (session.status === 'failed') {
-                        <span class="flex h-2 w-2 rounded-full bg-destructive"></span>
-                      } @else {
-                        <ng-icon name="lucideLoader2" class="h-3 w-3 animate-spin text-muted-foreground" />
-                      }
-                      <span class="text-sm font-medium truncate">
-                        {{ session.sourceTitle || (session.sourceType === 'manual' ? 'Manual Stories' : 'Unknown Source') }}
-                      </span>
-                    </div>
-                    <p class="text-xs text-muted-foreground">
-                      {{ session.stories.length }} stories
-                      @if (session.selectedNfrs.length > 0) {
-                        · {{ session.selectedNfrs.length }} NFRs
-                      }
-                    </p>
-                    @if (session.status === 'completed') {
-                      <p class="text-xs text-muted-foreground mt-1">
-                        {{ session.totalTestCases }} test cases generated
-                      </p>
-                    }
-                    @if (session.status === 'failed') {
-                      <p class="text-xs text-destructive mt-1">
-                        {{ session.errorMessage || 'Generation failed' }}
-                      </p>
-                    }
+        <!-- History List -->
+        <div class="flex-1 overflow-y-auto">
+          @if (service.loading() && service.sessions().length === 0) {
+            <div class="p-4">
+              <div class="animate-pulse space-y-3">
+                @for (i of [1, 2, 3]; track i) {
+                  <div class="rounded-lg border bg-background p-4">
+                    <div class="h-4 bg-muted rounded w-3/4"></div>
+                    <div class="mt-2 h-3 bg-muted rounded w-1/2"></div>
                   </div>
-                  <button
-                    type="button"
-                    class="text-muted-foreground hover:text-destructive p-1"
-                    (click)="deleteSession($event, session.id)"
-                  >
-                    <ng-icon name="lucideTrash2" class="h-4 w-4" />
-                  </button>
-                </div>
-                <p class="text-xs text-muted-foreground mt-2">
-                  {{ formatDate(session.createdAt) }}
+                }
+              </div>
+            </div>
+          } @else if (service.sessions().length === 0) {
+            <div class="flex-1 flex items-center justify-center p-6 h-full">
+              <div class="text-center">
+                <ng-icon name="lucideTestTube2" class="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <h3 class="mt-4 text-lg font-medium text-muted-foreground">No history yet</h3>
+                <p class="mt-2 text-sm text-muted-foreground max-w-xs">
+                  Your generated test scripts will appear here.
                 </p>
               </div>
-            }
-          </div>
-        }
+            </div>
+          } @else {
+            <div class="p-4 space-y-2">
+              @for (session of service.sessions(); track session.id) {
+                <div
+                  class="group rounded-lg border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
+                  (click)="viewSession(session)"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          [class.bg-green-100]="session.status === 'completed'"
+                          [class.text-green-700]="session.status === 'completed'"
+                          [class.bg-yellow-100]="session.status === 'generating'"
+                          [class.text-yellow-700]="session.status === 'generating'"
+                          [class.bg-red-100]="session.status === 'failed'"
+                          [class.text-red-700]="session.status === 'failed'"
+                          [class.bg-gray-100]="session.status === 'pending'"
+                          [class.text-gray-700]="session.status === 'pending'"
+                        >
+                          {{ session.status === 'completed' ? 'Complete' : session.status === 'generating' ? 'Generating' : session.status === 'failed' ? 'Failed' : 'Pending' }}
+                        </span>
+                      </div>
+                      <h3 class="mt-2 font-medium text-sm truncate">
+                        {{ session.sourceTitle || (session.sourceType === 'manual' ? 'Manual Stories' : 'Unknown Source') }}
+                      </h3>
+                      <p class="text-xs text-muted-foreground mt-1">
+                        {{ session.stories.length }} {{ session.stories.length === 1 ? 'story' : 'stories' }}
+                        @if (session.selectedNfrs.length > 0) {
+                          · {{ session.selectedNfrs.length }} NFRs
+                        }
+                        @if (session.status === 'completed') {
+                          · {{ session.totalTestCases }} test cases
+                        }
+                      </p>
+                      @if (session.status === 'failed' && session.errorMessage) {
+                        <p class="text-xs text-destructive mt-1 truncate">
+                          {{ session.errorMessage }}
+                        </p>
+                      }
+                      <p class="text-xs text-muted-foreground mt-2">
+                        {{ formatDate(session.createdAt) }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive p-1 transition-opacity"
+                      (click)="deleteSession($event, session.id)"
+                    >
+                      <ng-icon name="lucideTrash2" class="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
     </div>
   `,

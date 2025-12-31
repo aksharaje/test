@@ -176,12 +176,15 @@ def list_sessions(
 @router.post("/sessions", response_model=TestScriptWriterSessionResponse)
 async def create_session(
     background_tasks: BackgroundTasks,
-    data: str = Form(...),
+    data: str = Form(None),
     files: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
     """Create a new test script writer session and start generation"""
     # Parse the JSON data
+    if not data:
+        raise HTTPException(status_code=400, detail="Missing request data")
+
     try:
         parsed_data = json.loads(data)
         session_data = TestScriptWriterSessionCreate(**parsed_data)
@@ -191,7 +194,7 @@ async def create_session(
     # Process uploaded images
     image_data = []
     for file in files:
-        if file.content_type and file.content_type.startswith('image/'):
+        if file.filename and file.content_type and file.content_type.startswith('image/'):
             content = await file.read()
             # Encode as base64 for LLM consumption
             b64_content = base64.b64encode(content).decode('utf-8')
