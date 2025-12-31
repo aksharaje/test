@@ -360,6 +360,7 @@ import {
       </div>
     </div>
   `,
+  styles: `:host { display: block; height: 100%; }`,
 })
 export class CxRecommenderInputComponent implements OnInit {
   private service = inject(CxRecommenderService);

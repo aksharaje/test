@@ -480,6 +480,7 @@ import {
   styles: [`
     :host {
       display: block;
+      height: 100%;
     }
   `],
 })
@@ -664,9 +665,9 @@ export class JourneyMapperComponent implements OnInit {
     const sources = this.contextSources();
     if (!sources) return false;
     return (sources.knowledgeBases?.length || 0) > 0 ||
-           (sources.ideationSessions?.length || 0) > 0 ||
-           (sources.feasibilitySessions?.length || 0) > 0 ||
-           (sources.businessCaseSessions?.length || 0) > 0;
+      (sources.ideationSessions?.length || 0) > 0 ||
+      (sources.feasibilitySessions?.length || 0) > 0 ||
+      (sources.businessCaseSessions?.length || 0) > 0;
   }
 
   // Session history

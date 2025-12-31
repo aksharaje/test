@@ -302,7 +302,7 @@ export interface NavItem {
 
     <!-- Main content -->
     <main class="lg:pl-64 h-screen flex flex-col overflow-hidden">
-      <div class="flex-1 flex flex-col overflow-auto">
+      <div class="flex-1 flex flex-col overflow-hidden">
         <router-outlet />
       </div>
     </main>

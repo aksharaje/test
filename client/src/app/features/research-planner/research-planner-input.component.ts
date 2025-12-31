@@ -62,7 +62,7 @@ import {
     }),
   ],
   template: `
-    <div class="flex h-[calc(100vh-4rem)]">
+    <div class="flex h-full">
       <!-- Left Panel: Input Form -->
       <div class="w-1/2 border-r border-border overflow-y-auto p-6">
         <!-- Header -->
@@ -768,6 +768,7 @@ import {
       </div>
     </div>
   `,
+  styles: `:host { display: block; height: 100%; }`,
 })
 export class ResearchPlannerInputComponent implements OnInit {
   private fb = inject(FormBuilder);

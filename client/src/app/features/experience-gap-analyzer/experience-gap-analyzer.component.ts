@@ -247,6 +247,7 @@ import {
       </div>
     </div>
   `,
+  styles: `:host { display: block; height: 100%; }`,
 })
 export class ExperienceGapAnalyzerComponent implements OnInit {
   private service = inject(ExperienceGapAnalyzerService);

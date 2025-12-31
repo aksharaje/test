@@ -53,7 +53,7 @@ import type { RoadmapSession } from '../roadmap-planner/roadmap-planner.types';
     }),
   ],
   template: `
-    <div class="flex min-h-full">
+    <div class="flex h-full">
       <!-- Left Panel: Input Form -->
       <div class="w-1/2 border-r p-6 overflow-y-auto">
         <div class="max-w-xl mx-auto">
@@ -168,7 +168,7 @@ import type { RoadmapSession } from '../roadmap-planner/roadmap-planner.types';
       </div>
 
       <!-- Right Panel: History -->
-      <div class="w-1/2 flex flex-col bg-muted/30 min-h-full">
+      <div class="w-1/2 flex flex-col bg-muted/30">
         <div class="border-b bg-white p-4">
           <div class="flex items-center gap-2">
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
@@ -254,6 +254,7 @@ import type { RoadmapSession } from '../roadmap-planner/roadmap-planner.types';
       </div>
     </div>
   `,
+  styles: `:host { display: block; height: 100%; }`,
 })
 export class RoadmapCommunicatorInputComponent implements OnInit {
   private router = inject(Router);
