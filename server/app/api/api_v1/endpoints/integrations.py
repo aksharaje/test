@@ -7,7 +7,8 @@ import httpx
 from app.core.db import get_session
 from app.core.config import settings
 from app.services.jira_service import jira_service
-from app.models.jira import Integration
+from app.models.jira import Integration, FieldMapping
+from app.services.llm_service import llm_service
 
 router = APIRouter()
 
@@ -221,8 +222,21 @@ def get_field_mappings(
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
-    # For now, return empty mappings - can be extended with a FieldMapping model
-    return []
+    # Load mappings from database
+    statement = select(FieldMapping).where(FieldMapping.integration_id == integration_id)
+    mappings = session.exec(statement).all()
+
+    return [
+        {
+            "ourField": m.our_field,
+            "providerFieldId": m.provider_field_id,
+            "providerFieldName": m.provider_field_name,
+            "providerFieldType": m.provider_field_type,
+            "confidence": m.confidence,
+            "adminConfirmed": m.admin_confirmed
+        }
+        for m in mappings
+    ]
 
 @router.put("/{integration_id}/mappings/{our_field}")
 def update_field_mapping(
@@ -236,14 +250,47 @@ def update_field_mapping(
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
-    # For now, return a mock response - can be extended with a FieldMapping model
+    # Find existing mapping or create new one
+    statement = select(FieldMapping).where(
+        FieldMapping.integration_id == integration_id,
+        FieldMapping.our_field == our_field
+    )
+    existing = session.exec(statement).first()
+
+    if existing:
+        existing.provider_field_id = payload.get("providerFieldId")
+        existing.provider_field_name = payload.get("providerFieldName")
+        existing.provider_field_type = payload.get("providerFieldType")
+        existing.confidence = 100
+        existing.admin_confirmed = True
+        existing.updated_at = datetime.utcnow()
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        mapping = existing
+    else:
+        mapping = FieldMapping(
+            integration_id=integration_id,
+            our_field=our_field,
+            provider_field_id=payload.get("providerFieldId"),
+            provider_field_name=payload.get("providerFieldName"),
+            provider_field_type=payload.get("providerFieldType"),
+            confidence=100,
+            admin_confirmed=True,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        session.add(mapping)
+        session.commit()
+        session.refresh(mapping)
+
     return {
-        "ourField": our_field,
-        "providerFieldId": payload.get("providerFieldId"),
-        "providerFieldName": payload.get("providerFieldName"),
-        "providerFieldType": payload.get("providerFieldType"),
-        "confidence": 100,
-        "adminConfirmed": True
+        "ourField": mapping.our_field,
+        "providerFieldId": mapping.provider_field_id,
+        "providerFieldName": mapping.provider_field_name,
+        "providerFieldType": mapping.provider_field_type,
+        "confidence": mapping.confidence,
+        "adminConfirmed": mapping.admin_confirmed
     }
 
 @router.delete("/{integration_id}/mappings/{our_field}")
@@ -257,7 +304,131 @@ def delete_field_mapping(
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
+    # Find and delete the mapping
+    statement = select(FieldMapping).where(
+        FieldMapping.integration_id == integration_id,
+        FieldMapping.our_field == our_field
+    )
+    existing = session.exec(statement).first()
+
+    if existing:
+        session.delete(existing)
+        session.commit()
+
     return {"success": True}
+
+@router.post("/{integration_id}/mappings/auto-detect")
+async def auto_detect_mappings(
+    integration_id: int,
+    session: Session = Depends(get_session)
+) -> Any:
+    """Use LLM to automatically detect field mappings based on field names."""
+    integration = session.get(Integration, integration_id)
+    if not integration:
+        raise HTTPException(status_code=404, detail="Integration not found")
+
+    # Get provider fields
+    provider_fields = []
+    async with httpx.AsyncClient() as client:
+        if integration.provider == "ado":
+            provider_fields = [
+                {"id": "System.Title", "name": "Title"},
+                {"id": "System.Description", "name": "Description"},
+                {"id": "Microsoft.VSTS.Scheduling.StoryPoints", "name": "Story Points"},
+                {"id": "System.IterationPath", "name": "Iteration Path (Sprint)"},
+                {"id": "System.AreaPath", "name": "Area Path (Team)"},
+                {"id": "Microsoft.VSTS.Common.Priority", "name": "Priority"},
+                {"id": "System.Tags", "name": "Tags"},
+                {"id": "System.Parent", "name": "Parent"},
+            ]
+        elif integration.provider == "jira":
+            headers = {
+                "Authorization": f"Bearer {integration.access_token}",
+                "Accept": "application/json"
+            }
+            response = await client.get(
+                f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/api/3/field",
+                headers=headers
+            )
+            if response.status_code == 200:
+                provider_fields = [{"id": f["id"], "name": f["name"]} for f in response.json()]
+
+    if not provider_fields:
+        return {"mappings": [], "message": "No provider fields found"}
+
+    # Our standard fields
+    our_fields = [
+        {"id": "story_points", "name": "Story Points", "description": "Numeric estimate of effort"},
+        {"id": "sprint", "name": "Sprint/Iteration", "description": "The sprint or iteration the work belongs to"},
+        {"id": "parent", "name": "Parent", "description": "Parent epic or feature"},
+        {"id": "team", "name": "Team", "description": "The team responsible for the work"},
+        {"id": "priority", "name": "Priority", "description": "Priority level of the work"},
+        {"id": "labels", "name": "Labels/Tags", "description": "Tags or labels for categorization"},
+        {"id": "components", "name": "Components", "description": "System components"},
+    ]
+
+    # Use LLM to match fields
+    prompt = f"""Match the following source fields to target fields based on their names and purposes.
+
+Source fields (our standard fields):
+{[{"id": f["id"], "name": f["name"]} for f in our_fields]}
+
+Target fields (provider fields):
+{[{"id": f["id"], "name": f["name"]} for f in provider_fields[:50]]}
+
+For each source field, find the best matching target field. Return a JSON array with objects containing:
+- "ourField": the source field id
+- "providerFieldId": the matched target field id (or null if no good match)
+- "providerFieldName": the matched target field name (or null if no good match)
+- "confidence": 0-100 score of how confident the match is
+
+Only include matches with confidence >= 70. Return valid JSON array only, no explanation."""
+
+    try:
+        result = await llm_service.generate_json(
+            prompt=prompt,
+            system_message="You are a field mapping assistant. Match fields based on semantic similarity of names and purposes. Return only valid JSON."
+        )
+
+        suggested_mappings = result if isinstance(result, list) else []
+
+        # Save high-confidence mappings (but don't overwrite admin-confirmed ones)
+        for mapping in suggested_mappings:
+            if mapping.get("confidence", 0) >= 80 and mapping.get("providerFieldId"):
+                statement = select(FieldMapping).where(
+                    FieldMapping.integration_id == integration_id,
+                    FieldMapping.our_field == mapping["ourField"]
+                )
+                existing = session.exec(statement).first()
+
+                if existing and existing.admin_confirmed:
+                    continue  # Don't overwrite user-confirmed mappings
+
+                if existing:
+                    existing.provider_field_id = mapping["providerFieldId"]
+                    existing.provider_field_name = mapping.get("providerFieldName", "")
+                    existing.confidence = mapping["confidence"]
+                    existing.updated_at = datetime.utcnow()
+                    session.add(existing)
+                else:
+                    new_mapping = FieldMapping(
+                        integration_id=integration_id,
+                        our_field=mapping["ourField"],
+                        provider_field_id=mapping["providerFieldId"],
+                        provider_field_name=mapping.get("providerFieldName", ""),
+                        confidence=mapping["confidence"],
+                        admin_confirmed=False,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    session.add(new_mapping)
+
+        session.commit()
+
+        return {"mappings": suggested_mappings, "message": "Auto-detection complete"}
+
+    except Exception as e:
+        return {"mappings": [], "message": f"Auto-detection failed: {str(e)}"}
 
 @router.get("/jira/{integration_id}/projects")
 def list_jira_projects(integration_id: int) -> Any:

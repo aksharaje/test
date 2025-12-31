@@ -12,6 +12,7 @@ import {
   lucideX,
   lucideSave,
   lucideRefreshCw,
+  lucideWand2,
 } from '@ng-icons/lucide';
 import { IntegrationService } from './integration.service';
 import {
@@ -33,6 +34,7 @@ import {
       lucideX,
       lucideSave,
       lucideRefreshCw,
+      lucideWand2,
     }),
   ],
   template: `
@@ -76,21 +78,38 @@ import {
                 Map your fields to the corresponding Jira custom fields
               </p>
             </div>
-            <button
-              hlmBtn
-              variant="outline"
-              size="sm"
-              (click)="refreshFields()"
-              [disabled]="service.loading()"
-            >
-              <ng-icon
-                hlmIcon
-                name="lucideRefreshCw"
-                class="mr-2 h-4 w-4"
-                [class.animate-spin]="service.loading()"
-              />
-              Refresh Fields
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                hlmBtn
+                variant="default"
+                size="sm"
+                (click)="autoDetect()"
+                [disabled]="service.loading() || autoDetecting()"
+              >
+                <ng-icon
+                  hlmIcon
+                  name="lucideWand2"
+                  class="mr-2 h-4 w-4"
+                  [class.animate-pulse]="autoDetecting()"
+                />
+                {{ autoDetecting() ? 'Detecting...' : 'Auto-detect' }}
+              </button>
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                (click)="refreshFields()"
+                [disabled]="service.loading()"
+              >
+                <ng-icon
+                  hlmIcon
+                  name="lucideRefreshCw"
+                  class="mr-2 h-4 w-4"
+                  [class.animate-spin]="service.loading()"
+                />
+                Refresh Fields
+              </button>
+            </div>
           </div>
 
           <div class="divide-y">
@@ -181,6 +200,7 @@ export class FieldMappingsComponent implements OnInit {
 
   integrationId = signal<number | null>(null);
   pendingChanges = signal<Map<MappableField, string>>(new Map());
+  autoDetecting = signal(false);
 
   mappableFields: MappableField[] = [
     'story_points',
@@ -331,6 +351,18 @@ export class FieldMappingsComponent implements OnInit {
     if (!integrationId) return;
 
     await this.service.loadAvailableFields(integrationId);
+  }
+
+  async autoDetect() {
+    const integrationId = this.integrationId();
+    if (!integrationId) return;
+
+    this.autoDetecting.set(true);
+    try {
+      await this.service.autoDetectMappings(integrationId);
+    } finally {
+      this.autoDetecting.set(false);
+    }
   }
 
   goBack() {

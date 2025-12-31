@@ -36,3 +36,21 @@ class JiraProject(JiraProjectBase, table=True):
     __tablename__ = "jira_projects"
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class FieldMappingBase(SQLModel):
+    """Maps our standard fields to provider-specific fields."""
+    integration_id: int = Field(foreign_key="integrations.id", index=True)
+    our_field: str = Field(index=True)  # e.g., 'story_points', 'sprint', 'priority'
+    provider_field_id: str  # e.g., 'Microsoft.VSTS.Scheduling.StoryPoints'
+    provider_field_name: str  # e.g., 'Story Points'
+    provider_field_type: Optional[str] = None  # e.g., 'number', 'string'
+    confidence: int = Field(default=0)  # 0-100, how confident we are in this mapping
+    admin_confirmed: bool = Field(default=False)  # True if user confirmed this mapping
+
+
+class FieldMapping(FieldMappingBase, table=True):
+    __tablename__ = "field_mappings"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -292,6 +292,29 @@ export class IntegrationService {
     }
   }
 
+  async autoDetectMappings(integrationId: number): Promise<{ mappings: FieldMapping[]; message: string } | null> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ mappings: FieldMapping[]; message: string }>(
+          `${this.baseUrl}/${integrationId}/mappings/auto-detect`,
+          {}
+        )
+      );
+      // Reload mappings to get the saved ones
+      await this.loadFieldMappings(integrationId);
+      return result;
+    } catch (err) {
+      this._error.set('Failed to auto-detect mappings');
+      console.error(err);
+      return null;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
   // ==================
   // Projects & Boards
   // ==================
