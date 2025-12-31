@@ -86,9 +86,16 @@ import type { Integration } from './integration.types';
                   <p class="text-sm text-muted-foreground">{{ provider.description }}</p>
                 </div>
               </div>
-              <button hlmBtn variant="outline" size="sm" (click)="initiateConnection(provider.id)">
-                Connect
-              </button>
+              @if (isProviderConnected(provider.id)) {
+                <button hlmBtn variant="outline" size="sm" disabled class="opacity-60">
+                  <ng-icon hlmIcon name="lucideCheck" class="mr-2 h-4 w-4 text-green-600" />
+                  Connected
+                </button>
+              } @else {
+                <button hlmBtn variant="outline" size="sm" (click)="initiateConnection(provider.id)">
+                  Connect
+                </button>
+              }
             </div>
           }
         </div>
@@ -416,6 +423,12 @@ export class IntegrationsComponent implements OnInit {
       this.service.clearError();
       // The error will be shown via the service error signal
     }
+  }
+
+  isProviderConnected(providerId: string): boolean {
+    return this.service.integrations().some(
+      (i) => i.provider === providerId && i.status === 'connected'
+    );
   }
 
   initiateConnection(providerId: string) {
