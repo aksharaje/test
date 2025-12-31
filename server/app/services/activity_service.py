@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Tuple
-from sqlmodel import Session, select, func, desc
+from sqlmodel import Session, select, func, desc, or_
 from app.models.user_activity import UserActivity
 # Artifact Models
 from app.models.prd import GeneratedPrd
@@ -12,6 +12,18 @@ from app.models.research_planner import ResearchPlanSession
 from app.models.release_prep import ReleasePrepSession
 from app.models.roadmap_planner import RoadmapSession
 from app.models.story_to_code import StoryToCodeSession
+# New Models
+from app.models.competitive_analysis import CompetitiveAnalysisSession
+from app.models.scope_definition import ScopeDefinitionSession
+from app.models.scope_monitor import ScopeMonitorSession
+from app.models.measurement_framework import MeasurementFrameworkSession
+from app.models.kpi_assignment import KpiAssignmentSession
+from app.models.okr_generator import OkrSession
+from app.models.goal_setting import GoalSettingSession
+from app.models.scenario_modeler import ScenarioSession
+from app.models.experience_gap_analyzer import GapAnalysisSession
+from app.models.cx_recommender import RecommenderSession
+from app.models.roadmap_communicator import CommunicatorSession
 
 class ActivityService:
     def log_activity(self, db: Session, user_id: int, feature_key: str, metadata: str = None) -> UserActivity:
@@ -126,6 +138,49 @@ class ActivityService:
                 "icon": "lucideLayoutDashboard",
                 "url": "/dashboard",
                 "description": "Overview"
+            },
+            # New Features
+            "competitive_analysis": {
+                "name": "Competitive Analysis",
+                "icon": "lucideTrendingUp",
+                "url": "/competitive-analysis",
+                "description": "Analyze competitors"
+            },
+             "scope_definition": {
+                "name": "Scope Definition",
+                "icon": "lucideMap",
+                "url": "/scope-definition",
+                "description": "Define project scope"
+            },
+             "scope_monitor": {
+                "name": "Scope Monitor",
+                "icon": "lucideTarget",
+                "url": "/scope-monitor",
+                "description": "Track scope creep"
+            },
+             "okr_generator": {
+                "name": "OKR Generator",
+                "icon": "lucideTarget",
+                "url": "/okr-generator",
+                "description": "Set objectives"
+            },
+             "measurement_framework": {
+                "name": "Measurement Framework",
+                "icon": "lucideTrendingUp",
+                "url": "/measurement-framework",
+                "description": "Define metrics"
+            },
+            "scenario_modeler": {
+                "name": "Scenario Modeler",
+                "icon": "lucideMap",
+                "url": "/scenario-modeler",
+                "description": "Plan future scenarios"
+            },
+            "roadmap_communicator": {
+                "name": "Roadmap Communicator",
+                "icon": "lucideBriefcase",
+                "url": "/roadmap-communicator",
+                "description": "Share roadmap updates"
             }
         }
         return features.get(feature_key)
@@ -141,10 +196,11 @@ class ActivityService:
         def query_model(model, type_key, title_field="title", url_prefix="", icon="lucideFile"):
             # Some models use 'updated_at', some rely on 'created_at' if updated not available
             # We assume all identified models have updated_at
+            query = select(model)
+            if hasattr(model, "user_id"):
+                query = query.where(or_(model.user_id == user_id, model.user_id == None))
             results = db.exec(
-                select(model)
-                .where(model.user_id == user_id)
-                .order_by(desc(model.updated_at))
+                query.order_by(desc(model.updated_at))
                 .limit(limit)
             ).all()
             
@@ -170,6 +226,32 @@ class ActivityService:
                     stmt = getattr(item, "problem_statement", "Untitled Ideation")
                     title = stmt[:50] + "..." if len(stmt) > 50 else stmt
                     
+                    
+                elif type_key == "competitive_analysis":
+                    title = getattr(item, "focus_area", "Untitled Analysis")
+                elif type_key == "scope_definition":
+                    title = getattr(item, "project_name", "Untitled Scope")
+                elif type_key == "scope_monitor":
+                    title = getattr(item, "project_context", "Untitled Monitor")
+                elif type_key == "okr_generator":
+                     title = getattr(item, "goal_description", "Untitled OKR")
+                     title = title[:50] + "..." if len(title) > 50 else title
+                elif type_key == "goal_setting":
+                     title = getattr(item, "business_context", "Untitled Goal")
+                     title = title[:50] + "..." if len(title) > 50 else title
+                elif type_key == "scenario_modeler":
+                    title = getattr(item, "scenario_name", "Untitled Scenario")
+                elif type_key == "measurement_framework":
+                    title = getattr(item, "product_context", "Untitled Measurement")
+                elif type_key == "gap_analyzer":
+                    title = getattr(item, "focus_area", "Untitled Gap Analysis")
+                elif type_key == "cx_recommender":
+                    title = getattr(item, "business_context", "Untitled Rec")
+                    title = title[:50] + "..." if len(title) > 50 else title
+                elif type_key == "roadmap_communicator":
+                    title = getattr(item, "communication_goal", "Untitled Comm")
+                    title = title[:50] + "..." if len(title) > 50 else title
+                    
                 outputs.append({
                     "id": item.id,
                     "type": type_key,
@@ -189,6 +271,19 @@ class ActivityService:
         query_model(ReleasePrepSession, "release_prep", "release_name", "/release-prep", "lucideRocket")
         query_model(RoadmapSession, "roadmap_planner", "name", "/roadmap-planner", "lucideCalendar")
         query_model(StoryToCodeSession, "story_to_code", "title", "/story-to-code", "lucideCode")
+        
+        # New Queries
+        query_model(CompetitiveAnalysisSession, "competitive_analysis", "focus_area", "/competitive-analysis", "lucideTrendingUp")
+        query_model(ScopeDefinitionSession, "scope_definition", "project_name", "/scope-definition", "lucideMap")
+        query_model(ScopeMonitorSession, "scope_monitor", "project_context", "/scope-monitor", "lucideTarget")
+        query_model(OkrSession, "okr_generator", "goal_description", "/okr-generator", "lucideTarget")
+        query_model(GoalSettingSession, "goal_setting", "business_context", "/goal-setting", "lucideTarget")
+        query_model(MeasurementFrameworkSession, "measurement_framework", "product_context", "/measurement-framework", "lucideTrendingUp")
+        query_model(ScenarioSession, "scenario_modeler", "scenario_name", "/scenario-modeler", "lucideMap")
+        query_model(GapAnalysisSession, "gap_analyzer", "focus_area", "/cx/gap-analyzer", "lucideTrendingDown")
+        query_model(RecommenderSession, "cx_recommender", "business_context", "/cx/recommender", "lucideLightbulb")
+        query_model(CommunicatorSession, "roadmap_communicator", "communication_goal", "/roadmap-communicator", "lucideBriefcase")
+        query_model(KpiAssignmentSession, "kpi_assignment", "team_context", "/kpi-assignment", "lucideTrendingUp")
 
         # Sort combined list by date desc
         outputs.sort(key=lambda x: x["updated_at"], reverse=True)

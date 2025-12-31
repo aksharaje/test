@@ -5,24 +5,74 @@ REST API for competitive analysis workflow.
 """
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.api.deps import get_db
 from app.models.competitive_analysis import (
     CompetitiveAnalysisSessionCreate,
     CompetitiveAnalysisSessionResponse,
-    ProblemAreaOption,
-    PROBLEM_AREAS,
+    FocusAreaOption,
+    IndustryOption,
+    InputSourceOption,
+    FOCUS_AREAS,
+    INDUSTRIES,
+    INPUT_SOURCE_TYPES,
 )
+from app.models.knowledge_base import KnowledgeBase, Document
 from app.services.competitive_analysis_service import competitive_analysis_service as service
 
 router = APIRouter()
 
 
-@router.get("/problem-areas", response_model=List[ProblemAreaOption])
-async def get_problem_areas():
-    """Get available problem area options"""
-    return [ProblemAreaOption(**area) for area in PROBLEM_AREAS]
+@router.get("/focus-areas", response_model=List[FocusAreaOption])
+async def get_focus_areas():
+    """Get available focus area options (sorted alphabetically)"""
+    return [FocusAreaOption(**area) for area in FOCUS_AREAS]
+
+
+@router.get("/industries", response_model=List[IndustryOption])
+async def get_industries():
+    """Get available industry options (sorted alphabetically)"""
+    return [IndustryOption(**ind) for ind in INDUSTRIES]
+
+
+@router.get("/input-source-types", response_model=List[InputSourceOption])
+async def get_input_source_types():
+    """Get available input source type options"""
+    return [InputSourceOption(**src) for src in INPUT_SOURCE_TYPES]
+
+
+@router.get("/code-knowledge-bases")
+async def get_code_knowledge_bases(
+    db: Session = Depends(get_db),
+):
+    """Get knowledge bases that contain code (from GitHub)"""
+    # Find KB IDs that have github documents
+    kb_ids_result = db.exec(
+        select(Document.knowledgeBaseId).where(Document.source == "github").distinct()
+    ).all()
+    kb_ids = [r for r in kb_ids_result if r is not None]
+
+    if not kb_ids:
+        return []
+
+    # Get KBs by IDs
+    query = select(KnowledgeBase).where(
+        KnowledgeBase.id.in_(kb_ids),
+        KnowledgeBase.documentCount > 0
+    ).order_by(KnowledgeBase.createdAt.desc())
+    kbs = list(db.exec(query).all())
+
+    return [
+        {
+            "id": kb.id,
+            "name": kb.name,
+            "description": kb.description,
+            "documentCount": kb.documentCount,
+            "repoUrl": kb.sourceMetadata.get("repoUrl") if kb.sourceMetadata else None,
+        }
+        for kb in kbs
+    ]
 
 
 @router.post("/sessions", response_model=CompetitiveAnalysisSessionResponse)

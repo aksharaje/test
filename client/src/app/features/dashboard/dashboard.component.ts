@@ -18,9 +18,19 @@ import {
   lucideCheckCircle,
   lucideRocket,
   lucideLayoutDashboard,
-  lucideTrendingDown
+  lucideTrendingDown,
+  lucideInfo,
+  lucideTrophy,
+  lucideFlame,
+  lucideMedal,
+  lucidePieChart,
+  lucideBarChart3,
+  lucideLineChart,
+  lucideX,
+  lucideChevronDown,
+  lucideChevronRight
 } from '@ng-icons/lucide';
-import { DashboardService, DashboardStats } from './dashboard.service';
+import { DashboardService, DashboardStats, DashboardReport, ReportGroup } from './dashboard.service';
 import { ActivityService } from '../../core/services/activity.service';
 
 @Component({
@@ -45,7 +55,17 @@ import { ActivityService } from '../../core/services/activity.service';
       lucideCheckCircle,
       lucideRocket,
       lucideLayoutDashboard,
-      lucideTrendingDown
+      lucideTrendingDown,
+      lucideInfo,
+      lucideTrophy,
+      lucideFlame,
+      lucideMedal,
+      lucidePieChart,
+      lucideBarChart3,
+      lucideLineChart,
+      lucideX,
+      lucideChevronDown,
+      lucideChevronRight
     }),
   ],
   template: `
@@ -95,100 +115,102 @@ import { ActivityService } from '../../core/services/activity.service';
       } @else {
 
       <div class="grid gap-6 md:grid-cols-3">
-        <!-- 1. Hours Reclaimed -->
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
-          <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Hours Reclaimed</h3>
-            <ng-icon name="lucideClock" class="h-4 w-4 text-muted-foreground" />
+
+        <!-- 1. Productivity (formerly Hours Reclaimed) -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm cursor-pointer hover:border-primary transition-all group/card relative overflow-hidden" (click)="openReport('productivity')">
+          <div class="absolute inset-0 bg-primary/0 group-hover/card:bg-primary/5 transition-colors"></div>
+          <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <div class="flex items-center gap-2">
+              <h3 class="tracking-tight text-sm font-medium text-muted-foreground group-hover/card:text-primary transition-colors">Productivity</h3>
+              <div class="flex items-center">
+                 <!-- Tooltip preserved but updated context -->
+                 <ng-icon name="lucideInfo" class="h-3 w-3 text-muted-foreground/50 hover:text-foreground cursor-help" />
+                 <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-md border z-50 pointer-events-none">
+                    Click to see itemized report of time saved per module.
+                 </div>
+              </div>
+            </div>
+            <ng-icon name="lucidePieChart" class="h-4 w-4 text-muted-foreground group-hover/card:text-primary" />
           </div>
-          <div class="p-6 pt-0">
+          <div class="p-6 pt-0 relative z-10">
             <div class="flex items-baseline space-x-2">
               <span class="text-4xl font-bold tracking-tighter">{{ stats()?.roi?.hoursReclaimed }}</span>
               <span class="text-sm font-medium text-muted-foreground">hours</span>
             </div>
-            <p class="text-xs text-muted-foreground mt-2">
+            <p class="text-xs text-muted-foreground mt-2 flex items-center gap-1">
               <span class="text-green-500 font-medium inline-flex items-center">
                 <ng-icon name="lucideTrendingUp" class="mr-1 h-3 w-3" />
                 saved
               </span>
-              based on {{ stats()?.counts?.total }} artifacts
+              based on {{ stats()?.counts?.total }} artifacts generated
             </p>
-            <div class="mt-4 h-1 w-full bg-muted rounded-full overflow-hidden">
-               <div class="h-full bg-primary" [style.width.%]="(stats()?.roi?.hoursReclaimed || 0) / 100 * 100"></div> 
-               <!-- Simplified progress visual for now -->
-            </div>
           </div>
         </div>
 
         <!-- 2. Velocity Multiplier -->
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
-          <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Velocity Multiplier</h3>
-            <ng-icon name="lucideZap" class="h-4 w-4 text-muted-foreground" />
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm cursor-pointer hover:border-primary transition-all group/card relative overflow-hidden" (click)="openReport('velocity')">
+          <div class="absolute inset-0 bg-primary/0 group-hover/card:bg-primary/5 transition-colors"></div>
+          <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <div class="flex items-center gap-2">
+               <h3 class="tracking-tight text-sm font-medium text-muted-foreground group-hover/card:text-primary transition-colors">Velocity Multiplier</h3>
+               <div class="flex items-center">
+                 <ng-icon name="lucideInfo" class="h-3 w-3 text-muted-foreground/50 hover:text-foreground cursor-help" />
+                 <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-56 p-2 bg-popover text-popover-foreground text-xs rounded shadow-md border z-50 pointer-events-none">
+                    Click to compare detailed volume against baseline.
+                 </div>
+              </div>
+            </div>
+            <ng-icon name="lucideBarChart3" class="h-4 w-4 text-muted-foreground group-hover/card:text-primary" />
           </div>
-          <div class="p-6 pt-0">
+          <div class="p-6 pt-0 relative z-10">
              <div class="flex items-baseline space-x-2">
               <span class="text-4xl font-bold tracking-tighter text-blue-600">{{ stats()?.roi?.velocityMultiplier }}x</span>
               <span class="text-sm font-medium text-muted-foreground">faster</span>
             </div>
-            <p class="text-xs text-muted-foreground mt-2 mb-4">
+            <p class="text-xs text-muted-foreground mt-2">
               Vs. traditional documentation methods
             </p>
-            
-            <!-- Visualization: Bar Chart Comparison -->
-            <div class="flex items-end space-x-4 h-24 mt-2">
-               <div class="flex-1 flex flex-col justify-end group">
-                  <div class="w-full bg-muted rounded-t-sm h-[30%] relative group-hover:bg-muted/80 transition-colors">
-                     <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">1x</span>
-                  </div>
-                  <p class="text-[10px] text-center mt-2 text-muted-foreground">Manual</p>
-               </div>
-               <div class="flex-1 flex flex-col justify-end group">
-                  <!-- Dynamic height calculation for visualization, capped at 100% -->
-                  <div class="w-full bg-blue-600 rounded-t-sm relative group-hover:bg-blue-500 transition-colors shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                       [style.height.%]="getVelocityHeight(stats()?.roi?.velocityMultiplier)">
-                    <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-blue-600 font-medium opacity-100">{{ stats()?.roi?.velocityMultiplier }}x</span>
-                  </div>
-                  <p class="text-[10px] text-center mt-2 font-medium text-blue-600">You</p>
-               </div>
-            </div>
           </div>
         </div>
 
-        <!-- 3. Focus Shift -->
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
-          <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-             <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Strategic Focus</h3>
-             <ng-icon name="lucideTarget" class="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div class="p-6 pt-0 space-y-4">
-             <div>
-                <span class="text-4xl font-bold tracking-tighter text-purple-600">{{ stats()?.roi?.strategicFocus }}%</span>
-                <span class="text-sm font-medium text-muted-foreground ml-2">Strategy</span>
-             </div>
-             
-             <!-- Visualization: Segmented Bar -->
-             <div class="space-y-2">
-                <div class="flex h-4 w-full overflow-hidden rounded-full bg-muted">
-                  <div class="h-full bg-muted-foreground/30 w-[10%] border-r border-background" title="Drafting (10%)"></div>
-                  <div class="h-full bg-purple-600 w-[90%]" title="Strategy (90%)"></div>
-                </div>
-                <div class="flex justify-between text-[10px] text-muted-foreground px-1">
-                   <div class="flex items-center">
-                      <div class="w-2 h-2 rounded-full bg-muted-foreground/30 mr-1.5"></div>
-                      Drafting ({{ 100 - (stats()?.roi?.strategicFocus || 90) }}%)
-                   </div>
-                   <div class="flex items-center font-medium text-purple-600">
-                      <div class="w-2 h-2 rounded-full bg-purple-600 mr-1.5"></div>
-                      Strategy ({{ stats()?.roi?.strategicFocus }}%)
-                   </div>
-                </div>
-             </div>
+        <!-- 3. Product Mastery (Gamification) -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm relative">
+           <!-- Header -->
+           <div class="p-6 flex flex-row items-center justify-between pb-2">
+              <div class="flex items-center gap-2">
+                 <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Product Mastery</h3>
+                 <div class="group relative flex items-center">
+                    <ng-icon name="lucideInfo" class="h-3 w-3 text-muted-foreground/50 hover:text-foreground cursor-help" />
+                    <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-56 p-2 bg-popover text-popover-foreground text-xs rounded shadow-md border z-50 pointer-events-none">
+                       Your growth as a product leader based on experience (XP), tool mastery, and consistency.
+                    </div>
+                 </div>
+              </div>
+              <div class="px-2 py-1 rounded-full bg-orange-50 text-orange-700 text-[10px] font-medium border border-orange-100 flex items-center gap-1">
+                <ng-icon name="lucideFlame" class="h-3 w-3" />
+                {{ stats()?.gamification?.streakWeeks || 0 }} Week Streak
+              </div>
+           </div>
 
-             <p class="text-xs text-muted-foreground">
-                You're spending significantly more time on high-value strategic thinking than manual input.
-             </p>
-          </div>
+           <div class="p-6 pt-0 space-y-6">
+              <!-- 1. Level -->
+              <div>
+                 <div class="flex justify-between items-baseline mb-1">
+                    <span class="text-2xl font-bold tracking-tight">Level {{ stats()?.gamification?.level || 1 }}</span>
+                    <span class="text-xs text-muted-foreground">Product Leader</span>
+                 </div>
+                 <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-yellow-400 to-yellow-600" 
+                         [style.width.%]="(stats()?.gamification?.progressXp || 0) / 1000 * 100">
+                    </div>
+                 </div>
+                 <p class="text-[10px] text-muted-foreground text-right mt-1">
+                    {{ stats()?.gamification?.progressXp || 0 }} / 1000 XP to next level
+                 </p>
+              </div>
+           </div>
+
+
         </div>
       </div>
       }
@@ -254,6 +276,99 @@ import { ActivityService } from '../../core/services/activity.service';
          </div>
       </div>
     </div>
+
+
+    <!-- METRICS SIDEBAR (DRAWER) -->
+    @if (showReport()) {
+      <div class="fixed inset-0 z-50 flex justify-end">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" (click)="closeReport()"></div>
+        
+        <!-- Sidebar Content -->
+        <div class="relative w-full max-w-md h-full bg-card border-l shadow-2xl flex flex-col p-6 overflow-hidden animate-in slide-in-from-right duration-300">
+           
+           <!-- Header -->
+           <div class="flex items-center justify-between mb-6">
+              <div>
+                  <h2 class="text-xl font-bold tracking-tight">
+                    {{ reportType() === 'productivity' ? 'Productivity Report' : 'Velocity Report' }}
+                  </h2>
+                   <p class="text-sm text-muted-foreground">
+                    {{ reportType() === 'productivity' ? 'Total Time Saved Breakdown' : 'Volume of artifacts created versus the traditional approach baseline of 20' }}
+                  </p>
+              </div>
+              <button (click)="closeReport()" class="p-2 rounded-full hover:bg-muted transition-colors">
+                 <ng-icon name="lucideX" class="h-5 w-5" />
+              </button>
+           </div>
+
+           <!-- Summary Card -->
+           @if (reportData(); as data) {
+             <div class="bg-muted/50 rounded-lg p-4 mb-6 border">
+                @if (reportType() === 'productivity') {
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-muted-foreground">Total Reclaimed</span>
+                        <span class="text-2xl font-bold">{{ data.total_hours }}h</span>
+                    </div>
+                    <div class="text-xs text-muted-foreground">
+                        Across {{ data.groups.length }} active modules.
+                    </div>
+                } @else {
+                     <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-muted-foreground">Total Output</span>
+                        <span class="text-2xl font-bold">{{ data.total_count }} artifacts</span>
+                    </div>
+                    <div class="text-xs text-muted-foreground">
+                        Vs Baseline of {{ data.groups.length > 0 ? '20.0' : '0' }} / month
+                    </div>
+                }
+             </div>
+
+             <!-- List -->
+             <div class="flex-1 overflow-y-auto space-y-4 pr-2">
+                @for (group of data.groups; track group.id) {
+                    <div class="border rounded-lg bg-card overflow-hidden">
+                        <!-- Group Header with expand toggle -->
+                        <div (click)="toggleGroup(group.id)" class="bg-muted/30 p-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors select-none">
+                            <div class="flex items-center gap-2">
+                                <ng-icon [name]="isExpanded(group.id) ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4 text-muted-foreground" />
+                                <span class="font-medium text-sm">{{ group.label }}</span>
+                                <span class="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{{ group.count }}</span>
+                            </div>
+                            <div class="text-xs font-mono font-medium">
+                                {{ reportType() === 'productivity' ? group.total_hours + 'h' : '' }}
+                            </div>
+                        </div>
+                        
+                        <!-- Body -->
+                         @if (isExpanded(group.id)) {
+                             <div class="border-t bg-background/50">
+                                 <!-- Context -->
+                                 <div class="p-2 bg-yellow-50/50 text-[10px] text-yellow-800 border-b flex justify-between px-3">
+                                     <span>Calculation: {{ group.count }} runs × {{ group.hours_per_unit }}h saved/run</span>
+                                 </div>
+                                 <div class="divide-y">
+                                     @for (item of group.items; track item.id) {
+                                         <div class="p-3 pl-9 flex flex-col gap-0.5 hover:bg-muted/30">
+                                             <span class="text-sm font-medium truncate">{{ item.title }}</span>
+                                             <span class="text-[10px] text-muted-foreground">{{ item.date | date:'medium' }}</span>
+                                         </div>
+                                     }
+                                 </div>
+                             </div>
+                         }
+                    </div>
+                }
+             </div>
+           } @else {
+             <div class="flex-1 flex items-center justify-center text-muted-foreground">
+                <ng-icon name="lucideLoader2" class="h-6 w-6 animate-spin" />
+             </div>
+           }
+
+        </div>
+      </div>
+    }
   `,
 })
 export class DashboardComponent {
@@ -267,6 +382,12 @@ export class DashboardComponent {
   stats = signal<DashboardStats | null>(null);
   shortcuts = this.activityService.shortcuts;
   recentOutputs = signal<any[]>([]);
+
+  // Report State
+  showReport = signal(false);
+  reportType = signal<'productivity' | 'velocity'>('productivity');
+  reportData = signal<DashboardReport | null>(null);
+  expandedGroups = signal<Set<string>>(new Set());
 
   constructor() {
     effect(() => {
@@ -311,5 +432,41 @@ export class DashboardComponent {
     // Linear interpolation: 30 + (multiplier - 1) * (70 / 4)
     const val = 30 + (multiplier - 1) * 17.5;
     return Math.min(Math.max(val, 30), 100);
+  }
+
+  // Sidebar Logic
+  openReport(type: 'productivity' | 'velocity') {
+    this.reportType.set(type);
+    this.showReport.set(true);
+    this.reportData.set(null); // Reset while loading
+
+    this.service.getReport(this.timeframe(), type).subscribe({
+      next: (data) => {
+        this.reportData.set(data);
+        // Default expand top 1 group
+        if (data.groups.length > 0) {
+          this.expandedGroups.set(new Set([data.groups[0].id]));
+        }
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  closeReport() {
+    this.showReport.set(false);
+  }
+
+  toggleGroup(id: string) {
+    const current = new Set(this.expandedGroups());
+    if (current.has(id)) {
+      current.delete(id);
+    } else {
+      current.add(id);
+    }
+    this.expandedGroups.set(current);
+  }
+
+  isExpanded(id: string): boolean {
+    return this.expandedGroups().has(id);
   }
 }
