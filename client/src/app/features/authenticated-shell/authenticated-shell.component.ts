@@ -66,7 +66,7 @@ export class AuthenticatedShellComponent {
       path: '/research',
       children: [
         { label: 'Competitive Analysis', path: '/research/competitive-analysis' },
-
+        { label: 'Market Research', path: '/research/market-research' },
       ],
     },
     {

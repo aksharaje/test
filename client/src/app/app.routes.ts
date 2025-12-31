@@ -612,6 +612,22 @@ export const routes: Routes = [
                 (m) => m.CompetitiveAnalysisResultsComponent
               ),
           },
+          {
+            path: 'market-research',
+            title: 'Market Research | Product Studio',
+            loadComponent: () =>
+              import('./features/market-research/market-research-input.component').then(
+                (m) => m.MarketResearchInputComponent
+              ),
+          },
+          {
+            path: 'market-research/results/:id',
+            title: 'Market Research Results | Product Studio',
+            loadComponent: () =>
+              import('./features/market-research/market-research-results.component').then(
+                (m) => m.MarketResearchResultsComponent
+              ),
+          },
         ],
       },
     ],
