@@ -226,6 +226,8 @@ export class MarketResearchService {
           {}
         )
       );
+      // Update current session (for results page)
+      this.currentSession.set(session);
       // Update in list
       this.sessions.update((current) =>
         current.map((s) => (s.id === id ? session : s))
