@@ -320,7 +320,7 @@ type ActiveTab = 'release-notes' | 'decisions' | 'debt' | 'stories';
                         </div>
                       }
 
-                      @if (decision.alternativesConsidered?.length) {
+                      @if (decision.alternativesConsidered.length) {
                         <div class="mt-3">
                           <p class="text-sm font-medium text-slate-700 mb-1">
                             Alternatives Considered

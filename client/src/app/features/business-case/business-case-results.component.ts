@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { DecimalPipe, CurrencyPipe, TitleCasePipe } from '@angular/common';
+import { DecimalPipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -25,7 +25,7 @@ import { HlmButtonDirective } from '../../ui/button';
 @Component({
   selector: 'app-business-case-results',
   standalone: true,
-  imports: [NgIcon, HlmButtonDirective, DecimalPipe, CurrencyPipe, TitleCasePipe, FormsModule],
+  imports: [NgIcon, HlmButtonDirective, DecimalPipe, TitleCasePipe, FormsModule],
   viewProviders: [
     provideIcons({
       lucideArrowLeft,

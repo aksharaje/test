@@ -353,7 +353,7 @@ import type {
                       <div class="text-xs text-muted-foreground">
                         {{ formatSprintDates(sprint) }}
                       </div>
-                      @if (sprint.holidays?.length) {
+                      @if (sprint.holidays.length) {
                         <div class="text-xs text-orange-600">
                           {{ sprint.workingDays }} working days
                         </div>

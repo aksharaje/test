@@ -1,4 +1,5 @@
 import { Component, inject, signal, effect } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { CommonModule } from '@angular/common'; // Import CommonModule for pipes
 import {
@@ -36,7 +37,7 @@ import { ActivityService } from '../../core/services/activity.service';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NgIcon, CommonModule],
+  imports: [NgIcon, CommonModule, RouterLink],
   viewProviders: [
     provideIcons({
       lucideClock,
@@ -212,7 +213,7 @@ import { ActivityService } from '../../core/services/activity.service';
                 </div>
                 <div class="divide-y">
                      @for (output of recentOutputs(); track output.id + output.type) {
-                        <a [href]="output.url" class="flex items-center justify-between p-4 py-3 hover:bg-muted/50 transition-colors group">
+                        <a [routerLink]="output.url" class="flex items-center justify-between p-4 py-3 hover:bg-muted/50 transition-colors group">
                            <div class="min-w-0 pr-4">
                               <div class="font-medium text-sm group-hover:text-primary transition-colors truncate">{{ output.title }}</div>
                               <div class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mt-0.5">{{ output.type.replace('_', ' ') }}</div>
@@ -235,7 +236,7 @@ import { ActivityService } from '../../core/services/activity.service';
                 </div>
                 <div class="p-2 space-y-1">
                     @for (item of shortcuts(); track item.id) {
-                        <a [href]="item.url" class="flex items-center px-4 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+                        <a [routerLink]="item.url" class="flex items-center px-4 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
                             <span>{{ item.name }}</span>
                         </a>
                     }
@@ -334,7 +335,7 @@ import { ActivityService } from '../../core/services/activity.service';
                                  </div>
                                  <div class="divide-y">
                                      @for (item of group.items; track item.id) {
-                                         <a [href]="getItemUrl(item, group.id)" class="p-3 pl-9 flex flex-col gap-0.5 hover:bg-muted/30 cursor-pointer transition-colors block">
+                                         <a [routerLink]="getItemUrl(item, group.id)" class="p-3 pl-9 flex flex-col gap-0.5 hover:bg-muted/30 cursor-pointer transition-colors block">
                                              <span class="text-sm font-medium truncate">{{ item.title }}</span>
                                              <span class="text-[10px] text-muted-foreground">{{ item.date | date:'medium' }}</span>
                                          </a>
@@ -428,10 +429,8 @@ export class DashboardComponent {
     this.service.getReport(this.timeframe(), type).subscribe({
       next: (data) => {
         this.reportData.set(data);
-        // Default expand top 1 group
-        if (data.groups.length > 0) {
-          this.expandedGroups.set(new Set([data.groups[0].id]));
-        }
+        // Start with all groups collapsed
+        this.expandedGroups.set(new Set());
       },
       error: (err) => console.error(err)
     });

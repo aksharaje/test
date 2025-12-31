@@ -107,41 +107,41 @@ def get_artifact_details(artifact_id: int, db: Session = Depends(get_db)):
     import json
     stories = []
 
+    def extract_story(story_obj, index: int = 0):
+        """Extract story data from story object"""
+        return {
+            "id": story_obj.get("id", str(index)),
+            "title": story_obj.get("title", ""),
+            # userStory field contains the "As a... I want... So that..." description
+            "description": story_obj.get("userStory", story_obj.get("description", "")),
+            "acceptance_criteria": story_obj.get("acceptanceCriteria", []),
+        }
+
     try:
         content = json.loads(artifact.content)
 
         if artifact.type == "epic":
             # Extract features and their stories from epic
+            # Structure: content.epic.features[].stories[]
             epic = content.get("epic", {})
+            story_index = 0
             for feature in epic.get("features", []):
-                for story in feature.get("userStories", []):
-                    stories.append({
-                        "id": story.get("id", ""),
-                        "title": story.get("title", ""),
-                        "description": story.get("description", ""),
-                        "acceptance_criteria": story.get("acceptanceCriteria", []),
-                    })
+                for story in feature.get("stories", []):
+                    stories.append(extract_story(story, story_index))
+                    story_index += 1
 
         elif artifact.type == "feature":
             # Extract stories from feature
+            # Structure: content.feature.stories[]
             feature = content.get("feature", {})
-            for story in feature.get("userStories", []):
-                stories.append({
-                    "id": story.get("id", ""),
-                    "title": story.get("title", ""),
-                    "description": story.get("description", ""),
-                    "acceptance_criteria": story.get("acceptanceCriteria", []),
-                })
+            for i, story in enumerate(feature.get("stories", [])):
+                stories.append(extract_story(story, i))
 
         elif artifact.type == "user_story":
-            # Single user story
-            story = content.get("userStory", content.get("story", {}))
-            stories.append({
-                "id": story.get("id", str(artifact.id)),
-                "title": story.get("title", artifact.title),
-                "description": story.get("description", artifact.input_description),
-                "acceptance_criteria": story.get("acceptanceCriteria", []),
-            })
+            # User story artifacts have an array of stories
+            # Structure: content.stories[]
+            for i, story in enumerate(content.get("stories", [])):
+                stories.append(extract_story(story, i))
 
     except (json.JSONDecodeError, TypeError):
         # Fallback: use artifact directly as a story

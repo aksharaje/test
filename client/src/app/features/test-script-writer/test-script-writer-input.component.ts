@@ -57,10 +57,18 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
       lucideMonitor,
     }),
   ],
+  styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+  `,
   template: `
-    <div class="flex h-full min-h-0">
+    <div class="flex flex-1 min-h-0 overflow-hidden">
       <!-- Left Panel: Input Form -->
-      <div class="w-1/2 border-r p-6 overflow-y-auto min-h-0">
+      <div class="w-1/2 border-r p-6 overflow-y-auto">
         <div class="max-w-xl mx-auto">
           <h1 class="text-2xl font-bold text-foreground">Test Script Writer</h1>
           <p class="mt-1 text-muted-foreground">
@@ -284,7 +292,7 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
       </div>
 
       <!-- Right Panel: History -->
-      <div class="w-1/2 bg-muted/30 p-6 overflow-y-auto min-h-0">
+      <div class="w-1/2 bg-muted/30 p-6 overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />

@@ -48,7 +48,7 @@ def get_dashboard_stats(
         start_date = datetime.utcnow() - timedelta(days=30)
     
     def count_query(model):
-        query = select(func.count())
+        query = select(func.count()).select_from(model)
         if hasattr(model, "user_id"):
             query = query.where(or_(model.user_id == user_id, model.user_id == None))
 
@@ -123,16 +123,47 @@ def get_dashboard_stats(
     )
     
     # Velocity Multiplier
-    # Baseline: 2 artifacts per sprint (2 weeks).
-    # If timeframe is 30d (~4.3 weeks), baseline is ~4.3 artifacts.
+    # Baseline: 40 artifacts per month (standard monthly output)
     standard_monthly_output = 40.0
     
     if timeframe == "30d":
+        # For 30 days, compare directly against monthly baseline
         baseline = standard_monthly_output
+        velocity_multiplier = round(total_artifacts / baseline, 1) if baseline > 0 else 0.0
     else:
-        baseline = max(1.0, total_artifacts / 2.0) # Fallback
-
-    velocity_multiplier = round(total_artifacts / baseline, 1) if baseline > 0 else 0.0
+        # For all-time, calculate monthly run rate based on actual usage period
+        # Find the earliest created_at date across all artifacts
+        earliest_date = None
+        for model in [GeneratedPrd, FeasibilitySession, IdeationSession, BusinessCaseSession,
+                      JourneyMapSession, ResearchPlanSession, ReleasePrepSession, RoadmapSession,
+                      StoryToCodeSession, CompetitiveAnalysisSession, ScopeDefinitionSession,
+                      ScopeMonitorSession, MeasurementFrameworkSession, KpiAssignmentSession,
+                      OkrSession, GoalSettingSession, ScenarioSession, GapAnalysisSession,
+                      RecommenderSession, CommunicatorSession]:
+            if hasattr(model, "created_at"):
+                query = select(func.min(model.created_at))
+                if hasattr(model, "user_id"):
+                    query = query.where(or_(model.user_id == user_id, model.user_id == None))
+                min_date = db.exec(query).one()
+                if min_date and (earliest_date is None or min_date < earliest_date):
+                    earliest_date = min_date
+        
+        # Calculate months elapsed
+        if earliest_date and total_artifacts > 0:
+            now = datetime.utcnow()
+            days_elapsed = (now - earliest_date).days
+            months_elapsed = max(days_elapsed / 30.0, 0.1)  # At least 0.1 month to avoid division issues
+            
+            # Calculate monthly run rate
+            monthly_run_rate = total_artifacts / months_elapsed
+            
+            # Calculate velocity multiplier
+            velocity_multiplier = round(monthly_run_rate / standard_monthly_output, 1)
+        else:
+            # No artifacts or no dates, default to 0
+            velocity_multiplier = 0.0
+    
+    # Ensure minimum of 1.0x if there are artifacts
     if velocity_multiplier < 1.0 and total_artifacts > 0:
         velocity_multiplier = 1.0 
 
@@ -144,7 +175,7 @@ def get_dashboard_stats(
     
     # We need all-time counts for XP and Mastery
     def count_all_time(model):
-        query = select(func.count())
+        query = select(func.count()).select_from(model)
         if hasattr(model, "user_id"):
             query = query.where(or_(model.user_id == user_id, model.user_id == None))
         return db.exec(query).one()

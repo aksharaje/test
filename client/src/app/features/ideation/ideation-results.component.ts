@@ -4,12 +4,11 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideEdit2, lucideSave, lucideX, lucideSparkles, lucideArrowLeft } from '@ng-icons/lucide';
 import { IdeationService } from './ideation.service';
 import type { GeneratedIdea } from './ideation.types';
-import { HlmButtonDirective } from '../../ui/button';
 
 @Component({
   selector: 'app-ideation-results',
   standalone: true,
-  imports: [NgIcon, HlmButtonDirective],
+  imports: [NgIcon],
   viewProviders: [
     provideIcons({
       lucideEdit2,

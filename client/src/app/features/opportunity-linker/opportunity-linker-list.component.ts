@@ -87,7 +87,7 @@ import { HlmButtonDirective } from '../../ui/button';
                     @if (session.status === 'completed' && session.portfolioSummary) {
                       <div class="mt-3 flex gap-4 text-sm">
                         <div>
-                          <span class="font-medium text-green-600">{{ session.portfolioSummary.byTier?.p0 || 0 }}</span>
+                          <span class="font-medium text-green-600">{{ session.portfolioSummary.byTier.p0 || 0 }}</span>
                           <span class="text-muted-foreground"> P0</span>
                         </div>
                         <div>

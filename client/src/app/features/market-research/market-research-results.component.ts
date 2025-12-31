@@ -330,7 +330,7 @@ interface Tab {
                                     </span>
                                   }
                                 </div>
-                                @if (trend.sources?.length) {
+                                @if (trend.sources.length) {
                                   <div class="mt-2 flex flex-wrap gap-1">
                                     @for (source of trend.sources; track source) {
                                       <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
@@ -414,7 +414,7 @@ interface Tab {
                                     </span>
                                   }
                                 </div>
-                                @if (shift.sources?.length) {
+                                @if (shift.sources.length) {
                                   <div class="mt-2 flex flex-wrap gap-1">
                                     @for (source of shift.sources; track source) {
                                       <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
@@ -498,7 +498,7 @@ interface Tab {
                                     </span>
                                   }
                                 </div>
-                                @if (risk.sources?.length) {
+                                @if (risk.sources.length) {
                                   <div class="mt-2 flex flex-wrap gap-1">
                                     @for (source of risk.sources; track source) {
                                       <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white text-xs text-muted-foreground">

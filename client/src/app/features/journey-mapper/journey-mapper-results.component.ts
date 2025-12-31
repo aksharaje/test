@@ -206,7 +206,7 @@ import {
                           }
 
                           <!-- Touchpoints -->
-                          @if (stage.touchpoints?.length) {
+                          @if (stage.touchpoints.length) {
                             <div class="mt-3 flex flex-wrap gap-1">
                               @for (tp of stage.touchpoints.slice(0, 3); track tp.id) {
                                 <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
