@@ -1,23 +1,27 @@
-# Scope Monitoring Tool
+# Scope Monitoring
 
 ## Overview
-The Scope Monitoring Tool helps Product Managers track and analyze changes in project scope efficiently. It enables PMs to make informed decisions based on AI-driven insights, ensuring project success and minimizing risks.
+Scope Monitoring helps Product Managers track and analyze changes in project scope, ensuring alignment with project goals and identifying potential risks early on. By using Scope Monitoring, PMs can proactively manage project scope changes, assess their impact, and make informed decisions to ensure project success.
 
 ## Key Capabilities
 - Create new scope monitoring sessions
-- Get detailed insights on scope changes
+- Get detailed insights into scope changes
 - Analyze scope changes using AI
 - Track impact assessments and alerts
-- Retry failed sessions for accurate monitoring
+- Retry failed sessions for thorough analysis
 
 ## How to Use
-To begin, start by creating a new scope monitoring session to track project changes. Analyze scope changes using AI to gain valuable insights. Track impact assessments and alerts to stay informed about critical updates. If needed, retry a failed session for comprehensive monitoring.
+To start using Scope Monitoring, begin by creating a new scope monitoring session. Input relevant data and analyze scope changes using the built-in AI capabilities. Track impact assessments and alerts to stay informed about any critical changes. In case of a failed session, retry it to ensure comprehensive analysis.
 
 ## Configuration & Fields
-- **Database**: Stores session data
-  - **Purpose**: Manages all information related to scope monitoring sessions
-  - **Example**: Cloud-based storage for secure data management
-
-- **Scope Monitor Session Data**: Contains information about a specific monitoring session
-  - **Purpose**: Captures details of each monitoring session, including changes and assessments
-  - **Example**: Recording scope changes during a project update
+- **Database Session**:
+  - **Purpose**: Stores session data for analysis.
+  - **Example**: "Q3 Project Scope Review"
+  
+- **Scope Monitoring Session Data**:
+  - **Purpose**: Captures specific scope details for analysis.
+  - **Example**: "Updated Feature Requirements"
+  
+- **Session ID**:
+  - **Purpose**: Identifies the specific monitoring session.
+  - **Example**: "12345"

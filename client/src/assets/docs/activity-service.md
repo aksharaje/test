@@ -1,30 +1,37 @@
-
 # Activity Logger
 
 ## Overview
-The Activity Logger helps you track and analyze the usage patterns of different features within your product. By logging activities, you can gain insights into user behavior and make data-driven decisions to improve user experience and product performance.
+The Activity Logger helps Product Managers track and analyze user activities within the application, providing valuable insights into feature usage and outputs.
 
 ## Key Capabilities
-- Log user activities to understand feature usage.
-- Retrieve frequently used features within a specified timeframe.
-- Aggregate recent outputs for analysis and reporting.
+- Log user activities for analysis
+- Retrieve frequently used features
+- Aggregate recent outputs for review
 
 ## How to Use
-To get started with the Activity Logger, begin by logging activities related to specific features in your product. You can then review the most frequently used features or aggregate recent outputs to gain valuable insights into user interactions and product performance.
+To leverage the Activity Logger, start by logging user activities to understand feature engagement. Then, analyze the most frequently used features to prioritize enhancements. Finally, review recent outputs to gain insights into user interactions.
 
 ## Configuration & Fields
-- **db**: Database Connection
-  - **What it's for**: Connects to the database to store activity logs.
-  - **Example**: Linking to your production database to track user interactions.
-  
-- **user_id**: User Identifier
-  - **What it's for**: Identifies the user performing the activity.
-  - **Example**: Assigning a unique ID to each user for tracking purposes.
-  
-- **feature_key**: Feature Identifier
-  - **What it's for**: Specifies the feature being logged.
-  - **Example**: Logging clicks on the "Add to Cart" button in an e-commerce platform.
-  
-- **metadata**: Additional Information
-  - **What it's for**: Provides context or details about the logged activity.
-  - **Example**: Storing timestamp and device information along with the activity log.
+- **Database**: Stores user activity data for analysis.
+  - **Purpose**: Provides context for feature usage analysis.
+  - **Example**: "Product Usage Database"
+
+- **User ID**: Identifies the user associated with the logged activity.
+  - **Purpose**: Links activities to specific users for personalized insights.
+  - **Example**: "JohnDoe123"
+
+- **Feature Key**: Represents the feature being used in the activity log.
+  - **Purpose**: Helps identify and categorize user interactions.
+  - **Example**: "FeatureX"
+
+- **Metadata**: Additional information related to the logged activity.
+  - **Purpose**: Offers supplementary details for deeper analysis.
+  - **Example**: "User Feedback Comments"
+
+- **Limit**: Specifies the maximum number of results to retrieve.
+  - **Purpose**: Controls the scope of data displayed for efficient analysis.
+  - **Example**: "10"
+
+- **Days**: Sets the timeframe for retrieving frequent shortcuts.
+  - **Purpose**: Defines the period for analyzing feature usage trends.
+  - **Example**: "30 days"

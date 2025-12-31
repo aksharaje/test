@@ -277,15 +277,16 @@ class DocumentationGenerator:
         [Narrative description of the workflow. E.g. "Start by defining your objective..."]
         
         ## Configuration & Fields
-        [Analyze the inputs to these methods. Translate them into what a user would see on a form.
-         For example:
-         - if arg is `objective`, label it "**Objective**"
-         - if arg is `knowledge_base_ids`, label it "**Connected Knowledge**"
+        [Analyze the inputs to the public methods. Translate them into the form fields a user would fill out.
+         **CRITICAL RULES FOR FIELDS**:
+         - **Rename Technical IDs**: NEVER say "Knowledge Base ID" or "User ID". Rename to "Connected Knowledge Base" or "Owner".
+         - **Filter Internal Fields**: Exclude fields that are clearly internal logic (e.g. `db_session`, `api_client`, `request_context`). Only list fields the user provides.
+         - **Focus on Purpose**: Explain what the data *does* for the user (e.g., "Provides context for the AI", "Determines priority").
          
-         For each important field:
-         - **Field Name**: [Human Friendly Label]
-         - **What it's for**: [Simple, non-technical description]
-         - **Example**: [Realistic business example]
+         Format for each relevant field (omit if no user inputs):
+         - **Field Name**: [Friendly UI Label, e.g. "Connected Knowledge Base" NOT "knowledge_base_ids"]
+         - **Purpose**: [What is this data used for? Is it optional? E.g. "Provides background context for the analysis."]
+         - **Example**: [Realistic business content, e.g. "Q3 User Interview Notes"]
         ]
         """
 

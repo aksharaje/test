@@ -1,17 +1,18 @@
-
-# Ado Management
+# Ado Manager
 
 ## Overview
-Ado Management helps you maintain a clean and organized workspace, ensuring that only relevant and up-to-date information is accessible to your team. It streamlines the process of managing project states and access permissions.
+Ado Manager helps Product Managers efficiently manage and maintain their project states and authentication processes, streamlining workflow and enhancing security measures.
 
 ## Key Capabilities
 - Clean up expired project states
-- Generate OAuth URLs for secure access
+- Generate OAuth URLs for secure authentication
 
 ## How to Use
-To keep your workspace clutter-free, start by cleaning up any expired project states using the "Cleanup Expired States" feature. This ensures that outdated information is removed, keeping your workspace relevant and efficient. Additionally, you can use the "Get OAuth URL" function to securely share access to specific project resources with authorized team members.
+To clean up expired project states, simply run the "Cleanup Expired States" function. This ensures that outdated project information is removed, keeping your data up to date and organized.
+
+For generating OAuth URLs, use the "Get OAuth URL" function with the optional parameter "Return URL" to create secure authentication links for your projects.
 
 ## Configuration & Fields
-- **Return URL**: The URL where users will be redirected after authentication.
-  - **What it's for**: Specifies the destination after authorization.
-  - **Example**: "https://www.example.com/dashboard"
+- **Return URL**:
+  - **Purpose**: Specifies the URL where the user will be redirected after authentication.
+  - **Example**: "https://www.myproduct.com/dashboard"

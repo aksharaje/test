@@ -1,28 +1,31 @@
 # Flow Manager
 
 ## Overview
-The Flow Manager helps Product Managers streamline their workflow by managing project flows efficiently. It enables PMs to oversee project progress, make updates, and initiate project executions seamlessly.
+The Flow Manager helps you streamline your workflow by managing the flow of tasks and processes within your projects. It allows you to efficiently organize, track, and execute tasks to drive project success.
 
 ## Key Capabilities
-- Create new project flows
-- Update existing project details
-- Track project executions
-- Start project executions
-- Delete unnecessary project flows
+- Create new flows for your projects
+- Update existing flows with the latest information
+- Track the progress of each flow
+- Start and monitor flow executions
+- Delete unnecessary flows
 
 ## How to Use
-To get started with the Flow Manager, begin by creating a new project flow with relevant details. Update project information as needed and track the progress of each project. When ready, start project executions to kick off the project tasks. If a project is no longer needed, delete the flow to keep the workspace organized.
+To begin, start by creating a new flow for your project. Define the tasks and steps involved in the flow, along with any necessary data. Once your flow is set up, you can update it as needed to reflect changes in your project. When ready, start the execution of the flow to kick off the tasks and monitor their progress. If a flow is no longer needed, you can easily delete it from the system.
 
 ## Configuration & Fields
-- **Session**: Represents the current work session
-  - **Purpose**: Identifies the context in which the user is working
-  - **Example**: Morning brainstorming session
-- **ID**: Unique identifier for the project flow
-  - **Purpose**: Uniquely identifies each project flow
-  - **Example**: Project ID - P123
-- **Data**: Information related to the project flow
-  - **Purpose**: Contains details about the project
-  - **Example**: Project name, description, and deadline
-- **Context**: Additional information for project execution
-  - **Purpose**: Provides necessary context for executing the project
-  - **Example**: Client requirements for the project execution
+- **Session**: This field establishes your working session within the application.
+  - **Purpose**: Provides the context for your actions in the Flow Manager.
+  - **Example**: Weekly Marketing Campaign Meeting Session
+
+- **Data**: Input the necessary information to create or update a flow.
+  - **Purpose**: Defines the tasks, steps, and details of the flow.
+  - **Example**: Q4 Product Launch Plan
+
+- **ID**: Unique identifier for each flow.
+  - **Purpose**: Helps differentiate between multiple flows.
+  - **Example**: 12345
+
+- **Context**: Additional information related to the flow execution.
+  - **Purpose**: Provides relevant details for executing the flow.
+  - **Example**: Customer Feedback Survey Results

@@ -1,27 +1,41 @@
-# Product Report Generator
+# Product Requirements Document Generator
 
 ## Overview
-The Product Report Generator helps Product Managers create detailed product reports efficiently, enabling them to communicate key insights and progress effectively to stakeholders.
+The Product Requirements Document (PRD) Generator helps Product Managers create detailed PRDs efficiently. By using this tool, PMs can streamline the process of documenting product requirements, ensuring clear communication and alignment across teams.
 
 ## Key Capabilities
-- Create new product report drafts
-- Generate content for product reports
-- Update and refine existing product reports
-- List all product reports for easy tracking
-- Retry failed report generation processes
+- Create new PRD records
+- Generate PRD content through an automated pipeline
+- Update and refine existing PRDs
+- List all PRDs for easy tracking and management
+- Retry failed PRDs for a seamless retry process
 
 ## How to Use
-To begin, start by creating a new product report draft. Fill in the necessary details and request the system to generate the report content. You can refine the report further based on feedback or updates. Easily track and manage all your product reports in one place.
+To begin, start by creating a new PRD record with the necessary details. Utilize the automated pipeline to generate content based on the provided information. Refine and update PRDs as needed to maintain accuracy. Track and manage all PRDs through the list view, and easily retry failed PRDs for a successful submission.
 
 ## Configuration & Fields
-- **Session**: Represents your current work session within the application.
-  - **What it's for**: Identifies and maintains your active work environment.
-  - **Example**: Your session keeps track of all changes made during a work session, ensuring data integrity.
+- **Request Details**
+  - **Purpose**: Information needed to create a new PRD record.
+  - **Example**: Detailed feature specifications for a new product feature.
 
-- **Request**: Contains the information needed to create or update a product report.
-  - **What it's for**: Provides the necessary input for the system to process and generate the report content.
-  - **Example**: Including product specifications and market analysis in your request ensures a comprehensive report output.
+- **PRD ID**
+  - **Purpose**: Unique identifier for a specific PRD.
+  - **Example**: PRD-2023-001
 
-- **ID**: Unique identifier for a specific product report.
-  - **What it's for**: Helps locate and manage individual reports within the system.
-  - **Example**: Using IDs allows you to quickly access and update a specific product report as needed.
+- **Data**
+  - **Purpose**: Updated content or details for an existing PRD.
+  - **Example**: Revised market analysis section.
+
+- **Skip**
+  - **Purpose**: Number of PRDs to skip in the list view.
+  - **Example**: Skip first 5 PRDs for review.
+
+- **Limit**
+  - **Purpose**: Maximum number of PRDs to display in a single view.
+  - **Example**: Display up to 10 PRDs per page.
+
+- **Retry PRD ID**
+  - **Purpose**: ID of the failed PRD to retry.
+  - **Example**: PRD-2023-005
+
+By focusing on these fields, Product Managers can efficiently manage and update their PRDs within the application.

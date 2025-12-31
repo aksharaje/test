@@ -1,30 +1,31 @@
+
 # Pi Planning
 
 ## Overview
-Pi Planning helps Product Managers efficiently plan and manage their product development cycles. It enables PMs to streamline their planning process and optimize resource allocation for successful product releases.
+Pi Planning helps Product Managers efficiently manage and plan their product development cycles, ensuring alignment and prioritization of work to drive successful product outcomes.
 
 ## Key Capabilities
-- Create new planning sessions
-- View and analyze existing planning sessions
-- Track progress and milestones within planning sessions
-- Manage holiday configurations for accurate planning
+- Create and organize work sessions
+- Retrieve specific session details
+- Add new sessions with relevant data
+- View holiday configuration settings
 
 ## How to Use
-To start using Pi Planning, begin by creating a new planning session for your upcoming product cycle. Add relevant details and data to the session, then proceed to track progress and make adjustments as needed. Utilize the holiday configuration feature to ensure accurate scheduling during planning.
+To get started, initiate a new work session by defining the session's purpose and integrating relevant data. You can then access and update session details as needed. Additionally, review and configure holiday settings to account for non-working days within your planning timeline.
 
 ## Configuration & Fields
-- **Session**: Planning Session
-  - **What it's for**: Represents a specific product development cycle.
-  - **Example**: "Q4 2022 Product Launch"
+- **Session Purpose**
+  - **Purpose**: Defines the objective of the work session.
+  - **Example**: "Q3 Product Roadmap Planning"
 
-- **Integration ID**: Integration Identifier
-  - **What it's for**: Links the planning session to external systems or tools.
-  - **Example**: 12345
+- **Integration ID**
+  - **Purpose**: Identifies the source or system integrated with the session.
+  - **Example**: "CRM Integration"
 
-- **Data**: Additional Data
-  - **What it's for**: Supplementary information related to the planning session.
-  - **Example**: Sales projections for the upcoming quarter
+- **Session Data**
+  - **Purpose**: Provides specific information or context for the session.
+  - **Example**: "Feature Prioritization Matrix"
 
-- **Session ID**: Session Identifier
-  - **What it's for**: Unique identifier for a specific planning session.
-  - **Example**: 9876
+- **Holiday Configuration**
+  - **Purpose**: Specifies non-working days for accurate planning.
+  - **Example**: "New Year's Day"

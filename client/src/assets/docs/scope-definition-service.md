@@ -1,33 +1,35 @@
 # Scope Definition Manager
 
 ## Overview
-The Scope Definition Manager helps Product Managers define and manage the scope of their projects efficiently. It enables PMs to outline project boundaries, deliverables, assumptions, and constraints, empowering them to make informed decisions and ensure project success.
+The Scope Definition Manager helps Product Managers define, manage, and analyze project scopes efficiently. It enables PMs to streamline scope definition sessions, generate scope using AI, and track key project deliverables.
 
 ## Key Capabilities
-- Create a new scope definition session
-- Retrieve details of a specific session
-- List all sessions with pagination
-- Delete a session and its related data
+- Create new scope definition sessions
+- Get detailed insights into session data
 - Generate scope definitions using AI
-- Access all scope items, assumptions, constraints, and deliverables for a session
-- Retry a failed session
+- Track scope items, assumptions, constraints, and deliverables
+- Retry failed sessions for continuous improvement
 
 ## How to Use
-To get started, create a new scope definition session to outline the project's scope. Then, you can generate scope definitions using AI to streamline the process. Access all relevant details such as scope items, assumptions, constraints, and deliverables to ensure clarity and alignment within your team. In case of any issues, you can retry a failed session to make necessary adjustments.
+To start using the Scope Definition Manager, begin by creating a new scope definition session. Input the necessary data and proceed to generate scope using AI. Analyze the scope items, assumptions, constraints, and deliverables to ensure project alignment. In case of a failed session, utilize the retry functionality to improve outcomes.
 
 ## Configuration & Fields
 - **Session ID**: Unique identifier for the session
-  - **What it's for**: Identifying and accessing a specific scope definition session
-  - **Example**: "12345"
-  
-- **Data**: Information related to the scope definition session
-  - **What it's for**: Providing details about the project scope
-  - **Example**: "Project X kickoff meeting outcomes"
+  - **Purpose**: Identifies the specific scope definition session
+  - **Example**: "Q3 Project Kickoff"
 
-- **Skip**: Number of items to skip in the session list
-  - **What it's for**: Managing pagination when viewing multiple sessions
-  - **Example**: "5"
+- **Data**: Scope definition details
+  - **Purpose**: Provides context for generating the project scope
+  - **Example**: "Project requirements document"
 
-- **Limit**: Maximum number of sessions to display per page
-  - **What it's for**: Controlling the number of sessions shown on a single page
-  - **Example**: "10"
+- **Skip**: Number of sessions to skip for pagination
+  - **Purpose**: Controls the session listing display
+  - **Example**: 0
+
+- **Limit**: Maximum number of sessions to display
+  - **Purpose**: Manages the number of sessions shown per page
+  - **Example**: 10
+
+- **DB**: Database connection
+  - **Purpose**: Stores session and project data
+  - **Example**: "Project_DB_Connection"

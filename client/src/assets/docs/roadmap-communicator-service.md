@@ -1,35 +1,34 @@
 # Roadmap Communicator
 
 ## Overview
-The Roadmap Communicator helps Product Managers efficiently manage and communicate their product roadmap progress to stakeholders. It enables PMs to streamline their communication processes and ensure alignment across teams.
+Roadmap Communicator enables Product Managers to efficiently manage and collaborate on project roadmaps and presentations. It facilitates seamless communication and coordination among team members, driving alignment and progress tracking.
 
 ## Key Capabilities
 - Create new communicator sessions for roadmaps or scenarios
-- Retrieve and display all sessions or filter by user
-- Delete sessions and associated presentations
-- Access detailed information on sessions and presentations
-- Retrieve available audience types and configurations
+- Retrieve and manage sessions and presentations
+- Collaborate on presentations with team members
+- Access available audience types and configurations
 
 ## How to Use
-To begin, create a new communicator session based on your roadmap or scenario. You can then access, manage, and delete sessions as needed. Retrieve detailed information on sessions and presentations to effectively communicate progress and updates to your team and stakeholders. Lastly, explore available audience types and their configurations to tailor your communication strategy.
+To begin, create a new communicator session based on a roadmap or scenario. You can then add presentations, collaborate with team members, and track progress. Utilize the available audience types and configurations to tailor your communication strategy effectively.
 
 ## Configuration & Fields
-- **Communicator Session Data**: Represents the information related to a specific session.
-  - **Purpose**: Contains details about the session, such as objectives and progress.
-  - **Example**: Create a session for your upcoming product launch to track milestones and deliverables.
+- **Communicator Session Data**:
+  - **Purpose**: Provides context for the session.
+  - **Example**: Q3 Product Roadmap
 
-- **User ID**: Identifies the user associated with a session.
-  - **Purpose**: Links sessions to specific team members for collaboration and accountability.
-  - **Example**: Assign a user ID to track individual contributions and responsibilities within the roadmap communication.
+- **User ID**:
+  - **Purpose**: Identifies the user associated with the session.
+  - **Example**: JohnDoe123
 
-- **Roadmap Session ID**: Identifies the roadmap session for which communicator sessions are retrieved.
-  - **Purpose**: Allows users to view all communicator sessions linked to a particular roadmap for comprehensive communication management.
-  - **Example**: Retrieve all communicator sessions associated with the Q3 product roadmap for status updates and planning.
+- **Roadmap Session ID**:
+  - **Purpose**: Specifies the roadmap for the communicator session.
+  - **Example**: ProjectX_Roadmap
 
-- **Presentation ID**: Represents a specific presentation within a session.
-  - **Purpose**: Enables users to access and manage individual presentations for detailed communication of roadmap elements.
-  - **Example**: Delete a presentation to update stakeholders on revised product features during a roadmap review meeting.
+- **Presentation ID**:
+  - **Purpose**: Identifies a specific presentation within a session.
+  - **Example**: Quarterly Update Slide Deck
 
-- **Audience Types**: Provides information on available audience types and their configurations.
-  - **Purpose**: Helps tailor communication strategies based on the target audience's preferences and needs.
-  - **Example**: Explore different audience types to customize communication materials for executive leadership or development teams.
+- **Audience Types**:
+  - **Purpose**: Defines different audience segments and their preferences.
+  - **Example**: Executives, Marketing Team

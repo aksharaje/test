@@ -1,35 +1,32 @@
 # KPI Assignment Manager
 
 ## Overview
-The KPI Assignment Manager helps Product Managers streamline the process of assigning Key Performance Indicators (KPIs) to their team's objectives, ensuring alignment and clarity in tracking progress towards goals.
+The KPI Assignment Manager helps Product Managers efficiently assign and track Key Performance Indicators (KPIs) to align with their Objectives and Key Results (OKRs). By using this tool, PMs can streamline the process of linking KPIs to specific outcomes, ensuring clarity and accountability in their strategic planning.
 
 ## Key Capabilities
 - Create new KPI assignment sessions
 - Manage and track KPI assignments for key results
-- Generate AI-driven KPI suggestions
-- Mark sessions as completed
-- Retrieve key results with their associated KPI assignments
+- Generate AI-driven KPI suggestions for key results
+- Mark sessions as completed for progress tracking
 
 ## How to Use
-To begin, start by creating a new KPI assignment session and linking it to an Objective and Key Results (OKR) session. Then, manage KPI assignments for each key result, utilizing AI-generated suggestions to enhance the process. Finally, mark sessions as completed to track progress effectively.
+To begin utilizing the KPI Assignment Manager, start by creating a new KPI assignment session linked to an existing OKR session. Then, proceed to assign KPIs to key results, update assignments as needed, and mark sessions as completed once objectives are achieved.
 
 ## Configuration & Fields
-- **Session ID**: Unique identifier for the session
-  - **What it's for**: Identifies the specific KPI assignment session
-  - **Example**: Session ID 1234
+- **Session ID**: Identifies the specific session for managing KPI assignments.
+  - **Purpose**: Tracks and organizes KPI assignments within designated sessions.
+  - **Example**: Q3 Strategy Planning Session
 
-- **Data**: Information related to the KPI assignment
-  - **What it's for**: Contains details about the KPI assignment
-  - **Example**: Assigning KPIs for Q3 sales targets
+- **Data**: Contains the details of the KPI assignment.
+  - **Purpose**: Specifies the KPIs to be assigned to key results.
+  - **Example**: Revenue Growth KPI for Product Launch
 
-- **Key Result ID**: Identifier for the key result
-  - **What it's for**: Links KPI assignments to specific key results
-  - **Example**: Key Result ID 5678
+- **OKR Session ID**: Refers to the ID of the OKR session linked to the KPI assignment session.
+  - **Purpose**: Connects the KPI assignments to the corresponding OKR objectives.
+  - **Example**: Q3 Sales Targets OKR Session
 
-- **Assignment ID**: Unique identifier for the KPI assignment
-  - **What it's for**: Identifies a specific KPI assignment
-  - **Example**: Assignment ID 9876
+- **Key Result ID**: Unique identifier for the key result associated with a specific KPI assignment.
+  - **Purpose**: Links KPI assignments to individual key results for detailed tracking.
+  - **Example**: Increase Customer Engagement Key Result
 
-- **OKR Session ID**: Identifier for the Objective and Key Results session
-  - **What it's for**: Links KPI assignments to the corresponding OKR session
-  - **Example**: OKR Session ID 3456
+By utilizing these fields, Product Managers can efficiently manage and track KPI assignments to drive strategic decision-making and goal achievement.

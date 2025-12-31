@@ -1,34 +1,63 @@
+
 # Journey Mapping Tool
 
 ## Overview
-The Journey Mapping Tool helps product managers visualize and analyze customer journeys, enabling them to identify pain points, improve user experiences, and enhance product strategies.
+The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys to improve product experiences and identify pain points for enhancement.
 
 ## Key Capabilities
 - Create new journey mapping sessions
-- View and manage existing sessions
-- Add and update pain points in the journey map
+- View and edit session details
+- Add pain points and stages to the journey map
 - Compare different versions of journey maps
 
 ## How to Use
-To start using the Journey Mapping Tool, begin by creating a new journey mapping session to outline the user's experience. You can then add pain points, stages, and competitor observations to enrich the journey map. Finally, compare different versions to track changes and improvements over time.
+Start by creating a new journey mapping session to outline the customer journey. Add pain points, stages, and competitor observations to enrich the map. Analyze the data to understand user experiences and make informed product decisions.
 
 ## Configuration & Fields
 - **Mode**
-  - **What it's for**: Specifies the type of journey mapping session (e.g., "Research", "Ideation").
-  - **Example**: Select "Research" to focus on understanding user needs and behaviors.
+  - **Purpose**: Specifies the type of session (e.g., research, ideation).
+  - **Example**: "Research Session"
 
 - **Journey Description**
-  - **What it's for**: Describes the overall purpose or goal of the journey mapping session.
-  - **Example**: "Improve checkout process for e-commerce website."
+  - **Purpose**: Describes the overall journey being mapped.
+  - **Example**: "Customer Onboarding Process"
 
 - **User ID**
-  - **What it's for**: Identifies the user associated with the session (optional).
-  - **Example**: Assign the session to a specific product manager for tracking.
+  - **Purpose**: Identifies the user associated with the session.
+  - **Example**: "Product Manager"
 
 - **File Metadata**
-  - **What it's for**: Additional information or resources related to the session.
-  - **Example**: Upload user research reports or customer feedback data.
+  - **Purpose**: Provides additional information or context related to the journey.
+  - **Example**: "Customer Journey Map PDF"
 
 - **Personas**
-  - **What it's for**: Represents different user profiles or segments involved in the journey.
-  - **Example**: Define personas such as "New User" or "Returning Customer."
+  - **Purpose**: Represents different user personas involved in the journey.
+  - **Example**: "Persona: Tech-savvy User"
+
+- **Stage Name**
+  - **Purpose**: Names a specific stage in the journey map.
+  - **Example**: "Product Selection Stage"
+
+- **Description**
+  - **Purpose**: Provides details about a pain point or stage.
+  - **Example**: "Long checkout process leading to drop-offs"
+
+- **Severity**
+  - **Purpose**: Indicates the impact or severity of a pain point.
+  - **Example**: "High severity: Critical usability issue"
+
+- **Friction Points**
+  - **Purpose**: Identifies areas causing user frustration or obstacles.
+  - **Example**: "Complex navigation structure"
+
+- **Strengths Observed**
+  - **Purpose**: Highlights positive aspects or successful elements in the journey.
+  - **Example**: "Efficient checkout process"
+
+- **Notes**
+  - **Purpose**: Allows for additional comments or observations.
+  - **Example**: "User feedback: Confusing layout"
+
+- **Screenshot URL**
+  - **Purpose**: Provides visual reference or context for observations.
+  - **Example**: "Screenshot of checkout page"

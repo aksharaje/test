@@ -1,47 +1,48 @@
 # Research Planner
 
 ## Overview
-The Research Planner helps Product Managers streamline the planning and execution of research activities, ensuring efficient decision-making based on reliable insights.
+The Research Planner application helps Product Managers efficiently plan and manage their research sessions to gather insights and make informed decisions. It enables PMs to streamline the research process, ensuring that key objectives are met and valuable data is collected.
 
 ## Key Capabilities
 - Create new research planning sessions
 - View and manage existing research sessions
+- Select research methods to proceed with
 - Update interview guides and survey questions
-- Recommend research methods based on objectives
-- Generate instruments for selected methods
+- Retry failed sessions
+- Delete sessions and related data
 
 ## How to Use
-To get started, create a new research planning session by defining the objective, research context, and any constraints. Then, select the appropriate methods to proceed with and run the necessary pipelines for method recommendations and instrument generation.
+Start by creating a new research planning session with your objective and any relevant context sources. Then, you can select specific research methods to proceed with, update interview guides and survey questions as needed, and monitor the progress of your sessions. In case of any failures, you can retry the session or delete it entirely.
 
 ## Configuration & Fields
-- **Objective**: Defines the main goal or purpose of the research session.
-  - **What it's for**: Helps focus the research efforts on achieving specific outcomes.
-  - **Example**: "Improve user engagement on the mobile app."
+- **Objective**
+  - **Purpose**: Defines the main goal of the research session.
+  - **Example**: "Product Feature Usability Testing"
 
-- **Research Context**: Describes the background or context for the research session.
-  - **What it's for**: Provides additional information to guide the research process.
-  - **Example**: "Exploring market trends in the healthcare industry."
+- **Research Context**
+  - **Purpose**: Provides additional context for the research session.
+  - **Example**: "User Feedback from Beta Testing"
 
-- **Constraints**: Specifies any limitations or restrictions for the research session.
-  - **What it's for**: Ensures that the research activities align with predefined boundaries.
-  - **Example**: "Budget constraints for conducting user surveys."
+- **Constraints**
+  - **Purpose**: Specifies any limitations or constraints for the research.
+  - **Example**: "Budget Restrictions"
 
-- **User ID**: Identifies the user associated with the research session.
-  - **What it's for**: Links the session to a specific user for tracking and collaboration.
-  - **Example**: "Assigning the session to Product Manager A."
+- **User ID**
+  - **Purpose**: Identifies the user associated with the session.
+  - **Example**: "Product Manager John Doe"
 
-- **Connected Knowledge**: Lists the knowledge base IDs relevant to the research session.
-  - **What it's for**: Links the session to existing knowledge resources for informed decision-making.
-  - **Example**: "Referencing previous market research reports."
+- **Connected Knowledge Base**
+  - **Purpose**: Links the session to relevant knowledge bases.
+  - **Example**: "Market Research Reports"
 
-- **Interview Guide Content**: Allows users to update the content of the interview guide.
-  - **What it's for**: Customizes the questions and structure of the interview guide.
-  - **Example**: "Adding specific questions for user feedback sessions."
+- **Ideation Session ID**
+  - **Purpose**: Associates the session with a specific ideation session.
+  - **Example**: "Ideation Session #12345"
 
-- **Survey Questions**: Enables users to update the questions for the survey.
-  - **What it's for**: Tailors the survey questions to gather specific insights from respondents.
-  - **Example**: "Including demographic questions for target audience analysis."
+- **Feasibility Session ID**
+  - **Purpose**: Links the session to a feasibility assessment session.
+  - **Example**: "Feasibility Session #67890"
 
-- **Recruiting Configuration**: Provides options to configure recruitment settings for research participants.
-  - **What it's for**: Helps manage the process of recruiting participants for research activities.
-  - **Example**: "Defining criteria for selecting participants for usability testing."
+- **Business Case Session ID**
+  - **Purpose**: Connects the session to a business case development session.
+  - **Example**: "Business Case Session #54321"

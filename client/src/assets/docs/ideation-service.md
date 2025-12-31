@@ -1,37 +1,41 @@
 # Ideation Manager
 
 ## Overview
-Ideation Manager helps Product Managers facilitate ideation sessions and set SMART goals to drive innovation and product development.
+Ideation Manager helps Product Managers facilitate ideation sessions and SMART goal setting, fostering innovation and strategic planning within their teams. By using Ideation Manager, PMs can streamline the process of generating, organizing, and refining ideas to drive product development and business growth.
 
 ## Key Capabilities
 - Create new ideation sessions
-- Retrieve session details
-- List sessions with pagination
-- Retry failed sessions
-- Update idea fields
-- Delete sessions and related data
-- Run the ideation pipeline for idea generation and evaluation
+- Retrieve session details by ID
+- List sessions with pagination for user management
+- Retry failed sessions for further evaluation
+- Update idea fields for continuous improvement
+- Delete sessions along with related data
+- Run the ideation pipeline for structured problem-solving
 
 ## How to Use
-To start, create a new ideation session by defining the problem statement, constraints, goals, and any relevant research insights. Then, collaborate with team members to generate, cluster, and prioritize ideas. Finally, evaluate and refine ideas based on predefined criteria.
+To leverage Ideation Manager effectively, start by creating a new ideation session where you define the problem statement, constraints, goals, research insights, and relevant knowledge bases. Once sessions are created, you can view session details, update idea fields, retry sessions if needed, and ultimately run the ideation pipeline to generate and prioritize innovative ideas.
 
 ## Configuration & Fields
-- **Problem Statement**: Describes the core issue or opportunity for ideation.
-  - **What it's for**: Helps focus the ideation session on addressing specific challenges or opportunities.
-  - **Example**: "Improve user engagement on the mobile app."
+- **Problem Statement**:
+  - **Purpose**: Describes the core issue or opportunity for ideation.
+  - **Example**: "Enhance user onboarding experience with personalized tutorials."
 
-- **Constraints**: Limitations or boundaries that guide idea generation.
-  - **What it's for**: Ensures ideas align with practical constraints or requirements.
-  - **Example**: "Budget constraints limit additional feature development."
+- **Constraints**:
+  - **Purpose**: Specifies any limitations or restrictions for idea generation.
+  - **Example**: "Must align with company's privacy policy."
 
-- **Goals**: Desired outcomes or objectives for the ideation session.
-  - **What it's for**: Sets the direction and purpose of the ideation process.
-  - **Example**: "Increase customer retention by 15% within six months."
+- **Goals**:
+  - **Purpose**: Outlines the desired outcomes or objectives of the ideation session.
+  - **Example**: "Increase user engagement by 20% within the next quarter."
 
-- **Research Insights**: Relevant information or data to inform ideation.
-  - **What it's for**: Provides context and background for generating innovative ideas.
-  - **Example**: "User feedback indicates a need for streamlined checkout process."
+- **Research Insights**:
+  - **Purpose**: Provides valuable data or findings to inform idea generation.
+  - **Example**: "User feedback from recent beta testing."
 
-- **Connected Knowledge**: IDs of knowledge bases or resources linked to the ideation session.
-  - **What it's for**: Integrates external knowledge sources to enrich idea generation.
-  - **Example**: "Link to customer survey results and market research reports."
+- **Connected Knowledge Base**:
+  - **Purpose**: Links the session to relevant knowledge repositories for reference.
+  - **Example**: "Market research reports on competitor strategies."
+
+- **Owner**:
+  - **Purpose**: Identifies the responsible user overseeing the session.
+  - **Example**: "Product Manager - John Doe"

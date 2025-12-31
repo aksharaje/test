@@ -1,30 +1,33 @@
-# Optimized Prompt Manager
+
+# Optimized Flow Manager
 
 ## Overview
-The Optimized Prompt Manager helps Product Managers enhance the effectiveness of their content by providing insights into user interactions and feedback on specific prompts. It enables PMs to refine messaging strategies and improve user engagement.
+The Optimized Flow Manager helps Product Managers enhance and refine their product flows to improve user experience and drive better outcomes. It enables PMs to optimize user interactions and content to achieve business goals effectively.
 
 ## Key Capabilities
-- Save optimized prompts for different flows
-- Activate specific versions for A/B testing
-- Create split tests to compare different versions
-- View flow statistics and feedback
+- View and analyze all flows with performance statistics
+- Access detailed information about specific flows
+- Obtain feedback on flow performance
+- Save optimized prompts for enhancing user engagement
+- Activate different versions of flows for testing
+- Create split tests to compare multiple flow versions
 
 ## How to Use
-To start optimizing prompts, begin by selecting a flow and saving an optimized prompt based on user feedback. Activate different versions to test variations and create split tests to analyze user responses. Use flow details and feedback to make informed decisions on messaging strategies.
+To leverage the Optimized Flow Manager, start by reviewing all flows to identify areas for improvement. Analyze flow details and feedback to understand user interactions better. Save optimized prompts to enhance user engagement. Activate different flow versions to test variations and create split tests to compare performance.
 
 ## Configuration & Fields
-- **Session**: A work session where you can access flow data.
-  - **What it's for**: Allows you to interact with specific flows and their associated data.
-  - **Example**: Analyzing user feedback on a promotional flow during a marketing campaign.
-  
-- **Flow ID**: Identifier for a specific flow within the application.
-  - **What it's for**: Helps you pinpoint the exact flow you want to work on.
-  - **Example**: Identifying the onboarding flow for new users.
-  
-- **Optimized Prompt**: The refined message or content you want to use for a specific flow.
-  - **What it's for**: Improves user engagement by tailoring messaging based on feedback.
-  - **Example**: Crafting a more compelling call-to-action for a product feature.
-  
-- **Version ID**: Numeric identifier for different versions of a flow.
-  - **What it's for**: Allows you to compare and test variations of the same flow.
-  - **Example**: Testing two different subject lines in an email marketing campaign.
+- **Session**: Required field to authenticate and access flow data.
+  - **Purpose**: Provides access to flow information securely.
+  - **Example**: User Session Token
+
+- **Flow ID**: Identifier for the specific flow being managed.
+  - **Purpose**: Helps identify and retrieve details for a particular flow.
+  - **Example**: Product Onboarding Flow
+
+- **Optimized Prompt**: Customized content to improve user interactions.
+  - **Purpose**: Enhances user engagement and interaction.
+  - **Example**: Optimized Welcome Message
+
+- **Version ID(s)**: Numerical identifier(s) for different versions of a flow.
+  - **Purpose**: Enables comparison and testing of different flow versions.
+  - **Example**: 1, 2, 3

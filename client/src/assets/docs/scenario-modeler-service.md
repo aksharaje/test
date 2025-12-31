@@ -1,26 +1,41 @@
 # Scenario Modeler
 
 ## Overview
-Scenario Modeler helps Product Managers create and manage different scenarios for their projects, enabling them to make informed decisions based on various possibilities and outcomes.
+Scenario Modeler helps Product Managers create and manage different scenarios and variants for strategic planning and decision-making. It enables PMs to visualize different paths and outcomes based on various inputs, aiding in informed decision-making processes.
 
 ## Key Capabilities
 - Create new scenario modeling sessions
-- Retrieve and view existing scenario sessions
-- Manage and analyze scenario variants
-- Utilize predefined scenario templates
+- View and manage existing scenario sessions
+- Generate scenario variants based on templates
+- Compare different scenario outcomes
+- Delete unnecessary sessions and variants
 
 ## How to Use
-To get started, create a new scenario modeling session based on an existing roadmap. Then, explore and analyze different variants to understand the potential outcomes. You can also use predefined templates to quickly set up new scenarios.
+To start using Scenario Modeler, begin by creating a new scenario modeling session based on an existing roadmap. Then, explore the different scenario sessions and variants to analyze and compare outcomes. You can also create new variants from predefined templates to simulate various scenarios. Finally, delete any redundant sessions or variants to keep your workspace organized.
 
 ## Configuration & Fields
-- **Data**: Input the details for creating a new scenario or variant.
-  - **Purpose**: Provides the necessary information to define a scenario or variant.
-  - **Example**: Inputting market research data to create a new scenario based on customer trends.
+- **Data for New Session**
+  - **Scenario Data**: Information for setting up the scenario session. This data provides context for the analysis and decision-making process.
+    - *Example*: Q3 Strategic Plan
 
-- **User ID**: Identify the user associated with a session or variant.
-  - **Purpose**: Helps in tracking and managing scenarios specific to individual users.
-  - **Example**: Assigning a user ID to track the scenarios created by different team members.
+- **Data for New Variant**
+  - **Session ID**: Identifier for the session to which the variant belongs.
+    - *Example*: 1234
+  - **Variant Data**: Details for creating the new scenario variant. This data helps in defining the specific scenario parameters.
+    - *Example*: High-demand Product Launch
 
-- **Template Name**: Select a predefined template for creating a variant.
-  - **Purpose**: Allows for quick setup of scenarios based on established templates.
-  - **Example**: Choosing a "Product Launch Plan" template to create a new variant for a product launch scenario.
+- **Variant Update**
+  - **Variant ID**: Identifier for the variant to be updated.
+    - *Example*: 5678
+  - **Updated Data**: Information for modifying the existing variant to reflect new changes or insights.
+    - *Example*: Revised Market Analysis
+
+- **Template for New Variant**
+  - **Session ID**: Identifier for the session from which the variant template is derived.
+    - *Example*: 1234
+  - **Template Name**: Name of the predefined template to base the new variant on.
+    - *Example*: Growth Strategy Template
+
+- **Scenario Templates**
+  - **Available Templates**: List of templates that can be used to create new scenario variants. These templates provide predefined structures for scenario modeling.
+    - *Example*: Market Expansion Template

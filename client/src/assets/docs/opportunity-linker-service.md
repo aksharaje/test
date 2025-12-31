@@ -1,25 +1,30 @@
-# Idea Opportunity Mapper
+# Opportunity Mapper
 
 ## Overview
-The Idea Opportunity Mapper helps Product Managers transform creative ideas into actionable opportunities by assessing their strategic fit and priority.
+The Opportunity Mapper helps Product Managers transform ideas into actionable opportunities by assigning priority scores. It streamlines the process of evaluating and prioritizing potential projects based on strategic fit and estimated impact.
 
 ## Key Capabilities
-- Create a new prioritization session
-- Process a prioritization session
-- View detailed information about prioritization sessions
-- List all prioritization sessions
-- Delete a prioritization session
+- Create prioritization sessions
+- Process and analyze opportunities
+- Retrieve session details
+- Delete unnecessary sessions
 
 ## How to Use
-To get started, create a new prioritization session to map out ideas and calculate priority scores. Process the session to evaluate strategic fit, estimate size, and determine priority tiers. You can then view detailed information about the session and delete it when necessary.
+To begin, create a new prioritization session by providing the completed ideation session ID. Process the session to map opportunities, score strategic fit, estimate size, calculate priority, and generate a portfolio summary. You can then view session details, including all prioritized ideas, and delete sessions that are no longer needed.
 
 ## Configuration & Fields
-- **Database**: Database session
-  - **What it's for**: Stores information related to your prioritization sessions.
-  - **Example**: Storing data on idea mappings, priority scores, and session details.
-- **Ideation Session ID**: ID of completed ideation session
-  - **What it's for**: Links the current prioritization session to a previous ideation session.
-  - **Example**: Connecting the prioritization of ideas generated in a brainstorming session.
-- **User ID**: Optional user ID
-  - **What it's for**: Associates a specific user with the prioritization session.
-  - **Example**: Assigning ownership of the session to a particular Product Manager.
+- **Database**: Stores session data for analysis.
+  - **Purpose**: Manages the information related to prioritization sessions.
+  - **Example**: Product Roadmap Database
+
+- **Ideation Session ID**: ID of the completed ideation session.
+  - **Purpose**: Links the prioritization session to the initial ideation phase.
+  - **Example**: Q3 Brainstorming Session ID
+
+- **User ID**: Optional user identifier.
+  - **Purpose**: Associates a specific user with the prioritization session.
+  - **Example**: Product Manager John Doe's ID
+
+- **Session ID**: Unique identifier for the prioritization session.
+  - **Purpose**: Identifies and retrieves a specific prioritization session.
+  - **Example**: Session #12345

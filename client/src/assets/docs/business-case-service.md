@@ -1,49 +1,52 @@
 # Business Case Analysis
 
 ## Overview
-Business Case Analysis helps Product Managers evaluate the feasibility and potential benefits of new initiatives. It enables PMs to make informed decisions by analyzing costs, benefits, and market potential.
+Business Case Analysis helps Product Managers make informed decisions by evaluating the feasibility and potential benefits of a business initiative. It guides PMs in understanding the financial implications and risks associated with their projects.
 
 ## Key Capabilities
 - Create new business case sessions
+- Retrieve and view session details
 - Update cost and benefit items
-- Retrieve detailed session information
-- Delete sessions
+- Delete unnecessary sessions
 - Manage rate assumptions
 - Save user corrections for learning
-- Run a comprehensive business case analysis pipeline
 
 ## How to Use
-To start, create a new business case session to outline your initiative's details. Then, update cost and benefit items to reflect realistic financial projections. Retrieve detailed session information to gain insights and make informed decisions. If needed, update rate assumptions and save user corrections for future learning. Finally, run the business case analysis pipeline to orchestrate AI agents for a comprehensive evaluation.
+To start, create a new business case session to outline your project details, including business context and target market. You can then update cost and benefit items based on your analysis. If needed, manage rate assumptions and save any user corrections for future reference.
 
 ## Configuration & Fields
-- **Feature Name**: Descriptive name of the initiative
-  - **What it's for**: Identifying the key features of the project
-  - **Example**: "Online Marketplace Integration"
+- **Feature Name**: Descriptive name for the business case feature
+  - **Purpose**: Identifies the specific feature under analysis
+  - **Example**: "Enhanced Checkout Process"
 
-- **Feature Description**: Brief overview of the initiative
-  - **What it's for**: Providing context for the project
-  - **Example**: "Integrating third-party sellers into our platform"
+- **Feature Description**: Detailed description of the feature
+  - **Purpose**: Provides additional context for the feature analysis
+  - **Example**: "Improves user experience by streamlining the payment process"
 
-- **Business Context**: Contextual information related to the initiative
-  - **What it's for**: Understanding the business environment surrounding the project
-  - **Example**: "Increasing market share in the e-commerce sector"
+- **Business Context**: Contextual information related to the business case
+  - **Purpose**: Helps in understanding the business environment and constraints
+  - **Example**: "Competitive landscape analysis"
 
-- **Target Market**: Specific market segment the initiative targets
-  - **What it's for**: Defining the audience for the project
-  - **Example**: "Young urban professionals interested in sustainable products"
+- **Target Market**: Intended market segment for the business initiative
+  - **Purpose**: Defines the audience for the proposed feature
+  - **Example**: "Young professionals aged 25-35"
 
-- **User ID**: Unique identifier for the user managing the session
-  - **What it's for**: Associating the session with a specific user
-  - **Example**: 12345
+- **Optimistic Amount**: Best-case scenario financial estimate
+  - **Purpose**: Represents the highest expected value for cost or benefit
+  - **Example**: $100,000
 
-- **Session ID**: Identification number for the business case session
-  - **What it's for**: Locating and managing specific sessions
-  - **Example**: 9876
+- **Realistic Amount**: Most likely financial estimate
+  - **Purpose**: Represents the average expected value for cost or benefit
+  - **Example**: $80,000
 
-- **Rate Value**: Numerical value representing a rate assumption
-  - **What it's for**: Estimating growth rates or interest rates
+- **Pessimistic Amount**: Worst-case scenario financial estimate
+  - **Purpose**: Represents the lowest expected value for cost or benefit
+  - **Example**: $120,000
+
+- **Rate Value**: Numerical value for rate assumption
+  - **Purpose**: Determines the rate used in financial calculations
   - **Example**: 0.05
 
-- **Save for Future**: Checkbox to indicate whether the rate assumption should be saved for future reference
-  - **What it's for**: Flagging important assumptions for future analysis
-  - **Example**: Checked to save the rate assumption for future use.
+- **Save for Future**: Option to save the rate assumption for future use
+  - **Purpose**: Indicates whether the rate should be retained for future analyses
+  - **Example**: Yes

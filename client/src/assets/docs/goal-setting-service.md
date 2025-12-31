@@ -1,30 +1,38 @@
+
 # Goal Setting Manager
 
 ## Overview
-The Goal Setting Manager helps Product Managers effectively plan and track their goal setting sessions, ensuring alignment and progress towards strategic objectives.
+The Goal Setting Manager helps Product Managers efficiently create, track, and manage goal setting sessions, enabling them to drive strategic alignment and monitor progress towards key objectives.
 
 ## Key Capabilities
 - Create new goal setting sessions
-- Retrieve and review existing goal setting sessions
-- Generate goals using AI for sessions
-- Retry failed sessions for improved outcomes
+- Retrieve and view specific goal setting sessions
+- List all goal setting sessions with pagination
+- Delete goal setting sessions along with associated goals
+- Generate goals using AI for a session
+- View all goals associated with a session
+- Retry a failed goal setting session
 
 ## How to Use
-To get started, create a new goal setting session to define objectives and action plans. Then, review and track progress by accessing session details and generated goals. In case of setbacks, retry failed sessions to refine strategies.
+To begin, start by creating a new goal setting session where you can define objectives and key results. You can then access and manage these sessions, generate goals using AI to enhance your planning process, and track progress towards achieving set goals.
 
 ## Configuration & Fields
-- **Session ID**: Unique identifier for the goal setting session
-  - **What it's for**: Identifying and accessing specific goal setting sessions
-  - **Example**: Session ID: 12345
+- **Database**: Stores session data for tracking purposes.
+  - **Purpose**: Provides a repository for storing and organizing goal setting information.
+  - **Example**: "2022 Q4 Strategic Planning"
 
-- **Data**: Information related to the goal setting session
-  - **What it's for**: Providing details and context for the session
-  - **Example**: Goal Setting Data: Quarterly Sales Targets
+- **Data**: Information related to the goal setting session.
+  - **Purpose**: Contains details about the objectives and key results for the session.
+  - **Example**: "Increase user engagement by 15%"
 
-- **Skip**: Number of sessions to skip for pagination
-  - **What it's for**: Managing large sets of sessions for easier navigation
-  - **Example**: Skip: 10
+- **Session ID**: Unique identifier for a goal setting session.
+  - **Purpose**: Helps in identifying and accessing specific goal setting sessions.
+  - **Example**: "GS-001"
 
-- **Limit**: Maximum number of sessions to display per page
-  - **What it's for**: Controlling the number of sessions shown at once
-  - **Example**: Limit: 20
+- **Skip**: Number of sessions to skip for pagination.
+  - **Purpose**: Allows for navigating through a large number of sessions efficiently.
+  - **Example**: 10
+
+- **Limit**: Maximum number of sessions to display per page.
+  - **Purpose**: Controls the number of sessions shown on a single page for better readability.
+  - **Example**: 20

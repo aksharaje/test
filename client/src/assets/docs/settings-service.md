@@ -1,28 +1,29 @@
-# Settings Manager
+# Settings Management
 
 ## Overview
-The Settings Manager helps Product Managers customize and manage key settings for their projects, enabling them to tailor the application to their specific needs and preferences.
+Settings Management helps Product Managers customize and control key features of the application to align with their business goals and user needs. It empowers PMs to tailor the user experience and optimize product performance.
 
 ## Key Capabilities
-- Customize project settings
-- Retrieve and update specific configurations
+- Customize application settings
+- Define key parameters for user interactions
+- Monitor and adjust configuration options
 
 ## How to Use
-To get started, navigate to the Settings Manager section in the application. Here, you can set and retrieve various configurations that impact your project's functionality and behavior.
+To start managing settings, begin by accessing the Settings Management section in the application. Here, you can set specific values for different features based on your product objectives. Use the "Set Setting" function to input new values and the "Get Setting" function to retrieve existing configurations.
 
 ## Configuration & Fields
-- **Session**: Represents the current work session.
-  - **What it's for**: Identifies the context in which settings are being managed.
-  - **Example**: Morning Marketing Campaign Planning Session
+- **Session**: Represents the current work session within the application.
+  - **Purpose**: Provides context for the setting changes.
+  - **Example**: "Weekly Marketing Meeting Session"
 
-- **Key**: Specifies the setting to be modified or retrieved.
-  - **What it's for**: Identifies the specific configuration to be accessed.
-  - **Example**: Notification Frequency
+- **Key**: Identifies the specific setting to be modified.
+  - **Purpose**: Determines which feature or parameter is being customized.
+  - **Example**: "Default Language Selection"
 
-- **Value**: Indicates the new value for the setting.
-  - **What it's for**: Updates the selected configuration with a new value.
-  - **Example**: Weekly
+- **Value**: Specifies the new value for the setting.
+  - **Purpose**: Defines the updated configuration for the selected feature.
+  - **Example**: "French (fr-FR)"
 
-- **Description**: Provides additional details or context for the setting.
-  - **What it's for**: Describes the purpose or use case of the setting.
-  - **Example**: Receive email notifications every week for campaign updates.
+- **Description**: Offers additional information about the setting change.
+  - **Purpose**: Provides details or notes related to the modification.
+  - **Example**: "Update language preference for international users"

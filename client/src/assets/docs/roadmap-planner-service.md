@@ -1,26 +1,36 @@
 # Roadmap Planner
 
 ## Overview
-The Roadmap Planner helps Product Managers create and manage strategic product roadmaps, enabling them to visualize and prioritize key initiatives, align stakeholders, and communicate product direction effectively.
+The Roadmap Planner helps Product Managers create and visualize product roadmaps, enabling them to align stakeholders, prioritize features, and track progress towards strategic goals.
 
 ## Key Capabilities
 - Create new roadmap planning sessions
-- Retrieve and update roadmap items, milestones, and dependencies
-- Generate visual dependency graphs for better understanding
+- Retrieve and manage roadmap sessions
+- Access artifacts like epics, features, feasibility analyses, and ideation ideas for planning
+- Manage milestones, dependencies, and segments for roadmap items
 - Export roadmaps as JSON or CSV for sharing and reporting
 
 ## How to Use
-To get started, create a new roadmap planning session to outline your product strategy. Add items, milestones, and dependencies to build a comprehensive roadmap. Use the visual dependency graph to analyze relationships between items. Finally, export your roadmap in JSON or CSV format for easy sharing.
+To start planning your roadmap, begin by creating a new planning session. Add milestones, dependencies, and segments to your items to organize and track progress. Utilize available artifacts and analyses to inform your roadmap decisions. Finally, export your roadmap for sharing with stakeholders.
 
 ## Configuration & Fields
-- **User ID**: Identifies the user managing the roadmap session
-  - **What it's for**: Assigns ownership and tracks changes made by different users
-  - **Example**: Assigning a user ID ensures accountability for roadmap updates
+- **Data for Creating a Session**:
+  - **Roadmap Name**: Name of the roadmap session
+  - **Description**: Brief description of the session
+  - **Start Date**: Planned start date for the roadmap
+  - **End Date**: Planned end date for the roadmap
 
-- **Data**: Information related to roadmap items, milestones, or dependencies
-  - **What it's for**: Provides details necessary for planning and tracking product initiatives
-  - **Example**: Adding data for a new milestone includes milestone description and target completion date
+- **Milestone Data**:
+  - **Milestone Name**: Name of the milestone
+  - **Target Date**: Expected completion date for the milestone
+  - **Description**: Additional details or context for the milestone
 
-- **Session ID**: Unique identifier for each roadmap planning session
-  - **What it's for**: Allows users to access and modify specific roadmap sessions
-  - **Example**: Retrieving items for a session requires specifying the session ID
+- **Dependency Data**:
+  - **Dependent Item**: The item that is dependent on another
+  - **Dependency Type**: Type of dependency (e.g., finish-to-start, start-to-start)
+  - **Description**: Reason or details about the dependency
+
+- **Segment Data**:
+  - **Segment Name**: Name or identifier for the segment
+  - **Start Date**: Planned start date for the segment
+  - **End Date**: Planned end date for the segment

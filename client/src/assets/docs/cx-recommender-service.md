@@ -1,38 +1,39 @@
 # CX Improvement Recommender
 
 ## Overview
-The CX Improvement Recommender helps Product Managers enhance customer experience by providing tailored improvement recommendations based on data analysis and insights.
+The CX Improvement Recommender helps Product Managers enhance their customer experience by providing tailored recommendations for improving customer satisfaction and loyalty.
 
 ## Key Capabilities
-- Create a new recommendation session
-- View and manage recommendation sessions
+- Create new recommender sessions
+- List all sessions and filter by user
 - Add custom recommendations
-- Generate recommendations using a background pipeline
+- Generate recommendations through the main pipeline
+- View available journey maps and gap analyses for selection
 
 ## How to Use
-To start, create a new recommendation session to outline your improvement goals. Then, explore the generated recommendations and take actions such as updating, dismissing, or restoring them as needed. Additionally, you can manually add custom recommendations to address specific business needs.
+To start, create a new session to gather insights on your customer experience. You can then add custom recommendations based on your analysis or run the recommendation pipeline to generate suggestions automatically. Explore available journey maps and gap analyses to enrich your decision-making process.
 
 ## Configuration & Fields
-- **Session Name**: Name of the recommendation session
-  - **What it's for**: Identifying the purpose of the session
-  - **Example**: "Q4 Customer Retention Strategy"
+- **Session Name**:
+  - **Purpose**: Identifies the session for tracking and reference.
+  - **Example**: "Q3 Customer Feedback Analysis"
 
-- **Timeline**: Timeline for implementing recommendations
-  - **What it's for**: Setting the timeframe for executing improvements
-  - **Example**: "6 months"
+- **Timeline**:
+  - **Purpose**: Sets the timeframe for the recommendations.
+  - **Example**: "Next 6 months"
 
-- **Budget**: Allocated budget for implementing recommendations
-  - **What it's for**: Estimating the financial resources needed
-  - **Example**: "$50,000"
+- **Budget**:
+  - **Purpose**: Defines the financial resources available for implementation.
+  - **Example**: "$10,000"
 
-- **Team Capacity**: Capacity of the team working on the recommendations
-  - **What it's for**: Understanding resource availability
-  - **Example**: "10 team members"
+- **Team Capacity**:
+  - **Purpose**: Indicates the team's availability for executing recommendations.
+  - **Example**: "5 team members"
 
-- **Recommendation Type**: Type of recommendation (e.g., UX, Marketing)
-  - **What it's for**: Categorizing the nature of the recommendation
-  - **Example**: "User Interface Enhancement"
+- **Recommendation Type**:
+  - **Purpose**: Specifies the category of the recommendation (e.g., product, service, process).
+  - **Example**: "Product Enhancement"
 
-- **User ID**: User identifier for tracking purposes
-  - **What it's for**: Associating recommendations with specific users
-  - **Example**: "12345"
+- **User ID**:
+  - **Purpose**: Associates the session with a specific user for tracking purposes.
+  - **Example**: "JohnDoe123"

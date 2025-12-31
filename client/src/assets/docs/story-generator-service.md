@@ -1,41 +1,42 @@
 # Story Generator
 
 ## Overview
-The Story Generator tool helps Product Managers create compelling narratives for their products. It enables them to craft engaging stories that resonate with their target audience, driving product adoption and brand loyalty.
+The Story Generator helps Product Managers create compelling narratives for their products, enabling them to communicate effectively with stakeholders and customers. It streamlines the process of crafting engaging stories to drive product understanding and adoption.
 
 ## Key Capabilities
-- Generate personalized product narratives
+- Create personalized product narratives
+- Generate story prompts based on system inputs
 - Manage and update story artifacts
-- Access a knowledge base for content inspiration
+- Retrieve and analyze existing story content
 
 ## How to Use
-To start, define your product's key features and target audience. Use the Story Generator to craft narratives that highlight these features in a captivating way. You can also explore the knowledge base for additional content ideas.
+To start using the Story Generator, begin by entering relevant system prompts to kickstart the narrative creation process. Then, generate a story based on the provided inputs and refine it as needed. You can also manage and update existing story artifacts to ensure they align with your product messaging.
 
 ## Configuration & Fields
-- **Type**: Type of prompt
-  - **What it's for**: Specifies the type of narrative prompt to generate.
-  - **Example**: "Product Launch", "Customer Testimonial"
+- **Type**: Specifies the type of system prompt.
+  - **Purpose**: Identifies the context for the generated story.
+  - **Example**: "Product Launch Event"
 
-- **Title**: Title of the narrative
-  - **What it's for**: Sets the headline for the generated story.
-  - **Example**: "Revolutionizing the Industry with AI Integration"
+- **Title**: Provides a title for the system prompt.
+  - **Purpose**: Adds specificity to the generated narrative.
+  - **Example**: "Introducing Product X"
 
-- **Session**: User session information
-  - **What it's for**: Identifies the user session for story generation.
-  - **Example**: User session ID: 12345
+- **Session**: Represents the work session context.
+  - **Purpose**: Ensures continuity in story development.
+  - **Example**: "Q3 Stakeholder Meeting"
 
-- **Request**: Request details
-  - **What it's for**: Contains specific details for generating the story.
-  - **Example**: Requesting a narrative for a new product feature release
+- **Request**: Contains the input data for story generation.
+  - **Purpose**: Drives the content and direction of the narrative.
+  - **Example**: "Customer Feedback Insights"
 
-- **User ID**: User identification
-  - **What it's for**: Specifies the user for whom the artifacts are listed.
-  - **Example**: User ID: 9876
+- **User ID**: Identifies the user associated with the story artifact.
+  - **Purpose**: Links the story to a specific user for tracking purposes.
+  - **Example**: "Product Manager A"
 
-- **ID**: Artifact identification
-  - **What it's for**: Identifies the specific artifact to retrieve or update.
-  - **Example**: Artifact ID: 54321
+- **Data**: Includes the details to update a story artifact.
+  - **Purpose**: Allows for modifications and enhancements to the narrative.
+  - **Example**: "Updated Product Features"
 
-- **Data**: Artifact data
-  - **What it's for**: Contains the updated information for the artifact.
-  - **Example**: Updating product description for artifact ID 54321
+- **ID**: Represents the unique identifier of a story artifact.
+  - **Purpose**: Enables precise retrieval and management of specific stories.
+  - **Example**: "12345"
