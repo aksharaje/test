@@ -587,6 +587,33 @@ export const routes: Routes = [
           },
         ],
       },
+      // Research Section
+      {
+        path: 'research',
+        children: [
+          {
+            path: '',
+            redirectTo: 'competitive-analysis',
+            pathMatch: 'full',
+          },
+          {
+            path: 'competitive-analysis',
+            title: 'Competitive Analysis | Product Studio',
+            loadComponent: () =>
+              import('./features/competitive-analysis/competitive-analysis-input.component').then(
+                (m) => m.CompetitiveAnalysisInputComponent
+              ),
+          },
+          {
+            path: 'competitive-analysis/results/:id',
+            title: 'Competitive Analysis Results | Product Studio',
+            loadComponent: () =>
+              import('./features/competitive-analysis/competitive-analysis-results.component').then(
+                (m) => m.CompetitiveAnalysisResultsComponent
+              ),
+          },
+        ],
+      },
     ],
   },
 ];

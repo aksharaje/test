@@ -65,6 +65,7 @@ export class AuthenticatedShellComponent {
       label: 'Research',
       path: '/research',
       children: [
+        { label: 'Competitive Analysis', path: '/research/competitive-analysis' },
         { label: 'Code Chat', path: '/code-chat' },
       ],
     },
