@@ -54,4 +54,8 @@ export class AssistantService {
             }
         });
     }
+
+    resetChat() {
+        this.messages.set([]);
+    }
 }
