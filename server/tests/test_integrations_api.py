@@ -587,3 +587,264 @@ class TestStatusTransitions:
         new_sync = response.json().get("last_sync_at")
         # Should be set (was None before or updated)
         assert new_sync is not None or original_sync != new_sync
+
+
+# ===================
+# Auto-Detect Mappings
+# ===================
+
+class TestAutoDetectMappings:
+    """Tests for auto-detect mappings endpoint."""
+
+    def test_auto_detect_not_found(self, client: TestClient):
+        """Should return 404 for non-existent integration."""
+        response = client.post("/api/integrations/9999/mappings/auto-detect")
+        assert response.status_code == 404
+
+    def test_auto_detect_ado_returns_standard_mappings(self, client: TestClient, sample_ado_integration: Integration):
+        """Should auto-detect standard ADO field mappings."""
+        response = client.post(f"/api/integrations/{sample_ado_integration.id}/mappings/auto-detect")
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "mappings" in data
+        assert "message" in data
+        assert len(data["mappings"]) >= 5  # Should detect most standard fields
+
+        # Check expected mappings
+        mapping_fields = {m["ourField"] for m in data["mappings"]}
+        assert "story_points" in mapping_fields
+        assert "sprint" in mapping_fields
+        assert "priority" in mapping_fields
+
+    def test_auto_detect_ado_correct_field_ids(self, client: TestClient, sample_ado_integration: Integration):
+        """Should map to correct ADO field IDs."""
+        response = client.post(f"/api/integrations/{sample_ado_integration.id}/mappings/auto-detect")
+        assert response.status_code == 200
+        data = response.json()
+
+        # Find story_points mapping
+        story_points = next((m for m in data["mappings"] if m["ourField"] == "story_points"), None)
+        assert story_points is not None
+        assert story_points["providerFieldId"] == "Microsoft.VSTS.Scheduling.StoryPoints"
+
+        # Find sprint mapping
+        sprint = next((m for m in data["mappings"] if m["ourField"] == "sprint"), None)
+        assert sprint is not None
+        assert sprint["providerFieldId"] == "System.IterationPath"
+
+    def test_auto_detect_saves_mappings_to_db(self, client: TestClient, sample_ado_integration: Integration):
+        """Should save detected mappings to database."""
+        # First auto-detect
+        response = client.post(f"/api/integrations/{sample_ado_integration.id}/mappings/auto-detect")
+        assert response.status_code == 200
+
+        # Then fetch mappings
+        mappings_response = client.get(f"/api/integrations/{sample_ado_integration.id}/mappings")
+        assert mappings_response.status_code == 200
+        mappings = mappings_response.json()
+
+        assert len(mappings) >= 5
+        # Check that mappings have correct structure
+        for mapping in mappings:
+            assert "ourField" in mapping
+            assert "providerFieldId" in mapping
+            assert "confidence" in mapping
+            assert mapping["confidence"] == 90  # Rule-based matches have 90% confidence
+
+    def test_auto_detect_does_not_overwrite_confirmed(self, client: TestClient, sample_ado_integration: Integration):
+        """Should not overwrite admin-confirmed mappings."""
+        # First, manually set a mapping
+        client.put(
+            f"/api/integrations/{sample_ado_integration.id}/mappings/story_points",
+            json={
+                "providerFieldId": "CustomField.MyStoryPoints",
+                "providerFieldName": "My Custom Story Points"
+            }
+        )
+
+        # Then auto-detect
+        client.post(f"/api/integrations/{sample_ado_integration.id}/mappings/auto-detect")
+
+        # Fetch mappings
+        mappings_response = client.get(f"/api/integrations/{sample_ado_integration.id}/mappings")
+        mappings = mappings_response.json()
+
+        # Find story_points - should still have custom value since it was admin confirmed
+        story_points = next((m for m in mappings if m["ourField"] == "story_points"), None)
+        assert story_points is not None
+        assert story_points["providerFieldId"] == "CustomField.MyStoryPoints"
+        assert story_points["adminConfirmed"] is True
+
+    @patch("httpx.AsyncClient")
+    def test_auto_detect_jira_with_api_fields(self, mock_httpx, client: TestClient, sample_jira_integration: Integration):
+        """Should auto-detect Jira fields from API response."""
+        # Mock Jira fields API response
+        mock_fields = [
+            {"id": "customfield_10016", "name": "Story point estimate", "schema": {"type": "number", "custom": "com.pyxis.greenhopper.jira:jsw-story-points"}},
+            {"id": "customfield_10020", "name": "Sprint", "schema": {"type": "array", "custom": "com.pyxis.greenhopper.jira:gh-sprint"}},
+            {"id": "parent", "name": "Parent", "schema": {}},
+            {"id": "customfield_10001", "name": "Team", "schema": {"type": "team"}},
+            {"id": "priority", "name": "Priority", "schema": {"type": "priority"}},
+            {"id": "labels", "name": "Labels", "schema": {"type": "array"}},
+            {"id": "components", "name": "Components", "schema": {"type": "array"}},
+        ]
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = mock_fields
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_httpx.return_value = mock_client
+
+        response = client.post(f"/api/integrations/{sample_jira_integration.id}/mappings/auto-detect")
+        assert response.status_code == 200
+        data = response.json()
+
+        assert len(data["mappings"]) >= 5
+
+        # Verify story points maps to the correct custom field
+        story_points = next((m for m in data["mappings"] if m["ourField"] == "story_points"), None)
+        assert story_points is not None
+        assert story_points["providerFieldId"] == "customfield_10016"
+
+    def test_auto_detect_confidence_score(self, client: TestClient, sample_ado_integration: Integration):
+        """Auto-detected mappings should have confidence scores."""
+        response = client.post(f"/api/integrations/{sample_ado_integration.id}/mappings/auto-detect")
+        assert response.status_code == 200
+        data = response.json()
+
+        for mapping in data["mappings"]:
+            assert "confidence" in mapping
+            assert mapping["confidence"] == 90  # Rule-based matches
+
+
+# ===================
+# Jira Sync with Accessible Resources
+# ===================
+
+class TestJiraSyncAccessibleResources:
+    """Tests for Jira sync using accessible-resources endpoint."""
+
+    @patch("app.services.jira_service.jira_service.sync_integration")
+    def test_jira_sync_calls_service(self, mock_sync, client: TestClient, sample_jira_integration: Integration):
+        """Should delegate Jira sync to jira_service."""
+        mock_sync.return_value = sample_jira_integration
+
+        response = client.post(f"/api/integrations/{sample_jira_integration.id}/sync")
+        assert response.status_code == 200
+        mock_sync.assert_called_once()
+
+    @patch("httpx.AsyncClient")
+    def test_jira_sync_uses_accessible_resources(self, mock_httpx, client: TestClient, sample_jira_integration: Integration, session: Session):
+        """Jira sync should use accessible-resources endpoint, not /me."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [{"id": "cloud-123", "name": "Test Site"}]
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_httpx.return_value = mock_client
+
+        # Need to patch the jira_service directly since it's imported in integrations.py
+        with patch("app.services.jira_service.httpx.AsyncClient", return_value=mock_client):
+            from app.services.jira_service import jira_service
+            import asyncio
+            result = asyncio.get_event_loop().run_until_complete(
+                jira_service.sync_integration(session, sample_jira_integration.id)
+            )
+
+        # Verify the call was made to accessible-resources
+        calls = mock_client.get.call_args_list
+        assert any("accessible-resources" in str(call) for call in calls)
+
+
+# ===================
+# Mapping Persistence
+# ===================
+
+class TestMappingPersistence:
+    """Tests for field mapping persistence."""
+
+    def test_mapping_persists_after_creation(self, client: TestClient, sample_ado_integration: Integration):
+        """Created mapping should persist in database."""
+        # Create mapping
+        client.put(
+            f"/api/integrations/{sample_ado_integration.id}/mappings/story_points",
+            json={
+                "providerFieldId": "test-field",
+                "providerFieldName": "Test Field"
+            }
+        )
+
+        # Fetch and verify
+        response = client.get(f"/api/integrations/{sample_ado_integration.id}/mappings")
+        mappings = response.json()
+        assert len(mappings) == 1
+        assert mappings[0]["ourField"] == "story_points"
+        assert mappings[0]["providerFieldId"] == "test-field"
+
+    def test_mapping_update_overwrites(self, client: TestClient, sample_ado_integration: Integration):
+        """Updating a mapping should overwrite the old value."""
+        # Create initial mapping
+        client.put(
+            f"/api/integrations/{sample_ado_integration.id}/mappings/story_points",
+            json={"providerFieldId": "old-field", "providerFieldName": "Old"}
+        )
+
+        # Update mapping
+        client.put(
+            f"/api/integrations/{sample_ado_integration.id}/mappings/story_points",
+            json={"providerFieldId": "new-field", "providerFieldName": "New"}
+        )
+
+        # Verify only one mapping exists with new value
+        response = client.get(f"/api/integrations/{sample_ado_integration.id}/mappings")
+        mappings = response.json()
+        story_points_mappings = [m for m in mappings if m["ourField"] == "story_points"]
+        assert len(story_points_mappings) == 1
+        assert story_points_mappings[0]["providerFieldId"] == "new-field"
+
+    def test_mapping_delete_removes_from_db(self, client: TestClient, sample_ado_integration: Integration):
+        """Deleting a mapping should remove it from database."""
+        # Create mapping
+        client.put(
+            f"/api/integrations/{sample_ado_integration.id}/mappings/story_points",
+            json={"providerFieldId": "test", "providerFieldName": "Test"}
+        )
+
+        # Delete mapping
+        client.delete(f"/api/integrations/{sample_ado_integration.id}/mappings/story_points")
+
+        # Verify it's gone
+        response = client.get(f"/api/integrations/{sample_ado_integration.id}/mappings")
+        mappings = response.json()
+        assert len(mappings) == 0
+
+    def test_mappings_isolated_per_integration(self, client: TestClient, sample_ado_integration: Integration, sample_jira_integration: Integration):
+        """Mappings should be isolated per integration."""
+        # Create mapping for ADO
+        client.put(
+            f"/api/integrations/{sample_ado_integration.id}/mappings/story_points",
+            json={"providerFieldId": "ado-field", "providerFieldName": "ADO Field"}
+        )
+
+        # Create mapping for Jira
+        client.put(
+            f"/api/integrations/{sample_jira_integration.id}/mappings/story_points",
+            json={"providerFieldId": "jira-field", "providerFieldName": "Jira Field"}
+        )
+
+        # Verify they're separate
+        ado_mappings = client.get(f"/api/integrations/{sample_ado_integration.id}/mappings").json()
+        jira_mappings = client.get(f"/api/integrations/{sample_jira_integration.id}/mappings").json()
+
+        assert len(ado_mappings) == 1
+        assert len(jira_mappings) == 1
+        assert ado_mappings[0]["providerFieldId"] == "ado-field"
+        assert jira_mappings[0]["providerFieldId"] == "jira-field"
