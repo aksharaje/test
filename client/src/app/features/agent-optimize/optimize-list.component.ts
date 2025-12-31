@@ -228,6 +228,7 @@ export class OptimizeListComponent implements OnInit {
   }
 
   getSentimentClass(flow: FlowItem): string {
+    if (flow.feedbackStats.total === 0) return '';
     if (flow.feedbackStats.positivePercent >= 80) return 'text-green-600';
     if (flow.feedbackStats.positivePercent >= 60) return 'text-yellow-600';
     return 'text-red-600';

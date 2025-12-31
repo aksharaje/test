@@ -14,7 +14,8 @@ class OptimizeService:
         # 1. Get Agents
         agents = session.exec(select(Agent)).all()
         for agent in agents:
-            stats = self._get_agent_feedback_stats(session, agent.id)
+            # For the list view, we want stats for the ACTIVE version only to reflect current performance
+            stats = self._get_agent_feedback_stats(session, agent.id, only_active=True)
             flows.append({
                 "id": f"agent:{agent.id}",
                 "type": "agent",
@@ -32,7 +33,8 @@ class OptimizeService:
         }
         
         for type_ in types:
-            stats = self._get_story_gen_feedback_stats(session, type_)
+            # For the list view, we want stats for the ACTIVE version only
+            stats = self._get_story_gen_feedback_stats(session, type_, only_active=True)
             flows.append({
                 "id": f"story_generator:{type_}",
                 "type": f"story_generator_{type_}",
@@ -120,14 +122,36 @@ Create an improved version of the system prompt that addresses the issues raised
 3. Be more precise and clear where users reported confusion
 4. Add guardrails or clarifications where users reported incorrect information
 
-Respond with ONLY the new system prompt text. Do not include any explanation or commentary."""
+Respond with a JSON object containing the improved system prompt in the "system_prompt" field.
+Example: { "system_prompt": "Your upgraded prompt here..." }"""
 
         try:
             from app.services.openrouter_service import openrouter_service
-            response = await openrouter_service.chat([{"role": "user", "content": prompt}], temperature=0.4, max_tokens=4000)
+            response = await openrouter_service.chat(
+                [{"role": "user", "content": prompt}], 
+                temperature=0.4, 
+                max_tokens=4000,
+                response_format={"type": "json_object"}
+            )
+            
+            # Parse and clean response
+            content = response["content"]
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+                
+            try:
+                parsed = json.loads(content)
+                new_prompt = parsed.get("system_prompt", content)
+            except json.JSONDecodeError:
+                # Fallback: if JSON fails, try to use content directly if it looks reasonable, or raise
+                print("Failed to parse optimization response as JSON, using raw content")
+                new_prompt = content
+                
             return {
                 "currentPrompt": details['currentPrompt'],
-                "newPrompt": response["content"],
+                "newPrompt": new_prompt,
                 "feedbackSummary": feedback_summary
             }
         except Exception as e:
@@ -280,10 +304,23 @@ Respond with ONLY the new system prompt text. Do not include any explanation or 
 
     # --- Agent Helpers ---
 
-    def _get_agent_feedback_stats(self, session: Session, agent_id: int) -> Dict[str, Any]:
+    def _get_agent_feedback_stats(self, session: Session, agent_id: int, only_active: bool = False) -> Dict[str, Any]:
         # Join Feedback -> AgentExecution -> Agent
-        statement = select(Feedback.sentiment, func.count(Feedback.id)).join(AgentExecution).where(AgentExecution.agent_id == agent_id).group_by(Feedback.sentiment)
-        results = session.exec(statement).all()
+        query = select(Feedback.sentiment, func.count(Feedback.id)).join(AgentExecution).where(AgentExecution.agent_id == agent_id)
+        
+        if only_active:
+            # Filter by the currently active version
+            active_version = session.exec(select(PromptVersion).where(PromptVersion.agent_id == agent_id, PromptVersion.status == "active")).first()
+            if active_version:
+                query = query.where(AgentExecution.prompt_version_id == active_version.id)
+            else:
+                # If no active version (shouldn't happen for agents usually), return 0 stats
+                return {
+                    "positive": 0, "negative": 0, "total": 0,
+                    "positivePercent": 0, "negativePercent": 0
+                }
+                
+        results = session.exec(query.group_by(Feedback.sentiment)).all()
         
         positive = 0
         negative = 0
@@ -302,16 +339,69 @@ Respond with ONLY the new system prompt text. Do not include any explanation or 
             "negativePercent": round((negative / total) * 100) if total > 0 else 0
         }
 
+    def _get_agent_version_stats(self, session: Session, agent_id: int) -> Dict[int, Dict[str, Any]]:
+        # Map version_id -> stats
+        statement = select(
+            AgentExecution.prompt_version_id,
+            Feedback.sentiment,
+            func.count(Feedback.id)
+        ).select_from(Feedback).join(AgentExecution).where(
+            AgentExecution.agent_id == agent_id,
+            AgentExecution.prompt_version_id.is_not(None)
+        ).group_by(AgentExecution.prompt_version_id, Feedback.sentiment)
+        
+        results = session.exec(statement).all()
+        
+        stats_map = {}
+        for ver_id, sentiment, count in results:
+            if ver_id not in stats_map:
+                stats_map[ver_id] = {"positive": 0, "negative": 0, "total": 0}
+            
+            if sentiment == 'positive':
+                stats_map[ver_id]["positive"] += count
+            elif sentiment == 'negative':
+                stats_map[ver_id]["negative"] += count
+            
+            stats_map[ver_id]["total"] += count
+            
+        # Calculate percentages
+        for ver_id, stats in stats_map.items():
+            total = stats["total"]
+            stats["positivePercent"] = round((stats["positive"] / total) * 100) if total > 0 else 0
+            stats["negativePercent"] = round((stats["negative"] / total) * 100) if total > 0 else 0
+            
+        return stats_map
+
     def _get_agent_details(self, session: Session, agent_id: int) -> Optional[Dict[str, Any]]:
         agent = session.get(Agent, agent_id)
         if not agent:
             return None
             
-        stats = self._get_agent_feedback_stats(session, agent_id)
+        # Stats for ACTIVE version only
+        stats = self._get_agent_feedback_stats(session, agent_id, only_active=True)
+        version_stats = self._get_agent_version_stats(session, agent_id)
         
         # Get versions
         versions = session.exec(select(PromptVersion).where(PromptVersion.agent_id == agent_id).order_by(desc(PromptVersion.version))).all()
         
+        # Prepare version list with stats
+        version_list = []
+        for v in versions:
+            v_dict = v.model_dump()
+            # Fix date format
+            v_dict["createdAt"] = v.created_at.isoformat()
+            if v.updated_at:
+                v_dict["updatedAt"] = v.updated_at.isoformat()
+            
+            # Attach stats
+            if v.id in version_stats:
+                v_dict["feedbackStats"] = version_stats[v.id]
+            else:
+                v_dict["feedbackStats"] = {
+                    "positive": 0, "negative": 0, "total": 0, "positivePercent": 0, "negativePercent": 0
+                }
+            version_list.append(v_dict)
+
         # Get active split test
         split_test = session.exec(select(SplitTest).where(SplitTest.agent_id == agent_id, SplitTest.status == "active")).first()
         
@@ -324,31 +414,45 @@ Respond with ONLY the new system prompt text. Do not include any explanation or 
             "draftPrompt": None, # TODO: Implement draft logic
             "draftVersionId": None,
             "feedbackStats": stats,
-            "versions": [v.model_dump() for v in versions],
+            "versions": version_list,
             "splitTest": split_test.model_dump() if split_test else None
         }
 
     def _get_agent_feedback(self, session: Session, agent_id: int) -> List[Dict[str, Any]]:
-        statement = select(Feedback, AgentExecution).join(AgentExecution).where(AgentExecution.agent_id == agent_id).order_by(desc(Feedback.created_at))
+        statement = select(Feedback, AgentExecution, PromptVersion).select_from(Feedback).join(AgentExecution).outerjoin(PromptVersion, AgentExecution.prompt_version_id == PromptVersion.id).where(AgentExecution.agent_id == agent_id).order_by(desc(Feedback.created_at))
         results = session.exec(statement).all()
         
         feedback_list = []
-        for fb, exec in results:
+        for fb, exec, version in results:
             feedback_list.append({
                 "id": fb.id,
                 "sentiment": fb.sentiment,
                 "text": fb.text,
                 "createdAt": fb.created_at.isoformat(),
-                "artifactTitle": f"Execution {exec.id}" # Placeholder title
+                "artifactTitle": f"Execution {exec.id}", # Placeholder title
+                "version": version.version if version else None,
+                "versionId": version.id if version else None
             })
         return feedback_list
 
     # --- Story Generator Helpers ---
 
-    def _get_story_gen_feedback_stats(self, session: Session, type_: str) -> Dict[str, Any]:
+    def _get_story_gen_feedback_stats(self, session: Session, type_: str, only_active: bool = False) -> Dict[str, Any]:
         # Join GenerationFeedback -> GeneratedArtifact
-        statement = select(GenerationFeedback.sentiment, func.count(GenerationFeedback.id)).join(GeneratedArtifact).where(GeneratedArtifact.type == type_).group_by(GenerationFeedback.sentiment)
-        results = session.exec(statement).all()
+        query = select(GenerationFeedback.sentiment, func.count(GenerationFeedback.id)).join(GeneratedArtifact).where(GeneratedArtifact.type == type_)
+        
+        if only_active:
+             # Filter by the currently active template
+            active_template = session.exec(select(PromptTemplate).where(PromptTemplate.type == type_, PromptTemplate.status == "active")).first()
+            if active_template:
+                query = query.where(GeneratedArtifact.prompt_template_id == active_template.id)
+            else:
+                return {
+                    "positive": 0, "negative": 0, "total": 0,
+                    "positivePercent": 0, "negativePercent": 0
+                }
+                
+        results = session.exec(query.group_by(GenerationFeedback.sentiment)).all()
         
         positive = 0
         negative = 0
@@ -367,11 +471,64 @@ Respond with ONLY the new system prompt text. Do not include any explanation or 
             "negativePercent": round((negative / total) * 100) if total > 0 else 0
         }
 
+    def _get_story_gen_version_stats(self, session: Session, type_: str) -> Dict[int, Dict[str, Any]]:
+        # Map template_id -> stats
+        statement = select(
+            GeneratedArtifact.prompt_template_id,
+            GenerationFeedback.sentiment,
+            func.count(GenerationFeedback.id)
+        ).select_from(GenerationFeedback).join(GeneratedArtifact).where(
+            GeneratedArtifact.type == type_,
+            GeneratedArtifact.prompt_template_id.is_not(None)
+        ).group_by(GeneratedArtifact.prompt_template_id, GenerationFeedback.sentiment)
+        
+        results = session.exec(statement).all()
+        
+        stats_map = {}
+        for ver_id, sentiment, count in results:
+            if ver_id not in stats_map:
+                stats_map[ver_id] = {"positive": 0, "negative": 0, "total": 0}
+            
+            if sentiment == 'positive':
+                stats_map[ver_id]["positive"] += count
+            elif sentiment == 'negative':
+                stats_map[ver_id]["negative"] += count
+            
+            stats_map[ver_id]["total"] += count
+            
+        # Calculate percentages
+        for ver_id, stats in stats_map.items():
+            total = stats["total"]
+            stats["positivePercent"] = round((stats["positive"] / total) * 100) if total > 0 else 0
+            stats["negativePercent"] = round((stats["negative"] / total) * 100) if total > 0 else 0
+            
+        return stats_map
+
     def _get_story_gen_details(self, session: Session, type_: str) -> Dict[str, Any]:
-        stats = self._get_story_gen_feedback_stats(session, type_)
+        # Stats for ACTIVE version only
+        stats = self._get_story_gen_feedback_stats(session, type_, only_active=True)
+        version_stats = self._get_story_gen_version_stats(session, type_)
         
         # Get versions (PromptTemplates)
         versions = session.exec(select(PromptTemplate).where(PromptTemplate.type == type_).order_by(desc(PromptTemplate.version))).all()
+        
+        # Prepare version list with stats
+        version_list = []
+        for v in versions:
+            v_dict = v.model_dump()
+            # Fix date format
+            v_dict["createdAt"] = v.created_at.isoformat()
+            if v.updated_at:
+                v_dict["updatedAt"] = v.updated_at.isoformat()
+                
+            # Attach stats
+            if v.id in version_stats:
+                v_dict["feedbackStats"] = version_stats[v.id]
+            else:
+                v_dict["feedbackStats"] = {
+                    "positive": 0, "negative": 0, "total": 0, "positivePercent": 0, "negativePercent": 0
+                }
+            version_list.append(v_dict)
         
         # Get active split test
         split_test = session.exec(select(StoryGeneratorSplitTest).where(StoryGeneratorSplitTest.artifact_type == type_, StoryGeneratorSplitTest.status == "active")).first()
@@ -389,22 +546,24 @@ Respond with ONLY the new system prompt text. Do not include any explanation or 
             "draftPrompt": None,
             "draftVersionId": None,
             "feedbackStats": stats,
-            "versions": [v.model_dump() for v in versions],
+            "versions": version_list,
             "splitTest": split_test.model_dump() if split_test else None
         }
 
     def _get_story_gen_feedback(self, session: Session, type_: str) -> List[Dict[str, Any]]:
-        statement = select(GenerationFeedback, GeneratedArtifact).join(GeneratedArtifact).where(GeneratedArtifact.type == type_).order_by(desc(GenerationFeedback.created_at))
+        statement = select(GenerationFeedback, GeneratedArtifact, PromptTemplate).select_from(GenerationFeedback).join(GeneratedArtifact).outerjoin(PromptTemplate, GeneratedArtifact.prompt_template_id == PromptTemplate.id).where(GeneratedArtifact.type == type_).order_by(desc(GenerationFeedback.created_at))
         results = session.exec(statement).all()
         
         feedback_list = []
-        for fb, artifact in results:
+        for fb, artifact, template in results:
             feedback_list.append({
                 "id": fb.id,
                 "sentiment": fb.sentiment,
                 "text": fb.text,
                 "createdAt": fb.created_at.isoformat(),
-                "artifactTitle": artifact.title
+                "artifactTitle": artifact.title,
+                "version": template.version if template else None,
+                "versionId": template.id if template else None
             })
         return feedback_list
 

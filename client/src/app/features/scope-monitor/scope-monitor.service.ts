@@ -10,7 +10,8 @@ export class ScopeMonitorService {
 
   sessions = signal<ScopeMonitorSession[]>([]);
   currentSession = signal<ScopeMonitorSession | null>(null);
-  scopeChanges = signal<ScopeChange[]>([]);
+  scopeCreepChanges = signal<ScopeChange[]>([]);
+  otherChanges = signal<ScopeChange[]>([]);
   impactAssessments = signal<ImpactAssessment[]>([]);
   alerts = signal<ScopeAlert[]>([]);
   isLoading = signal(false);
@@ -53,9 +54,10 @@ export class ScopeMonitorService {
       const response = await this.http.get<ScopeMonitorFullResponse>(`${this.baseUrl}/sessions/${sessionId}/full`).toPromise();
       if (response) {
         this.currentSession.set(response.session);
-        this.scopeChanges.set(response.scope_changes);
-        this.impactAssessments.set(response.impact_assessments);
-        this.alerts.set(response.alerts);
+        this.scopeCreepChanges.set(response.scope_creep_changes || []);
+        this.otherChanges.set(response.other_changes || []);
+        this.impactAssessments.set(response.impact_assessments || []);
+        this.alerts.set(response.alerts || []);
       }
       return response || null;
     } catch (err: any) { this.error.set(err.message); return null; } finally { this.isLoading.set(false); }
@@ -95,22 +97,5 @@ export class ScopeMonitorService {
         this.scopeDefinitionItems.set(response.in_scope_items);
       }
     } catch (err: any) { this.error.set(err.error?.detail || err.statusText || 'Failed to load scope definition'); }
-  }
-
-  // Build original scope from scope definition data
-  buildScopeFromDefinition(): string {
-    const session = this.selectedScopeDefinition();
-    const items = this.scopeDefinitionItems();
-    if (!session || items.length === 0) return '';
-
-    let scope = `Project: ${session.projectName}\n\n`;
-    if (session.scopeStatement) {
-      scope += `Scope Statement: ${session.scopeStatement}\n\n`;
-    }
-    scope += `In-Scope Items:\n`;
-    for (const item of items) {
-      scope += `- ${item.title}: ${item.description}\n`;
-    }
-    return scope;
   }
 }

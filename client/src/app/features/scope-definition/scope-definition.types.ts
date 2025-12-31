@@ -73,6 +73,9 @@ export interface ScopeDefinitionSessionCreate {
   knownConstraints?: string;
   stakeholderNeeds?: string;
   targetUsers?: string;
+  ideationSessionId?: number;
+  okrSessionId?: number;
+  knowledgeBaseIds?: number[];
 }
 
 export interface ScopeDefinitionFullResponse {

@@ -177,8 +177,20 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
         kb_ids = request.get("knowledgeBaseIds", [])
         kb_context = self.get_knowledge_base_context(session, kb_ids, request.get("description", ""))
         
-        # Build prompt
-        system_prompt = self.get_system_prompt(request["type"], request.get("title") or request["description"][:50])
+        # Look up active prompt template
+        active_template = session.exec(
+            select(PromptTemplate).where(
+                PromptTemplate.type == request["type"],
+                PromptTemplate.status == "active"
+            )
+        ).first()
+
+        prompt_template_id = None
+        if active_template:
+            system_prompt = active_template.system_prompt
+            prompt_template_id = active_template.id
+        else:
+            system_prompt = self.get_system_prompt(request["type"], request.get("title") or request["description"][:50])
         
         user_content = request["description"]
         if kb_context:
@@ -234,6 +246,7 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
             input_description=request["description"],
             input_files=request.get("files", []),
             knowledge_base_ids=kb_ids,
+            prompt_template_id=prompt_template_id,
             status="draft",
             generation_metadata={
                 "model": model,

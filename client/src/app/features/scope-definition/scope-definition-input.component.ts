@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, HostListener } from '@angular/core';
+import { SlicePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideClipboardList, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw } from '@ng-icons/lucide';
+import { lucideClipboardList, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideLightbulb, lucideTarget, lucidePenLine, lucideDatabase, lucideCheck, lucideSearch } from '@ng-icons/lucide';
 import { ScopeDefinitionService } from './scope-definition.service';
 import type { ScopeDefinitionSession } from './scope-definition.types';
 import { HlmButtonDirective } from '../../ui/button';
@@ -9,8 +10,8 @@ import { HlmButtonDirective } from '../../ui/button';
 @Component({
   selector: 'app-scope-definition-input',
   standalone: true,
-  imports: [NgIcon, HlmButtonDirective],
-  viewProviders: [provideIcons({ lucideClipboardList, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw })],
+  imports: [NgIcon, HlmButtonDirective, SlicePipe],
+  viewProviders: [provideIcons({ lucideClipboardList, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideLightbulb, lucideTarget, lucidePenLine, lucideDatabase, lucideCheck, lucideSearch })],
   template: `
     <div class="flex h-full">
       <div class="w-1/2 border-r p-6 overflow-y-auto">
@@ -29,7 +30,78 @@ import { HlmButtonDirective } from '../../ui/button';
             </div>
           }
 
+          <!-- Source Type Tabs -->
+          <div class="mb-6">
+            <label class="text-sm font-medium mb-2 block">Context Source</label>
+            <div class="flex gap-2">
+              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'ideation'" [class.bg-primary/5]="sourceType() === 'ideation'" [class.text-primary]="sourceType() === 'ideation'" (click)="setSourceType('ideation')">
+                <ng-icon name="lucideLightbulb" class="h-4 w-4" /> From Ideation
+              </button>
+              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'okr'" [class.bg-primary/5]="sourceType() === 'okr'" [class.text-primary]="sourceType() === 'okr'" (click)="setSourceType('okr')">
+                <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
+              </button>
+              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'custom'" [class.bg-primary/5]="sourceType() === 'custom'" [class.text-primary]="sourceType() === 'custom'" (click)="setSourceType('custom')">
+                <ng-icon name="lucidePenLine" class="h-4 w-4" /> Custom
+              </button>
+            </div>
+          </div>
+
           <form class="space-y-6" (submit)="onSubmit($event)">
+            <!-- Ideation Session Picker -->
+            @if (sourceType() === 'ideation') {
+              <div>
+                <label class="text-sm font-medium">Select Ideation Session <span class="text-destructive">*</span></label>
+                <select class="mt-2 w-full rounded-lg border bg-background p-3 text-sm" [value]="selectedIdeationSessionId()" (change)="onIdeationSessionChange($event)">
+                  <option value="">Choose an ideation session...</option>
+                  @for (session of service.ideationSessions(); track session.id) {
+                    <option [value]="session.id">{{ session.problemStatement | slice:0:80 }}{{ session.problemStatement.length > 80 ? '...' : '' }}</option>
+                  }
+                </select>
+                @if (service.selectedIdeationSession()) {
+                  <div class="mt-3 rounded-lg border bg-muted/30 p-3">
+                    <p class="text-xs font-medium text-muted-foreground mb-1">Problem Statement</p>
+                    <p class="text-sm">{{ service.selectedIdeationSession()!.problemStatement }}</p>
+                    @if (service.selectedIdeas().length > 0) {
+                      <p class="text-xs font-medium text-muted-foreground mt-3 mb-1">Top Ideas ({{ service.selectedIdeas().length }} total)</p>
+                      <ul class="text-sm space-y-1">
+                        @for (idea of service.selectedIdeas().slice(0, 3); track idea.id) {
+                          <li class="flex items-start gap-2"><span class="text-primary">•</span> {{ idea.title }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- OKR Session Picker -->
+            @if (sourceType() === 'okr') {
+              <div>
+                <label class="text-sm font-medium">Select OKR Session <span class="text-destructive">*</span></label>
+                <select class="mt-2 w-full rounded-lg border bg-background p-3 text-sm" [value]="selectedOkrSessionId()" (change)="onOkrSessionChange($event)">
+                  <option value="">Choose an OKR session...</option>
+                  @for (session of service.okrSessions(); track session.id) {
+                    <option [value]="session.id">{{ session.goalDescription | slice:0:80 }}{{ session.goalDescription.length > 80 ? '...' : '' }} ({{ session.timeframe }})</option>
+                  }
+                </select>
+                @if (service.selectedOkrSession()) {
+                  <div class="mt-3 rounded-lg border bg-muted/30 p-3">
+                    <p class="text-xs font-medium text-muted-foreground mb-1">Goal</p>
+                    <p class="text-sm">{{ service.selectedOkrSession()!.goalDescription }}</p>
+                    <p class="text-xs text-muted-foreground mt-1">Timeframe: {{ service.selectedOkrSession()!.timeframe }}</p>
+                    @if (service.okrObjectives().length > 0) {
+                      <p class="text-xs font-medium text-muted-foreground mt-3 mb-1">Objectives ({{ service.okrObjectives().length }})</p>
+                      <ul class="text-sm space-y-1">
+                        @for (obj of service.okrObjectives().slice(0, 3); track obj.id) {
+                          <li class="flex items-start gap-2"><span class="text-primary">•</span> {{ obj.title }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
             <div>
               <label class="text-sm font-medium">Project Name <span class="text-destructive">*</span></label>
               <input type="text" class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="projectName()" (input)="onProjectNameInput($event)" placeholder="e.g., Customer Portal V2" required />
@@ -40,6 +112,48 @@ import { HlmButtonDirective } from '../../ui/button';
               <p class="text-xs text-muted-foreground mt-1">High-level vision and goals (min 50 chars)</p>
               <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]" [value]="productVision()" (input)="onProductVisionInput($event)" placeholder="e.g., Build a self-service portal that allows customers to manage their accounts, view usage, and resolve issues without contacting support..." required></textarea>
               <p class="text-xs mt-1" [class.text-destructive]="visionLength() > 0 && visionLength() < 50">{{ visionLength() }} / 50 min</p>
+            </div>
+
+            <!-- Knowledge Base Picker -->
+            <div>
+              <label class="text-sm font-medium">Knowledge Bases (Optional)</label>
+              <p class="text-xs text-muted-foreground mt-1">Select knowledge bases for additional context</p>
+              <div class="relative mt-2">
+                <button type="button" class="w-full flex items-center justify-between rounded-lg border bg-background p-3 text-sm" (click)="toggleKbDropdown()">
+                  <span class="flex items-center gap-2">
+                    <ng-icon name="lucideDatabase" class="h-4 w-4 text-muted-foreground" />
+                    @if (selectedKnowledgeBases().length === 0) {
+                      <span class="text-muted-foreground">Select knowledge bases...</span>
+                    } @else {
+                      <span>{{ selectedKnowledgeBases().length }} selected</span>
+                    }
+                  </span>
+                  <ng-icon [name]="kbDropdownOpen() ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4" />
+                </button>
+                @if (kbDropdownOpen()) {
+                  <div class="absolute z-10 mt-1 w-full rounded-lg border bg-background shadow-lg">
+                    <div class="p-2 border-b">
+                      <div class="relative">
+                        <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input type="text" class="w-full rounded border bg-muted/30 py-1.5 pl-8 pr-3 text-sm" placeholder="Search..." [value]="kbSearchFilter()" (input)="onKbSearchInput($event)" />
+                      </div>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto p-1">
+                      @for (kb of filteredKnowledgeBases(); track kb.id) {
+                        <button type="button" class="w-full flex items-center gap-2 rounded p-2 text-sm hover:bg-muted/50 text-left" (click)="toggleKnowledgeBase(kb.id)">
+                          <div class="h-4 w-4 rounded border flex items-center justify-center" [class.bg-primary]="selectedKbIds().includes(kb.id)" [class.border-primary]="selectedKbIds().includes(kb.id)">
+                            @if (selectedKbIds().includes(kb.id)) { <ng-icon name="lucideCheck" class="h-3 w-3 text-white" /> }
+                          </div>
+                          <span>{{ kb.name }}</span>
+                        </button>
+                      }
+                      @if (filteredKnowledgeBases().length === 0) {
+                        <p class="p-2 text-sm text-muted-foreground text-center">No knowledge bases found</p>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
 
             <div class="border rounded-lg">
@@ -116,6 +230,12 @@ export class ScopeDefinitionInputComponent implements OnInit {
   service = inject(ScopeDefinitionService);
   private router = inject(Router);
 
+  // Source type selection
+  sourceType = signal<'ideation' | 'okr' | 'custom'>('ideation');
+  selectedIdeationSessionId = signal<number | null>(null);
+  selectedOkrSessionId = signal<number | null>(null);
+
+  // Form fields
   projectName = signal('');
   productVision = signal('');
   initialRequirements = signal('');
@@ -124,10 +244,92 @@ export class ScopeDefinitionInputComponent implements OnInit {
   targetUsers = signal('');
   optionalFieldsOpen = signal(false);
 
-  visionLength = computed(() => this.productVision().length);
-  canSubmit = computed(() => this.projectName().length > 0 && this.visionLength() >= 50);
+  // Knowledge base selection
+  selectedKbIds = signal<number[]>([]);
+  kbDropdownOpen = signal(false);
+  kbSearchFilter = signal('');
 
-  async ngOnInit() { await this.service.loadSessions(); }
+  selectedKnowledgeBases = computed(() => this.service.knowledgeBases().filter((kb) => this.selectedKbIds().includes(kb.id)));
+  filteredKnowledgeBases = computed(() => {
+    const filter = this.kbSearchFilter().toLowerCase();
+    return this.service.knowledgeBases().filter((kb) => kb.name.toLowerCase().includes(filter));
+  });
+
+  visionLength = computed(() => this.productVision().length);
+  canSubmit = computed(() => {
+    if (this.sourceType() === 'ideation' && !this.selectedIdeationSessionId()) return false;
+    if (this.sourceType() === 'okr' && !this.selectedOkrSessionId()) return false;
+    return this.projectName().length > 0 && this.visionLength() >= 50;
+  });
+
+  async ngOnInit() {
+    await Promise.all([
+      this.service.loadSessions(),
+      this.service.loadIdeationSessions(),
+      this.service.loadOkrSessions(),
+      this.service.loadKnowledgeBases(),
+    ]);
+  }
+
+  setSourceType(type: 'ideation' | 'okr' | 'custom') {
+    this.sourceType.set(type);
+    // Clear other selections when switching
+    if (type !== 'ideation') {
+      this.selectedIdeationSessionId.set(null);
+      this.service.clearIdeationSelection();
+    }
+    if (type !== 'okr') {
+      this.selectedOkrSessionId.set(null);
+      this.service.clearOkrSelection();
+    }
+    // Clear auto-populated fields when switching
+    this.projectName.set('');
+    this.productVision.set('');
+  }
+
+  async onIdeationSessionChange(e: Event) {
+    const id = parseInt((e.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedIdeationSessionId.set(null);
+      this.service.clearIdeationSelection();
+      return;
+    }
+    this.selectedIdeationSessionId.set(id);
+    await this.service.loadIdeationSessionFull(id);
+    // Auto-populate fields
+    const { projectName, vision } = this.service.buildVisionFromIdeation();
+    this.projectName.set(projectName);
+    this.productVision.set(vision);
+  }
+
+  async onOkrSessionChange(e: Event) {
+    const id = parseInt((e.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedOkrSessionId.set(null);
+      this.service.clearOkrSelection();
+      return;
+    }
+    this.selectedOkrSessionId.set(id);
+    await this.service.loadOkrSessionFull(id);
+    // Auto-populate fields
+    const { projectName, vision } = this.service.buildVisionFromOkr();
+    this.projectName.set(projectName);
+    this.productVision.set(vision);
+  }
+
+  // KB dropdown methods
+  toggleKbDropdown() { this.kbDropdownOpen.update((v) => !v); }
+  closeKbDropdown() { this.kbDropdownOpen.set(false); this.kbSearchFilter.set(''); }
+  onKbSearchInput(e: Event) { this.kbSearchFilter.set((e.target as HTMLInputElement).value); }
+  toggleKnowledgeBase(id: number) {
+    this.selectedKbIds.update((ids) => ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(e: Event) {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.relative')) this.closeKbDropdown();
+  }
 
   onProjectNameInput(e: Event) { this.projectName.set((e.target as HTMLInputElement).value); }
   onProductVisionInput(e: Event) { this.productVision.set((e.target as HTMLTextAreaElement).value); }
@@ -147,6 +349,9 @@ export class ScopeDefinitionInputComponent implements OnInit {
       knownConstraints: this.knownConstraints() || undefined,
       stakeholderNeeds: this.stakeholderNeeds() || undefined,
       targetUsers: this.targetUsers() || undefined,
+      ideationSessionId: this.sourceType() === 'ideation' ? this.selectedIdeationSessionId() || undefined : undefined,
+      okrSessionId: this.sourceType() === 'okr' ? this.selectedOkrSessionId() || undefined : undefined,
+      knowledgeBaseIds: this.selectedKbIds().length > 0 ? this.selectedKbIds() : undefined,
     });
     if (session) this.router.navigate(['/scoping/definition/results', session.id]);
   }

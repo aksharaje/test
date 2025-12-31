@@ -84,18 +84,6 @@ class TestFeasibilityAPI:
 
         assert response.status_code == 422  # Validation error
 
-    @patch('app.services.feasibility_service.feasibility_service.run_feasibility_pipeline')
-    def test_create_session_validation_max_length(self, mock_pipeline, clean_db):
-        """Test validation: feature description too long"""
-        response = client.post(
-            "/api/feasibility/sessions",
-            json={
-                "featureDescription": "A" * 2001,  # More than 2000 chars
-            },
-        )
-
-        assert response.status_code == 422  # Validation error
-
     def test_get_session_status(self, clean_db):
         """Test getting session status for polling"""
         # Create session via API

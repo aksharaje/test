@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideRadar, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideClipboardList, lucidePenLine } from '@ng-icons/lucide';
+import { lucideRadar, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideRotateCw, lucideClipboardList, lucidePenLine } from '@ng-icons/lucide';
 import { ScopeMonitorService } from './scope-monitor.service';
 import type { ScopeMonitorSession } from './scope-monitor.types';
 import { HlmButtonDirective } from '../../ui/button';
@@ -11,7 +11,7 @@ import { SlicePipe } from '@angular/common';
   selector: 'app-scope-monitor-input',
   standalone: true,
   imports: [NgIcon, HlmButtonDirective, SlicePipe],
-  viewProviders: [provideIcons({ lucideRadar, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideClipboardList, lucidePenLine })],
+  viewProviders: [provideIcons({ lucideRadar, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideRotateCw, lucideClipboardList, lucidePenLine })],
   template: `
     <div class="flex h-full">
       <div class="w-1/2 border-r p-6 overflow-y-auto">
@@ -22,7 +22,7 @@ import { SlicePipe } from '@angular/common';
             </div>
             <h1 class="text-2xl font-bold">Scope Monitor</h1>
           </div>
-          <p class="text-muted-foreground mb-6">Track scope changes, assess impacts, and manage scope creep.</p>
+          <p class="text-muted-foreground mb-6">Evaluate proposed changes against your approved scope to detect scope creep.</p>
 
           @if (service.error()) {
             <div class="mb-4 rounded-lg border border-destructive bg-destructive/10 p-4">
@@ -30,82 +30,78 @@ import { SlicePipe } from '@angular/common';
             </div>
           }
 
-          <!-- Source Type Tabs -->
-          <div class="flex rounded-lg border p-1 mb-6">
-            <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'scope-definition'" [class.text-primary-foreground]="sourceType() === 'scope-definition'" [class.hover:bg-muted]="sourceType() !== 'scope-definition'" (click)="setSourceType('scope-definition')">
-              <ng-icon name="lucideClipboardList" class="h-4 w-4" /> From Scope Definition
-            </button>
-            <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
-              <ng-icon name="lucidePenLine" class="h-4 w-4" /> Write Custom
-            </button>
-          </div>
-
           <form class="space-y-6" (submit)="onSubmit($event)">
             <div>
               <label class="text-sm font-medium">Project Name <span class="text-destructive">*</span></label>
               <input type="text" class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="projectName()" (input)="onProjectNameInput($event)" placeholder="e.g., Customer Portal V2" required />
             </div>
 
-            @if (sourceType() === 'scope-definition') {
-              <!-- Scope Definition Picker -->
-              <div>
-                <label class="text-sm font-medium">Select Scope Definition <span class="text-destructive">*</span></label>
-                <p class="text-xs text-muted-foreground mt-1">Import baseline scope from a completed scope definition</p>
-                <select class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="selectedScopeDefinitionId()" (change)="onScopeDefinitionChange($event)">
+            <!-- Baseline Scope Source -->
+            <div>
+              <label class="text-sm font-medium">Approved Scope (Baseline) <span class="text-destructive">*</span></label>
+              <p class="text-xs text-muted-foreground mt-1">The scope that was originally approved</p>
+
+              <div class="flex rounded-lg border p-1 mt-2 mb-3">
+                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'scope-definition'" [class.text-primary-foreground]="sourceType() === 'scope-definition'" [class.hover:bg-muted]="sourceType() !== 'scope-definition'" (click)="setSourceType('scope-definition')">
+                  <ng-icon name="lucideClipboardList" class="h-4 w-4" /> From Scope Definition
+                </button>
+                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
+                  <ng-icon name="lucidePenLine" class="h-4 w-4" /> Write Custom
+                </button>
+              </div>
+
+              @if (sourceType() === 'scope-definition') {
+                <select class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="selectedScopeDefinitionId()" (change)="onScopeDefinitionChange($event)">
                   <option value="">-- Select a Scope Definition --</option>
                   @for (scopeDef of service.scopeDefinitionSessions(); track scopeDef.id) {
                     <option [value]="scopeDef.id">{{ scopeDef.projectName }} - {{ scopeDef.productVision | slice:0:50 }}{{ scopeDef.productVision.length > 50 ? '...' : '' }}</option>
                   }
                 </select>
-              </div>
 
-              @if (selectedScopeDefinitionId() && service.scopeDefinitionItems().length > 0) {
-                <div class="rounded-lg border bg-muted/30 p-4">
-                  <h4 class="text-sm font-medium mb-2">Imported Scope Items</h4>
-                  <ul class="text-sm space-y-1 text-muted-foreground">
-                    @for (item of service.scopeDefinitionItems(); track item.id) {
-                      <li>• {{ item.title }}</li>
-                    }
-                  </ul>
-                </div>
+                @if (selectedScopeDefinitionId() && service.scopeDefinitionItems().length > 0) {
+                  <div class="rounded-lg border bg-muted/30 p-4 mt-3">
+                    <h4 class="text-sm font-medium mb-2">Imported Scope Items</h4>
+                    <ul class="text-sm space-y-1 text-muted-foreground">
+                      @for (item of service.scopeDefinitionItems(); track item.id) {
+                        <li>• {{ item.title }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+              } @else {
+                <textarea class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]" [value]="baselineDescription()" (input)="onBaselineDescriptionInput($event)" placeholder="Describe the approved scope: features, requirements, and constraints that were agreed upon..."></textarea>
+                <p class="text-xs mt-1" [class.text-destructive]="baselineLength() > 0 && baselineLength() < 50">{{ baselineLength() }} / 50 min</p>
               }
-            } @else {
-              <!-- Custom Scope Input -->
-              <div>
-                <label class="text-sm font-medium">Original Scope <span class="text-destructive">*</span></label>
-                <p class="text-xs text-muted-foreground mt-1">The baseline scope to monitor against (min 50 chars)</p>
-                <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]" [value]="originalScope()" (input)="onOriginalScopeInput($event)" placeholder="e.g., Phase 1 includes user authentication, dashboard, and basic reporting. Phase 2 will add advanced analytics..." required></textarea>
-                <p class="text-xs mt-1" [class.text-destructive]="scopeLength() > 0 && scopeLength() < 50">{{ scopeLength() }} / 50 min</p>
-              </div>
-            }
-
-            <div>
-              <label class="text-sm font-medium">Current Status <span class="text-destructive">*</span></label>
-              <p class="text-xs text-muted-foreground mt-1">What's the current project situation? Any changes or concerns?</p>
-              <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]" [value]="currentStatus()" (input)="onCurrentStatusInput($event)" placeholder="e.g., Sprint 3 completed. Stakeholder requested additional reporting features. Timeline pressure increasing..." required></textarea>
             </div>
 
-            <div class="border rounded-lg">
-              <button type="button" class="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50" (click)="toggleOptionalFields()">
-                <span>Optional Configuration</span>
-                <ng-icon [name]="optionalFieldsOpen() ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4" />
-              </button>
-              @if (optionalFieldsOpen()) {
-                <div class="p-3 pt-0 space-y-4">
-                  <div>
-                    <label class="text-sm font-medium">Monitoring Period</label>
-                    <input type="text" class="mt-2 w-full rounded-lg border bg-background p-3 text-sm" [value]="monitoringPeriod()" (input)="onMonitoringPeriodInput($event)" placeholder="e.g., Last 2 weeks, Current sprint" />
-                  </div>
-                  <div>
-                    <label class="text-sm font-medium">Change Threshold</label>
-                    <input type="text" class="mt-2 w-full rounded-lg border bg-background p-3 text-sm" [value]="changeThreshold()" (input)="onChangeThresholdInput($event)" placeholder="e.g., Medium (5-10% scope increase)" />
-                  </div>
-                </div>
-              }
+            <div>
+              <label class="text-sm font-medium">Proposed Change <span class="text-destructive">*</span></label>
+              <p class="text-xs text-muted-foreground mt-1">Describe the change request you want to evaluate (min 50 chars)</p>
+              <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]" [value]="proposedChange()" (input)="onProposedChangeInput($event)" placeholder="e.g., Stakeholder requested adding 3 additional reporting widgets, a new export feature, and real-time notifications..." required></textarea>
+              <p class="text-xs mt-1" [class.text-destructive]="proposedChangeLength() > 0 && proposedChangeLength() < 50">{{ proposedChangeLength() }} / 50 min</p>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Change Threshold</label>
+              <p class="text-xs text-muted-foreground mt-1">How strict should the scope creep detection be?</p>
+              <div class="flex gap-2 mt-2">
+                <button type="button" class="flex-1 rounded-lg border p-3 text-sm font-medium transition-colors" [class.bg-primary]="threshold() === 'low'" [class.text-primary-foreground]="threshold() === 'low'" [class.border-primary]="threshold() === 'low'" (click)="setThreshold('low')">
+                  <div class="font-medium">Low</div>
+                  <div class="text-xs opacity-70">Only flag major changes</div>
+                </button>
+                <button type="button" class="flex-1 rounded-lg border p-3 text-sm font-medium transition-colors" [class.bg-primary]="threshold() === 'medium'" [class.text-primary-foreground]="threshold() === 'medium'" [class.border-primary]="threshold() === 'medium'" (click)="setThreshold('medium')">
+                  <div class="font-medium">Medium</div>
+                  <div class="text-xs opacity-70">Balanced detection</div>
+                </button>
+                <button type="button" class="flex-1 rounded-lg border p-3 text-sm font-medium transition-colors" [class.bg-primary]="threshold() === 'high'" [class.text-primary-foreground]="threshold() === 'high'" [class.border-primary]="threshold() === 'high'" (click)="setThreshold('high')">
+                  <div class="font-medium">High</div>
+                  <div class="text-xs opacity-70">Flag any deviation</div>
+                </button>
+              </div>
             </div>
 
             <button hlmBtn class="w-full" type="submit" [disabled]="!canSubmit() || service.isLoading()">
-              @if (service.isLoading()) { <ng-icon name="lucideLoader2" class="mr-2 h-4 w-4 animate-spin" /> Analyzing Scope... }
+              @if (service.isLoading()) { <ng-icon name="lucideLoader2" class="mr-2 h-4 w-4 animate-spin" /> Analyzing... }
               @else { <ng-icon name="lucideSparkles" class="mr-2 h-4 w-4" /> Analyze Scope Health }
             </button>
           </form>
@@ -126,13 +122,13 @@ import { SlicePipe } from '@angular/common';
                   <div class="flex items-start justify-between">
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" [class.bg-green-100]="session.status === 'completed'" [class.text-green-700]="session.status === 'completed'" [class.bg-yellow-100]="session.status === 'generating'" [class.text-yellow-700]="session.status === 'generating'" [class.bg-red-100]="session.status === 'failed'" [class.text-red-700]="session.status === 'failed'">{{ session.status }}</span>
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" [class.bg-green-100]="session.status === 'completed'" [class.text-green-700]="session.status === 'completed'" [class.bg-yellow-100]="session.status === 'analyzing'" [class.text-yellow-700]="session.status === 'analyzing'" [class.bg-red-100]="session.status === 'failed'" [class.text-red-700]="session.status === 'failed'">{{ session.status }}</span>
                         @if (session.scopeHealthScore !== undefined && session.scopeHealthScore !== null) {
                           <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" [class.bg-green-100]="session.scopeHealthScore >= 80" [class.text-green-700]="session.scopeHealthScore >= 80" [class.bg-yellow-100]="session.scopeHealthScore >= 50 && session.scopeHealthScore < 80" [class.text-yellow-700]="session.scopeHealthScore >= 50 && session.scopeHealthScore < 80" [class.bg-red-100]="session.scopeHealthScore < 50" [class.text-red-700]="session.scopeHealthScore < 50">{{ session.scopeHealthScore }}% health</span>
                         }
                       </div>
                       <p class="mt-1 text-sm font-medium">{{ session.projectName }}</p>
-                      <p class="text-xs text-muted-foreground line-clamp-1">{{ session.currentStatus }}</p>
+                      <p class="text-xs text-muted-foreground line-clamp-1">{{ session.currentRequirements }}</p>
                     </div>
                     <div class="flex items-center gap-1 ml-2">
                       @if (session.status === 'failed') { <button type="button" class="p-1 hover:text-primary" (click)="retrySession($event, session)"><ng-icon name="lucideRotateCw" class="h-4 w-4" /></button> }
@@ -158,19 +154,18 @@ export class ScopeMonitorInputComponent implements OnInit {
   sourceType = signal<'scope-definition' | 'custom'>('custom');
   selectedScopeDefinitionId = signal<string>('');
   projectName = signal('');
-  originalScope = signal('');
-  currentStatus = signal('');
-  monitoringPeriod = signal('');
-  changeThreshold = signal('');
-  optionalFieldsOpen = signal(false);
+  baselineDescription = signal('');
+  proposedChange = signal('');
+  threshold = signal<'low' | 'medium' | 'high'>('medium');
 
-  scopeLength = computed(() => this.originalScope().length);
+  baselineLength = computed(() => this.baselineDescription().length);
+  proposedChangeLength = computed(() => this.proposedChange().length);
   canSubmit = computed(() => {
-    if (this.projectName().length === 0 || this.currentStatus().length === 0) return false;
+    if (this.projectName().length === 0 || this.proposedChangeLength() < 50) return false;
     if (this.sourceType() === 'scope-definition') {
       return !!this.selectedScopeDefinitionId() && this.service.scopeDefinitionItems().length > 0;
     }
-    return this.scopeLength() >= 50;
+    return this.baselineLength() >= 50;
   });
 
   async ngOnInit() {
@@ -185,7 +180,6 @@ export class ScopeMonitorInputComponent implements OnInit {
       this.sourceType.set('scope-definition');
       this.selectedScopeDefinitionId.set(scopeDefinitionId);
       await this.service.loadScopeDefinitionFull(Number(scopeDefinitionId));
-      // Auto-fill project name from scope definition
       const scopeDef = this.service.selectedScopeDefinition();
       if (scopeDef) {
         this.projectName.set(scopeDef.projectName);
@@ -202,12 +196,15 @@ export class ScopeMonitorInputComponent implements OnInit {
     }
   }
 
+  setThreshold(t: 'low' | 'medium' | 'high') {
+    this.threshold.set(t);
+  }
+
   async onScopeDefinitionChange(e: Event) {
     const value = (e.target as HTMLSelectElement).value;
     this.selectedScopeDefinitionId.set(value);
     if (value) {
       await this.service.loadScopeDefinitionFull(Number(value));
-      // Auto-fill project name from scope definition
       const scopeDef = this.service.selectedScopeDefinition();
       if (scopeDef && !this.projectName()) {
         this.projectName.set(scopeDef.projectName);
@@ -219,28 +216,26 @@ export class ScopeMonitorInputComponent implements OnInit {
   }
 
   onProjectNameInput(e: Event) { this.projectName.set((e.target as HTMLInputElement).value); }
-  onOriginalScopeInput(e: Event) { this.originalScope.set((e.target as HTMLTextAreaElement).value); }
-  onCurrentStatusInput(e: Event) { this.currentStatus.set((e.target as HTMLTextAreaElement).value); }
-  onMonitoringPeriodInput(e: Event) { this.monitoringPeriod.set((e.target as HTMLInputElement).value); }
-  onChangeThresholdInput(e: Event) { this.changeThreshold.set((e.target as HTMLInputElement).value); }
-  toggleOptionalFields() { this.optionalFieldsOpen.update((v) => !v); }
+  onBaselineDescriptionInput(e: Event) { this.baselineDescription.set((e.target as HTMLTextAreaElement).value); }
+  onProposedChangeInput(e: Event) { this.proposedChange.set((e.target as HTMLTextAreaElement).value); }
 
   async onSubmit(e: Event) {
     e.preventDefault();
     if (!this.canSubmit()) return;
 
-    // Build original scope from scope definition if using that source
-    let scope = this.originalScope();
-    if (this.sourceType() === 'scope-definition') {
-      scope = this.service.buildScopeFromDefinition();
-    }
+    // Build change context with threshold info
+    const changeContext = `Change Threshold: ${this.threshold()} - ${
+      this.threshold() === 'low' ? 'Only flag major scope changes' :
+      this.threshold() === 'medium' ? 'Balanced scope creep detection' :
+      'Flag any deviation from approved scope'
+    }`;
 
     const session = await this.service.createSession({
       projectName: this.projectName(),
-      originalScope: scope,
-      currentStatus: this.currentStatus(),
-      monitoringPeriod: this.monitoringPeriod() || undefined,
-      changeThreshold: this.changeThreshold() || undefined,
+      baselineScopeId: this.sourceType() === 'scope-definition' ? Number(this.selectedScopeDefinitionId()) : undefined,
+      baselineDescription: this.sourceType() === 'custom' ? this.baselineDescription() : undefined,
+      currentRequirements: this.proposedChange(),
+      changeContext: changeContext,
     });
     if (session) this.router.navigate(['/scoping/monitor/results', session.id]);
   }

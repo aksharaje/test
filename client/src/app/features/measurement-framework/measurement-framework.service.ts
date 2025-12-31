@@ -2,6 +2,9 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import type { MeasurementFrameworkSession, FrameworkMetric, FrameworkDataSource, FrameworkDashboard, MeasurementFrameworkSessionCreate, MeasurementFrameworkFullResponse } from './measurement-framework.types';
 import type { OkrSession, Objective } from '../okr-generator/okr-generator.types';
+import type { GoalSettingSession, Goal } from '../goal-setting/goal-setting.types';
+import type { KpiAssignmentSession, KpiAssignmentFullItem } from '../kpi-assignment/kpi-assignment.types';
+import type { KnowledgeBase } from '../knowledge-bases/knowledge-base.types';
 
 @Injectable({ providedIn: 'root' })
 export class MeasurementFrameworkService {
@@ -20,6 +23,16 @@ export class MeasurementFrameworkService {
   okrSessions = signal<OkrSession[]>([]);
   selectedOkrSession = signal<OkrSession | null>(null);
   okrObjectives = signal<Objective[]>([]);
+
+  // Goal Setting + KPI Assignment data for import
+  goalSettingSessions = signal<GoalSettingSession[]>([]);
+  selectedGoalSession = signal<GoalSettingSession | null>(null);
+  selectedGoals = signal<Goal[]>([]);
+  selectedKpiSession = signal<KpiAssignmentSession | null>(null);
+  selectedKpiAssignments = signal<KpiAssignmentFullItem[]>([]);
+
+  // Knowledge bases
+  knowledgeBases = signal<KnowledgeBase[]>([]);
 
   async loadSessions(skip = 0, limit = 20): Promise<void> {
     this.isLoading.set(true);
@@ -113,5 +126,89 @@ export class MeasurementFrameworkService {
       }
     }
     return description;
+  }
+
+  // Goal Setting session methods for import functionality
+  async loadGoalSettingSessions(): Promise<void> {
+    try {
+      const sessions = await this.http.get<GoalSettingSession[]>('/api/goal-setting/sessions', { params: { limit: '50' } }).toPromise();
+      // Filter to only completed sessions
+      this.goalSettingSessions.set((sessions || []).filter((s) => s.status === 'completed'));
+    } catch (err: any) {
+      console.error('Failed to load goal setting sessions:', err);
+    }
+  }
+
+  async loadGoalSessionFull(sessionId: number): Promise<void> {
+    try {
+      const response = await this.http.get<{ session: GoalSettingSession; goals: Goal[] }>(`/api/goal-setting/sessions/${sessionId}/full`).toPromise();
+      if (response) {
+        this.selectedGoalSession.set(response.session);
+        this.selectedGoals.set(response.goals);
+      }
+    } catch (err: any) {
+      this.error.set(err.error?.detail || 'Failed to load goal session');
+    }
+  }
+
+  async loadKpiSessionByGoal(goalSessionId: number): Promise<void> {
+    try {
+      const response = await this.http.get<{ session: KpiAssignmentSession; assignments: KpiAssignmentFullItem[] }>(`/api/kpi-assignment/sessions/by-goal/${goalSessionId}/full`).toPromise();
+      if (response) {
+        this.selectedKpiSession.set(response.session);
+        this.selectedKpiAssignments.set(response.assignments);
+      }
+    } catch (err: any) {
+      // KPI session might not exist, that's okay
+      this.selectedKpiSession.set(null);
+      this.selectedKpiAssignments.set([]);
+    }
+  }
+
+  // Build objectives description from Goal Setting + KPI data
+  buildDescriptionFromGoals(): string {
+    const goalSession = this.selectedGoalSession();
+    const goals = this.selectedGoals();
+    const kpiAssignments = this.selectedKpiAssignments();
+
+    if (!goalSession || goals.length === 0) return '';
+
+    let description = `Domain: ${goalSession.domain}\nStrategy: ${goalSession.strategy}\n\nGoals and KPIs:\n`;
+
+    for (const goal of goals) {
+      description += `\n- ${goal.title} (${goal.category}, ${goal.priority} priority)\n`;
+      if (goal.description) {
+        description += `  Description: ${goal.description}\n`;
+      }
+
+      // Find matching KPI assignment
+      const kpi = kpiAssignments.find((k) => k.goalId === goal.id);
+      if (kpi) {
+        description += `  Primary KPI: ${kpi.primaryKpi} (${kpi.measurementUnit})\n`;
+        if (kpi.secondaryKpi) {
+          description += `  Secondary KPI: ${kpi.secondaryKpi}\n`;
+        }
+        description += `  Check Frequency: ${kpi.checkFrequency}\n`;
+      }
+    }
+    return description;
+  }
+
+  clearGoalSelection(): void {
+    this.selectedGoalSession.set(null);
+    this.selectedGoals.set([]);
+    this.selectedKpiSession.set(null);
+    this.selectedKpiAssignments.set([]);
+  }
+
+  // Knowledge base methods
+  async loadKnowledgeBases(): Promise<void> {
+    try {
+      const kbs = await this.http.get<KnowledgeBase[]>('/api/knowledge-bases').toPromise();
+      // Only show ready knowledge bases
+      this.knowledgeBases.set((kbs || []).filter((kb) => kb.status === 'ready'));
+    } catch (err: any) {
+      console.error('Failed to load knowledge bases:', err);
+    }
   }
 }

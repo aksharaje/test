@@ -1,15 +1,17 @@
 /**
  * KPI Assignment Types
  *
- * KPI Assignment shows Goals from Goal Setting with inline forms
- * to assign KPIs (Primary, Secondary, Measurement Unit, Check Frequency)
+ * AI-powered KPI assignment from Goals
  */
 
 export interface KpiAssignmentSession {
   id: number;
   goalSessionId?: number;
   okrSessionId?: number;
-  status: 'draft' | 'completed';
+  status: 'pending' | 'generating' | 'completed' | 'failed';
+  progressMessage?: string;
+  errorMessage?: string;
+  executiveSummary?: string;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -20,12 +22,17 @@ export interface KpiAssignment {
   sessionId: number;
   goalId?: number;
   keyResultId?: number;
+  goalTitle?: string;
+  goalCategory?: string;
   primaryKpi: string;
   measurementUnit: string;
   secondaryKpi?: string;
   checkFrequency: string;
+  alternativeKpis?: string[];
+  rationale?: string;
   metricSuggestions?: string[];
   notes?: string;
+  displayOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,8 +94,22 @@ export interface KpiAssignmentCreate {
   notes?: string;
 }
 
+// Assignment from full response (camelCase from API)
+export interface KpiAssignmentFullItem {
+  id: number;
+  goalId?: number;
+  goalTitle?: string;
+  goalCategory?: string;
+  primaryKpi: string;
+  measurementUnit: string;
+  secondaryKpi?: string;
+  checkFrequency: string;
+  alternativeKpis?: string[];
+  rationale?: string;
+  displayOrder: number;
+}
+
 export interface KpiAssignmentFullResponse {
   session: KpiAssignmentSession;
-  goals: GoalWithKpi[];
-  items: KeyResultWithAssignment[];  // Legacy
+  assignments: KpiAssignmentFullItem[];
 }

@@ -31,6 +31,7 @@ class MeasurementFrameworkSession(SQLModel, table=True):
     existing_data_sources: Optional[str] = None  # Known data sources
     reporting_requirements: Optional[str] = None  # Reporting needs
     stakeholder_audience: Optional[str] = None  # Who will consume the reports
+    knowledge_base_ids: Optional[List[int]] = Field(default=None, sa_column=Column(JSON))  # KBs for context
 
     # Processing state
     status: str = Field(default="pending")  # pending, generating, completed, failed
@@ -153,12 +154,17 @@ class FrameworkDashboard(SQLModel, table=True):
 # Pydantic models for API
 class MeasurementFrameworkSessionCreate(SQLModel):
     """Request model for creating a new session"""
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
     name: str
     objectives_description: str = Field(min_length=50)
     okr_session_id: Optional[int] = None
     existing_data_sources: Optional[str] = None
     reporting_requirements: Optional[str] = None
     stakeholder_audience: Optional[str] = None
+    knowledge_base_ids: Optional[List[int]] = None
 
 
 class MeasurementFrameworkSessionResponse(SQLModel):

@@ -156,6 +156,10 @@ class ScopeMonitorSessionCreate(SQLModel):
     current_requirements: str = Field(min_length=50)
     change_context: Optional[str] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class ScopeMonitorSessionResponse(SQLModel):
     """Response model for session data"""

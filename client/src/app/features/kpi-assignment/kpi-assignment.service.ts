@@ -8,6 +8,7 @@ import type {
   KpiAssignmentSessionCreate,
   KpiAssignmentCreate,
   KpiAssignmentFullResponse,
+  KpiAssignmentFullItem,
 } from './kpi-assignment.types';
 import type { GoalSettingSession, Goal } from '../goal-setting/goal-setting.types';
 
@@ -18,7 +19,8 @@ export class KpiAssignmentService {
 
   sessions = signal<KpiAssignmentSession[]>([]);
   currentSession = signal<KpiAssignmentSession | null>(null);
-  items = signal<KeyResultWithAssignment[]>([]);
+  assignments = signal<KpiAssignmentFullItem[]>([]);
+  items = signal<KeyResultWithAssignment[]>([]);  // Legacy
   goals = signal<GoalWithKpi[]>([]);
   isLoading = signal(false);
   error = signal<string | null>(null);
@@ -57,6 +59,19 @@ export class KpiAssignmentService {
     }
   }
 
+  async getSession(sessionId: number): Promise<KpiAssignmentSession | null> {
+    try {
+      const session = await this.http.get<KpiAssignmentSession>(
+        `${this.baseUrl}/sessions/${sessionId}`
+      ).toPromise();
+      if (session) this.currentSession.set(session);
+      return session || null;
+    } catch (err: any) {
+      this.error.set(err.error?.detail || err.statusText || 'Failed to load session');
+      return null;
+    }
+  }
+
   async getSessionByOkr(okrSessionId: number): Promise<KpiAssignmentSession | null> {
     try {
       const session = await this.http.get<KpiAssignmentSession>(
@@ -65,7 +80,7 @@ export class KpiAssignmentService {
       if (session) this.currentSession.set(session);
       return session || null;
     } catch (err: any) {
-      this.error.set(err.message || 'Failed to load session');
+      this.error.set(err.error?.detail || err.statusText || 'Failed to load session');
       return null;
     }
   }
@@ -78,11 +93,28 @@ export class KpiAssignmentService {
       ).toPromise();
       if (response) {
         this.currentSession.set(response.session);
-        this.items.set(response.items);
+        this.assignments.set(response.assignments || []);
       }
       return response || null;
     } catch (err: any) {
-      this.error.set(err.message || 'Failed to load session');
+      this.error.set(err.error?.detail || err.statusText || 'Failed to load session');
+      return null;
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async retrySession(sessionId: number): Promise<KpiAssignmentSession | null> {
+    this.isLoading.set(true);
+    try {
+      const session = await this.http.post<KpiAssignmentSession>(
+        `${this.baseUrl}/sessions/${sessionId}/retry`,
+        {}
+      ).toPromise();
+      if (session) this.currentSession.set(session);
+      return session || null;
+    } catch (err: any) {
+      this.error.set(err.error?.detail || err.statusText || 'Failed to retry session');
       return null;
     } finally {
       this.isLoading.set(false);

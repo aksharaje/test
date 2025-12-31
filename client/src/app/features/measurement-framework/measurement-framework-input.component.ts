@@ -1,17 +1,19 @@
-import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideBarChart3, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideTarget, lucidePenLine } from '@ng-icons/lucide';
+import { lucideBarChart3, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideTarget, lucidePenLine, lucideFileText, lucideDatabase, lucideSearch, lucideCheck } from '@ng-icons/lucide';
 import { MeasurementFrameworkService } from './measurement-framework.service';
 import type { MeasurementFrameworkSession } from './measurement-framework.types';
 import { HlmButtonDirective } from '../../ui/button';
 import { SlicePipe } from '@angular/common';
 
+type SourceType = 'goal-session' | 'okr-session' | 'custom';
+
 @Component({
   selector: 'app-measurement-framework-input',
   standalone: true,
   imports: [NgIcon, HlmButtonDirective, SlicePipe],
-  viewProviders: [provideIcons({ lucideBarChart3, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideTarget, lucidePenLine })],
+  viewProviders: [provideIcons({ lucideBarChart3, lucideHistory, lucideLoader2, lucideSparkles, lucideTrash2, lucideChevronRight, lucideChevronDown, lucideRotateCw, lucideTarget, lucidePenLine, lucideFileText, lucideDatabase, lucideSearch, lucideCheck })],
   template: `
     <div class="flex h-full">
       <div class="w-1/2 border-r p-6 overflow-y-auto">
@@ -32,11 +34,14 @@ import { SlicePipe } from '@angular/common';
 
           <!-- Source Type Tabs -->
           <div class="flex rounded-lg border p-1 mb-6">
+            <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'goal-session'" [class.text-primary-foreground]="sourceType() === 'goal-session'" [class.hover:bg-muted]="sourceType() !== 'goal-session'" (click)="setSourceType('goal-session')">
+              <ng-icon name="lucideFileText" class="h-4 w-4" /> From Goals
+            </button>
             <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'okr-session'" [class.text-primary-foreground]="sourceType() === 'okr-session'" [class.hover:bg-muted]="sourceType() !== 'okr-session'" (click)="setSourceType('okr-session')">
-              <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKR Session
+              <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
             </button>
             <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
-              <ng-icon name="lucidePenLine" class="h-4 w-4" /> Write Custom
+              <ng-icon name="lucidePenLine" class="h-4 w-4" /> Custom
             </button>
           </div>
 
@@ -46,7 +51,41 @@ import { SlicePipe } from '@angular/common';
               <input type="text" class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="name()" (input)="onNameInput($event)" placeholder="e.g., Q1 Product Metrics Framework" required />
             </div>
 
-            @if (sourceType() === 'okr-session') {
+            @if (sourceType() === 'goal-session') {
+              <!-- Goal Session Picker -->
+              <div>
+                <label class="text-sm font-medium">Select Goal Setting Session <span class="text-destructive">*</span></label>
+                <p class="text-xs text-muted-foreground mt-1">Import goals and KPIs from a completed Goal Setting session</p>
+                <select class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="selectedGoalSessionId()" (change)="onGoalSessionChange($event)">
+                  <option value="">-- Select a Goal Session --</option>
+                  @for (goalSession of service.goalSettingSessions(); track goalSession.id) {
+                    <option [value]="goalSession.id">{{ goalSession.domain }} - {{ goalSession.strategy | slice:0:50 }}{{ goalSession.strategy.length > 50 ? '...' : '' }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (selectedGoalSessionId() && service.selectedGoals().length > 0) {
+                <div class="rounded-lg border bg-muted/30 p-4">
+                  <h4 class="text-sm font-medium mb-2">Imported Goals & KPIs</h4>
+                  <ul class="text-sm space-y-2">
+                    @for (goal of service.selectedGoals(); track goal.id) {
+                      <li>
+                        <span class="font-medium">{{ goal.title }}</span>
+                        <span class="text-xs text-muted-foreground ml-2">({{ goal.category }})</span>
+                        @if (getKpiForGoal(goal.id); as kpi) {
+                          <div class="ml-4 mt-1 text-muted-foreground text-xs">
+                            <div>• Primary: {{ kpi.primaryKpi }} ({{ kpi.measurementUnit }})</div>
+                            @if (kpi.secondaryKpi) {
+                              <div>• Secondary: {{ kpi.secondaryKpi }}</div>
+                            }
+                          </div>
+                        }
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            } @else if (sourceType() === 'okr-session') {
               <!-- OKR Session Picker -->
               <div>
                 <label class="text-sm font-medium">Select OKR Session <span class="text-destructive">*</span></label>
@@ -87,6 +126,85 @@ import { SlicePipe } from '@angular/common';
                 <p class="text-xs mt-1" [class.text-destructive]="objectivesLength() > 0 && objectivesLength() < 50">{{ objectivesLength() }} / 50 min</p>
               </div>
             }
+
+            <!-- Knowledge Base Selection -->
+            <div>
+              <label class="text-sm font-medium">
+                <ng-icon name="lucideDatabase" class="inline h-4 w-4 mr-1" />
+                Knowledge Bases <span class="text-muted-foreground font-normal">(Optional)</span>
+              </label>
+              <p class="text-xs text-muted-foreground mt-1">
+                Include context about existing analytics infrastructure
+              </p>
+
+              <div class="relative mt-2">
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  (click)="toggleKbDropdown()"
+                >
+                  <span class="truncate text-left">
+                    @if (selectedKbIds().length === 0) {
+                      <span class="text-muted-foreground">Select knowledge bases...</span>
+                    } @else if (selectedKbIds().length === 1) {
+                      {{ selectedKnowledgeBases()[0]?.name }}
+                    } @else {
+                      {{ selectedKbIds().length }} knowledge bases selected
+                    }
+                  </span>
+                  <ng-icon
+                    name="lucideChevronDown"
+                    class="h-4 w-4 text-muted-foreground transition-transform"
+                    [class.rotate-180]="kbDropdownOpen()"
+                  />
+                </button>
+
+                @if (kbDropdownOpen()) {
+                  <div class="fixed inset-0 z-40" (click)="closeKbDropdown()"></div>
+                  <div class="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover shadow-lg">
+                    <div class="p-2 border-b">
+                      <div class="relative">
+                        <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Filter knowledge bases..."
+                          class="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                          [value]="kbSearchFilter()"
+                          (input)="onKbSearchInput($event)"
+                          (click)="$event.stopPropagation()"
+                        />
+                      </div>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto p-1">
+                      @for (kb of filteredKnowledgeBases(); track kb.id) {
+                        <button
+                          type="button"
+                          class="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+                          [class.bg-primary/10]="selectedKbIds().includes(kb.id)"
+                          (click)="toggleKnowledgeBase(kb.id); $event.stopPropagation()"
+                        >
+                          <div
+                            class="h-4 w-4 rounded border flex items-center justify-center flex-shrink-0"
+                            [class.bg-primary]="selectedKbIds().includes(kb.id)"
+                            [class.border-primary]="selectedKbIds().includes(kb.id)"
+                          >
+                            @if (selectedKbIds().includes(kb.id)) {
+                              <ng-icon name="lucideCheck" class="h-3 w-3 text-primary-foreground" />
+                            }
+                          </div>
+                          <span class="truncate">{{ kb.name }}</span>
+                        </button>
+                      }
+                      @if (filteredKnowledgeBases().length === 0) {
+                        <div class="p-3 text-center text-sm text-muted-foreground">
+                          No knowledge bases found
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
 
             <div class="border rounded-lg">
               <button type="button" class="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50" (click)="toggleOptionalFields()">
@@ -164,7 +282,8 @@ export class MeasurementFrameworkInputComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  sourceType = signal<'okr-session' | 'custom'>('custom');
+  sourceType = signal<SourceType>('goal-session');
+  selectedGoalSessionId = signal<string>('');
   selectedOkrSessionId = signal<string>('');
   name = signal('');
   objectivesDescription = signal('');
@@ -173,20 +292,62 @@ export class MeasurementFrameworkInputComponent implements OnInit {
   stakeholderAudience = signal('');
   optionalFieldsOpen = signal(false);
 
+  // Knowledge base selection
+  selectedKbIds = signal<number[]>([]);
+  kbDropdownOpen = signal(false);
+  kbSearchFilter = signal('');
+
   objectivesLength = computed(() => this.objectivesDescription().length);
   canSubmit = computed(() => {
     if (this.name().length === 0) return false;
+    if (this.sourceType() === 'goal-session') {
+      return !!this.selectedGoalSessionId() && this.service.selectedGoals().length > 0;
+    }
     if (this.sourceType() === 'okr-session') {
       return !!this.selectedOkrSessionId() && this.service.okrObjectives().length > 0;
     }
     return this.objectivesLength() >= 50;
   });
 
+  selectedKnowledgeBases = computed(() => {
+    const ids = this.selectedKbIds();
+    return this.service.knowledgeBases().filter((kb) => ids.includes(kb.id));
+  });
+
+  filteredKnowledgeBases = computed(() => {
+    const filter = this.kbSearchFilter().toLowerCase();
+    if (!filter) return this.service.knowledgeBases();
+    return this.service.knowledgeBases().filter((kb) =>
+      kb.name.toLowerCase().includes(filter)
+    );
+  });
+
+  getKpiForGoal(goalId: number) {
+    return this.service.selectedKpiAssignments().find((k) => k.goalId === goalId);
+  }
+
   async ngOnInit() {
     await Promise.all([
       this.service.loadSessions(),
       this.service.loadOkrSessions(),
+      this.service.loadGoalSettingSessions(),
+      this.service.loadKnowledgeBases(),
     ]);
+
+    // Check for goalSessionId query param (from KPI Assignment CTA)
+    const goalSessionId = this.route.snapshot.queryParams['goalSessionId'];
+    if (goalSessionId) {
+      this.sourceType.set('goal-session');
+      this.selectedGoalSessionId.set(goalSessionId);
+      await this.service.loadGoalSessionFull(Number(goalSessionId));
+      await this.service.loadKpiSessionByGoal(Number(goalSessionId));
+      // Auto-generate framework name from Goal session
+      const session = this.service.selectedGoalSession();
+      if (session) {
+        this.name.set(`${session.domain} Measurement Framework`);
+      }
+      return;
+    }
 
     // Check for okrSessionId query param (from OKR Generator CTA)
     const okrSessionId = this.route.snapshot.queryParams['okrSessionId'];
@@ -202,12 +363,37 @@ export class MeasurementFrameworkInputComponent implements OnInit {
     }
   }
 
-  setSourceType(type: 'okr-session' | 'custom') {
+  setSourceType(type: SourceType) {
     this.sourceType.set(type);
-    if (type === 'custom') {
+    if (type === 'goal-session') {
       this.selectedOkrSessionId.set('');
       this.service.selectedOkrSession.set(null);
       this.service.okrObjectives.set([]);
+    } else if (type === 'okr-session') {
+      this.selectedGoalSessionId.set('');
+      this.service.clearGoalSelection();
+    } else {
+      this.selectedGoalSessionId.set('');
+      this.selectedOkrSessionId.set('');
+      this.service.clearGoalSelection();
+      this.service.selectedOkrSession.set(null);
+      this.service.okrObjectives.set([]);
+    }
+  }
+
+  async onGoalSessionChange(e: Event) {
+    const value = (e.target as HTMLSelectElement).value;
+    this.selectedGoalSessionId.set(value);
+    if (value) {
+      await this.service.loadGoalSessionFull(Number(value));
+      await this.service.loadKpiSessionByGoal(Number(value));
+      // Auto-generate framework name from Goal session
+      const session = this.service.selectedGoalSession();
+      if (session && !this.name()) {
+        this.name.set(`${session.domain} Measurement Framework`);
+      }
+    } else {
+      this.service.clearGoalSelection();
     }
   }
 
@@ -234,13 +420,29 @@ export class MeasurementFrameworkInputComponent implements OnInit {
   onAudienceInput(e: Event) { this.stakeholderAudience.set((e.target as HTMLTextAreaElement).value); }
   toggleOptionalFields() { this.optionalFieldsOpen.update((v) => !v); }
 
+  // Knowledge base methods
+  toggleKbDropdown() { this.kbDropdownOpen.update((v) => !v); }
+  closeKbDropdown() { this.kbDropdownOpen.set(false); }
+  onKbSearchInput(e: Event) { this.kbSearchFilter.set((e.target as HTMLInputElement).value); }
+  toggleKnowledgeBase(id: number) {
+    this.selectedKbIds.update((ids) => {
+      if (ids.includes(id)) {
+        return ids.filter((kbId) => kbId !== id);
+      } else {
+        return [...ids, id];
+      }
+    });
+  }
+
   async onSubmit(e: Event) {
     e.preventDefault();
     if (!this.canSubmit()) return;
 
-    // Build objectives description from OKR session if using that source
+    // Build objectives description from source
     let description = this.objectivesDescription();
-    if (this.sourceType() === 'okr-session') {
+    if (this.sourceType() === 'goal-session') {
+      description = this.service.buildDescriptionFromGoals();
+    } else if (this.sourceType() === 'okr-session') {
       description = this.service.buildDescriptionFromOkr();
     }
 
@@ -250,6 +452,7 @@ export class MeasurementFrameworkInputComponent implements OnInit {
       existingDataSources: this.existingDataSources() || undefined,
       reportingRequirements: this.reportingRequirements() || undefined,
       stakeholderAudience: this.stakeholderAudience() || undefined,
+      knowledgeBaseIds: this.selectedKbIds().length > 0 ? this.selectedKbIds() : undefined,
     });
     if (session) this.router.navigate(['/measurements/framework/results', session.id]);
   }

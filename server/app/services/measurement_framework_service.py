@@ -14,6 +14,7 @@ from app.models.measurement_framework import (
     FrameworkDashboard,
     MeasurementFrameworkSessionCreate,
 )
+from app.models.knowledge_base import KnowledgeBase
 from openai import OpenAI
 
 
@@ -79,6 +80,69 @@ class MeasurementFrameworkService:
                                 break
             raise ValueError(f"{context}: Failed to parse JSON: {str(e)}")
 
+    def _fetch_knowledge_base_context(
+        self,
+        db: Session,
+        kb_ids: List[int],
+        query: str,
+        limit_per_kb: int = 10
+    ) -> Dict[str, Any]:
+        """Fetch relevant context from knowledge bases using semantic search."""
+        if not kb_ids:
+            return {"text": "", "metadata": []}
+
+        context_parts = []
+        metadata = []
+
+        for kb_id in kb_ids:
+            kb = db.get(KnowledgeBase, kb_id)
+            if not kb or kb.status != "ready":
+                continue
+
+            try:
+                from app.core.config import settings
+                from openai import OpenAI as EmbeddingClient
+                embed_client = EmbeddingClient(api_key=settings.OPENAI_API_KEY)
+                embedding_response = embed_client.embeddings.create(
+                    model=kb.settings.get("embeddingModel", "text-embedding-ada-002") if kb.settings else "text-embedding-ada-002",
+                    input=query
+                )
+                query_embedding = embedding_response.data[0].embedding
+
+                from sqlalchemy import text as sql_text
+                results = db.execute(
+                    sql_text("""
+                        SELECT id, document_id, content, metadata_,
+                               1 - (embedding <=> :embedding::vector) as similarity
+                        FROM document_chunks
+                        WHERE document_id IN (SELECT id FROM documents WHERE knowledge_base_id = :kb_id)
+                        ORDER BY embedding <=> :embedding::vector
+                        LIMIT :limit
+                    """),
+                    {"embedding": str(query_embedding), "kb_id": kb_id, "limit": limit_per_kb}
+                ).fetchall()
+
+                chunks_used = 0
+                for row in results:
+                    if row.similarity > 0.5:
+                        context_parts.append(f"[From {kb.name}]\n{row.content}")
+                        chunks_used += 1
+
+                if chunks_used > 0:
+                    metadata.append({
+                        "id": kb_id,
+                        "name": kb.name,
+                        "chunks_used": chunks_used
+                    })
+            except Exception as e:
+                print(f"Error fetching KB {kb_id} context: {e}")
+                continue
+
+        return {
+            "text": "\n\n".join(context_parts),
+            "metadata": metadata
+        }
+
     # ==================== SESSION MANAGEMENT ====================
 
     def create_session(self, db: Session, data: MeasurementFrameworkSessionCreate) -> MeasurementFrameworkSession:
@@ -90,6 +154,7 @@ class MeasurementFrameworkService:
             existing_data_sources=data.existing_data_sources,
             reporting_requirements=data.reporting_requirements,
             stakeholder_audience=data.stakeholder_audience,
+            knowledge_base_ids=data.knowledge_base_ids,
             status="pending",
         )
         db.add(session)
@@ -148,16 +213,32 @@ class MeasurementFrameworkService:
             session.updated_at = datetime.utcnow()
             db.commit()
 
-            prompt = self._build_framework_prompt(session)
+            # Fetch knowledge base context if available
+            kb_context = ""
+            if session.knowledge_base_ids:
+                session.progress_message = "Analyzing existing documentation..."
+                db.commit()
+                kb_result = self._fetch_knowledge_base_context(
+                    db,
+                    session.knowledge_base_ids,
+                    f"analytics metrics data sources dashboards reporting measurement KPIs {session.objectives_description}",
+                    limit_per_kb=15
+                )
+                kb_context = kb_result.get("text", "")
+
+            prompt = self._build_framework_prompt(session, kb_context)
 
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {
                         "role": "system",
-                        "content": """You are an expert in building measurement frameworks and data-driven decision systems.
-You help teams create comprehensive measurement strategies with clear metrics, data sources, and dashboards.
-Always respond with valid JSON only, no additional text or markdown."""
+                        "content": """You are a JSON-only API for building measurement frameworks.
+
+CRITICAL: You MUST respond with valid JSON only. No markdown, no explanations, no code fences.
+Start your response with { and end with }. Your entire response must be parseable JSON.
+
+Your expertise is in creating comprehensive measurement strategies with clear metrics, data sources, and dashboards."""
                     },
                     {"role": "user", "content": prompt}
                 ],
@@ -188,8 +269,22 @@ Always respond with valid JSON only, no additional text or markdown."""
             db.commit()
             raise
 
-    def _build_framework_prompt(self, session: MeasurementFrameworkSession) -> str:
+    def _build_framework_prompt(self, session: MeasurementFrameworkSession, kb_context: str = "") -> str:
         """Build the prompt for framework generation."""
+        kb_section = ""
+        if kb_context:
+            kb_section = f"""
+## Existing Analytics Documentation
+The following documentation from the organization's knowledge base describes existing analytics infrastructure,
+data sources, and measurement practices. Use this information to ground your recommendations in reality -
+reference actual data sources, existing dashboards, and current metrics where applicable:
+
+{kb_context}
+
+IMPORTANT: When recommending data sources and metrics, prioritize using existing infrastructure described above.
+Only suggest new data sources when necessary. Make specific references to existing tools and systems.
+"""
+
         prompt = f"""Create a comprehensive measurement framework based on the following requirements.
 
 ## Framework Name
@@ -197,9 +292,9 @@ Always respond with valid JSON only, no additional text or markdown."""
 
 ## Objectives to Measure
 {session.objectives_description}
-
+{kb_section}
 ## Existing Data Sources
-{session.existing_data_sources or "Not specified - recommend appropriate sources"}
+{session.existing_data_sources or "Not specified - recommend appropriate sources based on documentation above if available"}
 
 ## Reporting Requirements
 {session.reporting_requirements or "Standard executive and operational reporting"}

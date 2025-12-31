@@ -75,6 +75,7 @@ export interface MeasurementFrameworkSessionCreate {
   existingDataSources?: string;
   reportingRequirements?: string;
   stakeholderAudience?: string;
+  knowledgeBaseIds?: number[];
 }
 
 export interface MeasurementFrameworkFullResponse {

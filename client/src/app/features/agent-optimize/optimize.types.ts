@@ -26,6 +26,7 @@ export interface VersionInfo {
   version: number;
   status: string;
   createdAt: string;
+  feedbackStats: FeedbackStats;
 }
 
 // Split test significance
@@ -70,6 +71,8 @@ export interface FeedbackItem {
   text: string | null;
   createdAt: string;
   artifactTitle?: string;
+  version?: number;
+  versionId?: number;
 }
 
 // Legacy types for backward compatibility

@@ -1,7 +1,7 @@
 """
 KPI Assignment API Endpoints
 
-REST API for manual KPI assignment to Key Results.
+REST API for AI-powered KPI assignment from Goals.
 """
 from typing import List, Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
@@ -27,11 +27,15 @@ service = KpiAssignmentService()
 @router.post("/sessions", response_model=KpiAssignmentSessionResponse)
 def create_session(
     data: KpiAssignmentSessionCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> KpiAssignmentSession:
-    """Create a new KPI assignment session for an OKR session."""
+    """Create a new KPI assignment session and start generation."""
     try:
-        return service.create_session(db, data)
+        session = service.create_session(db, data)
+        # Start background generation
+        background_tasks.add_task(service.generate_kpis, db, session.id)
+        return session
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -58,16 +62,42 @@ def get_session(
     return session
 
 
+@router.get("/sessions/by-goal/{goal_session_id}", response_model=KpiAssignmentSessionResponse)
+def get_session_by_goal(
+    goal_session_id: int,
+    db: Session = Depends(get_db),
+) -> KpiAssignmentSession:
+    """Get KPI assignment session for a Goal Setting session."""
+    session = service.get_session_by_goal(db, goal_session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="No KPI assignment found for this goal session")
+    return session
+
+
+@router.get("/sessions/by-goal/{goal_session_id}/full")
+def get_session_by_goal_full(
+    goal_session_id: int,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Get full KPI assignment session for a Goal Setting session with all assignments."""
+    session = service.get_session_by_goal(db, goal_session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="No KPI assignment found for this goal session")
+    result = service.get_session_full(db, session.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return result
+
+
 @router.get("/sessions/by-okr/{okr_session_id}", response_model=KpiAssignmentSessionResponse)
 def get_session_by_okr(
     okr_session_id: int,
     db: Session = Depends(get_db),
 ) -> KpiAssignmentSession:
-    """Get or create KPI assignment session for an OKR session."""
+    """Get KPI assignment session for an OKR session (legacy)."""
     session = service.get_session_by_okr(db, okr_session_id)
     if not session:
-        # Auto-create session
-        session = service.create_session(db, KpiAssignmentSessionCreate(okr_session_id=okr_session_id))
+        raise HTTPException(status_code=404, detail="No KPI assignment found for this OKR session")
     return session
 
 
@@ -82,16 +112,25 @@ def delete_session(
     return {"message": "Session deleted"}
 
 
-@router.post("/sessions/{session_id}/complete", response_model=KpiAssignmentSessionResponse)
-def complete_session(
+@router.post("/sessions/{session_id}/retry", response_model=KpiAssignmentSessionResponse)
+def retry_session(
     session_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> KpiAssignmentSession:
-    """Mark a KPI assignment session as completed."""
-    try:
-        return service.complete_session(db, session_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    """Retry a failed KPI assignment session."""
+    session = service.get_session(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Reset session status
+    session.status = "pending"
+    session.error_message = None
+    db.commit()
+
+    # Start background generation
+    background_tasks.add_task(service.generate_kpis, db, session.id)
+    return session
 
 
 # ==================== ASSIGNMENT ENDPOINTS ====================
@@ -105,18 +144,17 @@ def get_assignments(
     return service.get_assignments(db, session_id)
 
 
-@router.post("/sessions/{session_id}/assignments", response_model=KpiAssignmentResponse)
-def create_or_update_assignment(
-    session_id: int,
+@router.patch("/assignments/{assignment_id}", response_model=KpiAssignmentResponse)
+def update_assignment(
+    assignment_id: int,
     data: KpiAssignmentCreate,
     db: Session = Depends(get_db),
 ) -> KpiAssignment:
-    """Create or update a KPI assignment."""
-    # Verify session exists
-    session = service.get_session(db, session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return service.create_or_update_assignment(db, session_id, data)
+    """Update a KPI assignment."""
+    assignment = service.update_assignment(db, assignment_id, data)
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    return assignment
 
 
 @router.delete("/assignments/{assignment_id}")
@@ -137,23 +175,8 @@ def get_session_full(
     session_id: int,
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Get full session data with key results and assignments."""
-    session = service.get_session(db, session_id)
-    if not session:
+    """Get full session data with all assignments."""
+    result = service.get_session_full(db, session_id)
+    if not result:
         raise HTTPException(status_code=404, detail="Session not found")
-
-    key_results_with_assignments = service.get_key_results_with_assignments(db, session_id)
-
-    return {
-        "session": session,
-        "items": key_results_with_assignments,
-    }
-
-
-@router.get("/key-results/{key_result_id}/suggestions")
-def get_kpi_suggestions(
-    key_result_id: int,
-    db: Session = Depends(get_db),
-) -> List[str]:
-    """Get AI-generated KPI suggestions for a key result."""
-    return service.get_kpi_suggestions(db, key_result_id)
+    return result

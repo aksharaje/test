@@ -1,9 +1,11 @@
 """
 KPI Assignment Service
 
-Business logic for manual KPI assignment workflow.
-Users assign KPIs to Key Results from their OKR sessions.
+Business logic for AI-powered KPI assignment workflow.
+Takes Goals from Goal Setting and generates appropriate KPIs.
 """
+import json
+import re
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlmodel import Session, select, desc
@@ -13,6 +15,7 @@ from app.models.kpi_assignment import (
     KpiAssignmentSessionCreate,
     KpiAssignmentCreate,
 )
+from app.models.goal_setting import GoalSettingSession, Goal
 from app.models.okr_generator import OkrSession, KeyResult, Objective
 from openai import OpenAI
 
@@ -41,18 +44,57 @@ class KpiAssignmentService:
         from app.core.config import settings
         return settings.OPENROUTER_MODEL
 
+    def _parse_llm_json(self, content: str, context: str = "LLM") -> Dict[str, Any]:
+        """Robust JSON parsing for LLM responses."""
+        if not content or content.strip() == "":
+            raise ValueError(f"{context}: Empty response from LLM")
+
+        content = content.strip()
+
+        if "```" in content:
+            code_block_match = re.search(r'```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```', content)
+            if code_block_match:
+                content = code_block_match.group(1).strip()
+            else:
+                content = content.replace("```json", "").replace("```JSON", "").replace("```", "").strip()
+
+        brace_idx = content.find('{')
+        bracket_idx = content.find('[')
+
+        if brace_idx == -1 and bracket_idx == -1:
+            raise ValueError(f"{context}: No JSON object found in response")
+
+        json_start = min(
+            brace_idx if brace_idx != -1 else len(content),
+            bracket_idx if bracket_idx != -1 else len(content)
+        )
+        content = content[json_start:]
+
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError as e:
+            if content.startswith('{'):
+                depth = 0
+                for i, char in enumerate(content):
+                    if char == '{':
+                        depth += 1
+                    elif char == '}':
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                return json.loads(content[:i+1])
+                            except json.JSONDecodeError:
+                                break
+            raise ValueError(f"{context}: Failed to parse JSON: {str(e)}")
+
     # ==================== SESSION MANAGEMENT ====================
 
     def create_session(self, db: Session, data: KpiAssignmentSessionCreate) -> KpiAssignmentSession:
-        """Create a new KPI assignment session linked to an OKR session."""
-        # Verify OKR session exists
-        okr_session = db.get(OkrSession, data.okr_session_id)
-        if not okr_session:
-            raise ValueError(f"OKR session {data.okr_session_id} not found")
-
+        """Create a new KPI assignment session."""
         session = KpiAssignmentSession(
+            goal_session_id=data.goal_session_id,
             okr_session_id=data.okr_session_id,
-            status="draft",
+            status="pending",
         )
         db.add(session)
         db.commit()
@@ -63,8 +105,17 @@ class KpiAssignmentService:
         """Get a session by ID."""
         return db.get(KpiAssignmentSession, session_id)
 
+    def get_session_by_goal(self, db: Session, goal_session_id: int) -> Optional[KpiAssignmentSession]:
+        """Get KPI assignment session for a Goal Setting session."""
+        statement = (
+            select(KpiAssignmentSession)
+            .where(KpiAssignmentSession.goal_session_id == goal_session_id)
+            .order_by(desc(KpiAssignmentSession.created_at))
+        )
+        return db.exec(statement).first()
+
     def get_session_by_okr(self, db: Session, okr_session_id: int) -> Optional[KpiAssignmentSession]:
-        """Get KPI assignment session for an OKR session."""
+        """Get KPI assignment session for an OKR session (legacy)."""
         statement = (
             select(KpiAssignmentSession)
             .where(KpiAssignmentSession.okr_session_id == okr_session_id)
@@ -104,60 +155,171 @@ class KpiAssignmentService:
         db.commit()
         return True
 
-    # ==================== KPI ASSIGNMENT ====================
+    # ==================== AI GENERATION ====================
 
-    def create_or_update_assignment(
-        self, db: Session, session_id: int, data: KpiAssignmentCreate
-    ) -> KpiAssignment:
-        """Create or update a KPI assignment for a key result."""
-        # Check if assignment exists
-        existing = db.exec(
-            select(KpiAssignment)
-            .where(KpiAssignment.session_id == session_id)
-            .where(KpiAssignment.key_result_id == data.key_result_id)
-        ).first()
+    def generate_kpis(self, db: Session, session_id: int) -> KpiAssignmentSession:
+        """Generate KPIs for all goals in the session using AI."""
+        session = db.get(KpiAssignmentSession, session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
 
-        if existing:
-            # Update existing
-            existing.primary_kpi = data.primary_kpi
-            existing.measurement_unit = data.measurement_unit
-            existing.secondary_kpi = data.secondary_kpi
-            existing.check_frequency = data.check_frequency
-            existing.notes = data.notes
-            existing.updated_at = datetime.utcnow()
+        try:
+            session.status = "generating"
+            session.progress_message = "Analyzing goals and generating KPIs..."
+            session.updated_at = datetime.utcnow()
             db.commit()
-            db.refresh(existing)
-            return existing
-        else:
-            # Create new
-            assignment = KpiAssignment(
-                session_id=session_id,
-                key_result_id=data.key_result_id,
-                primary_kpi=data.primary_kpi,
-                measurement_unit=data.measurement_unit,
-                secondary_kpi=data.secondary_kpi,
-                check_frequency=data.check_frequency,
-                notes=data.notes,
+
+            # Get goals from the linked Goal Setting session
+            goals = []
+            if session.goal_session_id:
+                goals = db.exec(
+                    select(Goal)
+                    .where(Goal.session_id == session.goal_session_id)
+                    .order_by(Goal.display_order)
+                ).all()
+
+            if not goals:
+                raise ValueError("No goals found for this session")
+
+            # Build prompt
+            prompt = self._build_kpi_prompt(goals)
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are an expert in performance measurement and KPI definition.
+You help teams define clear, measurable KPIs for their goals.
+Always respond with valid JSON only, no additional text or markdown."""
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000,
             )
-            db.add(assignment)
+
+            content = response.choices[0].message.content
+            result = self._parse_llm_json(content, "KPI Generation")
+
+            # Save generated KPIs
+            self._save_kpis(db, session_id, goals, result)
+
+            session.status = "completed"
+            session.executive_summary = result.get("executive_summary", "")
+            session.completed_at = datetime.utcnow()
+            session.updated_at = datetime.utcnow()
+            session.progress_message = None
             db.commit()
-            db.refresh(assignment)
-            return assignment
+            db.refresh(session)
+
+            return session
+
+        except Exception as e:
+            session.status = "failed"
+            session.error_message = str(e)
+            session.updated_at = datetime.utcnow()
+            db.commit()
+            raise
+
+    def _build_kpi_prompt(self, goals: List[Goal]) -> str:
+        """Build the prompt for KPI generation."""
+        goals_text = ""
+        for i, goal in enumerate(goals):
+            goals_text += f"""
+Goal {i + 1}:
+- Title: {goal.title}
+- Description: {goal.description}
+- Category: {goal.category}
+- Priority: {goal.priority}
+- Timeframe: {goal.timeframe or 'Not specified'}
+- Success Criteria: {goal.specific}
+- Measurable: {goal.measurable}
+"""
+
+        prompt = f"""Based on the following goals, generate appropriate KPIs (Key Performance Indicators) for each goal.
+
+## Goals
+{goals_text}
+
+## Instructions
+For each goal, provide:
+1. A primary KPI that directly measures progress toward the goal
+2. The appropriate measurement unit
+3. A secondary KPI (health metric) that helps ensure quality
+4. Recommended check frequency
+5. 2-3 alternative KPIs the user might consider
+6. Brief rationale for why this KPI was chosen
+
+Respond with JSON in this exact format:
+{{
+    "executive_summary": "Brief summary of the KPI assignment strategy",
+    "kpi_assignments": [
+        {{
+            "goal_index": 0,
+            "primary_kpi": "Login Success Rate",
+            "measurement_unit": "Percentage (%)",
+            "secondary_kpi": "Auth Error Rate",
+            "check_frequency": "weekly",
+            "alternative_kpis": ["Time to Login", "Failed Attempts"],
+            "rationale": "Login success rate directly measures user authentication experience..."
+        }}
+    ]
+}}"""
+        return prompt
+
+    def _save_kpis(self, db: Session, session_id: int, goals: List[Goal], result: Dict[str, Any]) -> None:
+        """Save generated KPIs to database."""
+        for i, kpi_data in enumerate(result.get("kpi_assignments", [])):
+            goal_index = kpi_data.get("goal_index", i)
+            if goal_index < len(goals):
+                goal = goals[goal_index]
+
+                assignment = KpiAssignment(
+                    session_id=session_id,
+                    goal_id=goal.id,
+                    goal_title=goal.title,
+                    goal_category=goal.category,
+                    primary_kpi=kpi_data.get("primary_kpi", ""),
+                    measurement_unit=kpi_data.get("measurement_unit", ""),
+                    secondary_kpi=kpi_data.get("secondary_kpi"),
+                    check_frequency=kpi_data.get("check_frequency", "weekly"),
+                    alternative_kpis=kpi_data.get("alternative_kpis"),
+                    rationale=kpi_data.get("rationale"),
+                    display_order=i,
+                )
+                db.add(assignment)
+
+        db.commit()
+
+    # ==================== DATA RETRIEVAL ====================
 
     def get_assignments(self, db: Session, session_id: int) -> List[KpiAssignment]:
         """Get all KPI assignments for a session."""
-        statement = select(KpiAssignment).where(KpiAssignment.session_id == session_id)
-        return list(db.exec(statement).all())
-
-    def get_assignment_for_key_result(
-        self, db: Session, session_id: int, key_result_id: int
-    ) -> Optional[KpiAssignment]:
-        """Get KPI assignment for a specific key result."""
-        return db.exec(
+        statement = (
             select(KpiAssignment)
             .where(KpiAssignment.session_id == session_id)
-            .where(KpiAssignment.key_result_id == key_result_id)
-        ).first()
+            .order_by(KpiAssignment.display_order)
+        )
+        return list(db.exec(statement).all())
+
+    def update_assignment(
+        self, db: Session, assignment_id: int, data: KpiAssignmentCreate
+    ) -> Optional[KpiAssignment]:
+        """Update a KPI assignment."""
+        assignment = db.get(KpiAssignment, assignment_id)
+        if not assignment:
+            return None
+
+        assignment.primary_kpi = data.primary_kpi
+        assignment.measurement_unit = data.measurement_unit
+        assignment.secondary_kpi = data.secondary_kpi
+        assignment.check_frequency = data.check_frequency
+        assignment.notes = data.notes
+        assignment.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(assignment)
+        return assignment
 
     def delete_assignment(self, db: Session, assignment_id: int) -> bool:
         """Delete a KPI assignment."""
@@ -168,113 +330,53 @@ class KpiAssignmentService:
         db.commit()
         return True
 
-    # ==================== SUGGESTIONS ====================
-
-    def get_kpi_suggestions(
-        self, db: Session, key_result_id: int
-    ) -> List[str]:
-        """Get AI-generated KPI suggestions for a key result."""
-        key_result = db.get(KeyResult, key_result_id)
-        if not key_result:
-            return []
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a product metrics expert. Generate 3-5 relevant KPI suggestions."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""Suggest 3-5 relevant KPIs to measure this Key Result:
-
-Title: {key_result.title}
-Description: {key_result.description}
-Target: {key_result.target_value}
-
-Return a JSON array of KPI names only, e.g.: ["KPI 1", "KPI 2", "KPI 3"]"""
-                    }
-                ],
-                temperature=0.5,
-                max_tokens=200,
-            )
-
-            import json
-            content = response.choices[0].message.content.strip()
-            # Parse JSON array
-            if content.startswith('['):
-                return json.loads(content)
-            return []
-        except Exception:
-            return []
-
     # ==================== SESSION COMPLETION ====================
 
-    def complete_session(self, db: Session, session_id: int) -> KpiAssignmentSession:
-        """Mark session as completed."""
+    def retry_session(self, db: Session, session_id: int) -> KpiAssignmentSession:
+        """Retry a failed session."""
         session = db.get(KpiAssignmentSession, session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
 
-        session.status = "completed"
-        session.completed_at = datetime.utcnow()
+        # Clear existing assignments
+        for assignment in db.exec(select(KpiAssignment).where(KpiAssignment.session_id == session_id)).all():
+            db.delete(assignment)
+
+        session.status = "pending"
+        session.error_message = None
+        session.executive_summary = None
+        session.completed_at = None
         session.updated_at = datetime.utcnow()
         db.commit()
-        db.refresh(session)
-        return session
+
+        return self.generate_kpis(db, session_id)
 
     # ==================== FULL DATA RETRIEVAL ====================
 
-    def get_key_results_with_assignments(
-        self, db: Session, session_id: int
-    ) -> List[Dict[str, Any]]:
-        """Get all key results from the linked OKR session with their KPI assignments."""
+    def get_session_full(self, db: Session, session_id: int) -> Optional[Dict[str, Any]]:
+        """Get full session data with all assignments."""
         session = db.get(KpiAssignmentSession, session_id)
         if not session:
-            return []
+            return None
 
-        # Get objectives from OKR session
-        objectives = db.exec(
-            select(Objective)
-            .where(Objective.session_id == session.okr_session_id)
-            .order_by(Objective.display_order)
-        ).all()
+        assignments = self.get_assignments(db, session_id)
 
-        result = []
-        for objective in objectives:
-            # Get key results for this objective
-            key_results = db.exec(
-                select(KeyResult)
-                .where(KeyResult.objective_id == objective.id)
-                .order_by(KeyResult.display_order)
-            ).all()
-
-            for kr in key_results:
-                # Get assignment if exists
-                assignment = self.get_assignment_for_key_result(db, session_id, kr.id)
-
-                result.append({
-                    "objective": {
-                        "id": objective.id,
-                        "title": objective.title,
-                        "category": objective.category,
-                    },
-                    "key_result": {
-                        "id": kr.id,
-                        "title": kr.title,
-                        "description": kr.description,
-                        "baseline_value": kr.baseline_value,
-                        "target_value": kr.target_value,
-                    },
-                    "assignment": {
-                        "id": assignment.id,
-                        "primary_kpi": assignment.primary_kpi,
-                        "measurement_unit": assignment.measurement_unit,
-                        "secondary_kpi": assignment.secondary_kpi,
-                        "check_frequency": assignment.check_frequency,
-                    } if assignment else None
-                })
-
-        return result
+        return {
+            "session": session,
+            "assignments": [
+                {
+                    "id": a.id,
+                    "goalId": a.goal_id,
+                    "goalTitle": a.goal_title,
+                    "goalCategory": a.goal_category,
+                    "primaryKpi": a.primary_kpi,
+                    "measurementUnit": a.measurement_unit,
+                    "secondaryKpi": a.secondary_kpi,
+                    "checkFrequency": a.check_frequency,
+                    "alternativeKpis": a.alternative_kpis,
+                    "rationale": a.rationale,
+                    "displayOrder": a.display_order,
+                }
+                for a in assignments
+            ],
+        }

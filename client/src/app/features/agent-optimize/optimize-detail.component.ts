@@ -132,7 +132,8 @@ import { HlmButtonDirective } from '../../ui/button';
         }
 
         <!-- Main content -->
-        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        @if (shouldShowInstructions(details)) {
+          <div class="mt-8 grid gap-6 lg:grid-cols-2">
           <!-- Current prompt -->
           <div class="rounded-lg border bg-card">
             <div class="border-b p-4">
@@ -253,7 +254,8 @@ import { HlmButtonDirective } from '../../ui/button';
               }
             </div>
           </div>
-        </div>
+          </div>
+        }
 
         <!-- Version history -->
         @if (details.versions.length > 0) {
@@ -332,6 +334,7 @@ import { HlmButtonDirective } from '../../ui/button';
                   <tr>
                     <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Version</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Feedback</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Created</th>
                     <th class="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
@@ -345,6 +348,18 @@ import { HlmButtonDirective } from '../../ui/button';
                           {{ version.status }}
                         </span>
                       </td>
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-3 text-xs">
+                          <span class="flex items-center gap-1 text-green-600" title="Positive">
+                            <ng-icon name="lucideThumbsUp" class="h-3 w-3" />
+                            {{ version.feedbackStats.positive }}
+                          </span>
+                          <span class="flex items-center gap-1 text-red-600" title="Negative">
+                            <ng-icon name="lucideThumbsDown" class="h-3 w-3" />
+                            {{ version.feedbackStats.negative }}
+                          </span>
+                        </div>
+                      </td>
                       <td class="px-4 py-3 text-sm text-muted-foreground">
                         {{ formatDate(version.createdAt) }}
                       </td>
@@ -356,6 +371,7 @@ import { HlmButtonDirective } from '../../ui/button';
                             size="sm"
                             [disabled]="service.loading()"
                             (click)="activateVersion(version.id)"
+                            title="Revert to this version"
                           >
                             <ng-icon name="lucidePlay" class="mr-1 h-4 w-4" />
                             Activate
@@ -405,7 +421,14 @@ import { HlmButtonDirective } from '../../ui/button';
                       </div>
                       <div class="flex-1">
                         @if (item.artifactTitle) {
-                          <p class="text-sm font-medium text-muted-foreground mb-1">{{ item.artifactTitle }}</p>
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-medium text-muted-foreground">{{ item.artifactTitle }}</span>
+                            @if (item.version) {
+                              <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border">
+                                v{{ item.version }}
+                              </span>
+                            }
+                          </div>
                         }
                         @if (item.text) {
                           <p class="text-sm">{{ item.text }}</p>
@@ -565,5 +588,9 @@ export class OptimizeDetailComponent implements OnInit {
     this.showABTestForm.set(false);
     this.abTestName.set('');
     this.selectedVersionIds.set([]);
+  }
+
+  shouldShowInstructions(_details: { id: string }): boolean {
+    return false;
   }
 }

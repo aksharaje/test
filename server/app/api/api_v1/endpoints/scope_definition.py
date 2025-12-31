@@ -151,3 +151,158 @@ async def get_session_full(
         "constraints": service.get_constraints(db, session_id),
         "deliverables": service.get_deliverables(db, session_id),
     }
+
+
+# ==================== ITEM CRUD ENDPOINTS ====================
+
+@router.post("/sessions/{session_id}/items", response_model=ScopeItemResponse)
+async def create_scope_item(
+    session_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Create a new scope item."""
+    session = service.get_session(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    item = service.create_scope_item(db, session_id, data)
+    return item
+
+
+@router.post("/sessions/{session_id}/assumptions")
+async def create_assumption(
+    session_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Create a new assumption."""
+    session = service.get_session(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return service.create_assumption(db, session_id, data)
+
+
+@router.post("/sessions/{session_id}/constraints")
+async def create_constraint(
+    session_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Create a new constraint."""
+    session = service.get_session(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return service.create_constraint(db, session_id, data)
+
+
+@router.post("/sessions/{session_id}/deliverables")
+async def create_deliverable(
+    session_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Create a new deliverable."""
+    session = service.get_session(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return service.create_deliverable(db, session_id, data)
+
+
+@router.patch("/items/{item_id}", response_model=ScopeItemResponse)
+async def update_scope_item(
+    item_id: int,
+    updates: dict,
+    db: Session = Depends(get_db),
+):
+    """Update a scope item (title, description, scope_type, priority, etc.)."""
+    item = service.update_scope_item(db, item_id, updates)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+
+@router.delete("/items/{item_id}")
+async def delete_scope_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete a scope item."""
+    success = service.delete_scope_item(db, item_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"status": "deleted"}
+
+
+@router.patch("/assumptions/{assumption_id}")
+async def update_assumption(
+    assumption_id: int,
+    updates: dict,
+    db: Session = Depends(get_db),
+):
+    """Update an assumption."""
+    item = service.update_assumption(db, assumption_id, updates)
+    if not item:
+        raise HTTPException(status_code=404, detail="Assumption not found")
+    return item
+
+
+@router.delete("/assumptions/{assumption_id}")
+async def delete_assumption(
+    assumption_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete an assumption."""
+    success = service.delete_assumption(db, assumption_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Assumption not found")
+    return {"status": "deleted"}
+
+
+@router.patch("/constraints/{constraint_id}")
+async def update_constraint(
+    constraint_id: int,
+    updates: dict,
+    db: Session = Depends(get_db),
+):
+    """Update a constraint."""
+    item = service.update_constraint(db, constraint_id, updates)
+    if not item:
+        raise HTTPException(status_code=404, detail="Constraint not found")
+    return item
+
+
+@router.delete("/constraints/{constraint_id}")
+async def delete_constraint(
+    constraint_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete a constraint."""
+    success = service.delete_constraint(db, constraint_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Constraint not found")
+    return {"status": "deleted"}
+
+
+@router.patch("/deliverables/{deliverable_id}")
+async def update_deliverable(
+    deliverable_id: int,
+    updates: dict,
+    db: Session = Depends(get_db),
+):
+    """Update a deliverable."""
+    item = service.update_deliverable(db, deliverable_id, updates)
+    if not item:
+        raise HTTPException(status_code=404, detail="Deliverable not found")
+    return item
+
+
+@router.delete("/deliverables/{deliverable_id}")
+async def delete_deliverable(
+    deliverable_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete a deliverable."""
+    success = service.delete_deliverable(db, deliverable_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Deliverable not found")
+    return {"status": "deleted"}

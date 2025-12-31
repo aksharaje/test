@@ -32,6 +32,13 @@ class ScopeDefinitionSession(SQLModel, table=True):
     stakeholder_needs: Optional[str] = None  # Key stakeholder requirements
     target_users: Optional[str] = None  # Primary user segments
 
+    # Source session references (mutually exclusive)
+    ideation_session_id: Optional[int] = Field(default=None, foreign_key="ideation_sessions.id")
+    okr_session_id: Optional[int] = Field(default=None, foreign_key="okr_sessions.id")
+
+    # Knowledge base IDs for context
+    knowledge_base_ids: Optional[List[int]] = Field(default=None, sa_column=Column(JSON))
+
     # Processing state
     status: str = Field(default="pending")  # pending, generating, completed, failed
     progress_message: Optional[str] = None
@@ -157,12 +164,19 @@ class ScopeDeliverable(SQLModel, table=True):
 # Pydantic models for API
 class ScopeDefinitionSessionCreate(SQLModel):
     """Request model for creating a new session"""
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
     project_name: str
     product_vision: str = Field(min_length=50)
     initial_requirements: Optional[str] = None
     known_constraints: Optional[str] = None
     stakeholder_needs: Optional[str] = None
     target_users: Optional[str] = None
+    ideation_session_id: Optional[int] = None
+    okr_session_id: Optional[int] = None
+    knowledge_base_ids: Optional[List[int]] = None
 
 
 class ScopeDefinitionSessionResponse(SQLModel):

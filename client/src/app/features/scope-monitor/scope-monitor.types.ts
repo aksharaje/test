@@ -1,19 +1,17 @@
 export interface ScopeMonitorSession {
   id: number;
   projectName: string;
-  originalScope: string;
-  currentStatus: string;
-  monitoringPeriod?: string;
-  changeThreshold?: string;
-  status: 'pending' | 'generating' | 'completed' | 'failed';
+  baselineScopeId?: number;
+  baselineDescription?: string;
+  currentRequirements: string;
+  changeContext?: string;
+  status: 'pending' | 'analyzing' | 'completed' | 'failed';
   progressMessage?: string;
   errorMessage?: string;
   executiveSummary?: string;
   scopeHealthScore?: number;
-  totalChanges?: number;
-  approvedChanges?: number;
-  pendingChanges?: number;
-  rejectedChanges?: number;
+  creepRiskLevel?: string;
+  recommendations?: string[];
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -22,34 +20,33 @@ export interface ScopeMonitorSession {
 export interface ScopeChange {
   id: number;
   sessionId: number;
-  changeTitle: string;
-  changeDescription: string;
+  title: string;
+  description: string;
   changeType: string;
-  requestedBy?: string;
-  requestDate?: string;
-  priority: string;
-  status: string;
+  category: string;
   impactLevel: string;
-  affectedAreas?: string[];
+  effortImpact?: string;
+  timelineImpact?: string;
+  budgetImpact?: string;
+  isScopeCreep: boolean;
+  creepType?: string;
   justification?: string;
-  decisionRationale?: string;
+  recommendation: string;
+  recommendationRationale?: string;
   displayOrder: number;
 }
 
 export interface ImpactAssessment {
   id: number;
   sessionId: number;
-  changeId?: number;
-  assessmentType: string;
-  impactArea: string;
-  currentState: string;
-  projectedImpact: string;
-  severity: string;
-  probability: string;
-  mitigationStrategy?: string;
-  costImpact?: string;
-  scheduleImpact?: string;
-  resourceImpact?: string;
+  area: string;
+  baselineValue?: string;
+  currentValue?: string;
+  projectedValue?: string;
+  impactDescription: string;
+  impactSeverity: string;
+  mitigationOptions?: string[];
+  recommendedAction?: string;
   displayOrder: number;
 }
 
@@ -57,28 +54,29 @@ export interface ScopeAlert {
   id: number;
   sessionId: number;
   alertType: string;
-  alertTitle: string;
-  alertDescription: string;
   severity: string;
+  title: string;
+  description: string;
+  relatedChangeIds?: number[];
+  actionRequired: boolean;
+  suggestedAction?: string;
+  escalationNeeded: boolean;
   status: string;
-  triggeredAt: string;
-  acknowledgedAt?: string;
-  resolvedAt?: string;
-  recommendedAction?: string;
   displayOrder: number;
 }
 
 export interface ScopeMonitorSessionCreate {
   projectName: string;
-  originalScope: string;
-  currentStatus: string;
-  monitoringPeriod?: string;
-  changeThreshold?: string;
+  baselineScopeId?: number;
+  baselineDescription?: string;
+  currentRequirements: string;
+  changeContext?: string;
 }
 
 export interface ScopeMonitorFullResponse {
   session: ScopeMonitorSession;
-  scope_changes: ScopeChange[];
+  scope_creep_changes: ScopeChange[];
+  other_changes: ScopeChange[];
   impact_assessments: ImpactAssessment[];
   alerts: ScopeAlert[];
 }
