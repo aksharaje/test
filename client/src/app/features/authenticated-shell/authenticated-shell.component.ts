@@ -130,13 +130,7 @@ export class AuthenticatedShellComponent {
         { label: 'Release Prep', path: '/release-prep' },
       ],
     },
-    {
-      label: 'Testing',
-      path: '/testing-section',
-      children: [
-        { label: 'Test Script Writer', path: '/testing/test-script-writer' },
-      ],
-    },
+    { label: 'Testing', path: '/testing', children: [] },
     { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
   ];
 
