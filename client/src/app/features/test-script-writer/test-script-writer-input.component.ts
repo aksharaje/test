@@ -58,9 +58,9 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
     }),
   ],
   template: `
-    <div class="flex h-full">
+    <div class="flex h-full min-h-0">
       <!-- Left Panel: Input Form -->
-      <div class="w-1/2 border-r p-6 overflow-y-auto">
+      <div class="w-1/2 border-r p-6 overflow-y-auto min-h-0">
         <div class="max-w-xl mx-auto">
           <h1 class="text-2xl font-bold text-foreground">Test Script Writer</h1>
           <p class="mt-1 text-muted-foreground">
@@ -73,7 +73,7 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
             </div>
           }
 
-          <form class="mt-6 space-y-6" (submit)="onSubmit($event)">
+          <form class="mt-6 space-y-6 pb-6" (submit)="onSubmit($event)">
             <!-- Step 1: Story Source -->
             <div class="rounded-lg border bg-card p-4">
               <div class="flex items-center gap-2 mb-1">
@@ -284,7 +284,7 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
       </div>
 
       <!-- Right Panel: History -->
-      <div class="w-1/2 bg-muted/30 p-6 overflow-y-auto">
+      <div class="w-1/2 bg-muted/30 p-6 overflow-y-auto min-h-0">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
