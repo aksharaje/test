@@ -1,31 +1,21 @@
 # Flow Manager
 
 ## Overview
-The Flow Manager helps you streamline your workflow by managing the flow of tasks and processes within your projects. It allows you to efficiently organize, track, and execute tasks to drive project success.
+The Flow Manager helps you efficiently manage and monitor workflows within your projects, ensuring smooth execution and tracking of progress.
 
 ## Key Capabilities
-- Create new flows for your projects
-- Update existing flows with the latest information
-- Track the progress of each flow
-- Start and monitor flow executions
-- Delete unnecessary flows
+- Create new flows to structure your project tasks
+- Update flow details to reflect changes in your project
+- Track and analyze flow executions for performance insights
 
 ## How to Use
-To begin, start by creating a new flow for your project. Define the tasks and steps involved in the flow, along with any necessary data. Once your flow is set up, you can update it as needed to reflect changes in your project. When ready, start the execution of the flow to kick off the tasks and monitor their progress. If a flow is no longer needed, you can easily delete it from the system.
+To get started with the Flow Manager, begin by creating a new flow to outline the steps of your project. Update flow details as needed to keep your project information current. When ready, start the execution of a flow to track its progress and analyze performance.
 
 ## Configuration & Fields
-- **Session**: This field establishes your working session within the application.
-  - **Purpose**: Provides the context for your actions in the Flow Manager.
-  - **Example**: Weekly Marketing Campaign Meeting Session
+- **Session Reference**: A reference to your work session to associate the flow with your current work context.
+  - **Purpose**: Ensures the flow is linked to your ongoing project work.
+  - **Example**: "Project X - Weekly Update Meeting"
 
-- **Data**: Input the necessary information to create or update a flow.
-  - **Purpose**: Defines the tasks, steps, and details of the flow.
-  - **Example**: Q4 Product Launch Plan
-
-- **ID**: Unique identifier for each flow.
-  - **Purpose**: Helps differentiate between multiple flows.
-  - **Example**: 12345
-
-- **Context**: Additional information related to the flow execution.
-  - **Purpose**: Provides relevant details for executing the flow.
-  - **Example**: Customer Feedback Survey Results
+- **Data**: Information to define the flow structure and content.
+  - **Purpose**: Specifies the tasks and details within the flow.
+  - **Example**: "Task 1: Research market trends"

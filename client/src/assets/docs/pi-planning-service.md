@@ -1,31 +1,25 @@
-
 # Pi Planning
 
 ## Overview
-Pi Planning helps Product Managers efficiently manage and plan their product development cycles, ensuring alignment and prioritization of work to drive successful product outcomes.
+Pi Planning helps Product Managers efficiently plan and manage their product development cycles, ensuring alignment and prioritization of work to drive successful product outcomes.
 
 ## Key Capabilities
-- Create and organize work sessions
-- Retrieve specific session details
-- Add new sessions with relevant data
-- View holiday configuration settings
+- Create new planning sessions
+- View and track existing planning sessions
+- Manage holiday configurations for accurate planning
 
 ## How to Use
-To get started, initiate a new work session by defining the session's purpose and integrating relevant data. You can then access and update session details as needed. Additionally, review and configure holiday settings to account for non-working days within your planning timeline.
+To start planning, create a new session and input relevant data such as integration details and necessary information. Once sessions are created, you can easily access and modify them as needed. Additionally, manage holiday configurations to ensure accurate scheduling within your planning sessions.
 
 ## Configuration & Fields
-- **Session Purpose**
-  - **Purpose**: Defines the objective of the work session.
-  - **Example**: "Q3 Product Roadmap Planning"
-
-- **Integration ID**
-  - **Purpose**: Identifies the source or system integrated with the session.
-  - **Example**: "CRM Integration"
-
-- **Session Data**
-  - **Purpose**: Provides specific information or context for the session.
-  - **Example**: "Feature Prioritization Matrix"
-
-- **Holiday Configuration**
-  - **Purpose**: Specifies non-working days for accurate planning.
-  - **Example**: "New Year's Day"
+- **Session**: A planning session where product development tasks are organized and prioritized.
+  - **Purpose**: Essential for defining the scope and timeline of product development efforts.
+  - **Example**: Sprint planning for a new feature release.
+  
+- **Integration**: Integration details for connecting external tools or systems to the planning session.
+  - **Purpose**: Facilitates seamless collaboration and data sharing between different platforms.
+  - **Example**: Linking Jira tasks to the planning session.
+  
+- **Data**: Additional information or details relevant to the planning session.
+  - **Purpose**: Provides context or specific requirements for the product development tasks.
+  - **Example**: User feedback collected from a recent usability test.

@@ -1,27 +1,27 @@
-
 # GitHub Integration
 
 ## Overview
-This feature enables Product Managers to seamlessly integrate GitHub repositories into their product management workflow. By connecting GitHub repositories, PMs can enhance collaboration, track development progress, and streamline project management processes.
+The GitHub Integration allows Product Managers to seamlessly connect their project management tool with GitHub repositories. By integrating GitHub, PMs can easily track development progress, collaborate with developers, and ensure project alignment with the codebase.
 
 ## Key Capabilities
-- Connect GitHub repositories to your project
-- Track development progress directly within the application
-- Collaborate with team members on GitHub-hosted code
-- View and manage repository content within the product management tool
+- Connect GitHub repository to project
+- View repository details
+- Track development progress
+- Collaborate with developers
+- Manage project tasks linked to code changes
 
 ## How to Use
-To start using the GitHub Integration feature, begin by linking your GitHub account to the application. Once connected, you can select specific repositories to integrate with your project. This allows you to monitor code changes, collaborate with your team, and access GitHub repository content seamlessly within the product management tool.
+To start using the GitHub Integration, first connect your GitHub repository to your project in the application. You can then view repository details, track development progress, collaborate with developers by commenting on code changes, and manage project tasks linked to specific code commits.
 
 ## Configuration & Fields
-- **Repository URL**: Enter the URL of the GitHub repository you want to integrate.
-  - **Purpose**: Links the specific GitHub repository to your project for tracking and collaboration purposes.
-  - **Example**: "https://github.com/organization/repo"
+- **Connected Repository**: Allows you to link a GitHub repository to your project. This field is mandatory for utilizing GitHub integration.
+  - **Purpose**: Enables tracking of code changes and collaboration with developers.
+  - **Example**: MyProjectRepo
 
-- **Access Token**: Provide the access token for authentication (optional).
-  - **Purpose**: Enables secure access to private repositories if required.
-  - **Example**: "ghp_xxxxxxxxxxxxxx"
+- **Access Token**: Optional field to provide authentication for accessing private repositories.
+  - **Purpose**: Grants secure access to private repositories.
+  - **Example**: ************ (Enter your GitHub access token here)
 
-- **Placeholder Document ID**: Input the ID of a placeholder document (optional).
-  - **Purpose**: Allows you to associate a specific document with the GitHub repository for reference or context.
-  - **Example**: "12345"
+- **Placeholder Document ID**: Optional field to specify a placeholder document for reference within the project.
+  - **Purpose**: Helps in associating project tasks with specific documents.
+  - **Example**: 12345

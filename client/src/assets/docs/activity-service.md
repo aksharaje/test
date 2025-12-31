@@ -1,37 +1,25 @@
 # Activity Logger
 
 ## Overview
-The Activity Logger helps Product Managers track and analyze user activities within the application, providing valuable insights into feature usage and outputs.
+The Activity Logger helps you track and analyze the most frequently used features by your team members, providing valuable insights into productivity and workflow efficiency.
 
 ## Key Capabilities
-- Log user activities for analysis
-- Retrieve frequently used features
-- Aggregate recent outputs for review
+- Log activities to monitor feature usage
+- Retrieve frequent shortcuts for quick access
+- Aggregate recent outputs for easy review
 
 ## How to Use
-To leverage the Activity Logger, start by logging user activities to understand feature engagement. Then, analyze the most frequently used features to prioritize enhancements. Finally, review recent outputs to gain insights into user interactions.
+Start by logging activities to capture user interactions with different features. Use the frequent shortcuts feature to identify commonly used functionalities. Review recent outputs to stay updated on the latest results and findings.
 
 ## Configuration & Fields
-- **Database**: Stores user activity data for analysis.
-  - **Purpose**: Provides context for feature usage analysis.
-  - **Example**: "Product Usage Database"
+- **User**: The individual responsible for the activity tracking. This field is mandatory.
+  - **Purpose**: Identifies the user associated with the logged activity.
+  - **Example**: John Doe
 
-- **User ID**: Identifies the user associated with the logged activity.
-  - **Purpose**: Links activities to specific users for personalized insights.
-  - **Example**: "JohnDoe123"
+- **Feature Key**: A unique identifier for the feature being logged.
+  - **Purpose**: Helps categorize activities based on the feature used.
+  - **Example**: Feature123
 
-- **Feature Key**: Represents the feature being used in the activity log.
-  - **Purpose**: Helps identify and categorize user interactions.
-  - **Example**: "FeatureX"
-
-- **Metadata**: Additional information related to the logged activity.
-  - **Purpose**: Offers supplementary details for deeper analysis.
-  - **Example**: "User Feedback Comments"
-
-- **Limit**: Specifies the maximum number of results to retrieve.
-  - **Purpose**: Controls the scope of data displayed for efficient analysis.
-  - **Example**: "10"
-
-- **Days**: Sets the timeframe for retrieving frequent shortcuts.
-  - **Purpose**: Defines the period for analyzing feature usage trends.
-  - **Example**: "30 days"
+- **Metadata**: Additional information or context related to the activity.
+  - **Purpose**: Provides details that enhance the understanding of the logged activity.
+  - **Example**: Completed task X in project Y

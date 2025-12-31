@@ -1,19 +1,21 @@
+
 # Feedback Manager
 
 ## Overview
-The Feedback Manager helps Product Managers gather and analyze feedback from users to make informed product decisions. It streamlines the process of collecting and organizing feedback, enabling PMs to improve product features and user experience.
+The Feedback Manager helps Product Managers gather and analyze feedback from various sources to make informed decisions and improve product quality.
 
 ## Key Capabilities
 - Create feedback entries
-- List all feedback entries
+- View a list of all feedback entries
 
 ## How to Use
-To start using the Feedback Manager, begin by creating feedback entries based on user input. This could include suggestions, bug reports, or feature requests. Once feedback is collected, you can easily list and review all entries to identify trends and prioritize actions.
+To start using the Feedback Manager, begin by creating new feedback entries based on user input or data collected from surveys, reviews, or customer interactions. You can then easily access and review all feedback entries to identify trends and prioritize product improvements.
 
 ## Configuration & Fields
-- **Session**: Represents the work session during which feedback was collected.
-  - **Purpose**: Provides context for each feedback entry.
-  - **Example**: Q3 User Testing Session
-- **Data**: Contains the feedback information provided by users.
-  - **Purpose**: Captures user insights and suggestions.
-  - **Example**: Feature Request for Enhanced Search Functionality
+- **Session Reference**: An identifier for the work session during which the feedback was received.
+  - **Purpose**: Helps track when feedback was provided.
+  - **Example**: "Session 1"
+
+- **Data**: Information provided by users, such as comments, suggestions, or ratings.
+  - **Purpose**: Captures the actual feedback content.
+  - **Example**: "Great product, but could use more customization options."

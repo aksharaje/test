@@ -1,48 +1,47 @@
 # Research Planner
 
 ## Overview
-The Research Planner application helps Product Managers efficiently plan and manage their research sessions to gather insights and make informed decisions. It enables PMs to streamline the research process, ensuring that key objectives are met and valuable data is collected.
+The Research Planner application helps Product Managers efficiently plan and manage research sessions, enabling them to gather valuable insights for product development and decision-making.
 
 ## Key Capabilities
 - Create new research planning sessions
-- View and manage existing research sessions
-- Select research methods to proceed with
+- View and manage session details
+- Select research methods for further exploration
+- Retry failed sessions for better outcomes
 - Update interview guides and survey questions
-- Retry failed sessions
-- Delete sessions and related data
+- Run pipelines to recommend research methods and generate instruments
 
 ## How to Use
-Start by creating a new research planning session with your objective and any relevant context sources. Then, you can select specific research methods to proceed with, update interview guides and survey questions as needed, and monitor the progress of your sessions. In case of any failures, you can retry the session or delete it entirely.
+To start using Research Planner, begin by creating a new research planning session with your objectives and context sources. You can then manage and analyze session details, select specific research methods to proceed with, and update interview guides or survey questions as needed. The application also allows you to rerun failed sessions for improved results and run pipelines to recommend research methods and generate instruments automatically.
 
 ## Configuration & Fields
-- **Objective**
-  - **Purpose**: Defines the main goal of the research session.
-  - **Example**: "Product Feature Usability Testing"
-
-- **Research Context**
-  - **Purpose**: Provides additional context for the research session.
-  - **Example**: "User Feedback from Beta Testing"
-
-- **Constraints**
-  - **Purpose**: Specifies any limitations or constraints for the research.
-  - **Example**: "Budget Restrictions"
-
-- **User ID**
-  - **Purpose**: Identifies the user associated with the session.
-  - **Example**: "Product Manager John Doe"
-
-- **Connected Knowledge Base**
-  - **Purpose**: Links the session to relevant knowledge bases.
-  - **Example**: "Market Research Reports"
-
-- **Ideation Session ID**
-  - **Purpose**: Associates the session with a specific ideation session.
-  - **Example**: "Ideation Session #12345"
-
-- **Feasibility Session ID**
-  - **Purpose**: Links the session to a feasibility assessment session.
-  - **Example**: "Feasibility Session #67890"
-
-- **Business Case Session ID**
-  - **Purpose**: Connects the session to a business case development session.
-  - **Example**: "Business Case Session #54321"
+- **Objective**: Define the main goal of the research session. This field is mandatory.
+  - **Example**: Understand user preferences for a new feature.
+  
+- **Research Context**: Provide additional context or background information for the research session.
+  - **Purpose**: Helps in shaping the research approach.
+  - **Example**: Previous user feedback on similar features.
+  
+- **Constraints**: Specify any limitations or boundaries for the research session.
+  - **Purpose**: Guides the research process within defined constraints.
+  - **Example**: Budget constraints for user testing.
+  
+- **Owner**: Identify the user responsible for the research session.
+  - **Purpose**: Assigns ownership and accountability.
+  - **Example**: John Doe.
+  
+- **Connected Knowledge Base**: Link relevant knowledge bases to the research session.
+  - **Purpose**: Access additional resources or data for informed decision-making.
+  - **Example**: Product insights repository.
+  
+- **Ideation Session Reference**: Reference an ideation session related to the research.
+  - **Purpose**: Connects ideation activities to research planning.
+  - **Example**: Ideation session ID 123.
+  
+- **Feasibility Session Reference**: Reference a feasibility session associated with the research.
+  - **Purpose**: Links feasibility assessments to research planning.
+  - **Example**: Feasibility session ID 456.
+  
+- **Business Case Session Reference**: Reference a business case session linked to the research.
+  - **Purpose**: Aligns business case considerations with research planning.
+  - **Example**: Business case session ID 789.

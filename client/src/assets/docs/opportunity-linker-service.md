@@ -1,30 +1,26 @@
-# Opportunity Mapper
+# Opportunity Linker
 
 ## Overview
-The Opportunity Mapper helps Product Managers transform ideas into actionable opportunities by assigning priority scores. It streamlines the process of evaluating and prioritizing potential projects based on strategic fit and estimated impact.
+Opportunity Linker helps Product Managers map ideas to opportunities and prioritize them based on strategic fit, size estimates, and priority tiers. It streamlines the process of turning creative concepts into actionable business strategies.
 
 ## Key Capabilities
 - Create prioritization sessions
 - Process and analyze opportunities
-- Retrieve session details
+- View detailed session information
 - Delete unnecessary sessions
 
 ## How to Use
-To begin, create a new prioritization session by providing the completed ideation session ID. Process the session to map opportunities, score strategic fit, estimate size, calculate priority, and generate a portfolio summary. You can then view session details, including all prioritized ideas, and delete sessions that are no longer needed.
+To begin, create a new prioritization session by providing the necessary details. Process the session to map opportunities, score strategic fit, estimate size, and calculate priority tiers. You can then access detailed information about the session and delete it when no longer needed.
 
 ## Configuration & Fields
-- **Database**: Stores session data for analysis.
-  - **Purpose**: Manages the information related to prioritization sessions.
-  - **Example**: Product Roadmap Database
+- **Connected Knowledge Base**: Helps link ideas to existing knowledge bases for additional context.
+  - **Purpose**: Enhances idea evaluation with relevant information.
+  - **Example**: Linking market research data to new product ideas.
 
-- **Ideation Session ID**: ID of the completed ideation session.
-  - **Purpose**: Links the prioritization session to the initial ideation phase.
-  - **Example**: Q3 Brainstorming Session ID
+- **Owner**: Identifies the user responsible for the session.
+  - **Purpose**: Assigns accountability for decision-making.
+  - **Example**: Assigning the product manager as the session owner.
 
-- **User ID**: Optional user identifier.
-  - **Purpose**: Associates a specific user with the prioritization session.
-  - **Example**: Product Manager John Doe's ID
-
-- **Session ID**: Unique identifier for the prioritization session.
-  - **Purpose**: Identifies and retrieves a specific prioritization session.
-  - **Example**: Session #12345
+- **Session Reference**: Unique identifier for the prioritization session.
+  - **Purpose**: Allows easy access to specific session details.
+  - **Example**: Referencing a session for further analysis.

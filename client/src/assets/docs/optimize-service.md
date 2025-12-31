@@ -1,33 +1,36 @@
-
 # Optimized Flow Manager
 
 ## Overview
-The Optimized Flow Manager helps Product Managers enhance and refine their product flows to improve user experience and drive better outcomes. It enables PMs to optimize user interactions and content to achieve business goals effectively.
+The Optimized Flow Manager helps Product Managers enhance and refine their product flows for better user engagement and conversion rates. It enables PMs to optimize content prompts, analyze flow performance, and conduct split tests to drive product improvements.
 
 ## Key Capabilities
-- View and analyze all flows with performance statistics
-- Access detailed information about specific flows
-- Obtain feedback on flow performance
-- Save optimized prompts for enhancing user engagement
-- Activate different versions of flows for testing
-- Create split tests to compare multiple flow versions
+- Create optimized prompts for product flows
+- Analyze flow statistics and feedback
+- Activate specific versions of product flows
+- Initiate split tests to compare different versions
 
 ## How to Use
-To leverage the Optimized Flow Manager, start by reviewing all flows to identify areas for improvement. Analyze flow details and feedback to understand user interactions better. Save optimized prompts to enhance user engagement. Activate different flow versions to test variations and create split tests to compare performance.
+To start optimizing your flows, begin by saving an optimized prompt for a specific flow. Then, use the provided tools to analyze flow details, gather feedback, and activate different versions. Lastly, create split tests to compare the performance of various flow versions.
 
 ## Configuration & Fields
-- **Session**: Required field to authenticate and access flow data.
-  - **Purpose**: Provides access to flow information securely.
-  - **Example**: User Session Token
+- **Session Reference**: Used to identify the work session context for flow optimization.
+  - **Purpose**: Provides a reference point for the session in which optimizations are made.
+  - **Example**: "Product Launch Campaign Meeting"
 
-- **Flow ID**: Identifier for the specific flow being managed.
-  - **Purpose**: Helps identify and retrieve details for a particular flow.
-  - **Example**: Product Onboarding Flow
+- **Flow ID**: Unique identifier for the product flow being optimized.
+  - **Purpose**: Specifies the flow to which optimizations apply.
+  - **Example**: "Onboarding Flow A"
 
-- **Optimized Prompt**: Customized content to improve user interactions.
-  - **Purpose**: Enhances user engagement and interaction.
-  - **Example**: Optimized Welcome Message
+- **Optimized Prompt**: Customized content to enhance user interaction within the flow.
+  - **Purpose**: Improves user engagement and guides users through the flow.
+  - **Example**: "Craft a compelling call-to-action message."
 
-- **Version ID(s)**: Numerical identifier(s) for different versions of a flow.
-  - **Purpose**: Enables comparison and testing of different flow versions.
-  - **Example**: 1, 2, 3
+- **Version ID**: Numerical identifier for different versions of a flow.
+  - **Purpose**: Allows for the selection and activation of specific flow versions.
+  - **Example**: "Version 2"
+
+- **Split Test Name**: Name given to the split test comparison.
+  - **Purpose**: Identifies the split test for tracking and analysis.
+  - **Example**: "A/B Test - New Onboarding Flow"
+
+By utilizing these fields, Product Managers can effectively optimize their product flows to drive better user experiences and achieve higher conversion rates.

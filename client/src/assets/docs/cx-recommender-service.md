@@ -1,39 +1,51 @@
 # CX Improvement Recommender
 
 ## Overview
-The CX Improvement Recommender helps Product Managers enhance their customer experience by providing tailored recommendations for improving customer satisfaction and loyalty.
+The CX Improvement Recommender helps Product Managers enhance customer experience by providing tailored improvement recommendations based on data analysis.
 
 ## Key Capabilities
-- Create new recommender sessions
-- List all sessions and filter by user
-- Add custom recommendations
-- Generate recommendations through the main pipeline
-- View available journey maps and gap analyses for selection
+- Create new recommendation sessions
+- View detailed session information with all recommendations
+- Manually add custom recommendations
+- Run recommendation pipeline for generating suggestions
+- List available journey maps and gap analyses for selection
 
 ## How to Use
-To start, create a new session to gather insights on your customer experience. You can then add custom recommendations based on your analysis or run the recommendation pipeline to generate suggestions automatically. Explore available journey maps and gap analyses to enrich your decision-making process.
+To start improving customer experience, begin by creating a new recommendation session. Add custom recommendations as needed, or run the recommendation pipeline to generate suggestions automatically. You can also view detailed session information to track progress and make informed decisions.
 
 ## Configuration & Fields
-- **Session Name**:
-  - **Purpose**: Identifies the session for tracking and reference.
-  - **Example**: "Q3 Customer Feedback Analysis"
+- **Session Reference**
+  - **Purpose**: Identifies the specific session for managing recommendations.
+  - **Example**: "Q3 CX Enhancement"
 
-- **Timeline**:
-  - **Purpose**: Sets the timeframe for the recommendations.
-  - **Example**: "Next 6 months"
+- **Connected Knowledge Base**
+  - **Purpose**: Links to relevant data sources for informed decision-making.
+  - **Example**: "Customer Feedback Database"
 
-- **Budget**:
-  - **Purpose**: Defines the financial resources available for implementation.
-  - **Example**: "$10,000"
+- **Journey Maps**
+  - **Purpose**: Displays completed journey maps for reference in the recommendation process.
+  - **Example**: "Customer Journey Map - Q2"
 
-- **Team Capacity**:
-  - **Purpose**: Indicates the team's availability for executing recommendations.
+- **Gap Analyses**
+  - **Purpose**: Lists completed gap analyses to address customer experience gaps.
+  - **Example**: "Q1 Customer Satisfaction Gap Analysis"
+
+- **Recommendation Type**
+  - **Purpose**: Specifies the type of recommendation for targeted improvements.
+  - **Example**: "Feature Enhancement"
+
+- **Team Capacity**
+  - **Purpose**: Indicates the available resources for implementing recommendations.
   - **Example**: "5 team members"
 
-- **Recommendation Type**:
-  - **Purpose**: Specifies the category of the recommendation (e.g., product, service, process).
-  - **Example**: "Product Enhancement"
+- **Timeline**
+  - **Purpose**: Sets the timeframe for implementing recommendations.
+  - **Example**: "Within the next quarter"
 
-- **User ID**:
-  - **Purpose**: Associates the session with a specific user for tracking purposes.
-  - **Example**: "JohnDoe123"
+- **Budget**
+  - **Purpose**: Allocates financial resources for recommended improvements.
+  - **Example**: "$10,000"
+
+- **User**
+  - **Purpose**: Designates the owner or user responsible for the recommendation session.
+  - **Example**: "Product Manager A"

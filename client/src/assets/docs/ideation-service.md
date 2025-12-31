@@ -1,41 +1,46 @@
-# Ideation Manager
+# Ideation Management
 
 ## Overview
-Ideation Manager helps Product Managers facilitate ideation sessions and SMART goal setting, fostering innovation and strategic planning within their teams. By using Ideation Manager, PMs can streamline the process of generating, organizing, and refining ideas to drive product development and business growth.
+Ideation Management helps Product Managers facilitate ideation sessions to generate innovative ideas and SMART goals, leading to enhanced product development and strategic planning.
 
 ## Key Capabilities
 - Create new ideation sessions
-- Retrieve session details by ID
-- List sessions with pagination for user management
-- Retry failed sessions for further evaluation
-- Update idea fields for continuous improvement
-- Delete sessions along with related data
-- Run the ideation pipeline for structured problem-solving
+- Retrieve specific session details
+- List sessions with pagination
+- Update idea details
+- Delete sessions and related data
 
 ## How to Use
-To leverage Ideation Manager effectively, start by creating a new ideation session where you define the problem statement, constraints, goals, research insights, and relevant knowledge bases. Once sessions are created, you can view session details, update idea fields, retry sessions if needed, and ultimately run the ideation pipeline to generate and prioritize innovative ideas.
+To begin, initiate a new ideation session by defining the problem statement, constraints, goals, and research insights. Collaborate with team members to generate and prioritize ideas. Utilize the application to track progress, update ideas, and manage sessions effectively.
 
 ## Configuration & Fields
-- **Problem Statement**:
-  - **Purpose**: Describes the core issue or opportunity for ideation.
-  - **Example**: "Enhance user onboarding experience with personalized tutorials."
+- **Problem Statement**: Describes the main challenge or opportunity for ideation. Mandatory for session creation.
+  - **Example**: "Enhance user engagement through gamification."
 
-- **Constraints**:
-  - **Purpose**: Specifies any limitations or restrictions for idea generation.
-  - **Example**: "Must align with company's privacy policy."
+- **Constraints**: Limitations or restrictions to consider during idea generation.
+  - **Purpose**: Guides idea creation within specified boundaries.
+  - **Example**: "Budget constraints restrict implementation costs."
 
-- **Goals**:
-  - **Purpose**: Outlines the desired outcomes or objectives of the ideation session.
-  - **Example**: "Increase user engagement by 20% within the next quarter."
+- **Goals**: Desired outcomes or achievements from the ideation session.
+  - **Purpose**: Sets the direction for idea generation.
+  - **Example**: "Increase customer retention by 20%."
 
-- **Research Insights**:
-  - **Purpose**: Provides valuable data or findings to inform idea generation.
-  - **Example**: "User feedback from recent beta testing."
+- **Research Insights**: Relevant data or information to support ideation decisions.
+  - **Purpose**: Provides context and informs idea generation.
+  - **Example**: "User feedback indicates preference for simplified navigation."
 
-- **Connected Knowledge Base**:
-  - **Purpose**: Links the session to relevant knowledge repositories for reference.
-  - **Example**: "Market research reports on competitor strategies."
+- **Connected Knowledge Base**: References external knowledge sources or resources.
+  - **Purpose**: Enhances ideation with additional information.
+  - **Example**: "Link to market research report on industry trends."
 
-- **Owner**:
-  - **Purpose**: Identifies the responsible user overseeing the session.
-  - **Example**: "Product Manager - John Doe"
+- **Owner**: Identifies the user responsible for the ideation session.
+  - **Purpose**: Assigns accountability for session management.
+  - **Example**: "John Doe, Product Manager."
+
+- **Idea Data**: Details to update or modify an existing idea.
+  - **Purpose**: Allows refinement and enhancement of ideas.
+  - **Example**: "Update idea description with user feedback."
+
+- **Session Reference**: Unique identifier for each ideation session.
+  - **Purpose**: Links actions and data to a specific session.
+  - **Example**: "Session #12345."

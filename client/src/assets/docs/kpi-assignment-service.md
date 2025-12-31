@@ -1,32 +1,41 @@
 # KPI Assignment Manager
 
 ## Overview
-The KPI Assignment Manager helps Product Managers efficiently assign and track Key Performance Indicators (KPIs) to align with their Objectives and Key Results (OKRs). By using this tool, PMs can streamline the process of linking KPIs to specific outcomes, ensuring clarity and accountability in their strategic planning.
+The KPI Assignment Manager enables Product Managers to efficiently assign and track Key Performance Indicators (KPIs) for their OKR sessions, enhancing performance measurement and goal alignment within the organization.
 
 ## Key Capabilities
 - Create new KPI assignment sessions
-- Manage and track KPI assignments for key results
-- Generate AI-driven KPI suggestions for key results
-- Mark sessions as completed for progress tracking
+- View and manage existing KPI assignment sessions
+- Assign KPIs to specific key results
+- Generate AI-driven KPI suggestions
+- Mark sessions as completed
 
 ## How to Use
-To begin utilizing the KPI Assignment Manager, start by creating a new KPI assignment session linked to an existing OKR session. Then, proceed to assign KPIs to key results, update assignments as needed, and mark sessions as completed once objectives are achieved.
+To get started with the KPI Assignment Manager, begin by creating a new KPI assignment session linked to your OKR session. From there, you can easily assign KPIs to key results, view existing assignments, and leverage AI-generated suggestions to enhance your KPI selection process. Once your assignments are complete, mark the session as finished for a comprehensive overview of your KPI performance.
 
 ## Configuration & Fields
-- **Session ID**: Identifies the specific session for managing KPI assignments.
-  - **Purpose**: Tracks and organizes KPI assignments within designated sessions.
-  - **Example**: Q3 Strategy Planning Session
+- **Session Reference**: Identifies the specific session for KPI assignments.
+  - **Purpose**: Links KPI assignments to the corresponding OKR session.
+  - **Example**: Q3 2022 Planning Session
 
-- **Data**: Contains the details of the KPI assignment.
-  - **Purpose**: Specifies the KPIs to be assigned to key results.
-  - **Example**: Revenue Growth KPI for Product Launch
+- **KPI Assignment Data**: Contains information for creating or updating KPI assignments.
+  - **Purpose**: Defines the KPI details for a specific key result.
+  - **Example**: Increase Customer Satisfaction by 10% by the end of the quarter.
 
-- **OKR Session ID**: Refers to the ID of the OKR session linked to the KPI assignment session.
-  - **Purpose**: Connects the KPI assignments to the corresponding OKR objectives.
-  - **Example**: Q3 Sales Targets OKR Session
+- **Key Result ID**: Identifies the specific key result for KPI assignment.
+  - **Purpose**: Specifies the key result to which the KPI will be assigned.
+  - **Example**: Key Result #1234
 
-- **Key Result ID**: Unique identifier for the key result associated with a specific KPI assignment.
-  - **Purpose**: Links KPI assignments to individual key results for detailed tracking.
-  - **Example**: Increase Customer Engagement Key Result
+- **Assignment ID**: Identifies a specific KPI assignment for deletion or modification.
+  - **Purpose**: Allows targeted management of individual KPI assignments.
+  - **Example**: Assignment #5678
 
-By utilizing these fields, Product Managers can efficiently manage and track KPI assignments to drive strategic decision-making and goal achievement.
+- **AI-generated KPI Suggestions**: Provides automated suggestions for KPI selection.
+  - **Purpose**: Offers data-driven recommendations to enhance KPI decision-making.
+  - **Example**: Increase Monthly Revenue by 15%
+
+- **Key Results with Assignments**: Retrieves all key results from the linked OKR session with their associated KPI assignments.
+  - **Purpose**: Displays a comprehensive overview of key results and their corresponding KPIs.
+  - **Example**: Key Result: Improve Product Engagement | KPI: Increase Daily Active Users by 20%
+
+By utilizing these fields, Product Managers can efficiently manage KPI assignments, track performance metrics, and drive strategic decision-making within their organizations.

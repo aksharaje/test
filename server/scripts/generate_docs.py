@@ -279,14 +279,18 @@ class DocumentationGenerator:
         ## Configuration & Fields
         [Analyze the inputs to the public methods. Translate them into the form fields a user would fill out.
          **CRITICAL RULES FOR FIELDS**:
-         - **Rename Technical IDs**: NEVER say "Knowledge Base ID" or "User ID". Rename to "Connected Knowledge Base" or "Owner".
-         - **Filter Internal Fields**: Exclude fields that are clearly internal logic (e.g. `db_session`, `api_client`, `request_context`). Only list fields the user provides.
-         - **Focus on Purpose**: Explain what the data *does* for the user (e.g., "Provides context for the AI", "Determines priority").
+         - **STRICTLY FORBIDDEN**: Do NOT use the words "ID", "IDs", "Id", "Pk", or "Fk" in any Field Name.
+         - **Mapping Rules**: 
+           - `knowledge_base_ids` -> "**Connected Knowledge Base**" (Singular or collective noun)
+           - `user_id` -> "**Owner**" or "**User**"
+           - `session_id` -> "**Session Reference**" (or omit if it's internal)
+         - **Filter Internal Fields**: Exclude fields that are clearly internal logic (e.g. `db`, `session` object, `api_key`, `request`). Only list fields the user provides.
+         - **Focus on Purpose**: Explain what the data *does* for the user.
          
          Format for each relevant field (omit if no user inputs):
-         - **Field Name**: [Friendly UI Label, e.g. "Connected Knowledge Base" NOT "knowledge_base_ids"]
-         - **Purpose**: [What is this data used for? Is it optional? E.g. "Provides background context for the analysis."]
-         - **Example**: [Realistic business content, e.g. "Q3 User Interview Notes"]
+         - **Field Name**: [Friendly UI Label, e.g. "Connected Knowledge Base"]
+         - **Purpose**: [What is this data used for? Is it optional?]
+         - **Example**: [Realistic business content]
         ]
         """
 

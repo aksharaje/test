@@ -3,222 +3,222 @@
     "name": "ZendeskService",
     "filename": "zendesk-service.md",
     "category": "General",
-    "summary": "The Zendesk Integration feature allows Product Managers to seamlessly connect their product data with Zendesk customer support services. By integratin..."
+    "summary": "This feature enables Product Managers to seamlessly integrate Zendesk customer support data into the product management application. By using this int..."
   },
   {
     "name": "OpportunityLinkerService",
     "filename": "opportunity-linker-service.md",
     "category": "Ideation",
-    "summary": "The Opportunity Mapper helps Product Managers transform ideas into actionable opportunities by assigning priority scores. It streamlines the process o..."
+    "summary": "Opportunity Linker helps Product Managers map ideas to opportunities and prioritize them based on strategic fit, size estimates, and priority tiers. I..."
   },
   {
     "name": "ScopeDefinitionService",
     "filename": "scope-definition-service.md",
     "category": "General",
-    "summary": "The Scope Definition Manager helps Product Managers define, manage, and analyze project scopes efficiently. It enables PMs to streamline scope definit..."
+    "summary": "The Scope Definition Manager helps Product Managers streamline the process of defining project scopes, ensuring clarity and alignment across teams. By..."
   },
   {
     "name": "CodeChatService",
     "filename": "code-chat-service.md",
     "category": "Research",
-    "summary": "Code Chat enables Product Managers to efficiently collaborate with their team members, share code knowledge, and manage work sessions seamlessly. It e..."
+    "summary": "Code Chat helps Product Managers collaborate with their team members in real-time, fostering knowledge sharing and enhancing project efficiency...."
   },
   {
     "name": "BusinessCaseService",
     "filename": "business-case-service.md",
     "category": "Feasibility",
-    "summary": "Business Case Analysis helps Product Managers make informed decisions by evaluating the feasibility and potential benefits of a business initiative. I..."
+    "summary": "Business Case Analysis helps Product Managers make informed decisions by evaluating the feasibility and potential impact of new business initiatives. ..."
   },
   {
     "name": "KpiAssignmentService",
     "filename": "kpi-assignment-service.md",
     "category": "General",
-    "summary": "The KPI Assignment Manager helps Product Managers efficiently assign and track Key Performance Indicators (KPIs) to align with their Objectives and Ke..."
+    "summary": "The KPI Assignment Manager enables Product Managers to efficiently assign and track Key Performance Indicators (KPIs) for their OKR sessions, enhancin..."
   },
   {
     "name": "GithubService",
     "filename": "github-service.md",
     "category": "Core",
-    "summary": "This feature enables Product Managers to seamlessly integrate GitHub repositories into their product management workflow. By connecting GitHub reposit..."
+    "summary": "The GitHub Integration allows Product Managers to seamlessly connect their project management tool with GitHub repositories. By integrating GitHub, PM..."
   },
   {
     "name": "AdoService",
     "filename": "ado-service.md",
     "category": "General",
-    "summary": "Ado Manager helps Product Managers efficiently manage and maintain their project states and authentication processes, streamlining workflow and enhanc..."
+    "summary": "Ado Manager helps Product Managers efficiently handle expired states and manage OAuth URLs for seamless user authentication. By using Ado Manager, PMs..."
   },
   {
     "name": "ReleasePrepService",
     "filename": "release-prep-service.md",
     "category": "General",
-    "summary": "Release Preparation helps Product Managers streamline the process of preparing artifacts for upcoming releases. It allows PMs to efficiently manage re..."
+    "summary": "Release Preparation helps Product Managers organize and plan their product releases efficiently. It streamlines the process of creating release artifa..."
   },
   {
     "name": "FlowService",
     "filename": "flow-service.md",
     "category": "Core",
-    "summary": "The Flow Manager helps you streamline your workflow by managing the flow of tasks and processes within your projects. It allows you to efficiently org..."
+    "summary": "The Flow Manager helps you efficiently manage and monitor workflows within your projects, ensuring smooth execution and tracking of progress...."
   },
   {
     "name": "SettingsService",
     "filename": "settings-service.md",
     "category": "Core",
-    "summary": "Settings Management helps Product Managers customize and control key features of the application to align with their business goals and user needs. It..."
+    "summary": "The Settings Manager helps Product Managers efficiently manage and customize application settings to align with their business goals and preferences. ..."
   },
   {
     "name": "KnowledgeBaseService",
     "filename": "knowledge-base-service.md",
     "category": "Research",
-    "summary": "The Knowledge Base Manager helps Product Managers organize and access essential information efficiently. It enables PMs to centralize knowledge, strea..."
+    "summary": "The Knowledge Base Manager helps Product Managers organize and access information essential for decision-making and project success. It enables effici..."
   },
   {
     "name": "ScopeMonitorService",
     "filename": "scope-monitor-service.md",
     "category": "General",
-    "summary": "Scope Monitoring helps Product Managers track and analyze changes in project scope, ensuring alignment with project goals and identifying potential ri..."
+    "summary": "Scope Monitoring helps Product Managers track and analyze changes in project scope, enabling better decision-making and risk management throughout the..."
   },
   {
     "name": "RoadmapPlannerService",
     "filename": "roadmap-planner-service.md",
     "category": "General",
-    "summary": "The Roadmap Planner helps Product Managers create and visualize product roadmaps, enabling them to align stakeholders, prioritize features, and track ..."
+    "summary": "The Roadmap Planner application helps Product Managers strategize and visualize their product development journey, enabling them to align teams, prior..."
   },
   {
     "name": "FeasibilityService",
     "filename": "feasibility-service.md",
     "category": "Feasibility",
-    "summary": "The Feasibility Analysis Manager helps Product Managers assess the viability of new features or projects, enabling informed decision-making and risk m..."
+    "summary": "The Feasibility Analysis Manager helps Product Managers assess the viability of their project ideas through structured analysis sessions, enabling inf..."
   },
   {
     "name": "ResearchPlannerService",
     "filename": "research-planner-service.md",
     "category": "Customer Experience",
-    "summary": "The Research Planner application helps Product Managers efficiently plan and manage their research sessions to gather insights and make informed decis..."
+    "summary": "The Research Planner application helps Product Managers efficiently plan and manage research sessions, enabling them to gather valuable insights for p..."
   },
   {
     "name": "EmbeddingService",
     "filename": "embedding-service.md",
     "category": "Core",
-    "summary": "The Embedding Generator helps Product Managers analyze and extract meaningful insights from text data. By generating embeddings, PMs can enhance their..."
+    "summary": "This tool helps you organize and analyze text data efficiently. By chunking text into manageable sections and generating embeddings, you can gain valu..."
   },
   {
     "name": "OptimizeService",
     "filename": "optimize-service.md",
     "category": "Core",
-    "summary": "The Optimized Flow Manager helps Product Managers enhance and refine their product flows to improve user experience and drive better outcomes. It enab..."
+    "summary": "The Optimized Flow Manager helps Product Managers enhance and refine their product flows for better user engagement and conversion rates. It enables P..."
   },
   {
     "name": "JourneyMapperService",
     "filename": "journey-mapper-service.md",
     "category": "Customer Experience",
-    "summary": "The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys to improve product experiences and identify pain points for en..."
+    "summary": "The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys, enabling them to identify pain points, opportunities, and imp..."
   },
   {
     "name": "PrdGeneratorService",
     "filename": "prd-generator-service.md",
     "category": "Backlog Authoring",
-    "summary": "The Product Requirements Document (PRD) Generator helps Product Managers create detailed PRDs efficiently. By using this tool, PMs can streamline the ..."
+    "summary": "The Product Generator tool helps Product Managers streamline the creation and management of product requirement documents (PRDs). By using this tool, ..."
   },
   {
     "name": "IdeationService",
     "filename": "ideation-service.md",
     "category": "Ideation",
-    "summary": "Ideation Manager helps Product Managers facilitate ideation sessions and SMART goal setting, fostering innovation and strategic planning within their ..."
+    "summary": "Ideation Management helps Product Managers facilitate ideation sessions to generate innovative ideas and SMART goals, leading to enhanced product deve..."
   },
   {
     "name": "JiraService",
     "filename": "jira-service.md",
     "category": "Core",
-    "summary": "The Jira Manager tool helps product managers efficiently manage their projects and collaborations within the Jira platform. It streamlines the process..."
+    "summary": "Jira Manager helps you streamline project management tasks and track progress efficiently. Stay organized and collaborate seamlessly with your team to..."
   },
   {
     "name": "MeasurementFrameworkService",
     "filename": "measurement-framework-service.md",
     "category": "General",
-    "summary": "The Measurement Framework Manager helps Product Managers streamline the creation, management, and analysis of measurement framework sessions. It enabl..."
+    "summary": "The Measurement Framework Manager helps Product Managers efficiently create and manage measurement frameworks for their projects. By using this tool, ..."
   },
   {
     "name": "FeedbackService",
     "filename": "feedback-service.md",
     "category": "Core",
-    "summary": "The Feedback Manager helps Product Managers gather and analyze feedback from users to make informed product decisions. It streamlines the process of c..."
+    "summary": "The Feedback Manager helps Product Managers gather and analyze feedback from various sources to make informed decisions and improve product quality...."
   },
   {
     "name": "ScenarioModelerService",
     "filename": "scenario-modeler-service.md",
     "category": "General",
-    "summary": "Scenario Modeler helps Product Managers create and manage different scenarios and variants for strategic planning and decision-making. It enables PMs ..."
+    "summary": "Scenario Modeler helps Product Managers create and manage different scenarios for their products, enabling them to analyze and compare various strateg..."
   },
   {
     "name": "LibraryService",
     "filename": "library-service.md",
     "category": "Core",
-    "summary": "The Library Management tool helps Product Managers efficiently manage their library of resources, enabling them to easily access, organize, and analyz..."
+    "summary": "Book Management helps Product Managers efficiently manage and organize books and their content, enabling them to track knowledge sources and collabora..."
   },
   {
     "name": "ServiceNowService",
     "filename": "service-now-service.md",
     "category": "General",
-    "summary": "Service Management helps you streamline and optimize your service-related tasks, ensuring efficient delivery and customer satisfaction without the nee..."
+    "summary": "Service Management is a tool designed to streamline and optimize the management of services within your organization. It helps Product Managers effici..."
   },
   {
     "name": "StoryGeneratorService",
     "filename": "story-generator-service.md",
     "category": "Backlog Authoring",
-    "summary": "The Story Generator helps Product Managers create compelling narratives for their products, enabling them to communicate effectively with stakeholders..."
+    "summary": "The Story Generator tool helps Product Managers create compelling narratives for their products, enhancing communication with stakeholders and custome..."
   },
   {
     "name": "QualtricsService",
     "filename": "qualtrics-service.md",
     "category": "General",
-    "summary": "The Qualtrics Connector facilitates seamless integration of customer feedback data into your product management workflow. It enables Product Managers ..."
+    "summary": "The Qualtrics Connector allows Product Managers to seamlessly integrate Qualtrics survey data into their product planning process. By utilizing this t..."
   },
   {
     "name": "RoadmapCommunicatorService",
     "filename": "roadmap-communicator-service.md",
     "category": "General",
-    "summary": "Roadmap Communicator enables Product Managers to efficiently manage and collaborate on project roadmaps and presentations. It facilitates seamless com..."
+    "summary": "Roadmap Communicator helps Product Managers effectively manage and communicate roadmap and scenario information with stakeholders. It enables PMs to c..."
   },
   {
     "name": "ExperienceGapAnalyzerService",
     "filename": "experience-gap-analyzer-service.md",
     "category": "Customer Experience",
-    "summary": "The Experience Gap Analyzer helps Product Managers identify and bridge gaps in user experience, leading to improved product performance and customer s..."
+    "summary": "The Experience Gap Analyzer helps Product Managers identify and address gaps in user experience to improve product quality and customer satisfaction. ..."
   },
   {
     "name": "PiPlanningService",
     "filename": "pi-planning-service.md",
     "category": "PI Planning",
-    "summary": "Pi Planning helps Product Managers efficiently manage and plan their product development cycles, ensuring alignment and prioritization of work to driv..."
+    "summary": "Pi Planning helps Product Managers efficiently plan and manage their product development cycles, ensuring alignment and prioritization of work to driv..."
   },
   {
     "name": "StoryToCodeService",
     "filename": "story-to-code-service.md",
     "category": "Development",
-    "summary": "The Story to Code Converter helps Product Managers translate user stories into executable code, streamlining the development process and ensuring alig..."
+    "summary": "The Story to Code Converter helps Product Managers transform user stories into code efficiently, streamlining the development process and ensuring ali..."
   },
   {
     "name": "GoalSettingService",
     "filename": "goal-setting-service.md",
     "category": "General",
-    "summary": "The Goal Setting Manager helps Product Managers efficiently create, track, and manage goal setting sessions, enabling them to drive strategic alignmen..."
+    "summary": "The Goal Setting Manager helps Product Managers efficiently create and manage goal setting sessions, enabling them to track progress and drive team al..."
   },
   {
     "name": "OkrGeneratorService",
     "filename": "okr-generator-service.md",
     "category": "General",
-    "summary": "The OKR Generator helps Product Managers streamline the process of setting Objectives and Key Results (OKRs) by automating the generation and tracking..."
+    "summary": "The OKR Generation Tool helps Product Managers create and manage Objectives and Key Results efficiently, driving alignment and focus within their team..."
   },
   {
     "name": "ActivityService",
     "filename": "activity-service.md",
     "category": "General",
-    "summary": "The Activity Logger helps Product Managers track and analyze user activities within the application, providing valuable insights into feature usage an..."
+    "summary": "The Activity Logger helps you track and analyze the most frequently used features by your team members, providing valuable insights into productivity ..."
   },
   {
     "name": "CXRecommenderService",
     "filename": "cx-recommender-service.md",
     "category": "Customer Experience",
-    "summary": "The CX Improvement Recommender helps Product Managers enhance their customer experience by providing tailored recommendations for improving customer s..."
+    "summary": "The CX Improvement Recommender helps Product Managers enhance customer experience by providing tailored improvement recommendations based on data anal..."
   }
 ]

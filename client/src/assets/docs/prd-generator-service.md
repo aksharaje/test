@@ -1,41 +1,30 @@
-# Product Requirements Document Generator
+# Product Generator
 
 ## Overview
-The Product Requirements Document (PRD) Generator helps Product Managers create detailed PRDs efficiently. By using this tool, PMs can streamline the process of documenting product requirements, ensuring clear communication and alignment across teams.
+The Product Generator tool helps Product Managers streamline the creation and management of product requirement documents (PRDs). By using this tool, PMs can efficiently generate, refine, and track PRDs, ensuring clear communication and alignment across teams.
 
 ## Key Capabilities
-- Create new PRD records
-- Generate PRD content through an automated pipeline
-- Update and refine existing PRDs
-- List all PRDs for easy tracking and management
-- Retry failed PRDs for a seamless retry process
+- Create new PRDs
+- Refine existing PRDs
+- Track PRD status
+- Retry failed PRD generation
 
 ## How to Use
-To begin, start by creating a new PRD record with the necessary details. Utilize the automated pipeline to generate content based on the provided information. Refine and update PRDs as needed to maintain accuracy. Track and manage all PRDs through the list view, and easily retry failed PRDs for a successful submission.
+To begin, start by creating a new PRD by providing the necessary details. You can then refine the content as needed to ensure accuracy and completeness. Track the status of each PRD to monitor progress and make informed decisions. In case of any failures, retry the PRD generation process to quickly address any issues.
 
 ## Configuration & Fields
-- **Request Details**
-  - **Purpose**: Information needed to create a new PRD record.
-  - **Example**: Detailed feature specifications for a new product feature.
+- **Connected Knowledge Base**
+  - **Purpose**: Link the PRD to relevant knowledge bases for reference.
+  - **Example**: Marketing Strategy, Feature Roadmap
 
-- **PRD ID**
-  - **Purpose**: Unique identifier for a specific PRD.
-  - **Example**: PRD-2023-001
-
-- **Data**
-  - **Purpose**: Updated content or details for an existing PRD.
-  - **Example**: Revised market analysis section.
+- **Owner**
+  - **Purpose**: Identify the owner or user responsible for the PRD.
+  - **Example**: John Doe, Product Team Lead
 
 - **Skip**
-  - **Purpose**: Number of PRDs to skip in the list view.
-  - **Example**: Skip first 5 PRDs for review.
+  - **Purpose**: Specify the number of PRDs to skip in the list view.
+  - **Example**: 0
 
 - **Limit**
-  - **Purpose**: Maximum number of PRDs to display in a single view.
-  - **Example**: Display up to 10 PRDs per page.
-
-- **Retry PRD ID**
-  - **Purpose**: ID of the failed PRD to retry.
-  - **Example**: PRD-2023-005
-
-By focusing on these fields, Product Managers can efficiently manage and update their PRDs within the application.
+  - **Purpose**: Set the maximum number of PRDs to display per page.
+  - **Example**: 10

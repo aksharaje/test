@@ -1,21 +1,21 @@
 # Jira Manager
 
 ## Overview
-The Jira Manager tool helps product managers efficiently manage their projects and collaborations within the Jira platform. It streamlines the process of organizing tasks, tracking progress, and integrating external tools seamlessly.
+Jira Manager helps you streamline project management tasks and track progress efficiently. Stay organized and collaborate seamlessly with your team to deliver results.
 
 ## Key Capabilities
-- Create and assign tasks to team members
-- Analyze project progress and identify bottlenecks
-- Track project milestones and deadlines
+- View and manage project states
+- Generate OAuth URLs for secure integrations
+- List all project integrations
 
 ## How to Use
-To start using Jira Manager, begin by creating a new project board and adding tasks with detailed descriptions. Assign team members to specific tasks and set deadlines for completion. Monitor progress regularly and make adjustments as needed to ensure project success.
+To manage project states, start by cleaning up expired states using the "Cleanup Expired States" feature. Next, generate OAuth URLs for integrations by providing a return URL. Finally, list all integrations associated with your projects by providing a session reference.
 
 ## Configuration & Fields
-- **Return URL**
-  - **Purpose**: Specifies the URL to redirect users after completing an OAuth authentication.
-  - **Example**: "https://www.mywebsite.com/dashboard"
-  
-- **Session**
-  - **Purpose**: Represents the work session within the application where integrations are managed.
-  - **Example**: "Weekly Sprint Planning Meeting"
+- **Return URL**: Enter the URL where OAuth responses should be redirected. This field is optional.
+  - **Purpose**: Used to redirect OAuth responses securely.
+  - **Example**: "https://www.yourwebsite.com/oauth/callback"
+
+- **Session Reference**: Provide a reference to the session for listing integrations.
+  - **Purpose**: Identifies the session for retrieving integration details.
+  - **Example**: "Project XYZ Session"

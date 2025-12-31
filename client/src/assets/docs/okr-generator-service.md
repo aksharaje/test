@@ -1,38 +1,38 @@
-# OKR Generator
+# OKR Generation Tool
 
 ## Overview
-The OKR Generator helps Product Managers streamline the process of setting Objectives and Key Results (OKRs) by automating the generation and tracking of key metrics. It enables PMs to align team goals, measure progress, and drive strategic decision-making.
+The OKR Generation Tool helps Product Managers create and manage Objectives and Key Results efficiently, driving alignment and focus within their teams.
 
 ## Key Capabilities
 - Create new OKR sessions
+- Retrieve and view existing sessions
 - Generate OKRs and KPIs using AI
-- Retrieve objectives and key results for analysis
 - Retry failed sessions for improved outcomes
 
 ## How to Use
-To get started with the OKR Generator, begin by creating a new OKR session. Define your objectives and key results, then let the system generate OKRs and KPIs using advanced algorithms. Analyze the results to track progress and make data-driven decisions. In case of a failed session, retry the process to achieve better outcomes.
+To start using the OKR Generation Tool, begin by creating a new OKR session. Define your objectives and associated key results. Utilize the AI-powered feature to generate OKRs and KPIs automatically. In case of any failed sessions, retry for better results.
 
 ## Configuration & Fields
-- **Session ID**: Identifies the session for reference
-  - **Purpose**: Helps track and manage specific OKR sessions
-  - **Example**: Q3 Strategy Planning Session
+- **Session Reference**: Used to identify the OKR session.
+  - **Purpose**: Provides a reference point for the specific session.
+  - **Example**: Q3 Planning Session
 
-- **Data**: Information for creating a new OKR session
-  - **Purpose**: Provides input for generating objectives and key results
-  - **Example**: Quarterly Goals and Targets
+- **Objective ID**: Identifies a specific objective within a session.
+  - **Purpose**: Helps in tracking individual objectives.
+  - **Example**: Increase Customer Engagement
 
-- **Skip**: Number of sessions to skip for pagination
-  - **Purpose**: Allows for easy navigation through multiple sessions
-  - **Example**: 0 (Start from the first session)
+- **Objective**: Describes the goal or target to achieve.
+  - **Purpose**: Defines the desired outcome.
+  - **Example**: Launch New Product Feature
 
-- **Limit**: Maximum number of sessions to display per page
-  - **Purpose**: Controls the amount of data shown at once
-  - **Example**: 10 (Display 10 sessions per page)
+- **Key Results**: Outcomes that indicate progress towards an objective.
+  - **Purpose**: Measures the success of achieving an objective.
+  - **Example**: Achieve 20% Increase in User Engagement
 
-- **Objective ID**: Identifier for a specific objective within a session
-  - **Purpose**: Helps pinpoint individual objectives for analysis
-  - **Example**: Increase User Engagement by 20%
+- **KPIs**: Key Performance Indicators for measuring success.
+  - **Purpose**: Tracks the performance of objectives and key results.
+  - **Example**: Conversion Rate
 
-- **Retry Session**: Initiates a retry for a failed session
-  - **Purpose**: Offers a second chance to generate successful OKRs
-  - **Example**: Q3 Marketing Campaign Planning
+- **Retry Session**: Initiates a retry for a failed session.
+  - **Purpose**: Allows for a second attempt at generating successful OKRs.
+  - **Example**: Retry Q3 Planning Session

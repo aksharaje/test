@@ -1,63 +1,79 @@
-
 # Journey Mapping Tool
 
 ## Overview
-The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys to improve product experiences and identify pain points for enhancement.
+The Journey Mapping Tool helps Product Managers visualize and analyze customer journeys, enabling them to identify pain points, opportunities, and improve overall user experience.
 
 ## Key Capabilities
 - Create new journey mapping sessions
-- View and edit session details
-- Add pain points and stages to the journey map
+- View detailed session information
+- Add and manage pain points in the journey map
+- Track stages and update journey maps
 - Compare different versions of journey maps
 
 ## How to Use
-Start by creating a new journey mapping session to outline the customer journey. Add pain points, stages, and competitor observations to enrich the map. Analyze the data to understand user experiences and make informed product decisions.
+Start by creating a new journey mapping session to capture the customer experience. Add pain points, stages, and competitor observations to enhance the map. Use the tool to analyze and refine the journey map for better product decisions.
 
 ## Configuration & Fields
-- **Mode**
-  - **Purpose**: Specifies the type of session (e.g., research, ideation).
-  - **Example**: "Research Session"
+- **Connected Knowledge Base**
+  - **Purpose**: Link relevant knowledge bases to enrich the journey map.
+  - **Example**: Link articles, research findings, or customer feedback.
+
+- **Owner**
+  - **Purpose**: Assign ownership of the session to a specific user.
+  - **Example**: Assign the Product Manager responsible for the journey mapping.
 
 - **Journey Description**
-  - **Purpose**: Describes the overall journey being mapped.
-  - **Example**: "Customer Onboarding Process"
-
-- **User ID**
-  - **Purpose**: Identifies the user associated with the session.
-  - **Example**: "Product Manager"
+  - **Purpose**: Describe the customer journey for reference and analysis.
+  - **Example**: "Customer onboarding process from sign-up to first purchase."
 
 - **File Metadata**
-  - **Purpose**: Provides additional information or context related to the journey.
-  - **Example**: "Customer Journey Map PDF"
+  - **Purpose**: Attach files or documents related to the journey map.
+  - **Example**: Upload user flow diagrams or customer personas.
 
 - **Personas**
-  - **Purpose**: Represents different user personas involved in the journey.
-  - **Example**: "Persona: Tech-savvy User"
+  - **Purpose**: Define user personas for targeted journey analysis.
+  - **Example**: "Persona A: Tech-savvy millennial looking for convenience."
 
 - **Stage Name**
-  - **Purpose**: Names a specific stage in the journey map.
-  - **Example**: "Product Selection Stage"
+  - **Purpose**: Identify stages in the customer journey for detailed mapping.
+  - **Example**: "Stage 1: Discovery Phase."
 
 - **Description**
-  - **Purpose**: Provides details about a pain point or stage.
-  - **Example**: "Long checkout process leading to drop-offs"
+  - **Purpose**: Provide details about pain points or stages for clarity.
+  - **Example**: "User struggles with complex checkout process."
 
 - **Severity**
-  - **Purpose**: Indicates the impact or severity of a pain point.
-  - **Example**: "High severity: Critical usability issue"
+  - **Purpose**: Rate the severity of a pain point for prioritization.
+  - **Example**: Severity rating of 3.5 on a scale of 1 to 5.
+
+- **Insert After Stage**
+  - **Purpose**: Specify the order of new stages in the journey map.
+  - **Example**: Insert a new stage after the "Evaluation Phase."
+
+- **Stage Order**
+  - **Purpose**: Arrange stages in chronological order for a coherent journey map.
+  - **Example**: Stage order 1 for initial touchpoints.
+
+- **Touchpoints Observed**
+  - **Purpose**: Document touchpoints experienced during the journey.
+  - **Example**: "Website visit, email confirmation, in-app message."
+
+- **Time Taken**
+  - **Purpose**: Record the time duration for each stage or touchpoint.
+  - **Example**: "5 minutes spent on product selection."
 
 - **Friction Points**
-  - **Purpose**: Identifies areas causing user frustration or obstacles.
-  - **Example**: "Complex navigation structure"
+  - **Purpose**: Highlight areas of friction or difficulty in the journey.
+  - **Example**: "Error messages during account creation."
 
 - **Strengths Observed**
-  - **Purpose**: Highlights positive aspects or successful elements in the journey.
-  - **Example**: "Efficient checkout process"
+  - **Purpose**: Note positive aspects or strengths in the customer journey.
+  - **Example**: "Seamless transition between website sections."
 
 - **Notes**
-  - **Purpose**: Allows for additional comments or observations.
-  - **Example**: "User feedback: Confusing layout"
+  - **Purpose**: Add additional comments or observations for context.
+  - **Example**: "Consider A/B testing for checkout process."
 
 - **Screenshot URL**
-  - **Purpose**: Provides visual reference or context for observations.
-  - **Example**: "Screenshot of checkout page"
+  - **Purpose**: Attach visual references or screenshots for better understanding.
+  - **Example**: Link to a screenshot showing the checkout flow.
