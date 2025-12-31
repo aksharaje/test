@@ -1,53 +1,25 @@
-# OpportunityLinkerService
+# Idea Opportunity Mapper
 
 ## Overview
-Service file: `opportunity_linker_service.py`
+The Idea Opportunity Mapper helps Product Managers transform creative ideas into actionable opportunities by assessing their strategic fit and priority.
 
-Service for mapping ideas to opportunities and calculating priority scores
+## Key Capabilities
+- Create a new prioritization session
+- Process a prioritization session
+- View detailed information about prioritization sessions
+- List all prioritization sessions
+- Delete a prioritization session
 
-## Methods
-### create_session
-Create a new prioritization session and start processing.
+## How to Use
+To get started, create a new prioritization session to map out ideas and calculate priority scores. Process the session to evaluate strategic fit, estimate size, and determine priority tiers. You can then view detailed information about the session and delete it when necessary.
 
-Args:
-    db: Database session
-    ideation_session_id: ID of completed ideation session
-    user_id: Optional user ID
-
-Returns:
-    Created prioritization session
-
-Raises:
-    ValueError: If ideation session not found or not completed
-
-### process_session
-Process a prioritization session through all agents.
-
-This is the main workflow that:
-1. Maps opportunities for each idea (Agent 7)
-2. Scores strategic fit (Agent 8)
-3. Estimates size (Agent 9)
-4. Calculates priority and assigns tiers (Agent 10)
-5. Generates portfolio summary
-
-Args:
-    db: Database session
-    session_id: Prioritization session ID
-
-Returns:
-    Updated prioritization session
-
-### get_session
-Get a prioritization session by ID
-
-### list_sessions
-List all prioritization sessions, optionally filtered by user
-
-### get_session_detail
-Get session with all prioritized ideas
-
-### delete_session
-Delete a prioritization session
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+## Configuration & Fields
+- **Database**: Database session
+  - **What it's for**: Stores information related to your prioritization sessions.
+  - **Example**: Storing data on idea mappings, priority scores, and session details.
+- **Ideation Session ID**: ID of completed ideation session
+  - **What it's for**: Links the current prioritization session to a previous ideation session.
+  - **Example**: Connecting the prioritization of ideas generated in a brainstorming session.
+- **User ID**: Optional user ID
+  - **What it's for**: Associates a specific user with the prioritization session.
+  - **Example**: Assigning ownership of the session to a particular Product Manager.

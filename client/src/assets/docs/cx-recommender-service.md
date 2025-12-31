@@ -1,52 +1,38 @@
-# CXRecommenderService
+# CX Improvement Recommender
 
 ## Overview
-Service file: `cx_recommender_service.py`
+The CX Improvement Recommender helps Product Managers enhance customer experience by providing tailored improvement recommendations based on data analysis and insights.
 
-Service for generating CX improvement recommendations
+## Key Capabilities
+- Create a new recommendation session
+- View and manage recommendation sessions
+- Add custom recommendations
+- Generate recommendations using a background pipeline
 
-## Methods
-### llm
-Get the strict JSON LLM instance.
+## How to Use
+To start, create a new recommendation session to outline your improvement goals. Then, explore the generated recommendations and take actions such as updating, dismissing, or restoring them as needed. Additionally, you can manually add custom recommendations to address specific business needs.
 
-### create_session
-Create a new recommender session.
+## Configuration & Fields
+- **Session Name**: Name of the recommendation session
+  - **What it's for**: Identifying the purpose of the session
+  - **Example**: "Q4 Customer Retention Strategy"
 
-### get_session
-Get a session by ID.
+- **Timeline**: Timeline for implementing recommendations
+  - **What it's for**: Setting the timeframe for executing improvements
+  - **Example**: "6 months"
 
-### list_sessions
-List all sessions, optionally filtered by user.
+- **Budget**: Allocated budget for implementing recommendations
+  - **What it's for**: Estimating the financial resources needed
+  - **Example**: "$50,000"
 
-### get_session_detail
-Get complete session detail with all recommendations.
+- **Team Capacity**: Capacity of the team working on the recommendations
+  - **What it's for**: Understanding resource availability
+  - **Example**: "10 team members"
 
-### delete_session
-Delete a session and all related data.
+- **Recommendation Type**: Type of recommendation (e.g., UX, Marketing)
+  - **What it's for**: Categorizing the nature of the recommendation
+  - **Example**: "User Interface Enhancement"
 
-### get_recommendation
-Get a single recommendation by ID.
-
-### update_recommendation
-Update a recommendation (user edits).
-
-### dismiss_recommendation
-Dismiss (soft delete) a recommendation.
-
-### restore_recommendation
-Restore a dismissed recommendation.
-
-### add_custom_recommendation
-Manually add a custom recommendation.
-
-### run_recommendation_pipeline
-Main pipeline for generating recommendations. Runs in background task.
-
-### list_available_journey_maps
-List completed journey maps available for selection.
-
-### list_available_gap_analyses
-List completed gap analyses available for selection.
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **User ID**: User identifier for tracking purposes
+  - **What it's for**: Associating recommendations with specific users
+  - **Example**: "12345"

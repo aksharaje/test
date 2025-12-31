@@ -1,50 +1,43 @@
-# StoryToCodeService
+# Story to Code Converter
 
 ## Overview
-Service file: `story_to_code_service.py`
+The Story to Code Converter helps Product Managers translate user stories into actual code, streamlining the development process and ensuring alignment between business requirements and technical implementation.
 
-Service for converting user stories to code.
+## Key Capabilities
+- Create new story-to-code sessions
+- Retrieve and manage existing sessions
+- Generate code based on user stories
+- List user story artifacts for selection
+- Convert generated files into a ZIP byte stream
 
-## Methods
-### client
+## How to Use
+To begin, start by creating a new story-to-code session where you can input the description, source, and other relevant details. Then, you can process the session to generate the code. Finally, you can download the generated code files in a ZIP format for further development.
 
-### model
+## Configuration & Fields
+- **Input Description**: Describes the user story or requirement.
+  - **What it's for**: Helps specify the details of the desired functionality.
+  - **Example**: "As a user, I want to be able to reset my password."
 
-### create_session
-Create a new story-to-code session.
+- **Title**: Optional title for the session.
+  - **What it's for**: Provides a brief summary or identifier for the session.
+  - **Example**: "Password Reset Feature Implementation."
 
-### get_session
-Get session by ID.
+- **Input Source**: Specifies the source of the user story or requirement.
+  - **What it's for**: Indicates where the user story originated from.
+  - **Example**: "Customer Feedback Form Submission."
 
-### list_sessions
-List sessions with pagination.
+- **Source Artifact ID**: Optional identifier for the source artifact.
+  - **What it's for**: Helps track the origin of the user story.
+  - **Example**: "12345."
 
-### delete_session
-Delete a session.
+- **Tech Stack**: Optional technology stack to be used for implementation.
+  - **What it's for**: Specifies the technologies to be employed in the code generation.
+  - **Example**: "React, Node.js, MongoDB."
 
-### retry_session
-Reset a failed session for retry.
+- **Connected Knowledge**: Identifies the knowledge bases linked to the user story.
+  - **What it's for**: Shows related resources or references for implementation.
+  - **Example**: "Agile Development Best Practices Guide."
 
-### list_story_artifacts
-List user story artifacts (epics, features, user stories) for selection.
-
-### list_code_knowledge_bases
-List knowledge bases that have code/github content.
-
-### process_session
-Main async pipeline for code generation.
-
-### create_zip
-Convert the generated files into a ZIP byte stream.
-
-### generate
-Legacy generate method for backwards compatibility.
-
-### list_requests
-Legacy list method for backwards compatibility.
-
-### get_artifact
-Legacy get artifact method for backwards compatibility.
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **User ID**: Optional user identifier associated with the session.
+  - **What it's for**: Assigns ownership or responsibility for the session.
+  - **Example**: "PM123."

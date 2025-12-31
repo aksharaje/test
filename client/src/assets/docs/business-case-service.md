@@ -1,53 +1,49 @@
-# BusinessCaseService
+# Business Case Analysis
 
 ## Overview
-Service file: `business_case_service.py`
+Business Case Analysis helps Product Managers evaluate the feasibility and potential benefits of new initiatives. It enables PMs to make informed decisions by analyzing costs, benefits, and market potential.
 
-Service for managing business case analysis sessions
+## Key Capabilities
+- Create new business case sessions
+- Update cost and benefit items
+- Retrieve detailed session information
+- Delete sessions
+- Manage rate assumptions
+- Save user corrections for learning
+- Run a comprehensive business case analysis pipeline
 
-## Methods
-### client
+## How to Use
+To start, create a new business case session to outline your initiative's details. Then, update cost and benefit items to reflect realistic financial projections. Retrieve detailed session information to gain insights and make informed decisions. If needed, update rate assumptions and save user corrections for future learning. Finally, run the business case analysis pipeline to orchestrate AI agents for a comprehensive evaluation.
 
-### model
+## Configuration & Fields
+- **Feature Name**: Descriptive name of the initiative
+  - **What it's for**: Identifying the key features of the project
+  - **Example**: "Online Marketplace Integration"
 
-### create_session
-Create a new business case session.
+- **Feature Description**: Brief overview of the initiative
+  - **What it's for**: Providing context for the project
+  - **Example**: "Integrating third-party sellers into our platform"
 
-If feasibility_session_id is provided, feature_name and feature_description
-are derived from the feasibility session if not provided.
+- **Business Context**: Contextual information related to the initiative
+  - **What it's for**: Understanding the business environment surrounding the project
+  - **Example**: "Increasing market share in the e-commerce sector"
 
-### get_session
-Get a session by ID
+- **Target Market**: Specific market segment the initiative targets
+  - **What it's for**: Defining the audience for the project
+  - **Example**: "Young urban professionals interested in sustainable products"
 
-### list_sessions
-List all sessions, optionally filtered by user
+- **User ID**: Unique identifier for the user managing the session
+  - **What it's for**: Associating the session with a specific user
+  - **Example**: 12345
 
-### get_session_detail
-Get complete session with all related data
+- **Session ID**: Identification number for the business case session
+  - **What it's for**: Locating and managing specific sessions
+  - **Example**: 9876
 
-### update_cost_item
-Update cost item with user override
+- **Rate Value**: Numerical value representing a rate assumption
+  - **What it's for**: Estimating growth rates or interest rates
+  - **Example**: 0.05
 
-### update_benefit_item
-Update benefit item with user override
-
-### delete_session
-Delete session and all related data
-
-### update_rate_assumption
-Update a rate assumption with user override
-
-### get_user_rate_preferences
-Get user's previous rate preferences for a company size
-
-### get_rate_assumptions
-Get all rate assumptions for a session
-
-### save_user_learning
-Save a user correction for future learning
-
-### run_business_case_pipeline
-Main pipeline: orchestrates 5 AI agents
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Save for Future**: Checkbox to indicate whether the rate assumption should be saved for future reference
+  - **What it's for**: Flagging important assumptions for future analysis
+  - **Example**: Checked to save the rate assumption for future use.

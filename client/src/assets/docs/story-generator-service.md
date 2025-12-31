@@ -1,26 +1,41 @@
-# StoryGeneratorService
+# Story Generator
 
 ## Overview
-Service file: `story_generator_service.py`
+The Story Generator tool helps Product Managers create compelling narratives for their products. It enables them to craft engaging stories that resonate with their target audience, driving product adoption and brand loyalty.
 
-## Methods
-### client
+## Key Capabilities
+- Generate personalized product narratives
+- Manage and update story artifacts
+- Access a knowledge base for content inspiration
 
-### get_system_prompt
+## How to Use
+To start, define your product's key features and target audience. Use the Story Generator to craft narratives that highlight these features in a captivating way. You can also explore the knowledge base for additional content ideas.
 
-### get_knowledge_base_context
+## Configuration & Fields
+- **Type**: Type of prompt
+  - **What it's for**: Specifies the type of narrative prompt to generate.
+  - **Example**: "Product Launch", "Customer Testimonial"
 
-### clean_json_response
+- **Title**: Title of the narrative
+  - **What it's for**: Sets the headline for the generated story.
+  - **Example**: "Revolutionizing the Industry with AI Integration"
 
-### generate
+- **Session**: User session information
+  - **What it's for**: Identifies the user session for story generation.
+  - **Example**: User session ID: 12345
 
-### list_artifacts
+- **Request**: Request details
+  - **What it's for**: Contains specific details for generating the story.
+  - **Example**: Requesting a narrative for a new product feature release
 
-### get_artifact
+- **User ID**: User identification
+  - **What it's for**: Specifies the user for whom the artifacts are listed.
+  - **Example**: User ID: 9876
 
-### update_artifact
+- **ID**: Artifact identification
+  - **What it's for**: Identifies the specific artifact to retrieve or update.
+  - **Example**: Artifact ID: 54321
 
-### delete_artifact
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Data**: Artifact data
+  - **What it's for**: Contains the updated information for the artifact.
+  - **Example**: Updating product description for artifact ID 54321

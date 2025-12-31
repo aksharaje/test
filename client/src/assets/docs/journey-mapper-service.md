@@ -1,62 +1,34 @@
-# JourneyMapperService
+# Journey Mapping Tool
 
 ## Overview
-Service file: `journey_mapper_service.py`
+The Journey Mapping Tool helps product managers visualize and analyze customer journeys, enabling them to identify pain points, improve user experiences, and enhance product strategies.
 
-Service for managing journey mapping sessions
+## Key Capabilities
+- Create new journey mapping sessions
+- View and manage existing sessions
+- Add and update pain points in the journey map
+- Compare different versions of journey maps
 
-## Methods
-### client
+## How to Use
+To start using the Journey Mapping Tool, begin by creating a new journey mapping session to outline the user's experience. You can then add pain points, stages, and competitor observations to enrich the journey map. Finally, compare different versions to track changes and improvements over time.
 
-### model
+## Configuration & Fields
+- **Mode**
+  - **What it's for**: Specifies the type of journey mapping session (e.g., "Research", "Ideation").
+  - **Example**: Select "Research" to focus on understanding user needs and behaviors.
 
-### create_session
-Create a new journey mapping session.
+- **Journey Description**
+  - **What it's for**: Describes the overall purpose or goal of the journey mapping session.
+  - **Example**: "Improve checkout process for e-commerce website."
 
-### get_session
-Get a session by ID.
+- **User ID**
+  - **What it's for**: Identifies the user associated with the session (optional).
+  - **Example**: Assign the session to a specific product manager for tracking.
 
-### list_sessions
-List all sessions, optionally filtered by user.
+- **File Metadata**
+  - **What it's for**: Additional information or resources related to the session.
+  - **Example**: Upload user research reports or customer feedback data.
 
-### get_session_detail
-Get complete session detail with all related data.
-
-### delete_session
-Delete a session and all related data.
-
-### update_pain_point
-Update a pain point (user edits).
-
-### add_pain_point
-Manually add a pain point.
-
-### delete_pain_point
-Delete a pain point.
-
-### update_stage
-Update a stage in the journey map.
-
-### add_stage
-Add a new stage to the journey map.
-
-### delete_stage
-Delete a stage from the journey map.
-
-### run_journey_generation_pipeline
-Main pipeline for generating journey maps. Runs in background task.
-
-### add_competitor_observation
-Add an observation during competitive walkthrough.
-
-### create_new_version
-Create a new version of a journey map with updated data.
-
-### run_version_update_pipeline
-Pipeline for updating an existing journey with new data and computing deltas.
-
-### compare_versions
-Compare two journey map versions.
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Personas**
+  - **What it's for**: Represents different user profiles or segments involved in the journey.
+  - **Example**: Define personas such as "New User" or "Returning Customer."

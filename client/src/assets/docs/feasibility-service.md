@@ -1,45 +1,48 @@
-# FeasibilityService
+# Feasibility Analysis Manager
 
 ## Overview
-Service file: `feasibility_service.py`
+The Feasibility Analysis Manager helps Product Managers assess the viability of their project ideas and make informed decisions based on detailed analysis.
 
-Service for managing feasibility analysis sessions
+## Key Capabilities
+- Create a new feasibility analysis session
+- Get detailed session information
+- Update component estimates
+- Capture actual results for learning
+- Delete a session and related data
+- Run a feasibility pipeline for advanced analysis
 
-## Methods
-### client
+## How to Use
+To get started, create a new feasibility analysis session to outline your project's scope and requirements. Then, you can update component estimates based on new information and capture actual results to improve future decision-making. Finally, run the feasibility pipeline to leverage AI agents for deeper insights.
 
-### model
+## Configuration & Fields
+- **Feature Description**: Describes the main aspects of the project.
+  - **What it's for**: Provides a brief overview of the project's purpose.
+  - **Example**: "Develop a mobile app for online grocery shopping."
 
-### create_session
-Create a new feasibility analysis session
+- **Technical Constraints**: Lists any limitations or restrictions on the project.
+  - **What it's for**: Identifies potential challenges that may impact project delivery.
+  - **Example**: "Limited API integrations with external systems."
 
-### get_session
-Get a session by ID
+- **Target Users**: Specifies the intended audience or customers for the project.
+  - **What it's for**: Helps define the user base and their needs.
+  - **Example**: "Young professionals seeking convenient shopping solutions."
 
-### list_sessions
-List all sessions, optionally filtered by user, with pagination
+- **Optimistic Hours**: Estimated best-case scenario for component completion.
+  - **What it's for**: Sets an optimistic timeline for project milestones.
+  - **Example**: "Development team completes feature in 20 hours."
 
-### retry_session
-Retry a failed session.
-Resets status and triggers background processing.
+- **Realistic Hours**: Estimated most likely scenario for component completion.
+  - **What it's for**: Provides a realistic timeline based on current progress.
+  - **Example**: "Development team completes feature in 30 hours."
 
-### get_session_detail
-Get complete session detail with all related data.
-Returns: Dict with session, components, scenarios, risks, skills
+- **Pessimistic Hours**: Estimated worst-case scenario for component completion.
+  - **What it's for**: Prepares for potential delays or complications in project delivery.
+  - **Example**: "Development team faces unexpected challenges and completes feature in 40 hours."
 
-### update_component
-Update component estimates (if editable)
+- **Actuals Data**: Records actual results and lessons learned from project components.
+  - **What it's for**: Captures real-time feedback and insights for future improvements.
+  - **Example**: "Component X required more hours due to unforeseen technical issues."
 
-### capture_actuals
-Capture actual results for learning.
-actuals_data: List of dicts with component_id, actual_hours_spent, lessons_learned
-
-### delete_session
-Delete a session and all related data (cascade)
-
-### run_feasibility_pipeline
-Main pipeline: orchestrates 4 AI agents sequentially.
-Runs in background task.
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Recorded By User ID**: Identifies the user responsible for recording actual results.
+  - **What it's for**: Tracks accountability and ownership of recorded data.
+  - **Example**: "Product Manager records actual results for Component Y."

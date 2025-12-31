@@ -1,71 +1,31 @@
-# ReleasePrepService
+# Release Preparation
 
 ## Overview
-Service file: `release_prep_service.py`
+Release Preparation helps Product Managers streamline the process of preparing for product releases. It allows PMs to manage release artifacts, notes, decisions, and technical debt items in one central location, facilitating efficient release planning and execution.
 
-Service for Release Prep artifact generation
+## Key Capabilities
+- Create a new release preparation session
+- Retrieve and manage release session details
+- Generate release artifacts from various sources
+- Update release notes, decisions, and technical debt items
+- Export release information in markdown format
 
-## Methods
-### llm
-Lazy load the strict JSON LLM
+## How to Use
+To get started, create a new release preparation session to organize your release planning activities. You can then access and manage the session details, including release notes, decisions, and technical debt items. Use the available functions to update and export release information as needed.
 
-### create_session
-Create a new release prep session
+## Configuration & Fields
+- **Session ID**: Unique identifier for the release preparation session
+  - **What it's for**: Identifying and accessing specific release planning sessions
+  - **Example**: "12345"
 
-### get_session
-Get a session by ID
+- **User ID**: Optional identifier for the user associated with the session
+  - **What it's for**: Linking a user to a specific release preparation session
+  - **Example**: "JohnDoe"
 
-### get_sessions
-Get all sessions, optionally filtered by user
+- **Include Released**: Flag to include already released artifacts
+  - **What it's for**: Controlling the inclusion of released artifacts in the generated list
+  - **Example**: "true"
 
-### delete_session
-Delete a session and all related artifacts
-
-### get_available_stories
-Get artifacts from Story Generator, Epic Creator, and Feature Creator
-
-Args:
-    include_released: If True, include stories already in a release (for debugging)
-
-### get_session_stories
-Get all stories for a session
-
-### get_release_notes
-Get all release notes for a session
-
-### get_decisions
-Get all decisions for a session
-
-### get_debt_items
-Get all technical debt items for a session
-
-### update_release_note
-Update a release note
-
-### update_decision
-Update a decision
-
-### update_debt_item
-Update a technical debt item
-
-### create_debt_item
-Create a new technical debt item manually
-
-### unrelease_artifact
-Remove released status from an artifact so it can be included in future releases
-
-### unrelease_session_artifacts
-Remove released status from all artifacts in a session.
-Returns count of artifacts unreleased.
-
-### export_release_notes_markdown
-Export release notes as markdown
-
-### export_decision_log_markdown
-Export decision log as markdown
-
-### export_debt_inventory_markdown
-Export technical debt inventory as markdown
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Artifact ID**: Identifier for a specific release artifact
+  - **What it's for**: Unreleasing a specific artifact for future releases
+  - **Example**: "54321"

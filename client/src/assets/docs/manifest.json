@@ -1,188 +1,224 @@
 [
   {
-    "name": "CXRecommenderService",
-    "filename": "cx-recommender-service.md",
-    "category": "Customer Experience",
-    "summary": "Service file: `cx_recommender_service.py`..."
-  },
-  {
-    "name": "PrdGeneratorService",
-    "filename": "prd-generator-service.md",
-    "category": "Backlog Authoring",
-    "summary": "Service file: `prd_generator_service.py`..."
-  },
-  {
-    "name": "FeedbackService",
-    "filename": "feedback-service.md",
-    "category": "Core",
-    "summary": "Service file: `feedback_service.py`..."
-  },
-  {
-    "name": "RoadmapPlannerService",
-    "filename": "roadmap-planner-service.md",
+    "name": "ZendeskService",
+    "filename": "zendesk-service.md",
     "category": "General",
-    "summary": "Service file: `roadmap_planner_service.py`..."
-  },
-  {
-    "name": "StoryGeneratorService",
-    "filename": "story-generator-service.md",
-    "category": "Backlog Authoring",
-    "summary": "Service file: `story_generator_service.py`..."
-  },
-  {
-    "name": "OptimizeService",
-    "filename": "optimize-service.md",
-    "category": "Core",
-    "summary": "Service file: `optimize_service.py`..."
+    "summary": "The Zendesk Connector allows Product Managers to seamlessly integrate customer support data from Zendesk into their product management workflow. By us..."
   },
   {
     "name": "OpportunityLinkerService",
     "filename": "opportunity-linker-service.md",
     "category": "Ideation",
-    "summary": "Service file: `opportunity_linker_service.py`..."
+    "summary": "The Idea Opportunity Mapper helps Product Managers transform creative ideas into actionable opportunities by assessing their strategic fit and priorit..."
   },
   {
-    "name": "EmbeddingService",
-    "filename": "embedding-service.md",
-    "category": "Core",
-    "summary": "Service file: `embedding_service.py`..."
-  },
-  {
-    "name": "AdoService",
-    "filename": "ado-service.md",
+    "name": "ScopeDefinitionService",
+    "filename": "scope-definition-service.md",
     "category": "General",
-    "summary": "Service file: `ado_service.py`..."
-  },
-  {
-    "name": "BusinessCaseService",
-    "filename": "business-case-service.md",
-    "category": "Feasibility",
-    "summary": "Service file: `business_case_service.py`..."
-  },
-  {
-    "name": "FeasibilityService",
-    "filename": "feasibility-service.md",
-    "category": "Feasibility",
-    "summary": "Service file: `feasibility_service.py`..."
-  },
-  {
-    "name": "GithubService",
-    "filename": "github-service.md",
-    "category": "Core",
-    "summary": "Service file: `github_service.py`..."
-  },
-  {
-    "name": "ServiceNowService",
-    "filename": "service-now-service.md",
-    "category": "General",
-    "summary": "Service file: `servicenow_service.py`..."
-  },
-  {
-    "name": "LibraryService",
-    "filename": "library-service.md",
-    "category": "Core",
-    "summary": "Service file: `library_service.py`..."
-  },
-  {
-    "name": "RoadmapCommunicatorService",
-    "filename": "roadmap-communicator-service.md",
-    "category": "General",
-    "summary": "Service file: `roadmap_communicator_service.py`..."
-  },
-  {
-    "name": "JiraService",
-    "filename": "jira-service.md",
-    "category": "Core",
-    "summary": "Service file: `jira_service.py`..."
-  },
-  {
-    "name": "SettingsService",
-    "filename": "settings-service.md",
-    "category": "Core",
-    "summary": "Service file: `settings_service.py`..."
-  },
-  {
-    "name": "ScenarioModelerService",
-    "filename": "scenario-modeler-service.md",
-    "category": "General",
-    "summary": "Service file: `scenario_modeler_service.py`..."
-  },
-  {
-    "name": "IdeationService",
-    "filename": "ideation-service.md",
-    "category": "Ideation",
-    "summary": "Service file: `ideation_service.py`..."
-  },
-  {
-    "name": "QualtricsService",
-    "filename": "qualtrics-service.md",
-    "category": "General",
-    "summary": "Service file: `qualtrics_service.py`..."
-  },
-  {
-    "name": "KnowledgeBaseService",
-    "filename": "knowledge-base-service.md",
-    "category": "Research",
-    "summary": "Service file: `knowledge_base_service.py`..."
+    "summary": "The Scope Definition Manager helps Product Managers define and manage the scope of their projects efficiently. It enables PMs to outline project bound..."
   },
   {
     "name": "CodeChatService",
     "filename": "code-chat-service.md",
     "category": "Research",
-    "summary": "Service file: `code_chat_service.py`..."
+    "summary": "Code Chat enables Product Managers to effectively communicate with developers, share knowledge, and manage coding sessions collaboratively. It streaml..."
   },
   {
-    "name": "ResearchPlannerService",
-    "filename": "research-planner-service.md",
-    "category": "Customer Experience",
-    "summary": "Service file: `research_planner_service.py`..."
+    "name": "BusinessCaseService",
+    "filename": "business-case-service.md",
+    "category": "Feasibility",
+    "summary": "Business Case Analysis helps Product Managers evaluate the feasibility and potential benefits of new initiatives. It enables PMs to make informed deci..."
   },
   {
-    "name": "FlowService",
-    "filename": "flow-service.md",
-    "category": "Core",
-    "summary": "Service file: `flow_service.py`..."
-  },
-  {
-    "name": "ZendeskService",
-    "filename": "zendesk-service.md",
+    "name": "KpiAssignmentService",
+    "filename": "kpi-assignment-service.md",
     "category": "General",
-    "summary": "Service file: `zendesk_service.py`..."
+    "summary": "The KPI Assignment Manager helps Product Managers streamline the process of assigning Key Performance Indicators (KPIs) to their team's objectives, en..."
+  },
+  {
+    "name": "GithubService",
+    "filename": "github-service.md",
+    "category": "Core",
+    "summary": "GitHub Integration allows Product Managers to seamlessly connect their product management application with GitHub repositories. By integrating GitHub,..."
+  },
+  {
+    "name": "AdoService",
+    "filename": "ado-service.md",
+    "category": "General",
+    "summary": "Ado Management helps you maintain a clean and organized workspace, ensuring that only relevant and up-to-date information is accessible to your team. ..."
   },
   {
     "name": "ReleasePrepService",
     "filename": "release-prep-service.md",
     "category": "General",
-    "summary": "Service file: `release_prep_service.py`..."
+    "summary": "Release Preparation helps Product Managers streamline the process of preparing for product releases. It allows PMs to manage release artifacts, notes,..."
   },
   {
-    "name": "StoryToCodeService",
-    "filename": "story-to-code-service.md",
-    "category": "Development",
-    "summary": "Service file: `story_to_code_service.py`..."
+    "name": "FlowService",
+    "filename": "flow-service.md",
+    "category": "Core",
+    "summary": "The Flow Manager helps Product Managers streamline their workflow by managing project flows efficiently. It enables PMs to oversee project progress, m..."
   },
   {
-    "name": "ExperienceGapAnalyzerService",
-    "filename": "experience-gap-analyzer-service.md",
+    "name": "SettingsService",
+    "filename": "settings-service.md",
+    "category": "Core",
+    "summary": "The Settings Manager helps Product Managers customize and manage key settings for their projects, enabling them to tailor the application to their spe..."
+  },
+  {
+    "name": "KnowledgeBaseService",
+    "filename": "knowledge-base-service.md",
+    "category": "Research",
+    "summary": "The Knowledge Base Manager helps Product Managers organize and access information efficiently. It enables PMs to centralize knowledge, streamline coll..."
+  },
+  {
+    "name": "ScopeMonitorService",
+    "filename": "scope-monitor-service.md",
+    "category": "General",
+    "summary": "The Scope Monitoring Tool helps Product Managers track and analyze changes in project scope efficiently. It enables PMs to make informed decisions bas..."
+  },
+  {
+    "name": "RoadmapPlannerService",
+    "filename": "roadmap-planner-service.md",
+    "category": "General",
+    "summary": "The Roadmap Planner helps Product Managers create and manage strategic product roadmaps, enabling them to visualize and prioritize key initiatives, al..."
+  },
+  {
+    "name": "FeasibilityService",
+    "filename": "feasibility-service.md",
+    "category": "Feasibility",
+    "summary": "The Feasibility Analysis Manager helps Product Managers assess the viability of their project ideas and make informed decisions based on detailed anal..."
+  },
+  {
+    "name": "ResearchPlannerService",
+    "filename": "research-planner-service.md",
     "category": "Customer Experience",
-    "summary": "Service file: `experience_gap_analyzer_service.py`..."
+    "summary": "The Research Planner helps Product Managers streamline the planning and execution of research activities, ensuring efficient decision-making based on ..."
+  },
+  {
+    "name": "EmbeddingService",
+    "filename": "embedding-service.md",
+    "category": "Core",
+    "summary": "The Embedding Generator helps Product Managers analyze and understand the textual content by converting it into numerical representations, enabling be..."
+  },
+  {
+    "name": "OptimizeService",
+    "filename": "optimize-service.md",
+    "category": "Core",
+    "summary": "The Optimized Prompt Manager helps Product Managers enhance the effectiveness of their content by providing insights into user interactions and feedba..."
   },
   {
     "name": "JourneyMapperService",
     "filename": "journey-mapper-service.md",
     "category": "Customer Experience",
-    "summary": "Service file: `journey_mapper_service.py`..."
+    "summary": "The Journey Mapping Tool helps product managers visualize and analyze customer journeys, enabling them to identify pain points, improve user experienc..."
   },
   {
-    "name": "ActivityService",
-    "filename": "activity-service.md",
+    "name": "PrdGeneratorService",
+    "filename": "prd-generator-service.md",
+    "category": "Backlog Authoring",
+    "summary": "The Product Report Generator helps Product Managers create detailed product reports efficiently, enabling them to communicate key insights and progres..."
+  },
+  {
+    "name": "IdeationService",
+    "filename": "ideation-service.md",
+    "category": "Ideation",
+    "summary": "Ideation Manager helps Product Managers facilitate ideation sessions and set SMART goals to drive innovation and product development...."
+  },
+  {
+    "name": "JiraService",
+    "filename": "jira-service.md",
+    "category": "Core",
+    "summary": "Jira Manager helps you streamline project management tasks and collaboration within your team. Easily track progress, assign tasks, and monitor projec..."
+  },
+  {
+    "name": "MeasurementFrameworkService",
+    "filename": "measurement-framework-service.md",
     "category": "General",
-    "summary": "Service file: `activity_service.py`..."
+    "summary": "The Measurement Framework Manager helps Product Managers organize and analyze data to make informed decisions, improving product performance and user ..."
+  },
+  {
+    "name": "FeedbackService",
+    "filename": "feedback-service.md",
+    "category": "Core",
+    "summary": "The Feedback Manager helps Product Managers gather and analyze feedback from users to drive product improvements and enhance user satisfaction...."
+  },
+  {
+    "name": "ScenarioModelerService",
+    "filename": "scenario-modeler-service.md",
+    "category": "General",
+    "summary": "Scenario Modeler helps Product Managers create and manage different scenarios for their projects, enabling them to make informed decisions based on va..."
+  },
+  {
+    "name": "LibraryService",
+    "filename": "library-service.md",
+    "category": "Core",
+    "summary": "The Library Manager application helps Product Managers efficiently manage their library of resources, enabling them to easily access, organize, and co..."
+  },
+  {
+    "name": "ServiceNowService",
+    "filename": "service-now-service.md",
+    "category": "General",
+    "summary": "Service Management helps Product Managers streamline communication and collaboration with cross-functional teams, ensuring efficient product developme..."
+  },
+  {
+    "name": "StoryGeneratorService",
+    "filename": "story-generator-service.md",
+    "category": "Backlog Authoring",
+    "summary": "The Story Generator tool helps Product Managers create compelling narratives for their products. It enables them to craft engaging stories that resona..."
+  },
+  {
+    "name": "QualtricsService",
+    "filename": "qualtrics-service.md",
+    "category": "General",
+    "summary": "The Qualtrics Connector enables Product Managers to seamlessly integrate customer feedback data from Qualtrics into their product development process...."
+  },
+  {
+    "name": "RoadmapCommunicatorService",
+    "filename": "roadmap-communicator-service.md",
+    "category": "General",
+    "summary": "The Roadmap Communicator helps Product Managers efficiently manage and communicate their product roadmap progress to stakeholders. It enables PMs to s..."
+  },
+  {
+    "name": "ExperienceGapAnalyzerService",
+    "filename": "experience-gap-analyzer-service.md",
+    "category": "Customer Experience",
+    "summary": "The Experience Gap Analyzer helps Product Managers identify and address gaps in user experience, enabling them to enhance product usability and satisf..."
   },
   {
     "name": "PiPlanningService",
     "filename": "pi-planning-service.md",
     "category": "PI Planning",
-    "summary": "Service file: `pi_planning_service.py`..."
+    "summary": "Pi Planning helps Product Managers efficiently plan and manage their product development cycles. It enables PMs to streamline their planning process a..."
+  },
+  {
+    "name": "StoryToCodeService",
+    "filename": "story-to-code-service.md",
+    "category": "Development",
+    "summary": "The Story to Code Converter helps Product Managers translate user stories into actual code, streamlining the development process and ensuring alignmen..."
+  },
+  {
+    "name": "GoalSettingService",
+    "filename": "goal-setting-service.md",
+    "category": "General",
+    "summary": "The Goal Setting Manager helps Product Managers effectively plan and track their goal setting sessions, ensuring alignment and progress towards strate..."
+  },
+  {
+    "name": "OkrGeneratorService",
+    "filename": "okr-generator-service.md",
+    "category": "General",
+    "summary": "This tool enables Product Managers to effortlessly create and manage OKR sessions, facilitating strategic planning and goal-setting processes within t..."
+  },
+  {
+    "name": "ActivityService",
+    "filename": "activity-service.md",
+    "category": "General",
+    "summary": "The Activity Logger helps you track and analyze the usage patterns of different features within your product. By logging activities, you can gain insi..."
+  },
+  {
+    "name": "CXRecommenderService",
+    "filename": "cx-recommender-service.md",
+    "category": "Customer Experience",
+    "summary": "The CX Improvement Recommender helps Product Managers enhance customer experience by providing tailored improvement recommendations based on data anal..."
   }
 ]

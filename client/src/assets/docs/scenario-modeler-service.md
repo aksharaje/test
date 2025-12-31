@@ -1,52 +1,26 @@
-# ScenarioModelerService
+# Scenario Modeler
 
 ## Overview
-Service file: `scenario_modeler_service.py`
+Scenario Modeler helps Product Managers create and manage different scenarios for their projects, enabling them to make informed decisions based on various possibilities and outcomes.
 
-Service for Scenario Modeler operations
+## Key Capabilities
+- Create new scenario modeling sessions
+- Retrieve and view existing scenario sessions
+- Manage and analyze scenario variants
+- Utilize predefined scenario templates
 
-## Methods
-### llm
-Lazy load the strict JSON LLM
+## How to Use
+To get started, create a new scenario modeling session based on an existing roadmap. Then, explore and analyze different variants to understand the potential outcomes. You can also use predefined templates to quickly set up new scenarios.
 
-### create_session
-Create a new scenario modeling session from an existing roadmap
+## Configuration & Fields
+- **Data**: Input the details for creating a new scenario or variant.
+  - **Purpose**: Provides the necessary information to define a scenario or variant.
+  - **Example**: Inputting market research data to create a new scenario based on customer trends.
 
-### get_session
-Get a session by ID
+- **User ID**: Identify the user associated with a session or variant.
+  - **Purpose**: Helps in tracking and managing scenarios specific to individual users.
+  - **Example**: Assigning a user ID to track the scenarios created by different team members.
 
-### get_sessions
-Get all sessions, optionally filtered by user
-
-### get_sessions_for_roadmap
-Get all scenario sessions for a specific roadmap
-
-### delete_session
-Delete a session and all its variants
-
-### get_full_session
-Get session with all variants and comparison
-
-### get_variants
-Get all variants for a session
-
-### get_variant
-Get a variant by ID
-
-### create_variant
-Create a new scenario variant
-
-### create_variant_from_template
-Create a variant from a predefined template
-
-### update_variant
-Update a variant
-
-### delete_variant
-Delete a variant
-
-### get_scenario_templates
-Get available scenario templates
-
-> [!NOTE]
-> This documentation was auto-generated without AI enhancement.
+- **Template Name**: Select a predefined template for creating a variant.
+  - **Purpose**: Allows for quick setup of scenarios based on established templates.
+  - **Example**: Choosing a "Product Launch Plan" template to create a new variant for a product launch scenario.
