@@ -11,6 +11,7 @@ import type {
   EpicOrFeature,
   ScopeDefinitionSummary,
   IdeationSessionSummary,
+  OkrSessionSummary,
 } from './competitive-analysis.types';
 import type { GeneratedArtifact, StructuredContent, EpicNode, FeatureNode } from '../story-generator/story-generator.types';
 import type { ScopeDefinitionSession } from '../scope-definition/scope-definition.types';
@@ -30,6 +31,7 @@ export class CompetitiveAnalysisService {
   epicsAndFeatures = signal<EpicOrFeature[]>([]);
   scopeDefinitions = signal<ScopeDefinitionSummary[]>([]);
   ideationSessions = signal<IdeationSessionSummary[]>([]);
+  okrSessions = signal<OkrSessionSummary[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -160,6 +162,27 @@ export class CompetitiveAnalysisService {
       this.ideationSessions.set(completedSessions);
     } catch (err) {
       this.ideationSessions.set([]);
+    }
+  }
+
+  async loadOkrSessions(): Promise<void> {
+    try {
+      const sessions = await firstValueFrom(
+        this.http.get<any[]>('/api/okr-generator/sessions')
+      );
+
+      const completedSessions: OkrSessionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          goalDescription: s.goalDescription || s.goal_description,
+          objectiveCount: s.objectiveCount || 0,
+          createdAt: s.createdAt || s.created_at,
+        }));
+
+      this.okrSessions.set(completedSessions);
+    } catch (err) {
+      this.okrSessions.set([]);
     }
   }
 

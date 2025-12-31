@@ -38,7 +38,8 @@ FOCUS_AREAS = sorted([
     {"value": "social_sharing", "label": "Social Features & Sharing"},
     {"value": "subscription_billing", "label": "Subscription & Billing"},
     {"value": "other", "label": "Other (Custom)"},
-], key=lambda x: x["label"] if x["value"] != "other" else "zzz")  # Keep "Other" at end
+    {"value": "source_based", "label": "From Source"},  # Used when focus area comes from another flow
+], key=lambda x: x["label"] if x["value"] != "other" and x["value"] != "source_based" else "zzz")  # Keep special options at end
 
 # Top 30 US industries (sorted alphabetically)
 INDUSTRIES = sorted([
@@ -100,6 +101,9 @@ class CompetitiveAnalysisSession(SQLModel, table=True):
     # Input fields
     focus_area: str = Field(default="", description="Selected focus area category")
     custom_focus_area: Optional[str] = Field(default=None, description="Custom focus area if 'other' selected")
+    focus_area_source_type: Optional[str] = Field(default=None, description="Source type: ideation, okr, scope_definition")
+    focus_area_source_id: Optional[int] = Field(default=None, description="ID of the source session")
+    focus_area_context: Optional[str] = Field(default=None, description="Context extracted from source for focus area")
     reference_competitors: List[str] = Field(default_factory=list, sa_column=Column(JSON))
     include_best_in_class: bool = Field(default=True)
     include_adjacent_industries: bool = Field(default=False)
@@ -146,6 +150,9 @@ class CompetitiveAnalysisSessionCreate(SQLModel):
     """Request model for creating a new session"""
     focus_area: str = Field(min_length=1)
     custom_focus_area: Optional[str] = None
+    focus_area_source_type: Optional[str] = None
+    focus_area_source_id: Optional[int] = None
+    focus_area_context: Optional[str] = None
     reference_competitors: List[str] = Field(default_factory=list)
     include_best_in_class: bool = True
     include_adjacent_industries: bool = False
@@ -183,6 +190,9 @@ class CompetitiveAnalysisSessionResponse(SQLModel):
     id: int
     focus_area: str
     custom_focus_area: Optional[str] = None
+    focus_area_source_type: Optional[str] = None
+    focus_area_source_id: Optional[int] = None
+    focus_area_context: Optional[str] = None
     reference_competitors: List[str] = []
     include_best_in_class: bool = True
     include_adjacent_industries: bool = False

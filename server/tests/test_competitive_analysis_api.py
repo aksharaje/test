@@ -54,10 +54,11 @@ class TestCompetitiveAnalysisAPI:
         response = client.get("/api/competitive-analysis/focus-areas")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 26  # 25 areas + "other"
-        # Verify alphabetical order (Other should be last)
-        assert data[-1]["value"] == "other"
-        assert data[-1]["label"] == "Other (Custom)"
+        assert len(data) == 27  # 25 areas + "other" + "source_based"
+        # Verify alphabetical order (Other and source_based should be at end)
+        values = [area["value"] for area in data]
+        assert "other" in values[-2:]
+        assert "source_based" in values[-2:]
         # Check first item is alphabetically first (Accessibility)
         assert data[0]["value"] == "accessibility"
         assert data[0]["label"] == "Accessibility & Inclusive Design"

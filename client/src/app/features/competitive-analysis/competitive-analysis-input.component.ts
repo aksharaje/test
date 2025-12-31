@@ -28,6 +28,7 @@ import type { CompetitiveAnalysisSession, EpicOrFeature, ScopeDefinitionSummary,
 import { HlmButtonDirective } from '../../ui/button';
 
 type InputSourceType = 'none' | 'epic_feature' | 'scope_definition' | 'ideation' | 'code_repository';
+type FocusAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
 
 @Component({
   selector: 'app-competitive-analysis-input',
@@ -76,69 +77,189 @@ type InputSourceType = 'none' | 'epic_feature' | 'scope_definition' | 'ideation'
           <form class="mt-6 space-y-6" (submit)="onSubmit($event)">
             <!-- Step 1: Focus Area -->
             <div class="rounded-lg border bg-card p-4">
-              <div class="flex items-center gap-2 mb-3">
+              <div class="flex items-center gap-2 mb-1">
                 <ng-icon name="lucideTarget" class="h-5 w-5 text-primary" />
                 <h2 class="font-semibold">Step 1: Select Focus Area</h2>
               </div>
+              <p class="text-xs text-muted-foreground mb-3">
+                Choose a focus area from existing work or enter one manually
+              </p>
 
-              <!-- Searchable Dropdown -->
-              <div class="relative">
-                <button
-                  type="button"
-                  class="w-full flex items-center justify-between rounded-lg border bg-background p-3 text-sm text-left"
-                  [class.text-muted-foreground]="!focusArea()"
-                  (click)="toggleFocusAreaDropdown()"
-                >
-                  <span>{{ selectedFocusAreaLabel() || 'Please select a focus area...' }}</span>
-                  <ng-icon [name]="focusAreaDropdownOpen() ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4" />
-                </button>
+              <!-- Focus Area Source Type Tabs -->
+              @if (hasFocusAreaSources()) {
+                <div class="flex flex-wrap gap-2 mb-3">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                    [class.bg-primary]="focusAreaSourceType() === 'manual'"
+                    [class.text-primary-foreground]="focusAreaSourceType() === 'manual'"
+                    [class.bg-muted]="focusAreaSourceType() !== 'manual'"
+                    [class.hover:bg-muted/80]="focusAreaSourceType() !== 'manual'"
+                    (click)="setFocusAreaSourceType('manual')"
+                  >
+                    Manual
+                  </button>
+                  @if (service.ideationSessions().length > 0) {
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                      [class.bg-primary]="focusAreaSourceType() === 'ideation'"
+                      [class.text-primary-foreground]="focusAreaSourceType() === 'ideation'"
+                      [class.bg-muted]="focusAreaSourceType() !== 'ideation'"
+                      [class.hover:bg-muted/80]="focusAreaSourceType() !== 'ideation'"
+                      (click)="setFocusAreaSourceType('ideation')"
+                    >
+                      <ng-icon name="lucideLightbulb" class="h-3.5 w-3.5" />
+                      Ideation
+                    </button>
+                  }
+                  @if (service.okrSessions().length > 0) {
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                      [class.bg-primary]="focusAreaSourceType() === 'okr'"
+                      [class.text-primary-foreground]="focusAreaSourceType() === 'okr'"
+                      [class.bg-muted]="focusAreaSourceType() !== 'okr'"
+                      [class.hover:bg-muted/80]="focusAreaSourceType() !== 'okr'"
+                      (click)="setFocusAreaSourceType('okr')"
+                    >
+                      <ng-icon name="lucideTarget" class="h-3.5 w-3.5" />
+                      OKRs
+                    </button>
+                  }
+                  @if (service.scopeDefinitions().length > 0) {
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                      [class.bg-primary]="focusAreaSourceType() === 'scope_definition'"
+                      [class.text-primary-foreground]="focusAreaSourceType() === 'scope_definition'"
+                      [class.bg-muted]="focusAreaSourceType() !== 'scope_definition'"
+                      [class.hover:bg-muted/80]="focusAreaSourceType() !== 'scope_definition'"
+                      (click)="setFocusAreaSourceType('scope_definition')"
+                    >
+                      <ng-icon name="lucideFileText" class="h-3.5 w-3.5" />
+                      Scope Definition
+                    </button>
+                  }
+                </div>
+              }
 
-                @if (focusAreaDropdownOpen()) {
-                  <div class="absolute z-20 mt-1 w-full rounded-lg border bg-background shadow-lg">
-                    <div class="p-2 border-b">
-                      <div class="relative">
-                        <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <input
-                          type="text"
-                          class="w-full rounded border bg-muted/30 py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Type to filter..."
-                          [value]="focusAreaFilter()"
-                          (input)="onFocusAreaFilterInput($event)"
-                        />
+              <!-- Manual Focus Area Selection -->
+              @if (focusAreaSourceType() === 'manual') {
+                <div class="relative">
+                  <button
+                    type="button"
+                    class="w-full flex items-center justify-between rounded-lg border bg-background p-3 text-sm text-left"
+                    [class.text-muted-foreground]="!focusArea()"
+                    (click)="toggleFocusAreaDropdown()"
+                  >
+                    <span>{{ selectedFocusAreaLabel() || 'Please select a focus area...' }}</span>
+                    <ng-icon [name]="focusAreaDropdownOpen() ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4" />
+                  </button>
+
+                  @if (focusAreaDropdownOpen()) {
+                    <div class="absolute z-20 mt-1 w-full rounded-lg border bg-background shadow-lg">
+                      <div class="p-2 border-b">
+                        <div class="relative">
+                          <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="text"
+                            class="w-full rounded border bg-muted/30 py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            placeholder="Type to filter..."
+                            [value]="focusAreaFilter()"
+                            (input)="onFocusAreaFilterInput($event)"
+                          />
+                        </div>
+                      </div>
+                      <div class="max-h-64 overflow-y-auto p-1">
+                        @for (area of filteredFocusAreas(); track area.value) {
+                          <button
+                            type="button"
+                            class="w-full flex items-center gap-2 rounded p-2 text-sm hover:bg-muted/50 text-left"
+                            [class.bg-primary/10]="focusArea() === area.value"
+                            (click)="selectFocusArea(area.value)"
+                          >
+                            @if (focusArea() === area.value) {
+                              <ng-icon name="lucideCheck" class="h-4 w-4 text-primary" />
+                            } @else {
+                              <div class="h-4 w-4"></div>
+                            }
+                            <span>{{ area.label }}</span>
+                          </button>
+                        }
+                        @if (filteredFocusAreas().length === 0) {
+                          <p class="p-2 text-sm text-muted-foreground text-center">No matching focus areas</p>
+                        }
                       </div>
                     </div>
-                    <div class="max-h-64 overflow-y-auto p-1">
-                      @for (area of filteredFocusAreas(); track area.value) {
-                        <button
-                          type="button"
-                          class="w-full flex items-center gap-2 rounded p-2 text-sm hover:bg-muted/50 text-left"
-                          [class.bg-primary/10]="focusArea() === area.value"
-                          (click)="selectFocusArea(area.value)"
-                        >
-                          @if (focusArea() === area.value) {
-                            <ng-icon name="lucideCheck" class="h-4 w-4 text-primary" />
-                          } @else {
-                            <div class="h-4 w-4"></div>
-                          }
-                          <span>{{ area.label }}</span>
-                        </button>
-                      }
-                      @if (filteredFocusAreas().length === 0) {
-                        <p class="p-2 text-sm text-muted-foreground text-center">No matching focus areas</p>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
+                  }
+                </div>
 
-              @if (focusArea() === 'other') {
-                <input
-                  type="text"
-                  class="mt-3 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Describe your focus area..."
-                  [value]="customFocusArea()"
-                  (input)="onCustomFocusAreaInput($event)"
-                />
+                @if (focusArea() === 'other') {
+                  <input
+                    type="text"
+                    class="mt-3 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Describe your focus area..."
+                    [value]="customFocusArea()"
+                    (input)="onCustomFocusAreaInput($event)"
+                  />
+                }
+              }
+
+              <!-- Ideation Session Selection -->
+              @if (focusAreaSourceType() === 'ideation') {
+                <select
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  [value]="selectedFocusAreaSourceId()"
+                  (change)="onFocusAreaIdeationSelect($event)"
+                >
+                  <option value="">Select an ideation session...</option>
+                  @for (session of service.ideationSessions(); track session.id) {
+                    <option [value]="session.id">
+                      {{ truncate(session.problemStatement, 60) }}
+                    </option>
+                  }
+                </select>
+              }
+
+              <!-- OKR Session Selection -->
+              @if (focusAreaSourceType() === 'okr') {
+                <select
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  [value]="selectedFocusAreaSourceId()"
+                  (change)="onFocusAreaOkrSelect($event)"
+                >
+                  <option value="">Select an OKR session...</option>
+                  @for (session of service.okrSessions(); track session.id) {
+                    <option [value]="session.id">
+                      {{ truncate(session.goalDescription, 60) }}
+                    </option>
+                  }
+                </select>
+              }
+
+              <!-- Scope Definition Selection -->
+              @if (focusAreaSourceType() === 'scope_definition') {
+                <select
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  [value]="selectedFocusAreaSourceId()"
+                  (change)="onFocusAreaScopeSelect($event)"
+                >
+                  <option value="">Select a scope definition...</option>
+                  @for (session of service.scopeDefinitions(); track session.id) {
+                    <option [value]="session.id">
+                      {{ session.projectName }}
+                    </option>
+                  }
+                </select>
+              }
+
+              <!-- Focus Area Context Preview -->
+              @if (focusAreaSourceType() !== 'manual' && focusAreaContext()) {
+                <div class="mt-3 rounded-lg border bg-muted/30 p-3">
+                  <p class="text-xs text-muted-foreground mb-1">Focus Area Context:</p>
+                  <p class="text-sm whitespace-pre-line line-clamp-3">{{ focusAreaContext() }}</p>
+                </div>
               }
             </div>
 
@@ -591,7 +712,12 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
   service = inject(CompetitiveAnalysisService);
   private router = inject(Router);
 
-  // Focus area selection
+  // Focus area source selection (Step 1)
+  focusAreaSourceType = signal<FocusAreaSourceType>('manual');
+  selectedFocusAreaSourceId = signal<number | null>(null);
+  focusAreaContext = signal('');
+
+  // Focus area selection (for manual mode)
   focusArea = signal('');
   customFocusArea = signal('');
   focusAreaDropdownOpen = signal(false);
@@ -636,12 +762,24 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
     this.service.codeKnowledgeBases().length > 0
   );
 
+  hasFocusAreaSources = computed(() =>
+    this.service.ideationSessions().length > 0 ||
+    this.service.okrSessions().length > 0 ||
+    this.service.scopeDefinitions().length > 0
+  );
+
   canSubmit = computed(() => {
-    if (!this.focusArea()) return false;
-    if (this.focusArea() === 'other') {
-      return this.customFocusArea().trim().length > 0;
+    const sourceType = this.focusAreaSourceType();
+    if (sourceType === 'manual') {
+      if (!this.focusArea()) return false;
+      if (this.focusArea() === 'other') {
+        return this.customFocusArea().trim().length > 0;
+      }
+      return true;
+    } else {
+      // Source-based focus area requires a selection and context
+      return this.selectedFocusAreaSourceId() !== null && this.focusAreaContext().trim().length > 0;
     }
-    return true;
   });
 
   async ngOnInit() {
@@ -652,6 +790,7 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
       this.service.loadEpicsAndFeatures(),
       this.service.loadScopeDefinitions(),
       this.service.loadIdeationSessions(),
+      this.service.loadOkrSessions(),
       this.service.loadSessions(true),
     ]);
   }
@@ -676,6 +815,65 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
 
   onCustomFocusAreaInput(event: Event) {
     this.customFocusArea.set((event.target as HTMLInputElement).value);
+  }
+
+  // Focus area source methods
+  setFocusAreaSourceType(type: FocusAreaSourceType) {
+    this.focusAreaSourceType.set(type);
+    this.selectedFocusAreaSourceId.set(null);
+    this.focusAreaContext.set('');
+    // Clear manual focus area when switching to source-based
+    if (type !== 'manual') {
+      this.focusArea.set('source_based');
+      this.customFocusArea.set('');
+    } else {
+      this.focusArea.set('');
+    }
+  }
+
+  onFocusAreaIdeationSelect(event: Event) {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedFocusAreaSourceId.set(null);
+      this.focusAreaContext.set('');
+      return;
+    }
+
+    const session = this.service.ideationSessions().find((s) => s.id === id);
+    if (session) {
+      this.selectedFocusAreaSourceId.set(id);
+      this.focusAreaContext.set(`Problem Statement: ${session.problemStatement}`);
+    }
+  }
+
+  onFocusAreaOkrSelect(event: Event) {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedFocusAreaSourceId.set(null);
+      this.focusAreaContext.set('');
+      return;
+    }
+
+    const session = this.service.okrSessions().find((s) => s.id === id);
+    if (session) {
+      this.selectedFocusAreaSourceId.set(id);
+      this.focusAreaContext.set(`Goal: ${session.goalDescription}`);
+    }
+  }
+
+  onFocusAreaScopeSelect(event: Event) {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedFocusAreaSourceId.set(null);
+      this.focusAreaContext.set('');
+      return;
+    }
+
+    const session = this.service.scopeDefinitions().find((s) => s.id === id);
+    if (session) {
+      this.selectedFocusAreaSourceId.set(id);
+      this.focusAreaContext.set(`Project: ${session.projectName}\n\nVision: ${session.productVision}`);
+    }
   }
 
   // Competitor methods
@@ -802,10 +1000,14 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
     event.preventDefault();
     if (!this.canSubmit()) return;
 
+    const sourceType = this.focusAreaSourceType();
     const session = await this.service.createSession({
-      focusArea: this.focusArea(),
+      focusArea: sourceType === 'manual' ? this.focusArea() : 'source_based',
       customFocusArea:
         this.focusArea() === 'other' ? this.customFocusArea() : undefined,
+      focusAreaSourceType: sourceType !== 'manual' ? sourceType : undefined,
+      focusAreaSourceId: this.selectedFocusAreaSourceId() || undefined,
+      focusAreaContext: this.focusAreaContext() || undefined,
       referenceCompetitors: this.referenceCompetitors(),
       includeBestInClass: this.includeBestInClass(),
       includeAdjacentIndustries: this.includeIndustrySolutions(),
@@ -843,6 +1045,12 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
   }
 
   getFocusAreaLabel(session: CompetitiveAnalysisSession): string {
+    // Handle source-based focus areas
+    if (session.focusArea === 'source_based' && session.focusAreaContext) {
+      // Extract first line of context as label
+      const firstLine = session.focusAreaContext.split('\n')[0];
+      return this.truncate(firstLine, 60);
+    }
     if (session.focusArea === 'other' && session.customFocusArea) {
       return session.customFocusArea;
     }

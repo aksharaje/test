@@ -7,7 +7,12 @@ import type {
   FocusAreaOption,
   IndustryOption,
   SessionStatus,
+  IdeationSessionSummary,
+  OkrSessionSummary,
+  ScopeDefinitionSummary,
 } from './market-research.types';
+import type { IdeationSession } from '../ideation/ideation.types';
+import type { ScopeDefinitionSession } from '../scope-definition/scope-definition.types';
 
 @Injectable({ providedIn: 'root' })
 export class MarketResearchService {
@@ -19,6 +24,9 @@ export class MarketResearchService {
   currentSession = signal<MarketResearchSession | null>(null);
   focusAreas = signal<FocusAreaOption[]>([]);
   industries = signal<IndustryOption[]>([]);
+  ideationSessions = signal<IdeationSessionSummary[]>([]);
+  okrSessions = signal<OkrSessionSummary[]>([]);
+  scopeDefinitions = signal<ScopeDefinitionSummary[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -46,6 +54,69 @@ export class MarketResearchService {
       this.industries.set(industries);
     } catch (err) {
       console.error('Failed to load industries:', err);
+    }
+  }
+
+  async loadIdeationSessions(): Promise<void> {
+    try {
+      const sessions = await firstValueFrom(
+        this.http.get<IdeationSession[]>('/api/ideation/sessions')
+      );
+
+      const completedSessions: IdeationSessionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          problemStatement: s.problemStatement,
+          ideaCount: 0,
+          createdAt: s.createdAt,
+        }));
+
+      this.ideationSessions.set(completedSessions);
+    } catch (err) {
+      this.ideationSessions.set([]);
+    }
+  }
+
+  async loadOkrSessions(): Promise<void> {
+    try {
+      const sessions = await firstValueFrom(
+        this.http.get<any[]>('/api/okr-generator/sessions')
+      );
+
+      const completedSessions: OkrSessionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          goalDescription: s.goalDescription || s.goal_description,
+          objectiveCount: s.objectiveCount || 0,
+          createdAt: s.createdAt || s.created_at,
+        }));
+
+      this.okrSessions.set(completedSessions);
+    } catch (err) {
+      this.okrSessions.set([]);
+    }
+  }
+
+  async loadScopeDefinitions(): Promise<void> {
+    try {
+      const sessions = await firstValueFrom(
+        this.http.get<ScopeDefinitionSession[]>('/api/scope-definition/sessions')
+      );
+
+      const completedSessions: ScopeDefinitionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          projectName: s.projectName,
+          productVision: s.productVision,
+          createdAt: s.createdAt,
+        }));
+
+      this.scopeDefinitions.set(completedSessions);
+    } catch (err) {
+      this.scopeDefinitions.set([]);
     }
   }
 

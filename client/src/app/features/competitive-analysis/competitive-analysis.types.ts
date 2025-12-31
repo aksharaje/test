@@ -54,10 +54,22 @@ export interface IdeationSessionSummary {
   createdAt: string;
 }
 
+export interface OkrSessionSummary {
+  id: number;
+  goalDescription: string;
+  objectiveCount: number;
+  createdAt: string;
+}
+
+export type FocusAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
+
 export interface CompetitiveAnalysisSession {
   id: number;
   focusArea: string;
   customFocusArea?: string;
+  focusAreaSourceType?: FocusAreaSourceType;
+  focusAreaSourceId?: number;
+  focusAreaContext?: string;
   referenceCompetitors: string[];
   includeBestInClass: boolean;
   includeAdjacentIndustries: boolean;
@@ -82,6 +94,9 @@ export interface CompetitiveAnalysisSession {
 export interface CreateCompetitiveAnalysisRequest {
   focusArea: string;
   customFocusArea?: string;
+  focusAreaSourceType?: FocusAreaSourceType;
+  focusAreaSourceId?: number;
+  focusAreaContext?: string;
   referenceCompetitors?: string[];
   includeBestInClass?: boolean;
   includeAdjacentIndustries?: boolean;

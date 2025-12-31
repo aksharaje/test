@@ -176,6 +176,7 @@ class TestPromptBuilding:
         """Test basic prompt building"""
         session = MagicMock(
             problem_area="Login & Onboarding",
+            problem_area_context=None,
             industry_context="b2c_saas",
             focus_areas=["user_expectations", "adoption_trends"],
         )
@@ -195,6 +196,7 @@ class TestPromptBuilding:
         """Test prompt with all focus areas"""
         session = MagicMock(
             problem_area="Checkout Flow",
+            problem_area_context=None,
             industry_context="ecommerce",
             focus_areas=["user_expectations", "adoption_trends", "market_risks", "regulation", "technology_shifts"],
         )
@@ -211,6 +213,7 @@ class TestPromptBuilding:
         """Test prompt with no focus areas defaults to all"""
         session = MagicMock(
             problem_area="Test Area",
+            problem_area_context=None,
             industry_context="fintech",
             focus_areas=[],
         )

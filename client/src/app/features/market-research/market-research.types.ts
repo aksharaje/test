@@ -19,9 +19,35 @@ export interface MarketInsight {
   sources: string[];
 }
 
+export type ProblemAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
+
+export interface IdeationSessionSummary {
+  id: number;
+  problemStatement: string;
+  ideaCount: number;
+  createdAt: string;
+}
+
+export interface OkrSessionSummary {
+  id: number;
+  goalDescription: string;
+  objectiveCount: number;
+  createdAt: string;
+}
+
+export interface ScopeDefinitionSummary {
+  id: number;
+  projectName: string;
+  productVision: string;
+  createdAt: string;
+}
+
 export interface MarketResearchSession {
   id: number;
   problemArea: string;
+  problemAreaSourceType?: ProblemAreaSourceType;
+  problemAreaSourceId?: number;
+  problemAreaContext?: string;
   industryContext: string;
   focusAreas: string[];
   status: 'pending' | 'analyzing' | 'completed' | 'failed';
@@ -37,6 +63,9 @@ export interface MarketResearchSession {
 
 export interface CreateMarketResearchRequest {
   problemArea: string;
+  problemAreaSourceType?: ProblemAreaSourceType;
+  problemAreaSourceId?: number;
+  problemAreaContext?: string;
   industryContext: string;
   focusAreas: string[];
 }

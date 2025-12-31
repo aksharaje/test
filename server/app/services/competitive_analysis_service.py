@@ -37,6 +37,9 @@ class CompetitiveAnalysisService:
         session = CompetitiveAnalysisSession(
             focus_area=data.focus_area,
             custom_focus_area=data.custom_focus_area,
+            focus_area_source_type=data.focus_area_source_type,
+            focus_area_source_id=data.focus_area_source_id,
+            focus_area_context=data.focus_area_context,
             reference_competitors=data.reference_competitors,
             include_best_in_class=data.include_best_in_class,
             include_adjacent_industries=data.include_adjacent_industries,
@@ -309,11 +312,14 @@ class CompetitiveAnalysisService:
         self, session: CompetitiveAnalysisSession, code_context: str = ""
     ) -> str:
         """Build the LLM prompt for competitive analysis"""
-        focus_label = (
-            session.custom_focus_area
-            if session.focus_area == "other" and session.custom_focus_area
-            else self._get_focus_area_label(session.focus_area)
-        )
+        # Determine focus area label based on source type
+        if session.focus_area == "source_based" and session.focus_area_context:
+            # Use the context from the source
+            focus_label = session.focus_area_context
+        elif session.focus_area == "other" and session.custom_focus_area:
+            focus_label = session.custom_focus_area
+        else:
+            focus_label = self._get_focus_area_label(session.focus_area)
 
         competitors_text = ""
         if session.reference_competitors:

@@ -34,6 +34,9 @@ class MarketResearchService:
         """Create a new market research session"""
         session = MarketResearchSession(
             problem_area=data.problem_area,
+            problem_area_source_type=data.problem_area_source_type,
+            problem_area_source_id=data.problem_area_source_id,
+            problem_area_context=data.problem_area_context,
             industry_context=data.industry_context,
             focus_areas=data.focus_areas,
             status="pending",
@@ -267,11 +270,16 @@ class MarketResearchService:
         focus_labels = [self._get_focus_area_label(f) for f in session.focus_areas]
         focus_text = ", ".join(focus_labels) if focus_labels else "all areas"
 
+        # Use problem area context if available (from source selection)
+        problem_description = session.problem_area
+        if session.problem_area_context:
+            problem_description = session.problem_area_context
+
         return f"""You are a market research analyst who synthesizes trends, risks, and signals from industry sources. Your audience is product managers making strategic decisions.
 
 Analyze the market landscape for the following:
 
-Problem Area: {session.problem_area}
+Problem Area: {problem_description}
 Industry Context: {industry_label}
 Focus Areas: {focus_text}
 

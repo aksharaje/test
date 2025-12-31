@@ -18,9 +18,11 @@ import {
   lucideAlertTriangle,
   lucideShield,
   lucideZap,
+  lucideLightbulb,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { MarketResearchService } from './market-research.service';
-import type { MarketResearchSession } from './market-research.types';
+import type { MarketResearchSession, ProblemAreaSourceType } from './market-research.types';
 import { HlmButtonDirective } from '../../ui/button';
 
 @Component({
@@ -45,6 +47,8 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideAlertTriangle,
       lucideShield,
       lucideZap,
+      lucideLightbulb,
+      lucideFileText,
     }),
   ],
   template: `
@@ -66,20 +70,139 @@ import { HlmButtonDirective } from '../../ui/button';
           <form class="mt-6 space-y-6" (submit)="onSubmit($event)">
             <!-- Step 1: Problem Area -->
             <div class="rounded-lg border bg-card p-4">
-              <div class="flex items-center gap-2 mb-3">
+              <div class="flex items-center gap-2 mb-1">
                 <ng-icon name="lucideTarget" class="h-5 w-5 text-primary" />
                 <h2 class="font-semibold">Step 1: Problem Area</h2>
               </div>
               <p class="text-xs text-muted-foreground mb-3">
-                Describe the problem area you want to research
+                Choose a problem area from existing work or enter one manually
               </p>
-              <input
-                type="text"
-                class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="e.g., Login & Onboarding, Checkout Flow, Mobile App Experience..."
-                [value]="problemArea()"
-                (input)="onProblemAreaInput($event)"
-              />
+
+              <!-- Problem Area Source Type Tabs -->
+              @if (hasProblemAreaSources()) {
+                <div class="flex flex-wrap gap-2 mb-3">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                    [class.bg-primary]="problemAreaSourceType() === 'manual'"
+                    [class.text-primary-foreground]="problemAreaSourceType() === 'manual'"
+                    [class.bg-muted]="problemAreaSourceType() !== 'manual'"
+                    [class.hover:bg-muted/80]="problemAreaSourceType() !== 'manual'"
+                    (click)="setProblemAreaSourceType('manual')"
+                  >
+                    Manual
+                  </button>
+                  @if (service.ideationSessions().length > 0) {
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                      [class.bg-primary]="problemAreaSourceType() === 'ideation'"
+                      [class.text-primary-foreground]="problemAreaSourceType() === 'ideation'"
+                      [class.bg-muted]="problemAreaSourceType() !== 'ideation'"
+                      [class.hover:bg-muted/80]="problemAreaSourceType() !== 'ideation'"
+                      (click)="setProblemAreaSourceType('ideation')"
+                    >
+                      <ng-icon name="lucideLightbulb" class="h-3.5 w-3.5" />
+                      Ideation
+                    </button>
+                  }
+                  @if (service.okrSessions().length > 0) {
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                      [class.bg-primary]="problemAreaSourceType() === 'okr'"
+                      [class.text-primary-foreground]="problemAreaSourceType() === 'okr'"
+                      [class.bg-muted]="problemAreaSourceType() !== 'okr'"
+                      [class.hover:bg-muted/80]="problemAreaSourceType() !== 'okr'"
+                      (click)="setProblemAreaSourceType('okr')"
+                    >
+                      <ng-icon name="lucideTarget" class="h-3.5 w-3.5" />
+                      OKRs
+                    </button>
+                  }
+                  @if (service.scopeDefinitions().length > 0) {
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
+                      [class.bg-primary]="problemAreaSourceType() === 'scope_definition'"
+                      [class.text-primary-foreground]="problemAreaSourceType() === 'scope_definition'"
+                      [class.bg-muted]="problemAreaSourceType() !== 'scope_definition'"
+                      [class.hover:bg-muted/80]="problemAreaSourceType() !== 'scope_definition'"
+                      (click)="setProblemAreaSourceType('scope_definition')"
+                    >
+                      <ng-icon name="lucideFileText" class="h-3.5 w-3.5" />
+                      Scope Definition
+                    </button>
+                  }
+                </div>
+              }
+
+              <!-- Manual Problem Area Input -->
+              @if (problemAreaSourceType() === 'manual') {
+                <input
+                  type="text"
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="e.g., Login & Onboarding, Checkout Flow, Mobile App Experience..."
+                  [value]="problemArea()"
+                  (input)="onProblemAreaInput($event)"
+                />
+              }
+
+              <!-- Ideation Session Selection -->
+              @if (problemAreaSourceType() === 'ideation') {
+                <select
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  [value]="selectedProblemAreaSourceId()"
+                  (change)="onProblemAreaIdeationSelect($event)"
+                >
+                  <option value="">Select an ideation session...</option>
+                  @for (session of service.ideationSessions(); track session.id) {
+                    <option [value]="session.id">
+                      {{ truncate(session.problemStatement, 60) }}
+                    </option>
+                  }
+                </select>
+              }
+
+              <!-- OKR Session Selection -->
+              @if (problemAreaSourceType() === 'okr') {
+                <select
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  [value]="selectedProblemAreaSourceId()"
+                  (change)="onProblemAreaOkrSelect($event)"
+                >
+                  <option value="">Select an OKR session...</option>
+                  @for (session of service.okrSessions(); track session.id) {
+                    <option [value]="session.id">
+                      {{ truncate(session.goalDescription, 60) }}
+                    </option>
+                  }
+                </select>
+              }
+
+              <!-- Scope Definition Selection -->
+              @if (problemAreaSourceType() === 'scope_definition') {
+                <select
+                  class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  [value]="selectedProblemAreaSourceId()"
+                  (change)="onProblemAreaScopeSelect($event)"
+                >
+                  <option value="">Select a scope definition...</option>
+                  @for (session of service.scopeDefinitions(); track session.id) {
+                    <option [value]="session.id">
+                      {{ session.projectName }}
+                    </option>
+                  }
+                </select>
+              }
+
+              <!-- Problem Area Context Preview -->
+              @if (problemAreaSourceType() !== 'manual' && problemAreaContext()) {
+                <div class="mt-3 rounded-lg border bg-muted/30 p-3">
+                  <p class="text-xs text-muted-foreground mb-1">Problem Area Context:</p>
+                  <p class="text-sm whitespace-pre-line line-clamp-3">{{ problemAreaContext() }}</p>
+                </div>
+              }
             </div>
 
             <!-- Step 2: Industry Context -->
@@ -318,13 +441,24 @@ import { HlmButtonDirective } from '../../ui/button';
       display: block;
       height: 100%;
     }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
   `,
 })
 export class MarketResearchInputComponent implements OnInit {
   service = inject(MarketResearchService);
   private router = inject(Router);
 
-  // Problem area
+  // Problem area source selection
+  problemAreaSourceType = signal<ProblemAreaSourceType>('manual');
+  selectedProblemAreaSourceId = signal<number | null>(null);
+  problemAreaContext = signal('');
+
+  // Problem area (for manual mode)
   problemArea = signal('');
 
   // Industry selection
@@ -349,12 +483,25 @@ export class MarketResearchInputComponent implements OnInit {
     return industries.filter((i) => i.label.toLowerCase().includes(filter));
   });
 
+  hasProblemAreaSources = computed(() =>
+    this.service.ideationSessions().length > 0 ||
+    this.service.okrSessions().length > 0 ||
+    this.service.scopeDefinitions().length > 0
+  );
+
   canSubmit = computed(() => {
-    return (
-      this.problemArea().trim().length > 0 &&
-      this.industryContext().length > 0 &&
-      this.selectedFocusAreas().length > 0
-    );
+    const sourceType = this.problemAreaSourceType();
+
+    // Check problem area based on source type
+    if (sourceType === 'manual') {
+      if (this.problemArea().trim().length === 0) return false;
+    } else {
+      if (this.selectedProblemAreaSourceId() === null || this.problemAreaContext().trim().length === 0) {
+        return false;
+      }
+    }
+
+    return this.industryContext().length > 0 && this.selectedFocusAreas().length > 0;
   });
 
   @HostListener('document:click', ['$event'])
@@ -365,15 +512,79 @@ export class MarketResearchInputComponent implements OnInit {
     }
   }
 
-  ngOnInit(): void {
-    this.service.loadFocusAreas();
-    this.service.loadIndustries();
-    this.service.loadSessions(true);
+  async ngOnInit(): Promise<void> {
+    await Promise.all([
+      this.service.loadFocusAreas(),
+      this.service.loadIndustries(),
+      this.service.loadIdeationSessions(),
+      this.service.loadOkrSessions(),
+      this.service.loadScopeDefinitions(),
+      this.service.loadSessions(true),
+    ]);
   }
 
   onProblemAreaInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.problemArea.set(input.value);
+  }
+
+  // Problem area source methods
+  setProblemAreaSourceType(type: ProblemAreaSourceType): void {
+    this.problemAreaSourceType.set(type);
+    this.selectedProblemAreaSourceId.set(null);
+    this.problemAreaContext.set('');
+    if (type !== 'manual') {
+      this.problemArea.set('');
+    }
+  }
+
+  onProblemAreaIdeationSelect(event: Event): void {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedProblemAreaSourceId.set(null);
+      this.problemAreaContext.set('');
+      return;
+    }
+
+    const session = this.service.ideationSessions().find((s) => s.id === id);
+    if (session) {
+      this.selectedProblemAreaSourceId.set(id);
+      this.problemAreaContext.set(`Problem Statement: ${session.problemStatement}`);
+    }
+  }
+
+  onProblemAreaOkrSelect(event: Event): void {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedProblemAreaSourceId.set(null);
+      this.problemAreaContext.set('');
+      return;
+    }
+
+    const session = this.service.okrSessions().find((s) => s.id === id);
+    if (session) {
+      this.selectedProblemAreaSourceId.set(id);
+      this.problemAreaContext.set(`Goal: ${session.goalDescription}`);
+    }
+  }
+
+  onProblemAreaScopeSelect(event: Event): void {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    if (!id) {
+      this.selectedProblemAreaSourceId.set(null);
+      this.problemAreaContext.set('');
+      return;
+    }
+
+    const session = this.service.scopeDefinitions().find((s) => s.id === id);
+    if (session) {
+      this.selectedProblemAreaSourceId.set(id);
+      this.problemAreaContext.set(`Project: ${session.projectName}\n\nVision: ${session.productVision}`);
+    }
+  }
+
+  truncate(str: string, len: number): string {
+    return str.length > len ? str.substring(0, len) + '...' : str;
   }
 
   toggleIndustryDropdown(): void {
@@ -422,8 +633,12 @@ export class MarketResearchInputComponent implements OnInit {
     event.preventDefault();
     if (!this.canSubmit()) return;
 
+    const sourceType = this.problemAreaSourceType();
     const session = await this.service.createSession({
-      problemArea: this.problemArea(),
+      problemArea: sourceType === 'manual' ? this.problemArea() : this.problemAreaContext(),
+      problemAreaSourceType: sourceType !== 'manual' ? sourceType : undefined,
+      problemAreaSourceId: this.selectedProblemAreaSourceId() || undefined,
+      problemAreaContext: this.problemAreaContext() || undefined,
       industryContext: this.industryContext(),
       focusAreas: this.selectedFocusAreas(),
     });

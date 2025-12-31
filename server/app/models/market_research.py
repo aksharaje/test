@@ -60,6 +60,9 @@ class MarketResearchSession(SQLModel, table=True):
 
     # Input fields
     problem_area: str = Field(default="", description="Problem area to research")
+    problem_area_source_type: Optional[str] = Field(default=None, description="Source type: ideation, okr, scope_definition")
+    problem_area_source_id: Optional[int] = Field(default=None, description="ID of the source session")
+    problem_area_context: Optional[str] = Field(default=None, description="Context extracted from source")
     industry_context: str = Field(default="", description="Industry context")
     focus_areas: List[str] = Field(default_factory=list, sa_column=Column(JSON))
 
@@ -82,6 +85,9 @@ class MarketResearchSession(SQLModel, table=True):
 class MarketResearchSessionCreate(SQLModel):
     """Request model for creating a new session"""
     problem_area: str = Field(min_length=1)
+    problem_area_source_type: Optional[str] = None
+    problem_area_source_id: Optional[int] = None
+    problem_area_context: Optional[str] = None
     industry_context: str = Field(min_length=1)
     focus_areas: List[str] = Field(default_factory=list)
 
@@ -111,6 +117,9 @@ class MarketResearchSessionResponse(SQLModel):
     """Response model for session data"""
     id: int
     problem_area: str
+    problem_area_source_type: Optional[str] = None
+    problem_area_source_id: Optional[int] = None
+    problem_area_context: Optional[str] = None
     industry_context: str
     focus_areas: List[str] = []
     status: str
