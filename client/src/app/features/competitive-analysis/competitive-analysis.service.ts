@@ -4,9 +4,17 @@ import { firstValueFrom } from 'rxjs';
 import type {
   CompetitiveAnalysisSession,
   CreateCompetitiveAnalysisRequest,
-  ProblemAreaOption,
+  FocusAreaOption,
+  IndustryOption,
   SessionStatus,
+  CodeKnowledgeBase,
+  EpicOrFeature,
+  ScopeDefinitionSummary,
+  IdeationSessionSummary,
 } from './competitive-analysis.types';
+import type { GeneratedArtifact, StructuredContent, EpicNode, FeatureNode } from '../story-generator/story-generator.types';
+import type { ScopeDefinitionSession } from '../scope-definition/scope-definition.types';
+import type { IdeationSession } from '../ideation/ideation.types';
 
 @Injectable({ providedIn: 'root' })
 export class CompetitiveAnalysisService {
@@ -16,7 +24,12 @@ export class CompetitiveAnalysisService {
   // State
   sessions = signal<CompetitiveAnalysisSession[]>([]);
   currentSession = signal<CompetitiveAnalysisSession | null>(null);
-  problemAreas = signal<ProblemAreaOption[]>([]);
+  focusAreas = signal<FocusAreaOption[]>([]);
+  industries = signal<IndustryOption[]>([]);
+  codeKnowledgeBases = signal<CodeKnowledgeBase[]>([]);
+  epicsAndFeatures = signal<EpicOrFeature[]>([]);
+  scopeDefinitions = signal<ScopeDefinitionSummary[]>([]);
+  ideationSessions = signal<IdeationSessionSummary[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -25,14 +38,128 @@ export class CompetitiveAnalysisService {
   private limit = 20;
   hasMore = signal(true);
 
-  async loadProblemAreas(): Promise<void> {
+  async loadFocusAreas(): Promise<void> {
     try {
       const areas = await firstValueFrom(
-        this.http.get<ProblemAreaOption[]>(`${this.baseUrl}/problem-areas`)
+        this.http.get<FocusAreaOption[]>(`${this.baseUrl}/focus-areas`)
       );
-      this.problemAreas.set(areas);
+      this.focusAreas.set(areas);
     } catch (err) {
-      console.error('Failed to load problem areas:', err);
+      console.error('Failed to load focus areas:', err);
+    }
+  }
+
+  async loadIndustries(): Promise<void> {
+    try {
+      const industries = await firstValueFrom(
+        this.http.get<IndustryOption[]>(`${this.baseUrl}/industries`)
+      );
+      this.industries.set(industries);
+    } catch (err) {
+      console.error('Failed to load industries:', err);
+    }
+  }
+
+  async loadCodeKnowledgeBases(): Promise<void> {
+    try {
+      const kbs = await firstValueFrom(
+        this.http.get<CodeKnowledgeBase[]>(`${this.baseUrl}/code-knowledge-bases`)
+      );
+      this.codeKnowledgeBases.set(kbs);
+    } catch (err) {
+      console.error('Failed to load code knowledge bases:', err);
+    }
+  }
+
+  async loadEpicsAndFeatures(): Promise<void> {
+    try {
+      const artifacts = await firstValueFrom(
+        this.http.get<GeneratedArtifact[]>('/api/story-generator')
+      );
+
+      const epicsAndFeatures: EpicOrFeature[] = artifacts
+        .filter((a) => a.type === 'epic' || a.type === 'feature')
+        .map((a) => {
+          let description = '';
+          try {
+            const content: StructuredContent = JSON.parse(a.content);
+            if (a.type === 'epic' && content.epic) {
+              description = this.buildEpicDescription(content.epic);
+            } else if (a.type === 'feature' && content.feature) {
+              description = this.buildFeatureDescription(content.feature);
+            }
+          } catch {
+            description = a.inputDescription;
+          }
+          return {
+            id: a.id,
+            type: a.type as 'epic' | 'feature',
+            title: a.title,
+            description,
+          };
+        });
+
+      this.epicsAndFeatures.set(epicsAndFeatures);
+    } catch (err) {
+      this.epicsAndFeatures.set([]);
+    }
+  }
+
+  private buildEpicDescription(epic: EpicNode): string {
+    const parts: string[] = [];
+    if (epic.vision) parts.push(`Vision: ${epic.vision}`);
+    if (epic.goals?.length) parts.push(`Goals: ${epic.goals.join(', ')}`);
+    if (epic.features?.length) parts.push(`Features (${epic.features.length}): ${epic.features.map(f => f.title).join(', ')}`);
+    return parts.join('\n');
+  }
+
+  private buildFeatureDescription(feature: FeatureNode): string {
+    const parts: string[] = [];
+    if (feature.purpose) parts.push(`Purpose: ${feature.purpose}`);
+    if (feature.summary) parts.push(`Summary: ${feature.summary}`);
+    if (feature.businessValue) parts.push(`Business Value: ${feature.businessValue}`);
+    return parts.join('\n');
+  }
+
+  async loadScopeDefinitions(): Promise<void> {
+    try {
+      const sessions = await firstValueFrom(
+        this.http.get<ScopeDefinitionSession[]>('/api/scope-definition/sessions')
+      );
+
+      const completedSessions: ScopeDefinitionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          projectName: s.projectName,
+          productVision: s.productVision,
+          createdAt: s.createdAt,
+        }));
+
+      this.scopeDefinitions.set(completedSessions);
+    } catch (err) {
+      this.scopeDefinitions.set([]);
+    }
+  }
+
+  async loadIdeationSessions(): Promise<void> {
+    try {
+      const sessions = await firstValueFrom(
+        this.http.get<IdeationSession[]>('/api/ideation/sessions')
+      );
+
+      const completedSessions: IdeationSessionSummary[] = sessions
+        .filter((s) => s.status === 'completed')
+        .map((s) => ({
+          id: s.id,
+          problemStatement: s.problemStatement,
+          ideaCount: 0,
+          createdAt: s.createdAt,
+        }));
+
+      this.ideationSessions.set(completedSessions);
+    } catch (err) {
+      this.ideationSessions.set([]);
     }
   }
 
@@ -152,8 +279,8 @@ export class CompetitiveAnalysisService {
     }
   }
 
-  getProblemAreaLabel(value: string): string {
-    const area = this.problemAreas().find((a) => a.value === value);
+  getFocusAreaLabel(value: string): string {
+    const area = this.focusAreas().find((a) => a.value === value);
     return area?.label || value;
   }
 }

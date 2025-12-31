@@ -13,12 +13,14 @@ import {
   lucideAlertTriangle,
   lucideLightbulb,
   lucideFlag,
+  lucideCode,
+  lucideInfo,
 } from '@ng-icons/lucide';
 import { CompetitiveAnalysisService } from './competitive-analysis.service';
 import type { Opportunity } from './competitive-analysis.types';
 import { HlmButtonDirective } from '../../ui/button';
 
-type TabId = 'summary' | 'standards' | 'practices' | 'pitfalls' | 'gaps' | 'opportunities';
+type TabId = 'summary' | 'standards' | 'practices' | 'pitfalls' | 'gaps' | 'opportunities' | 'code';
 
 interface Tab {
   id: TabId;
@@ -41,6 +43,8 @@ interface Tab {
       lucideAlertTriangle,
       lucideLightbulb,
       lucideFlag,
+      lucideCode,
+      lucideInfo,
     }),
   ],
   template: `
@@ -59,10 +63,10 @@ interface Tab {
             <div>
               <h1 class="text-xl font-bold text-foreground">Competitive Analysis Results</h1>
               <p class="text-sm text-muted-foreground">
-                {{ getProblemAreaLabel() }}
+                {{ getFocusAreaLabel() }}
                 @if (session()?.referenceCompetitors?.length) {
                   <span class="text-muted-foreground/70">
-                    &bull; {{ session()?.referenceCompetitors?.join(', ') }}
+                    &bull; vs. {{ session()?.referenceCompetitors?.join(', ') }}
                   </span>
                 }
               </p>
@@ -105,7 +109,7 @@ interface Tab {
             <ng-icon name="lucideLoader2" class="mx-auto h-12 w-12 animate-spin text-primary" />
             <h2 class="mt-4 text-lg font-semibold">Analyzing competitive landscape...</h2>
             <p class="mt-2 text-muted-foreground max-w-md">
-              We're researching industry standards, best practices, and opportunities for your problem area.
+              We're researching industry standards, best practices, and opportunities for your focus area.
             </p>
           </div>
         </div>
@@ -132,11 +136,11 @@ interface Tab {
         <!-- Tabs -->
         <div class="border-b bg-background">
           <div class="max-w-6xl mx-auto">
-            <div class="flex gap-1 p-1">
-              @for (tab of tabs; track tab.id) {
+            <div class="flex gap-1 p-1 overflow-x-auto">
+              @for (tab of visibleTabs(); track tab.id) {
                 <button
                   type="button"
-                  class="px-4 py-2 text-sm font-medium rounded-md transition-colors"
+                  class="px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
                   [class.bg-primary]="activeTab() === tab.id"
                   [class.text-primary-foreground]="activeTab() === tab.id"
                   [class.text-muted-foreground]="activeTab() !== tab.id"
@@ -168,23 +172,55 @@ interface Tab {
                       <p class="text-muted-foreground whitespace-pre-line">{{ session()?.executiveSummary }}</p>
                     </div>
 
-                    <!-- Quick Stats -->
-                    <div class="grid grid-cols-4 gap-4">
-                      <div class="rounded-lg border bg-card p-4 text-center">
-                        <p class="text-3xl font-bold text-primary">{{ session()?.industryStandards?.length || 0 }}</p>
-                        <p class="text-sm text-muted-foreground">Industry Standards</p>
+                    <!-- Findings -->
+                    <div class="rounded-lg border bg-card p-6">
+                      <div class="flex items-center gap-2 mb-4">
+                        <h2 class="text-lg font-semibold">Findings</h2>
+                        <div class="relative group">
+                          <ng-icon name="lucideInfo" class="h-4 w-4 text-muted-foreground cursor-help" />
+                          <div class="absolute left-0 top-6 z-10 hidden group-hover:block w-64 p-2 rounded-lg bg-popover border shadow-lg text-xs text-popover-foreground">
+                            These counts show how many insights were identified in each category during the competitive analysis.
+                          </div>
+                        </div>
                       </div>
-                      <div class="rounded-lg border bg-card p-4 text-center">
-                        <p class="text-3xl font-bold text-primary">{{ session()?.bestPractices?.length || 0 }}</p>
-                        <p class="text-sm text-muted-foreground">Best Practices</p>
-                      </div>
-                      <div class="rounded-lg border bg-card p-4 text-center">
-                        <p class="text-3xl font-bold text-primary">{{ session()?.commonPitfalls?.length || 0 }}</p>
-                        <p class="text-sm text-muted-foreground">Common Pitfalls</p>
-                      </div>
-                      <div class="rounded-lg border bg-card p-4 text-center">
-                        <p class="text-3xl font-bold text-primary">{{ session()?.opportunities?.length || 0 }}</p>
-                        <p class="text-sm text-muted-foreground">Opportunities</p>
+                      <div class="flex gap-3">
+                        <div class="flex-1 rounded-lg bg-muted/50 px-4 py-3 text-center relative group">
+                          <p class="text-2xl font-bold text-primary">{{ session()?.industryStandards?.length || 0 }}</p>
+                          <p class="text-xs text-muted-foreground">Standards</p>
+                          <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-10 hidden group-hover:block w-48 p-2 rounded-lg bg-popover border shadow-lg text-xs text-popover-foreground">
+                            Features or experiences that 70%+ of competitors offer. These are baseline expectations users have.
+                          </div>
+                        </div>
+                        <div class="flex-1 rounded-lg bg-muted/50 px-4 py-3 text-center relative group">
+                          <p class="text-2xl font-bold text-primary">{{ session()?.bestPractices?.length || 0 }}</p>
+                          <p class="text-xs text-muted-foreground">Best Practices</p>
+                          <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-10 hidden group-hover:block w-48 p-2 rounded-lg bg-popover border shadow-lg text-xs text-popover-foreground">
+                            Approaches used by top performers that delight users and drive better outcomes.
+                          </div>
+                        </div>
+                        <div class="flex-1 rounded-lg bg-muted/50 px-4 py-3 text-center relative group">
+                          <p class="text-2xl font-bold text-primary">{{ session()?.commonPitfalls?.length || 0 }}</p>
+                          <p class="text-xs text-muted-foreground">Pitfalls</p>
+                          <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-10 hidden group-hover:block w-48 p-2 rounded-lg bg-popover border shadow-lg text-xs text-popover-foreground">
+                            Mistakes that frustrate users or hurt business metrics. Avoid these in your implementation.
+                          </div>
+                        </div>
+                        @if (hasProductContext()) {
+                          <div class="flex-1 rounded-lg bg-muted/50 px-4 py-3 text-center relative group">
+                            <p class="text-2xl font-bold text-primary">{{ session()?.productGaps?.length || 0 }}</p>
+                            <p class="text-xs text-muted-foreground">Gaps</p>
+                            <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-10 hidden group-hover:block w-48 p-2 rounded-lg bg-popover border shadow-lg text-xs text-popover-foreground">
+                              Areas where your product may be missing features or experiences that competitors offer.
+                            </div>
+                          </div>
+                        }
+                        <div class="flex-1 rounded-lg bg-muted/50 px-4 py-3 text-center relative group">
+                          <p class="text-2xl font-bold text-primary">{{ session()?.opportunities?.length || 0 }}</p>
+                          <p class="text-xs text-muted-foreground">Opportunities</p>
+                          <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-10 hidden group-hover:block w-48 p-2 rounded-lg bg-popover border shadow-lg text-xs text-popover-foreground">
+                            Actionable improvements that could differentiate your product or improve user experience.
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -248,7 +284,7 @@ interface Tab {
                       <div>
                         <h2 class="text-lg font-semibold">Industry Standards</h2>
                         <p class="text-sm text-muted-foreground">
-                          Established norms and expectations in this problem area
+                          Established norms and expectations in this focus area
                         </p>
                       </div>
                     </div>
@@ -489,6 +525,33 @@ interface Tab {
                     }
                   </div>
                 }
+
+                @case ('code') {
+                  <!-- Code Comparison Tab -->
+                  <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-6">
+                      <ng-icon name="lucideCode" class="h-6 w-6 text-primary" />
+                      <div>
+                        <h2 class="text-lg font-semibold">Your Implementation vs. Competitors</h2>
+                        <p class="text-sm text-muted-foreground">
+                          Analysis of how your code compares to industry best practices
+                        </p>
+                      </div>
+                    </div>
+
+                    @if (session()?.codeComparison) {
+                      <div class="rounded-lg border bg-card p-6">
+                        <p class="text-sm whitespace-pre-line">{{ session()?.codeComparison }}</p>
+                      </div>
+                    } @else {
+                      <div class="text-center py-12 text-muted-foreground">
+                        <ng-icon name="lucideCode" class="mx-auto h-12 w-12 text-muted-foreground/50" />
+                        <p class="mt-4">No code comparison available</p>
+                        <p class="text-sm mt-1">Connect a code repository when creating the analysis to enable this feature</p>
+                      </div>
+                    }
+                  </div>
+                }
               }
             }
           </div>
@@ -516,12 +579,33 @@ export class CompetitiveAnalysisResultsComponent implements OnInit, OnDestroy {
     { id: 'pitfalls', label: 'Pitfalls' },
     { id: 'gaps', label: 'Product Gaps' },
     { id: 'opportunities', label: 'Opportunities' },
+    { id: 'code', label: 'Code Comparison' },
   ];
 
   activeTab = signal<TabId>('summary');
   priorityFilter = signal<'all' | 'high' | 'medium' | 'low'>('all');
 
   session = this.service.currentSession;
+
+  visibleTabs(): Tab[] {
+    const session = this.session();
+    return this.tabs.filter(t => {
+      // Only show code tab if there's a code comparison
+      if (t.id === 'code' && !session?.codeComparison) {
+        return false;
+      }
+      // Only show product gaps tab if product context was provided
+      if (t.id === 'gaps' && !session?.inputSourceDescription && !session?.knowledgeBaseId) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  hasProductContext(): boolean {
+    const session = this.session();
+    return !!(session?.inputSourceDescription || session?.knowledgeBaseId);
+  }
 
   topOpportunities(): Opportunity[] {
     const opps = this.session()?.opportunities || [];
@@ -544,6 +628,7 @@ export class CompetitiveAnalysisResultsComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     const sessionId = Number(this.route.snapshot.paramMap.get('id'));
     if (sessionId) {
+      await this.service.loadFocusAreas();
       await this.service.getSession(sessionId);
       this.startPollingIfNeeded();
     }
@@ -596,12 +681,12 @@ export class CompetitiveAnalysisResultsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getProblemAreaLabel(): string {
+  getFocusAreaLabel(): string {
     const session = this.session();
     if (!session) return '';
-    if (session.problemArea === 'other' && session.customProblemArea) {
-      return session.customProblemArea;
+    if (session.focusArea === 'other' && session.customFocusArea) {
+      return session.customFocusArea;
     }
-    return this.service.getProblemAreaLabel(session.problemArea);
+    return this.service.getFocusAreaLabel(session.focusArea);
   }
 }
