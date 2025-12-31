@@ -3,8 +3,10 @@ Test Script Writer API Endpoints
 
 REST API for generating comprehensive test scripts from user stories.
 """
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+import json
+import base64
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File, Form
 from sqlmodel import Session, select
 
 from app.api.deps import get_db
@@ -172,13 +174,34 @@ def list_sessions(
 
 
 @router.post("/sessions", response_model=TestScriptWriterSessionResponse)
-def create_session(
-    data: TestScriptWriterSessionCreate,
+async def create_session(
     background_tasks: BackgroundTasks,
+    data: str = Form(...),
+    files: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
     """Create a new test script writer session and start generation"""
-    session = test_script_writer_service.create_session(db, data)
+    # Parse the JSON data
+    try:
+        parsed_data = json.loads(data)
+        session_data = TestScriptWriterSessionCreate(**parsed_data)
+    except (json.JSONDecodeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
+
+    # Process uploaded images
+    image_data = []
+    for file in files:
+        if file.content_type and file.content_type.startswith('image/'):
+            content = await file.read()
+            # Encode as base64 for LLM consumption
+            b64_content = base64.b64encode(content).decode('utf-8')
+            image_data.append({
+                'filename': file.filename,
+                'content_type': file.content_type,
+                'data': b64_content,
+            })
+
+    session = test_script_writer_service.create_session(db, session_data, image_data)
 
     # Start generation in background
     background_tasks.add_task(

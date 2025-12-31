@@ -13,15 +13,9 @@ import {
   lucideFileText,
   lucideTestTube2,
   lucideClipboardList,
-  lucideShield,
-  lucideAccessibility,
-  lucideBarChart,
-  lucideZap,
-  lucideGlobe,
-  lucideAlertCircle,
-  lucideUsers,
-  lucideDatabase,
-  lucideMonitor,
+  lucideUpload,
+  lucideImage,
+  lucideX,
 } from '@ng-icons/lucide';
 import { TestScriptWriterService } from './test-script-writer.service';
 import type { TestScriptWriterSession, StoryInput, ArtifactSummary } from './test-script-writer.types';
@@ -46,15 +40,9 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
       lucideFileText,
       lucideTestTube2,
       lucideClipboardList,
-      lucideShield,
-      lucideAccessibility,
-      lucideBarChart,
-      lucideZap,
-      lucideGlobe,
-      lucideAlertCircle,
-      lucideUsers,
-      lucideDatabase,
-      lucideMonitor,
+      lucideUpload,
+      lucideImage,
+      lucideX,
     }),
   ],
   styles: `
@@ -239,37 +227,84 @@ type SourceType = 'manual' | 'epic' | 'feature' | 'user_story';
             <div class="rounded-lg border bg-card p-4">
               <div class="flex items-center gap-2 mb-1">
                 <ng-icon name="lucideClipboardList" class="h-5 w-5 text-primary" />
-                <h2 class="font-semibold">Step 2: Non-Functional Requirements (Optional)</h2>
+                <h2 class="font-semibold">Step 2: NFRs (Optional)</h2>
               </div>
               <p class="text-xs text-muted-foreground mb-3">
-                Select NFRs to include additional test scenarios
+                Include non-functional requirement test scenarios
               </p>
 
-              <div class="grid grid-cols-2 gap-2">
+              <div class="flex flex-wrap gap-2">
                 @for (nfr of service.nfrOptions(); track nfr.value) {
-                  <label
-                    class="flex items-start gap-2 p-2 rounded-md border cursor-pointer hover:bg-accent/50 transition-colors"
-                    [class.border-primary]="isNfrSelected(nfr.value)"
-                    [class.bg-primary/5]="isNfrSelected(nfr.value)"
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                    [class.bg-primary]="isNfrSelected(nfr.value)"
+                    [class.text-primary-foreground]="isNfrSelected(nfr.value)"
+                    [class.bg-muted]="!isNfrSelected(nfr.value)"
+                    [class.hover:bg-muted/80]="!isNfrSelected(nfr.value)"
+                    (click)="toggleNfr(nfr.value)"
                   >
-                    <input
-                      type="checkbox"
-                      class="mt-0.5"
-                      [checked]="isNfrSelected(nfr.value)"
-                      (change)="toggleNfr(nfr.value)"
-                    />
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-1.5">
-                        <ng-icon [name]="getNfrIcon(nfr.value)" class="h-4 w-4 text-primary" />
-                        <span class="text-sm font-medium">{{ nfr.label }}</span>
-                      </div>
-                      <p class="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {{ nfr.description }}
-                      </p>
-                    </div>
-                  </label>
+                    {{ nfr.label }}
+                  </button>
                 }
               </div>
+            </div>
+
+            <!-- Step 3: UX Screenshots (Optional) -->
+            <div class="rounded-lg border bg-card p-4">
+              <div class="flex items-center gap-2 mb-1">
+                <ng-icon name="lucideImage" class="h-5 w-5 text-primary" />
+                <h2 class="font-semibold">Step 3: UX Screenshots (Optional)</h2>
+              </div>
+              <p class="text-xs text-muted-foreground mb-3">
+                Upload UI mockups to generate more accurate test scenarios
+              </p>
+
+              <!-- Upload Area -->
+              <div
+                class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
+                [class.border-primary]="isDragging()"
+                [class.bg-muted/50]="isDragging()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  class="absolute inset-0 opacity-0 cursor-pointer"
+                  (change)="onFileSelect($event)"
+                />
+                <ng-icon name="lucideUpload" class="mx-auto h-6 w-6 text-muted-foreground" />
+                <p class="mt-1 text-xs text-muted-foreground">
+                  Drag & drop or click to upload images
+                </p>
+              </div>
+
+              <!-- Selected Files -->
+              @if (selectedFiles().length > 0) {
+                <div class="mt-3 space-y-2">
+                  @for (file of selectedFiles(); track file.name) {
+                    <div class="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                      <div class="flex items-center gap-2">
+                        <ng-icon name="lucideImage" class="h-4 w-4 text-muted-foreground" />
+                        <span class="text-sm truncate max-w-[200px]">{{ file.name }}</span>
+                        <span class="text-xs text-muted-foreground">
+                          ({{ formatFileSize(file.size) }})
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        class="text-muted-foreground hover:text-destructive"
+                        (click)="removeFile(file)"
+                      >
+                        <ng-icon name="lucideX" class="h-4 w-4" />
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
             </div>
 
             <!-- Submit Button -->
@@ -386,6 +421,8 @@ export class TestScriptWriterInputComponent implements OnInit {
   selectedNfrs = signal<string[]>([]);
   showArtifactDropdown = signal(false);
   loadingArtifact = signal(false);
+  selectedFiles = signal<File[]>([]);
+  isDragging = signal(false);
 
   availableArtifacts = computed(() => {
     switch (this.sourceType()) {
@@ -469,19 +506,47 @@ export class TestScriptWriterInputComponent implements OnInit {
     );
   }
 
-  getNfrIcon(value: string): string {
-    const icons: Record<string, string> = {
-      accessibility: 'lucideAccessibility',
-      security: 'lucideShield',
-      analytics: 'lucideBarChart',
-      performance: 'lucideZap',
-      localization: 'lucideGlobe',
-      error_handling: 'lucideAlertCircle',
-      usability: 'lucideUsers',
-      data_integrity: 'lucideDatabase',
-      compatibility: 'lucideMonitor',
-    };
-    return icons[value] || 'lucideCheck';
+  // File handling
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+    const files = Array.from(event.dataTransfer?.files || []);
+    this.addFiles(files);
+  }
+
+  onFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    this.addFiles(files);
+    input.value = '';
+  }
+
+  private addFiles(files: File[]): void {
+    const validFiles = files.filter((file) => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      return validTypes.includes(file.type) && file.size <= 20 * 1024 * 1024;
+    });
+    this.selectedFiles.update((current) => [...current, ...validFiles]);
+  }
+
+  removeFile(file: File): void {
+    this.selectedFiles.update((files) => files.filter((f) => f !== file));
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
   async onSubmit(event: Event): Promise<void> {
@@ -492,21 +557,24 @@ export class TestScriptWriterInputComponent implements OnInit {
       ? this.manualStories().filter(s => s.title.trim() || s.description.trim())
       : this.selectedStories();
 
-    const session = await this.service.createSession({
-      sourceType: this.sourceType(),
-      sourceId: this.selectedArtifact()?.id,
-      sourceTitle: this.selectedArtifact()?.title || (this.sourceType() === 'manual' ? 'Manual Stories' : undefined),
-      stories,
-      selectedNfrs: this.selectedNfrs(),
-    });
+    const session = await this.service.createSession(
+      {
+        sourceType: this.sourceType(),
+        sourceId: this.selectedArtifact()?.id,
+        sourceTitle: this.selectedArtifact()?.title || (this.sourceType() === 'manual' ? 'Manual Stories' : undefined),
+        stories,
+        selectedNfrs: this.selectedNfrs(),
+      },
+      this.selectedFiles()
+    );
 
     if (session) {
-      this.router.navigate(['/test-script-writer', 'results', session.id]);
+      this.router.navigate(['/testing/test-script-writer', 'results', session.id]);
     }
   }
 
   viewSession(session: TestScriptWriterSession): void {
-    this.router.navigate(['/test-script-writer', 'results', session.id]);
+    this.router.navigate(['/testing/test-script-writer', 'results', session.id]);
   }
 
   async deleteSession(event: Event, id: number): Promise<void> {

@@ -130,16 +130,25 @@ export class TestScriptWriterService {
   }
 
   async createSession(
-    data: CreateTestScriptWriterRequest
+    data: CreateTestScriptWriterRequest,
+    files: File[] = []
   ): Promise<TestScriptWriterSession | null> {
     this.loading.set(true);
     this.error.set(null);
 
     try {
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(data));
+
+      // Append files
+      for (const file of files) {
+        formData.append('files', file);
+      }
+
       const session = await firstValueFrom(
         this.http.post<TestScriptWriterSession>(
           `${this.baseUrl}/sessions`,
-          data
+          formData
         )
       );
       // Add to the beginning of the list

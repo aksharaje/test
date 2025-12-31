@@ -73,6 +73,7 @@ class TestScriptWriterSession(SQLModel, table=True):
     source_title: Optional[str] = Field(default=None, description="Title of the selected source")
     stories: List[dict] = Field(default_factory=list, sa_column=Column(JSON))
     selected_nfrs: List[str] = Field(default_factory=list, sa_column=Column(JSON))
+    input_images: List[dict] = Field(default_factory=list, sa_column=Column(JSON))  # Image metadata/data
 
     # Status
     status: str = Field(default="pending")  # pending, generating, completed, failed

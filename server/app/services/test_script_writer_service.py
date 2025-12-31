@@ -29,7 +29,7 @@ class TestScriptWriterService:
         self.llm = OpenRouterService()
 
     def create_session(
-        self, db: Session, data: TestScriptWriterSessionCreate
+        self, db: Session, data: TestScriptWriterSessionCreate, image_data: List[Dict[str, Any]] = None
     ) -> TestScriptWriterSession:
         """Create a new test script writer session"""
         session = TestScriptWriterSession(
@@ -38,6 +38,7 @@ class TestScriptWriterService:
             source_title=data.source_title,
             stories=data.stories,
             selected_nfrs=data.selected_nfrs,
+            input_images=image_data or [],
             status="pending",
         )
         db.add(session)
@@ -304,7 +305,7 @@ class TestScriptWriterService:
                 if "priority" not in tc:
                     tc["priority"] = "medium"
 
-    def _build_generation_prompt(self, session: TestScriptWriterSession) -> str:
+    def _build_generation_prompt(self, session: TestScriptWriterSession, has_images: bool = False) -> str:
         """Build the LLM prompt for test script generation"""
         stories_text = ""
         for i, story in enumerate(session.stories, 1):
@@ -330,7 +331,20 @@ Acceptance Criteria:
         else:
             nfr_text = "(No NFRs selected - focus on functional testing only)"
 
+        image_context = ""
+        if has_images:
+            image_context = """
+UX SCREENSHOTS:
+The user has provided UI mockup images. Analyze these images carefully to:
+- Understand the visual layout and user interface elements
+- Identify interactive elements (buttons, forms, links, etc.)
+- Create more specific test cases based on the actual UI design
+- Include tests for visual elements, layout, and user interactions shown
+
+"""
+
         return f"""You are a QA engineer creating comprehensive test scripts. Generate detailed test cases for the following user stories.
+{image_context}
 
 USER STORIES:
 {stories_text}
@@ -399,14 +413,33 @@ Return your test scripts as a JSON object with this EXACT structure:
             session.updated_at = datetime.utcnow()
             db.commit()
 
+            # Check if we have images
+            has_images = bool(session.input_images)
+
             # Build prompt and call LLM with retry logic
-            prompt = self._build_generation_prompt(session)
+            prompt = self._build_generation_prompt(session, has_images=has_images)
+
+            # Build user message content - multimodal if images present
+            if has_images:
+                # Build multimodal content array
+                user_content = [{"type": "text", "text": prompt}]
+                for img in session.input_images:
+                    user_content.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{img['content_type']};base64,{img['data']}"
+                        }
+                    })
+                user_message = {"role": "user", "content": user_content}
+            else:
+                user_message = {"role": "user", "content": prompt}
+
             messages = [
                 {
                     "role": "system",
-                    "content": "You are a senior QA engineer who creates thorough, well-structured test scripts. Focus on comprehensive coverage including edge cases and negative scenarios. CRITICAL: You must respond with ONLY valid JSON - no markdown, no code blocks, no explanatory text. Just the raw JSON object.",
+                    "content": "You are a senior QA engineer who creates thorough, well-structured test scripts. Focus on comprehensive coverage including edge cases and negative scenarios. When provided with UI screenshots, analyze them carefully to create specific test cases for the visual elements shown. CRITICAL: You must respond with ONLY valid JSON - no markdown, no code blocks, no explanatory text. Just the raw JSON object.",
                 },
-                {"role": "user", "content": prompt},
+                user_message,
             ]
 
             # Call LLM with retry logic and robust parsing
