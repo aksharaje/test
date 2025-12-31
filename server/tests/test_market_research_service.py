@@ -37,7 +37,7 @@ class TestSessionCRUD:
         """Test creating a new market research session"""
         data = MarketResearchSessionCreate(
             problem_area="Login & Onboarding",
-            industry_context="b2c_saas",
+            industry_context="technology",
             focus_areas=["user_expectations", "adoption_trends"],
         )
 
@@ -49,7 +49,7 @@ class TestSessionCRUD:
 
         added_session = db.add.call_args[0][0]
         assert added_session.problem_area == "Login & Onboarding"
-        assert added_session.industry_context == "b2c_saas"
+        assert added_session.industry_context == "technology"
         assert added_session.focus_areas == ["user_expectations", "adoption_trends"]
         assert added_session.status == "pending"
 
@@ -139,8 +139,8 @@ class TestHelperMethods:
 
     def test_get_industry_label(self, service):
         """Test getting industry label"""
-        label = service._get_industry_label("fintech")
-        assert label == "Fintech"
+        label = service._get_industry_label("banking")
+        assert label == "Banking & Financial Services"
 
     def test_get_industry_label_unknown(self, service):
         """Test getting unknown industry returns value"""
@@ -161,8 +161,8 @@ class TestHelperMethods:
         """Test industries list is populated"""
         assert len(INDUSTRIES) >= 10
         values = [ind["value"] for ind in INDUSTRIES]
-        assert "fintech" in values
-        assert "ecommerce" in values
+        assert "banking" in values
+        assert "consumer_goods" in values
 
 
 class TestPromptBuilding:
@@ -177,14 +177,14 @@ class TestPromptBuilding:
         session = MagicMock(
             problem_area="Login & Onboarding",
             problem_area_context=None,
-            industry_context="b2c_saas",
+            industry_context="technology",
             focus_areas=["user_expectations", "adoption_trends"],
         )
 
         prompt = service._build_analysis_prompt(session)
 
         assert "Login & Onboarding" in prompt
-        assert "B2C SaaS" in prompt
+        assert "Technology & Software" in prompt
         assert "User Expectations" in prompt
         assert "Adoption Trends" in prompt
         assert "market_trends" in prompt
@@ -197,7 +197,7 @@ class TestPromptBuilding:
         session = MagicMock(
             problem_area="Checkout Flow",
             problem_area_context=None,
-            industry_context="ecommerce",
+            industry_context="consumer_goods",
             focus_areas=["user_expectations", "adoption_trends", "market_risks", "regulation", "technology_shifts"],
         )
 
@@ -214,7 +214,7 @@ class TestPromptBuilding:
         session = MagicMock(
             problem_area="Test Area",
             problem_area_context=None,
-            industry_context="fintech",
+            industry_context="banking",
             focus_areas=[],
         )
 
@@ -424,7 +424,7 @@ class TestRunAnalysis:
         mock_session = MagicMock(
             id=1,
             problem_area="Login & Onboarding",
-            industry_context="b2c_saas",
+            industry_context="technology",
             focus_areas=["user_expectations"],
             status="pending",
         )
@@ -464,7 +464,7 @@ class TestRunAnalysis:
         mock_session = MagicMock(
             id=1,
             problem_area="Test",
-            industry_context="fintech",
+            industry_context="banking",
             focus_areas=[],
             status="pending",
         )

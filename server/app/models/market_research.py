@@ -9,6 +9,8 @@ from sqlmodel import SQLModel, Field, JSON, Column
 from pydantic import field_validator
 from pydantic.alias_generators import to_camel
 
+from app.models.shared_constants import INDUSTRIES
+
 
 # Focus area options for market research
 FOCUS_AREAS = [
@@ -18,30 +20,6 @@ FOCUS_AREAS = [
     {"value": "regulation", "label": "Regulation & Compliance"},
     {"value": "technology_shifts", "label": "Technology Shifts"},
 ]
-
-# Industry context options (reuse from competitive analysis)
-INDUSTRIES = sorted([
-    {"value": "b2c_saas", "label": "B2C SaaS"},
-    {"value": "b2b_saas", "label": "B2B SaaS"},
-    {"value": "fintech", "label": "Fintech"},
-    {"value": "ecommerce", "label": "E-commerce"},
-    {"value": "healthcare", "label": "Healthcare"},
-    {"value": "edtech", "label": "EdTech"},
-    {"value": "gaming", "label": "Gaming"},
-    {"value": "social_media", "label": "Social Media"},
-    {"value": "marketplace", "label": "Marketplace"},
-    {"value": "travel", "label": "Travel & Hospitality"},
-    {"value": "food_delivery", "label": "Food & Delivery"},
-    {"value": "real_estate", "label": "Real Estate"},
-    {"value": "automotive", "label": "Automotive"},
-    {"value": "insurance", "label": "Insurance"},
-    {"value": "telecommunications", "label": "Telecommunications"},
-    {"value": "media_entertainment", "label": "Media & Entertainment"},
-    {"value": "fitness_wellness", "label": "Fitness & Wellness"},
-    {"value": "productivity", "label": "Productivity Tools"},
-    {"value": "developer_tools", "label": "Developer Tools"},
-    {"value": "other", "label": "Other"},
-], key=lambda x: x["label"] if x["value"] != "other" else "zzz")
 
 
 class MarketInsight(SQLModel):
