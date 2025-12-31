@@ -124,6 +124,41 @@ goal-setting-mockup/
 ✅ Ability to store versions and compare prior drafts (UI prepared)
 ✅ Ability to click "Why was this generated?" for transparency
 
+## Authentication
+
+The application uses **magic link authentication** (passwordless login via email).
+
+### Development Mode
+
+When SMTP is not configured, the magic link appears directly in the UI after clicking "Sign in". This allows for easy local development without email setup.
+
+### Production Setup (SMTP)
+
+Add these environment variables to `server/.env`:
+
+```bash
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com        # Your SMTP server
+SMTP_PORT=587                   # Usually 587 for TLS
+SMTP_USER=your-email@gmail.com  # SMTP username
+SMTP_PASSWORD=your-app-password # SMTP password or app password
+SMTP_FROM=your-email@gmail.com  # "From" address for emails
+
+# Frontend URL (for magic link URLs)
+FRONTEND_URL=https://your-app.com
+```
+
+### Common SMTP Providers
+
+| Provider | SMTP_HOST | SMTP_PORT |
+|----------|-----------|-----------|
+| Gmail | smtp.gmail.com | 587 |
+| SendGrid | smtp.sendgrid.net | 587 |
+| Mailgun | smtp.mailgun.org | 587 |
+| AWS SES | email-smtp.{region}.amazonaws.com | 587 |
+
+> **Gmail Note**: Enable 2FA on your Google account and create an [App Password](https://myaccount.google.com/apppasswords).
+
 ## Future Enhancements
 
 - Backend integration for saving/loading goals
