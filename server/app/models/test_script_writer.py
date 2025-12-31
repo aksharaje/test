@@ -103,6 +103,18 @@ class TestScriptWriterSessionCreate(SQLModel):
         populate_by_name = True
 
 
+def _snake_to_camel(obj):
+    """Recursively convert snake_case keys to camelCase"""
+    if isinstance(obj, dict):
+        return {
+            ''.join(word.capitalize() if i > 0 else word for i, word in enumerate(k.split('_'))): _snake_to_camel(v)
+            for k, v in obj.items()
+        }
+    elif isinstance(obj, list):
+        return [_snake_to_camel(item) for item in obj]
+    return obj
+
+
 class TestScriptWriterSessionResponse(SQLModel):
     """Response model for session data"""
     id: int
@@ -123,6 +135,26 @@ class TestScriptWriterSessionResponse(SQLModel):
     class Config:
         alias_generator = to_camel
         populate_by_name = True
+
+    @classmethod
+    def from_session(cls, session: "TestScriptWriterSession") -> "TestScriptWriterSessionResponse":
+        """Create response from session with camelCase conversion for nested data"""
+        return cls(
+            id=session.id,
+            source_type=session.source_type,
+            source_id=session.source_id,
+            source_title=session.source_title,
+            stories=session.stories,
+            selected_nfrs=session.selected_nfrs,
+            status=session.status,
+            error_message=session.error_message,
+            story_test_scripts=_snake_to_camel(session.story_test_scripts),
+            summary=session.summary,
+            total_test_cases=session.total_test_cases,
+            test_breakdown=session.test_breakdown,
+            created_at=session.created_at,
+            updated_at=session.updated_at,
+        )
 
 
 class SourceTypeOption(SQLModel):

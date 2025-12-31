@@ -170,7 +170,7 @@ def list_sessions(
 ):
     """List all test script writer sessions"""
     sessions = test_script_writer_service.list_sessions(db, skip=skip, limit=limit)
-    return sessions
+    return [TestScriptWriterSessionResponse.from_session(s) for s in sessions]
 
 
 @router.post("/sessions", response_model=TestScriptWriterSessionResponse)
@@ -213,7 +213,7 @@ async def create_session(
         session.id,
     )
 
-    return session
+    return TestScriptWriterSessionResponse.from_session(session)
 
 
 @router.get("/sessions/{session_id}", response_model=TestScriptWriterSessionResponse)
@@ -222,7 +222,7 @@ def get_session(session_id: int, db: Session = Depends(get_db)):
     session = test_script_writer_service.get_session(db, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    return session
+    return TestScriptWriterSessionResponse.from_session(session)
 
 
 @router.get("/sessions/{session_id}/status", response_model=SessionStatus)
@@ -261,4 +261,4 @@ def retry_session(
         session.id,
     )
 
-    return session
+    return TestScriptWriterSessionResponse.from_session(session)

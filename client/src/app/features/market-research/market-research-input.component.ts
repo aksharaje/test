@@ -225,7 +225,7 @@ import { IndustrySelectComponent } from '../../shared/components/industry-select
 
             <!-- Step 3: Focus Areas -->
             <div class="rounded-lg border bg-card p-4">
-              <div class="flex items-center gap-2 mb-3">
+              <div class="flex items-center gap-2 mb-1">
                 <ng-icon name="lucideTrendingUp" class="h-5 w-5 text-primary" />
                 <h2 class="font-semibold">Step 3: Focus Areas</h2>
               </div>
@@ -233,24 +233,19 @@ import { IndustrySelectComponent } from '../../shared/components/industry-select
                 Select the aspects you want to analyze
               </p>
 
-              <div class="space-y-2">
+              <div class="flex flex-wrap gap-2">
                 @for (area of service.focusAreas(); track area.value) {
-                  <label
-                    class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-                    [class.bg-primary/5]="isFocusAreaSelected(area.value)"
-                    [class.border-primary/50]="isFocusAreaSelected(area.value)"
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                    [class.bg-primary]="isFocusAreaSelected(area.value)"
+                    [class.text-primary-foreground]="isFocusAreaSelected(area.value)"
+                    [class.bg-muted]="!isFocusAreaSelected(area.value)"
+                    [class.hover:bg-muted/80]="!isFocusAreaSelected(area.value)"
+                    (click)="toggleFocusArea(area.value)"
                   >
-                    <input
-                      type="checkbox"
-                      class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      [checked]="isFocusAreaSelected(area.value)"
-                      (change)="toggleFocusArea(area.value)"
-                    />
-                    <div class="flex items-center gap-2 flex-1">
-                      <ng-icon [name]="getFocusAreaIcon(area.value)" class="h-4 w-4 text-muted-foreground" />
-                      <span class="text-sm font-medium">{{ area.label }}</span>
-                    </div>
-                  </label>
+                    {{ area.label }}
+                  </button>
                 }
               </div>
             </div>
