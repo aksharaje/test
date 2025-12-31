@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -24,11 +24,12 @@ import {
 import { MarketResearchService } from './market-research.service';
 import type { MarketResearchSession, ProblemAreaSourceType } from './market-research.types';
 import { HlmButtonDirective } from '../../ui/button';
+import { IndustrySelectComponent } from '../../shared/components/industry-select/industry-select.component';
 
 @Component({
   selector: 'app-market-research-input',
   standalone: true,
-  imports: [NgIcon, HlmButtonDirective],
+  imports: [NgIcon, HlmButtonDirective, IndustrySelectComponent],
   viewProviders: [
     provideIcons({
       lucideChevronDown,
@@ -215,55 +216,11 @@ import { HlmButtonDirective } from '../../ui/button';
                 Select the industry context for your research
               </p>
 
-              <!-- Industry Dropdown -->
-              <div class="relative">
-                <button
-                  type="button"
-                  class="w-full flex items-center justify-between rounded-lg border bg-background p-3 text-sm text-left"
-                  [class.text-muted-foreground]="!industryContext()"
-                  (click)="toggleIndustryDropdown()"
-                >
-                  <span>{{ selectedIndustryLabel() || 'Select an industry...' }}</span>
-                  <ng-icon [name]="industryDropdownOpen() ? 'lucideChevronDown' : 'lucideChevronRight'" class="h-4 w-4" />
-                </button>
-
-                @if (industryDropdownOpen()) {
-                  <div class="absolute z-20 mt-1 w-full rounded-lg border bg-background shadow-lg">
-                    <div class="p-2 border-b">
-                      <div class="relative">
-                        <ng-icon name="lucideSearch" class="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <input
-                          type="text"
-                          class="w-full rounded border bg-muted/30 py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Type to filter..."
-                          [value]="industryFilter()"
-                          (input)="onIndustryFilterInput($event)"
-                        />
-                      </div>
-                    </div>
-                    <div class="max-h-64 overflow-y-auto p-1">
-                      @for (industry of filteredIndustries(); track industry.value) {
-                        <button
-                          type="button"
-                          class="w-full flex items-center gap-2 rounded p-2 text-sm hover:bg-muted/50 text-left"
-                          [class.bg-primary/10]="industryContext() === industry.value"
-                          (click)="selectIndustry(industry.value)"
-                        >
-                          @if (industryContext() === industry.value) {
-                            <ng-icon name="lucideCheck" class="h-4 w-4 text-primary" />
-                          } @else {
-                            <div class="h-4 w-4"></div>
-                          }
-                          <span>{{ industry.label }}</span>
-                        </button>
-                      }
-                      @if (filteredIndustries().length === 0) {
-                        <p class="p-2 text-sm text-muted-foreground text-center">No matching industries</p>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-industry-select
+                [industries]="service.industries()"
+                [value]="industryContext()"
+                (valueChange)="industryContext.set($event)"
+              />
             </div>
 
             <!-- Step 3: Focus Areas -->
@@ -463,25 +420,9 @@ export class MarketResearchInputComponent implements OnInit {
 
   // Industry selection
   industryContext = signal('');
-  industryDropdownOpen = signal(false);
-  industryFilter = signal('');
 
   // Focus areas
   selectedFocusAreas = signal<string[]>(['user_expectations', 'adoption_trends', 'market_risks']);
-
-  selectedIndustryLabel = computed(() => {
-    const value = this.industryContext();
-    if (!value) return '';
-    const industry = this.service.industries().find((i) => i.value === value);
-    return industry?.label || value;
-  });
-
-  filteredIndustries = computed(() => {
-    const filter = this.industryFilter().toLowerCase();
-    const industries = this.service.industries();
-    if (!filter) return industries;
-    return industries.filter((i) => i.label.toLowerCase().includes(filter));
-  });
 
   hasProblemAreaSources = computed(() =>
     this.service.ideationSessions().length > 0 ||
@@ -503,14 +444,6 @@ export class MarketResearchInputComponent implements OnInit {
 
     return this.industryContext().length > 0 && this.selectedFocusAreas().length > 0;
   });
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.relative')) {
-      this.industryDropdownOpen.set(false);
-    }
-  }
 
   async ngOnInit(): Promise<void> {
     await Promise.all([
@@ -585,23 +518,6 @@ export class MarketResearchInputComponent implements OnInit {
 
   truncate(str: string, len: number): string {
     return str.length > len ? str.substring(0, len) + '...' : str;
-  }
-
-  toggleIndustryDropdown(): void {
-    this.industryDropdownOpen.update((v) => !v);
-    if (this.industryDropdownOpen()) {
-      this.industryFilter.set('');
-    }
-  }
-
-  onIndustryFilterInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.industryFilter.set(input.value);
-  }
-
-  selectIndustry(value: string): void {
-    this.industryContext.set(value);
-    this.industryDropdownOpen.set(false);
   }
 
   isFocusAreaSelected(value: string): boolean {
