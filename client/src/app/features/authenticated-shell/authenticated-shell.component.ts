@@ -66,7 +66,7 @@ export class AuthenticatedShellComponent {
       path: '/research',
       children: [
         { label: 'Competitive Analysis', path: '/research/competitive-analysis' },
-        { label: 'Code Chat', path: '/code-chat' },
+
       ],
     },
     {
@@ -143,6 +143,7 @@ export class AuthenticatedShellComponent {
         { label: 'Knowledge Bases', path: '/knowledge-bases' },
         { label: 'Library', path: '/library' },
         { label: 'Optimize', path: '/optimize' },
+        { label: 'Code Chat', path: '/code-chat' },
       ],
     },
     {
