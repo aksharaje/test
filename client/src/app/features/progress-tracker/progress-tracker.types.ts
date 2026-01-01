@@ -134,7 +134,7 @@ export interface SyncStatusResponse {
 }
 
 export interface IntegrationCheckResponse {
-  hasValidIntegration: boolean;
+  has_valid_integration: boolean;
   integrations: Array<{
     id: number;
     name: string;

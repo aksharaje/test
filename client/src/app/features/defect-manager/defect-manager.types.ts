@@ -106,7 +106,7 @@ export interface AnalysisStatusResponse {
 }
 
 export interface IntegrationCheckResponse {
-  hasValidIntegration: boolean;
+  has_valid_integration: boolean;
   integrations: Array<{
     id: number;
     name: string;
@@ -114,4 +114,10 @@ export interface IntegrationCheckResponse {
     status: string;
   }>;
   message: string;
+}
+
+export interface ProjectOption {
+  key: string;
+  name: string;
+  description?: string;
 }

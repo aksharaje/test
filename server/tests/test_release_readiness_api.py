@@ -362,3 +362,170 @@ class TestRecommendation:
         assert response.status_code == 200
         data = response.json()
         assert data["recommendation"] == "no_go"
+
+
+# =============================================================================
+# INTEGRATION LOOKUP TESTS
+# =============================================================================
+
+
+class TestIntegrationLookups:
+    """Tests for integration lookup endpoints."""
+
+    def test_get_projects_not_found(self, client):
+        """Returns 404 when integration doesn't exist."""
+        response = client.get("/api/release-readiness/integrations/9999/projects")
+        assert response.status_code == 404
+
+    def test_get_projects_returns_list(self, client, sample_integration):
+        """Returns list (empty in test as no real API call)."""
+        response = client.get(f"/api/release-readiness/integrations/{sample_integration.id}/projects")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_get_fix_versions_not_found(self, client):
+        """Returns 404 when integration doesn't exist."""
+        response = client.get("/api/release-readiness/integrations/9999/fix-versions?project_key=TEST")
+        assert response.status_code == 404
+
+    def test_get_fix_versions_returns_list(self, client, sample_integration):
+        """Returns list (empty in test as no real API call)."""
+        response = client.get(
+            f"/api/release-readiness/integrations/{sample_integration.id}/fix-versions",
+            params={"project_key": "TEST"}
+        )
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_get_sprints_not_found(self, client):
+        """Returns 404 when integration doesn't exist."""
+        response = client.get("/api/release-readiness/integrations/9999/sprints")
+        assert response.status_code == 404
+
+    def test_get_sprints_returns_list(self, client, sample_integration):
+        """Returns list (empty in test as no real API call)."""
+        response = client.get(f"/api/release-readiness/integrations/{sample_integration.id}/sprints")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_get_labels_not_found(self, client):
+        """Returns 404 when integration doesn't exist."""
+        response = client.get("/api/release-readiness/integrations/9999/labels")
+        assert response.status_code == 404
+
+    def test_get_labels_returns_list(self, client, sample_integration):
+        """Returns list (empty in test as no real API call)."""
+        response = client.get(f"/api/release-readiness/integrations/{sample_integration.id}/labels")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_get_labels_with_project_key(self, client, sample_integration):
+        """Can filter labels by project key."""
+        response = client.get(
+            f"/api/release-readiness/integrations/{sample_integration.id}/labels",
+            params={"project_key": "PROJ"}
+        )
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+
+# =============================================================================
+# FIELD MAPPING TESTS
+# =============================================================================
+
+
+class TestFieldMappingsReleaseReadiness:
+    """Tests for field mapping functionality in Release Readiness service."""
+
+    def test_get_field_mappings_empty(self, session: Session, sample_integration):
+        """Returns empty dict when no mappings exist."""
+        from app.services.release_readiness_service import ReleaseReadinessService
+        service = ReleaseReadinessService(session)
+
+        mappings = service._get_field_mappings(sample_integration.id)
+        assert mappings == {}
+
+    def test_get_mapped_field_returns_mapping(self, session: Session, sample_integration):
+        """Returns mapped field ID when mapping exists."""
+        from app.models.jira import FieldMapping
+        from app.services.release_readiness_service import ReleaseReadinessService
+
+        # Create field mapping
+        mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="story_points",
+            provider_field_id="customfield_12345",
+            provider_field_name="Custom Points",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ReleaseReadinessService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+        result = service._get_mapped_field(mappings, "story_points", "jira")
+
+        assert result == "customfield_12345"
+
+    def test_get_mapped_field_falls_back_to_default(self, session: Session, sample_integration):
+        """Falls back to default field when no mapping exists."""
+        from app.services.release_readiness_service import ReleaseReadinessService
+
+        service = ReleaseReadinessService(session)
+        mappings = {}  # No mappings
+        result = service._get_mapped_field(mappings, "story_points", "jira")
+
+        # Should return default Jira story points field
+        assert result == "customfield_10016"
+
+    def test_build_jira_fields_list_includes_mappings(self, session: Session, sample_integration):
+        """Build fields list includes mapped custom fields."""
+        from app.models.jira import FieldMapping
+        from app.services.release_readiness_service import ReleaseReadinessService
+
+        # Create field mappings
+        mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="severity",
+            provider_field_id="customfield_20001",
+            provider_field_name="Severity",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ReleaseReadinessService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+        fields = service._build_jira_fields_list(mappings)
+
+        # Should include custom field
+        assert "customfield_20001" in fields
+        # Should include base fields
+        assert "summary" in fields
+        assert "status" in fields
+
+    def test_build_ado_fields_list_includes_mappings(self, session: Session, sample_integration):
+        """Build ADO fields list includes mapped custom fields."""
+        from app.models.jira import FieldMapping
+        from app.services.release_readiness_service import ReleaseReadinessService
+
+        # Create ADO field mapping
+        mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="acceptance_criteria",
+            provider_field_id="Custom.AcceptanceCriteria",
+            provider_field_name="Custom AC",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ReleaseReadinessService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+        fields = service._build_ado_fields_list(mappings)
+
+        # Should include custom field
+        assert "Custom.AcceptanceCriteria" in fields
+        # Should include base fields
+        assert "System.Title" in fields
+        assert "System.State" in fields

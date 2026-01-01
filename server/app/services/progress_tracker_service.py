@@ -499,10 +499,19 @@ class ProgressTrackerService:
                     story_points = fields.get(field_name)
                     break
 
-        # Get sprint info
+        # Get sprint info from mapped field or common locations
         sprint_name = None
         sprint_id = None
-        sprint_field = fields.get("customfield_10020") or fields.get("sprint")
+        sprint_field = None
+        if "sprint" in mappings:
+            sp_field_id = mappings["sprint"].provider_field_id
+            sprint_field = fields.get(sp_field_id)
+        if sprint_field is None:
+            # Try common field names
+            for field_name in ["customfield_10020", "customfield_10010", "sprint"]:
+                if fields.get(field_name) is not None:
+                    sprint_field = fields.get(field_name)
+                    break
         if sprint_field and isinstance(sprint_field, list) and len(sprint_field) > 0:
             sprint = sprint_field[0]
             if isinstance(sprint, dict):
@@ -610,8 +619,13 @@ class ProgressTrackerService:
         fields = work_item.get("fields", {})
         wi_id = work_item.get("id")
 
-        # Get story points
-        story_points = fields.get("Microsoft.VSTS.Scheduling.StoryPoints")
+        # Get story points from mapped field or default
+        story_points = None
+        if "story_points" in mappings:
+            sp_field = mappings["story_points"].provider_field_id
+            story_points = fields.get(sp_field)
+        if story_points is None:
+            story_points = fields.get("Microsoft.VSTS.Scheduling.StoryPoints")
 
         # Get status and map to category
         status = fields.get("System.State", "New")
@@ -642,8 +656,13 @@ class ProgressTrackerService:
         tags = fields.get("System.Tags", "")
         labels = [t.strip() for t in tags.split(";")] if tags else []
 
-        # Get priority
-        priority = fields.get("Microsoft.VSTS.Common.Priority")
+        # Get priority from mapped field or default
+        priority = None
+        if "priority" in mappings:
+            priority_field = mappings["priority"].provider_field_id
+            priority = fields.get(priority_field)
+        if priority is None:
+            priority = fields.get("Microsoft.VSTS.Common.Priority")
         priority_name = f"Priority {priority}" if priority else None
 
         # Get parent from relations

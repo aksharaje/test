@@ -16,6 +16,10 @@ from app.models.release_readiness import (
     DefectStatusReport,
     WorkCompletionReport,
     AssessmentStatusResponse,
+    ProjectOption,
+    FixVersionOption,
+    SprintOption,
+    LabelOption,
 )
 from app.services.release_readiness_service import get_release_readiness_service
 
@@ -36,6 +40,77 @@ async def check_integrations(
     """
     service = get_release_readiness_service(session)
     return service.check_integrations()
+
+
+@router.get("/integrations/{integration_id}/projects", response_model=List[ProjectOption])
+async def get_projects(
+    integration_id: int,
+    session: Session = Depends(get_db_session),
+) -> List[ProjectOption]:
+    """
+    Get available projects from the integration.
+    """
+    service = get_release_readiness_service(session)
+    try:
+        return await service.get_projects(integration_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch projects: {str(e)}")
+
+
+@router.get("/integrations/{integration_id}/fix-versions", response_model=List[FixVersionOption])
+async def get_fix_versions(
+    integration_id: int,
+    project_key: str,
+    session: Session = Depends(get_db_session),
+) -> List[FixVersionOption]:
+    """
+    Get available fix versions from a Jira project.
+    Returns empty list for ADO integrations.
+    """
+    service = get_release_readiness_service(session)
+    try:
+        return await service.get_fix_versions(integration_id, project_key)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch fix versions: {str(e)}")
+
+
+@router.get("/integrations/{integration_id}/sprints", response_model=List[SprintOption])
+async def get_sprints(
+    integration_id: int,
+    session: Session = Depends(get_db_session),
+) -> List[SprintOption]:
+    """
+    Get available sprints/iterations from the integration.
+    """
+    service = get_release_readiness_service(session)
+    try:
+        return await service.get_sprints(integration_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch sprints: {str(e)}")
+
+
+@router.get("/integrations/{integration_id}/labels", response_model=List[LabelOption])
+async def get_labels(
+    integration_id: int,
+    project_key: Optional[str] = None,
+    session: Session = Depends(get_db_session),
+) -> List[LabelOption]:
+    """
+    Get available labels/tags from the integration.
+    """
+    service = get_release_readiness_service(session)
+    try:
+        return await service.get_labels(integration_id, project_key)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch labels: {str(e)}")
 
 
 # =============================================================================

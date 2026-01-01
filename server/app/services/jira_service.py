@@ -147,6 +147,66 @@ class JiraService:
         statement = select(Integration).order_by(Integration.created_at.desc())
         return session.exec(statement).all()
 
+    async def ensure_valid_token(self, session: Session, integration: Integration) -> Integration:
+        """
+        Ensures the integration has a valid access token.
+        If token is expired, attempts to refresh it using the refresh token.
+        Updates the database with new tokens if refreshed.
+        
+        Returns the updated integration or raises ValueError if refresh fails.
+        """
+        # Check if token is still valid (with 5 minute buffer)
+        if integration.token_expires_at:
+            buffer = timedelta(minutes=5)
+            if datetime.utcnow() + buffer < integration.token_expires_at:
+                # Token is still valid
+                return integration
+        
+        # Token is expired or expiry unknown, try to refresh
+        if not integration.refresh_token:
+            integration.status = "expired"
+            integration.error_message = "Token expired and no refresh token available. Please reconnect."
+            session.add(integration)
+            session.commit()
+            session.refresh(integration)
+            raise ValueError("Token expired and no refresh token available")
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                refresh_response = await client.post(
+                    "https://auth.atlassian.com/oauth/token",
+                    json={
+                        "grant_type": "refresh_token",
+                        "client_id": settings.JIRA_CLIENT_ID,
+                        "client_secret": settings.JIRA_CLIENT_SECRET,
+                        "refresh_token": integration.refresh_token,
+                    }
+                )
+                
+                if refresh_response.status_code != 200:
+                    integration.status = "expired"
+                    integration.error_message = "Failed to refresh token. Please reconnect."
+                    session.add(integration)
+                    session.commit()
+                    session.refresh(integration)
+                    raise ValueError(f"Token refresh failed: {refresh_response.text}")
+                
+                tokens = refresh_response.json()
+                integration.access_token = tokens["access_token"]
+                if "refresh_token" in tokens:
+                    integration.refresh_token = tokens["refresh_token"]
+                integration.token_expires_at = datetime.utcnow() + timedelta(seconds=tokens.get("expires_in", 3600))
+                integration.status = "connected"
+                integration.error_message = None
+                session.add(integration)
+                session.commit()
+                session.refresh(integration)
+                
+                return integration
+                
+        except httpx.RequestError as e:
+            raise ValueError(f"Network error during token refresh: {str(e)}")
+
     async def sync_integration(self, session: Session, integration_id: int) -> Optional[Integration]:
         integration = session.get(Integration, integration_id)
         if not integration:

@@ -131,7 +131,7 @@ export interface AssessmentStatusResponse {
 }
 
 export interface IntegrationCheckResponse {
-  hasValidIntegration: boolean;
+  has_valid_integration: boolean;
   integrations: Array<{
     id: number;
     name: string;
@@ -139,4 +139,41 @@ export interface IntegrationCheckResponse {
     status: string;
   }>;
   message: string;
+}
+
+// Integration lookup types
+export interface ProjectOption {
+  key: string;
+  name: string;
+  description?: string;
+}
+
+export interface FixVersionOption {
+  id: string;
+  name: string;
+  released: boolean;
+  releaseDate: string | null;
+  description?: string;
+}
+
+export interface SprintOption {
+  id: string;
+  name: string;
+  state: 'active' | 'closed' | 'future';
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface LabelOption {
+  name: string;
+}
+
+// Release type configuration
+export type ReleaseType = 'fixVersion' | 'sprint' | 'label' | 'project';
+
+export interface ReleaseTypeConfig {
+  value: ReleaseType;
+  label: string;
+  description: string;
+  providers: ('jira' | 'ado')[];
 }

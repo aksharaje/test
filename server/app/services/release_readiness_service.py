@@ -25,10 +25,29 @@ from app.models.release_readiness import (
     AssessmentStatusResponse,
     DataSourceConfig,
     ConfigDiscoveryResult,
+    ProjectOption,
+    FixVersionOption,
+    SprintOption,
+    LabelOption,
     DEFAULT_SCORING_WEIGHTS,
 )
-from app.models.jira import Integration
+from app.models.jira import Integration, FieldMapping
 from app.core.config import settings
+
+# Default field IDs when no mapping exists
+DEFAULT_JIRA_FIELDS = {
+    "story_points": "customfield_10016",
+    "sprint": "customfield_10020",
+    "severity": None,  # Often uses priority field
+    "acceptance_criteria": None,  # Falls back to description
+}
+
+DEFAULT_ADO_FIELDS = {
+    "story_points": "Microsoft.VSTS.Scheduling.StoryPoints",
+    "severity": "Microsoft.VSTS.Common.Severity",
+    "acceptance_criteria": "Microsoft.VSTS.Common.AcceptanceCriteria",
+    "priority": "Microsoft.VSTS.Common.Priority",
+}
 
 
 class ReleaseReadinessService:
@@ -64,6 +83,344 @@ class ReleaseReadinessService:
             "integrations": valid_integrations,
             "message": "Ready to assess releases" if valid_integrations else "Connect Jira or Azure DevOps to assess release readiness"
         }
+
+    def _get_field_mappings(self, integration_id: int) -> Dict[str, FieldMapping]:
+        """Get field mappings for an integration."""
+        statement = select(FieldMapping).where(
+            FieldMapping.integration_id == integration_id
+        )
+        mappings = self.db.exec(statement).all()
+        return {m.our_field: m for m in mappings}
+
+    def _get_mapped_field(
+        self,
+        mappings: Dict[str, FieldMapping],
+        our_field: str,
+        provider: str
+    ) -> Optional[str]:
+        """Get the provider field ID for our standard field."""
+        if our_field in mappings:
+            return mappings[our_field].provider_field_id
+
+        # Fall back to defaults
+        if provider == "jira":
+            return DEFAULT_JIRA_FIELDS.get(our_field)
+        elif provider == "ado":
+            return DEFAULT_ADO_FIELDS.get(our_field)
+        return None
+
+    def _build_jira_fields_list(self, mappings: Dict[str, FieldMapping]) -> str:
+        """Build the fields parameter for Jira API based on mappings."""
+        base_fields = [
+            "summary", "description", "status", "issuetype",
+            "priority", "assignee", "created", "updated", "labels", "components"
+        ]
+
+        # Add mapped custom fields
+        for our_field in ["story_points", "severity", "acceptance_criteria", "sprint"]:
+            field_id = self._get_mapped_field(mappings, our_field, "jira")
+            if field_id and field_id not in base_fields:
+                base_fields.append(field_id)
+
+        return ",".join(base_fields)
+
+    def _build_ado_fields_list(self, mappings: Dict[str, FieldMapping]) -> List[str]:
+        """Build the fields list for ADO API based on mappings."""
+        base_fields = [
+            "System.Id", "System.Title", "System.Description", "System.State",
+            "System.WorkItemType", "System.AssignedTo", "System.CreatedDate",
+            "System.ChangedDate", "System.Tags", "System.IterationPath"
+        ]
+
+        # Add mapped fields
+        for our_field in ["story_points", "severity", "acceptance_criteria", "priority"]:
+            field_id = self._get_mapped_field(mappings, our_field, "ado")
+            if field_id and field_id not in base_fields:
+                base_fields.append(field_id)
+
+        return base_fields
+
+    # =========================================================================
+    # INTEGRATION LOOKUPS
+    # =========================================================================
+
+    async def get_projects(self, integration_id: int) -> List[ProjectOption]:
+        """Get available projects from integration."""
+        integration = self.db.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+
+        if integration.provider == "jira":
+            return await self._get_jira_projects(integration)
+        elif integration.provider == "ado":
+            return await self._get_ado_projects(integration)
+        return []
+
+    async def _get_jira_projects(self, integration: Integration) -> List[ProjectOption]:
+        """Get projects from Jira."""
+        projects = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/api/3/project/search",
+                    params={"maxResults": 100},
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+                if response.status_code == 200:
+                    for proj in response.json().get("values", []):
+                        projects.append(ProjectOption(
+                            key=proj.get("key", ""),
+                            name=proj.get("name", ""),
+                            description=proj.get("description")
+                        ))
+        except Exception as e:
+            print(f"Error fetching Jira projects: {e}")
+        return projects
+
+    async def _get_ado_projects(self, integration: Integration) -> List[ProjectOption]:
+        """Get projects from Azure DevOps."""
+        projects = []
+        try:
+            # Extract org from base_url (e.g., https://dev.azure.com/MyOrg/MyProject)
+            base_url = integration.base_url or ""
+            # Try to get org-level projects
+            org_url = "/".join(base_url.split("/")[:4])  # https://dev.azure.com/OrgName
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{org_url}/_apis/projects?api-version=7.0",
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+                if response.status_code == 200:
+                    for proj in response.json().get("value", []):
+                        projects.append(ProjectOption(
+                            key=proj.get("name", ""),  # ADO uses name as key
+                            name=proj.get("name", ""),
+                            description=proj.get("description")
+                        ))
+        except Exception as e:
+            print(f"Error fetching ADO projects: {e}")
+        return projects
+
+    async def get_fix_versions(
+        self, integration_id: int, project_key: str
+    ) -> List[FixVersionOption]:
+        """Get fix versions from Jira project."""
+        integration = self.db.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+
+        if integration.provider != "jira":
+            return []  # Fix versions are Jira-specific
+
+        versions = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/api/3/project/{project_key}/versions",
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+                if response.status_code == 200:
+                    for ver in response.json():
+                        versions.append(FixVersionOption(
+                            id=str(ver.get("id", "")),
+                            name=ver.get("name", ""),
+                            released=ver.get("released", False),
+                            release_date=ver.get("releaseDate"),
+                            description=ver.get("description")
+                        ))
+        except Exception as e:
+            print(f"Error fetching Jira fix versions: {e}")
+
+        # Sort: unreleased first, then by name
+        versions.sort(key=lambda v: (v.released, v.name))
+        return versions
+
+    async def get_sprints(self, integration_id: int) -> List[SprintOption]:
+        """Get available sprints/iterations from integration."""
+        integration = self.db.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+
+        if integration.provider == "jira":
+            return await self._get_jira_sprints(integration)
+        elif integration.provider == "ado":
+            return await self._get_ado_iterations(integration)
+        return []
+
+    async def _get_jira_sprints(self, integration: Integration) -> List[SprintOption]:
+        """Get sprints from Jira."""
+        sprints = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Get boards first
+                boards_url = f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/agile/1.0/board"
+                boards_response = await client.get(
+                    boards_url,
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+
+                if boards_response.status_code == 200:
+                    boards = boards_response.json().get("values", [])
+
+                    # Get sprints from scrum boards
+                    for board in boards:
+                        if board.get("type") == "scrum":
+                            sprints_url = f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/agile/1.0/board/{board['id']}/sprint"
+                            sprints_response = await client.get(
+                                sprints_url,
+                                headers={
+                                    "Authorization": f"Bearer {integration.access_token}",
+                                    "Accept": "application/json"
+                                }
+                            )
+
+                            if sprints_response.status_code == 200:
+                                for sprint in sprints_response.json().get("values", []):
+                                    sprints.append(SprintOption(
+                                        id=str(sprint.get("id", "")),
+                                        name=sprint.get("name", ""),
+                                        state=sprint.get("state", "future"),
+                                        start_date=sprint.get("startDate"),
+                                        end_date=sprint.get("endDate")
+                                    ))
+                            break  # Only use first scrum board
+        except Exception as e:
+            print(f"Error fetching Jira sprints: {e}")
+
+        # Sort: active first, then future, then closed
+        state_order = {"active": 0, "future": 1, "closed": 2}
+        sprints.sort(key=lambda s: state_order.get(s.state, 3))
+        return sprints
+
+    async def _get_ado_iterations(self, integration: Integration) -> List[SprintOption]:
+        """Get iterations from Azure DevOps."""
+        iterations = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{integration.base_url}/_apis/work/teamsettings/iterations?api-version=7.0",
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+
+                if response.status_code == 200:
+                    for iteration in response.json().get("value", []):
+                        attributes = iteration.get("attributes", {})
+
+                        # Map timeFrame to state
+                        time_frame = attributes.get("timeFrame", "")
+                        if time_frame == "current":
+                            state = "active"
+                        elif time_frame == "past":
+                            state = "closed"
+                        else:
+                            state = "future"
+
+                        iterations.append(SprintOption(
+                            id=iteration.get("path", iteration.get("id", "")),
+                            name=iteration.get("name", ""),
+                            state=state,
+                            start_date=attributes.get("startDate"),
+                            end_date=attributes.get("finishDate")
+                        ))
+        except Exception as e:
+            print(f"Error fetching ADO iterations: {e}")
+
+        # Sort: active first, then future, then closed
+        state_order = {"active": 0, "future": 1, "closed": 2}
+        iterations.sort(key=lambda s: state_order.get(s.state, 3))
+        return iterations
+
+    async def get_labels(
+        self, integration_id: int, project_key: Optional[str] = None
+    ) -> List[LabelOption]:
+        """Get available labels/tags from integration."""
+        integration = self.db.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+
+        if integration.provider == "jira":
+            return await self._get_jira_labels(integration, project_key)
+        elif integration.provider == "ado":
+            return await self._get_ado_tags(integration, project_key)
+        return []
+
+    async def _get_jira_labels(
+        self, integration: Integration, project_key: Optional[str] = None
+    ) -> List[LabelOption]:
+        """Get labels from Jira."""
+        labels = []
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Jira Cloud has a labels endpoint
+                response = await client.get(
+                    f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/api/3/label",
+                    params={"maxResults": 200},
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+                if response.status_code == 200:
+                    for label in response.json().get("values", []):
+                        labels.append(LabelOption(name=label))
+        except Exception as e:
+            print(f"Error fetching Jira labels: {e}")
+        return sorted(labels, key=lambda l: l.name.lower())
+
+    async def _get_ado_tags(
+        self, integration: Integration, project_key: Optional[str] = None
+    ) -> List[LabelOption]:
+        """Get tags from Azure DevOps work items."""
+        tags = set()
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Query recent work items to get unique tags
+                wiql = "SELECT [System.Id], [System.Tags] FROM WorkItems WHERE [System.Tags] <> '' ORDER BY [System.ChangedDate] DESC"
+                response = await client.post(
+                    f"{integration.base_url}/_apis/wit/wiql?api-version=7.0&$top=200",
+                    json={"query": wiql},
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Content-Type": "application/json"
+                    }
+                )
+
+                if response.status_code == 200:
+                    work_items = response.json().get("workItems", [])
+                    if work_items:
+                        ids = [str(wi["id"]) for wi in work_items[:100]]
+                        details = await client.get(
+                            f"{integration.base_url}/_apis/wit/workitems",
+                            params={"ids": ",".join(ids), "fields": "System.Tags", "api-version": "7.0"},
+                            headers={"Authorization": f"Bearer {integration.access_token}"}
+                        )
+
+                        if details.status_code == 200:
+                            for item in details.json().get("value", []):
+                                tag_str = item.get("fields", {}).get("System.Tags", "")
+                                if tag_str:
+                                    for tag in tag_str.split(";"):
+                                        tags.add(tag.strip())
+        except Exception as e:
+            print(f"Error fetching ADO tags: {e}")
+
+        return sorted([LabelOption(name=t) for t in tags], key=lambda l: l.name.lower())
 
     # =========================================================================
     # SESSION CRUD
@@ -341,11 +698,24 @@ class ReleaseReadinessService:
         """Fetch items from Jira for a release."""
         items = []
 
+        # Get field mappings for this integration
+        mappings = self._get_field_mappings(integration.id)
+
+        # Get mapped field IDs
+        story_points_field = self._get_mapped_field(mappings, "story_points", "jira")
+        severity_field = self._get_mapped_field(mappings, "severity", "jira")
+        ac_field = self._get_mapped_field(mappings, "acceptance_criteria", "jira")
+
+        # Build dynamic fields list
+        fields_to_fetch = self._build_jira_fields_list(mappings)
+
         # Build JQL based on release type
         if session.release_type == "fixVersion":
             jql = f"fixVersion = '{session.release_identifier}'"
         elif session.release_type == "label":
             jql = f"labels = '{session.release_identifier}'"
+        elif session.release_type == "sprint":
+            jql = f"Sprint = '{session.release_identifier}'"
         else:
             jql = f"fixVersion = '{session.release_identifier}'"
 
@@ -355,11 +725,11 @@ class ReleaseReadinessService:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
-                    f"{integration.base_url}/rest/api/3/search",
+                    f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/api/3/search",
                     params={
                         "jql": jql,
                         "maxResults": 200,
-                        "fields": "summary,description,status,issuetype,priority,assignee,created,updated,customfield_10016"
+                        "fields": fields_to_fetch
                     },
                     headers={
                         "Authorization": f"Bearer {integration.access_token}",
@@ -371,21 +741,54 @@ class ReleaseReadinessService:
                     data = response.json()
                     for issue in data.get("issues", []):
                         fields = issue.get("fields", {})
+
+                        # Extract story points using mapped field
+                        story_points = None
+                        if story_points_field:
+                            story_points = fields.get(story_points_field)
+
+                        # Extract severity using mapped field or fall back to priority
+                        severity = None
+                        if severity_field:
+                            sev_value = fields.get(severity_field)
+                            if isinstance(sev_value, dict):
+                                severity = sev_value.get("value") or sev_value.get("name")
+                            else:
+                                severity = sev_value
+                        if not severity:
+                            # Fall back to priority as severity proxy
+                            severity = fields.get("priority", {}).get("name") if fields.get("priority") else None
+
+                        # Extract acceptance criteria using mapped field or description
+                        ac_content = None
+                        if ac_field:
+                            ac_content = fields.get(ac_field)
+                        if not ac_content:
+                            ac_content = fields.get("description")
+
+                        # Extract components
+                        components = fields.get("components", [])
+                        component = components[0].get("name") if components else None
+
                         items.append({
                             "external_id": issue["key"],
-                            "external_url": f"{integration.base_url}/browse/{issue['key']}",
+                            "external_url": f"https://{integration.name}.atlassian.net/browse/{issue['key']}",
                             "title": fields.get("summary", ""),
                             "description": fields.get("description", ""),
                             "item_type": fields.get("issuetype", {}).get("name", "Task"),
                             "status": fields.get("status", {}).get("name", "Unknown"),
                             "status_category": fields.get("status", {}).get("statusCategory", {}).get("key", "new"),
                             "priority": fields.get("priority", {}).get("name") if fields.get("priority") else None,
+                            "severity": severity,
                             "assignee": fields.get("assignee", {}).get("displayName") if fields.get("assignee") else None,
-                            "story_points": fields.get("customfield_10016"),  # Typical story points field
+                            "story_points": story_points,
+                            "component": component,
+                            "acceptance_criteria": ac_content,
                             "created": fields.get("created"),
                             "updated": fields.get("updated"),
                         })
-        except Exception:
+        except Exception as e:
+            print(f"Error fetching Jira items: {e}")
             items = self._get_mock_release_items()
 
         return items
@@ -396,9 +799,18 @@ class ReleaseReadinessService:
         """Fetch items from ADO for a release."""
         items = []
 
+        # Get field mappings for this integration
+        mappings = self._get_field_mappings(integration.id)
+
+        # Get mapped field IDs with defaults
+        story_points_field = self._get_mapped_field(mappings, "story_points", "ado")
+        severity_field = self._get_mapped_field(mappings, "severity", "ado")
+        priority_field = self._get_mapped_field(mappings, "priority", "ado")
+        ac_field = self._get_mapped_field(mappings, "acceptance_criteria", "ado")
+
         # Build WIQL based on release type
-        if session.release_type == "iteration":
-            wiql = f"[System.IterationPath] = '{session.release_identifier}'"
+        if session.release_type == "sprint" or session.release_type == "iteration":
+            wiql = f"[System.IterationPath] UNDER '{session.release_identifier}'"
         else:
             wiql = f"[System.Tags] CONTAINS '{session.release_identifier}'"
 
@@ -418,15 +830,46 @@ class ReleaseReadinessService:
                     ids = [str(wi["id"]) for wi in work_items[:200]]
 
                     if ids:
+                        # Build fields parameter using mappings
+                        ado_fields = self._build_ado_fields_list(mappings)
+
                         details = await client.get(
                             f"{integration.base_url}/_apis/wit/workitems",
-                            params={"ids": ",".join(ids), "api-version": "7.0"},
+                            params={
+                                "ids": ",".join(ids),
+                                "fields": ",".join(ado_fields),
+                                "api-version": "7.0"
+                            },
                             headers={"Authorization": f"Bearer {integration.access_token}"}
                         )
 
                         if details.status_code == 200:
                             for item in details.json().get("value", []):
                                 fields = item.get("fields", {})
+
+                                # Extract story points using mapped field
+                                story_points = None
+                                if story_points_field:
+                                    story_points = fields.get(story_points_field)
+
+                                # Extract severity using mapped field
+                                severity = None
+                                if severity_field:
+                                    severity = fields.get(severity_field)
+
+                                # Extract priority using mapped field
+                                priority = None
+                                if priority_field:
+                                    prio_val = fields.get(priority_field)
+                                    priority = str(prio_val) if prio_val else None
+
+                                # Extract acceptance criteria using mapped field
+                                ac_content = None
+                                if ac_field:
+                                    ac_content = fields.get(ac_field)
+                                if not ac_content:
+                                    ac_content = fields.get("System.Description")
+
                                 items.append({
                                     "external_id": str(item["id"]),
                                     "external_url": item.get("_links", {}).get("html", {}).get("href"),
@@ -435,14 +878,17 @@ class ReleaseReadinessService:
                                     "item_type": fields.get("System.WorkItemType", "Task"),
                                     "status": fields.get("System.State", "New"),
                                     "status_category": self._ado_status_to_category(fields.get("System.State", "New")),
-                                    "priority": str(fields.get("Microsoft.VSTS.Common.Priority", "")) if fields.get("Microsoft.VSTS.Common.Priority") else None,
-                                    "severity": fields.get("Microsoft.VSTS.Common.Severity"),
+                                    "priority": priority,
+                                    "severity": severity,
                                     "assignee": fields.get("System.AssignedTo", {}).get("displayName") if isinstance(fields.get("System.AssignedTo"), dict) else None,
-                                    "story_points": fields.get("Microsoft.VSTS.Scheduling.StoryPoints"),
+                                    "story_points": story_points,
+                                    "component": fields.get("System.AreaPath", "").split("\\")[-1] if fields.get("System.AreaPath") else None,
+                                    "acceptance_criteria": ac_content,
                                     "created": fields.get("System.CreatedDate"),
                                     "updated": fields.get("System.ChangedDate"),
                                 })
-        except Exception:
+        except Exception as e:
+            print(f"Error fetching ADO items: {e}")
             items = self._get_mock_release_items()
 
         return items

@@ -8,6 +8,7 @@ import type {
   PreventionRecommendation,
   AnalysisStatusResponse,
   IntegrationCheckResponse,
+  ProjectOption,
 } from './defect-manager.types';
 
 @Injectable({ providedIn: 'root' })
@@ -22,14 +23,18 @@ export class DefectManagerService {
   recommendations = signal<PreventionRecommendation[]>([]);
   integrationCheck = signal<IntegrationCheckResponse | null>(null);
 
+  // Integration lookup options
+  projects = signal<ProjectOption[]>([]);
+
   loading = signal(false);
+  loadingOptions = signal(false);
   analyzing = signal(false);
   error = signal<string | null>(null);
 
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   // Computed properties
-  hasValidIntegration = computed(() => this.integrationCheck()?.hasValidIntegration ?? false);
+  hasValidIntegration = computed(() => this.integrationCheck()?.has_valid_integration ?? false);
   isReady = computed(() => this.currentSession()?.status === 'ready');
   isAnalyzing = computed(() => this.currentSession()?.status === 'analyzing' || this.analyzing());
 
@@ -54,6 +59,30 @@ export class DefectManagerService {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // =========================================================================
+  // INTEGRATION LOOKUPS
+  // =========================================================================
+
+  async loadProjects(integrationId: number): Promise<ProjectOption[]> {
+    this.loadingOptions.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.http.get<ProjectOption[]>(`${this.apiUrl}/integrations/${integrationId}/projects`)
+      );
+      this.projects.set(result);
+      return result;
+    } catch {
+      this.projects.set([]);
+      return [];
+    } finally {
+      this.loadingOptions.set(false);
+    }
+  }
+
+  clearProjects(): void {
+    this.projects.set([]);
   }
 
   // =========================================================================
@@ -294,7 +323,9 @@ export class DefectManagerService {
     this.triageResult.set(null);
     this.recommendations.set([]);
     this.integrationCheck.set(null);
+    this.projects.set([]);
     this.loading.set(false);
+    this.loadingOptions.set(false);
     this.analyzing.set(false);
     this.error.set(null);
   }

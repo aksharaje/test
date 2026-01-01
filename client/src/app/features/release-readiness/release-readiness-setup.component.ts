@@ -4,8 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HlmButtonDirective } from '../../ui/button';
 import { HlmIconDirective } from '../../ui/icon';
-import { HlmInputDirective } from '../../ui/input';
-import { HlmLabelDirective } from '../../ui/label';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -25,8 +23,6 @@ import { ReleaseReadinessService } from './release-readiness.service';
     RouterLink,
     HlmButtonDirective,
     HlmIconDirective,
-    HlmInputDirective,
-    HlmLabelDirective,
     NgIcon,
   ],
   providers: [
@@ -64,20 +60,19 @@ import { ReleaseReadinessService } from './release-readiness.service';
       <div class="bg-card rounded-lg border p-6 space-y-6">
         <!-- Session Name -->
         <div class="space-y-2">
-          <label hlmLabel for="name">Assessment Name</label>
+          <label class="text-sm font-medium" for="name">Assessment Name</label>
           <input
-            hlmInput
             id="name"
             type="text"
             [(ngModel)]="sessionName"
             placeholder="e.g., Release 2.4 Go/No-Go, Sprint 24 Release Check"
-            class="w-full"
+            class="w-full px-3 py-2 border rounded-lg bg-background"
           />
         </div>
 
         <!-- Integration Selection -->
         <div class="space-y-2">
-          <label hlmLabel>Integration</label>
+          <label class="text-sm font-medium">Integration</label>
           <div class="grid grid-cols-1 gap-2">
             @for (integration of service.integrationCheck()?.integrations || []; track integration.id) {
               <button
@@ -109,14 +104,13 @@ import { ReleaseReadinessService } from './release-readiness.service';
 
         <!-- Release Identifier -->
         <div class="space-y-2">
-          <label hlmLabel for="release">Release Identifier *</label>
+          <label class="text-sm font-medium" for="release">Release Identifier *</label>
           <input
-            hlmInput
             id="release"
             type="text"
             [(ngModel)]="releaseIdentifier"
             placeholder="e.g., 2.4.0, Sprint 24, Q4-Release"
-            class="w-full"
+            class="w-full px-3 py-2 border rounded-lg bg-background"
           />
           <p class="text-xs text-muted-foreground">
             The version number, sprint name, or release label to assess.
@@ -125,7 +119,7 @@ import { ReleaseReadinessService } from './release-readiness.service';
 
         <!-- Release Type -->
         <div class="space-y-2">
-          <label hlmLabel>Release Type</label>
+          <label class="text-sm font-medium">Release Type</label>
           <div class="grid grid-cols-3 gap-2">
             @for (type of releaseTypes; track type.value) {
               <button
@@ -143,14 +137,13 @@ import { ReleaseReadinessService } from './release-readiness.service';
 
         <!-- Project Key (optional) -->
         <div class="space-y-2">
-          <label hlmLabel for="project">Project Key (optional)</label>
+          <label class="text-sm font-medium" for="project">Project Key (optional)</label>
           <input
-            hlmInput
             id="project"
             type="text"
             [(ngModel)]="projectKey"
             placeholder="e.g., PROJ, MYAPP"
-            class="w-full"
+            class="w-full px-3 py-2 border rounded-lg bg-background"
           />
           <p class="text-xs text-muted-foreground">
             Filter to a specific project. Leave empty for all projects.

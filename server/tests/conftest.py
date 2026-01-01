@@ -1,3 +1,35 @@
+# Fix for fastapi-mail 1.5.2 bug: SecretStr not imported from pydantic
+# This patch must run before any app imports that use app.core.email
+# See: https://github.com/sabuhish/fastapi-mail/issues/XXX
+def _patch_fastapi_mail():
+    """Patch fastapi_mail.config to import SecretStr if missing."""
+    import importlib.util
+    spec = importlib.util.find_spec("fastapi_mail")
+    if spec and spec.submodule_search_locations:
+        config_path = None
+        for loc in spec.submodule_search_locations:
+            import os
+            candidate = os.path.join(loc, "config.py")
+            if os.path.exists(candidate):
+                config_path = candidate
+                break
+
+        if config_path:
+            with open(config_path, 'r') as f:
+                content = f.read()
+
+            # Check if SecretStr is missing from pydantic imports
+            if "from pydantic import" in content and "SecretStr" not in content:
+                patched = content.replace(
+                    "from pydantic import FilePath, DirectoryPath, EmailStr, conint",
+                    "from pydantic import FilePath, DirectoryPath, EmailStr, conint, SecretStr"
+                )
+                with open(config_path, 'w') as f:
+                    f.write(patched)
+                print("[conftest] Auto-patched fastapi_mail SecretStr import bug")
+
+_patch_fastapi_mail()
+
 import pytest
 from typing import Generator
 from fastapi.testclient import TestClient

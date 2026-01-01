@@ -9,6 +9,10 @@ import type {
   AssessmentResult,
   AssessmentStatusResponse,
   IntegrationCheckResponse,
+  ProjectOption,
+  FixVersionOption,
+  SprintOption,
+  LabelOption,
 } from './release-readiness.types';
 
 @Injectable({ providedIn: 'root' })
@@ -24,14 +28,21 @@ export class ReleaseReadinessService {
   assessment = signal<AssessmentResult | null>(null);
   integrationCheck = signal<IntegrationCheckResponse | null>(null);
 
+  // Integration lookup options
+  projects = signal<ProjectOption[]>([]);
+  fixVersions = signal<FixVersionOption[]>([]);
+  sprints = signal<SprintOption[]>([]);
+  labels = signal<LabelOption[]>([]);
+
   loading = signal(false);
+  loadingOptions = signal(false);
   assessing = signal(false);
   error = signal<string | null>(null);
 
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   // Computed properties
-  hasValidIntegration = computed(() => this.integrationCheck()?.hasValidIntegration ?? false);
+  hasValidIntegration = computed(() => this.integrationCheck()?.has_valid_integration ?? false);
   isReady = computed(() => this.currentSession()?.status === 'ready');
   isAssessing = computed(() => this.currentSession()?.status === 'assessing' || this.assessing());
 
@@ -56,6 +67,88 @@ export class ReleaseReadinessService {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // =========================================================================
+  // INTEGRATION LOOKUPS
+  // =========================================================================
+
+  async loadProjects(integrationId: number): Promise<ProjectOption[]> {
+    this.loadingOptions.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.http.get<ProjectOption[]>(`${this.apiUrl}/integrations/${integrationId}/projects`)
+      );
+      this.projects.set(result);
+      return result;
+    } catch {
+      this.projects.set([]);
+      return [];
+    } finally {
+      this.loadingOptions.set(false);
+    }
+  }
+
+  async loadFixVersions(integrationId: number, projectKey: string): Promise<FixVersionOption[]> {
+    this.loadingOptions.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.http.get<FixVersionOption[]>(
+          `${this.apiUrl}/integrations/${integrationId}/fix-versions`,
+          { params: { project_key: projectKey } }
+        )
+      );
+      this.fixVersions.set(result);
+      return result;
+    } catch {
+      this.fixVersions.set([]);
+      return [];
+    } finally {
+      this.loadingOptions.set(false);
+    }
+  }
+
+  async loadSprints(integrationId: number): Promise<SprintOption[]> {
+    this.loadingOptions.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.http.get<SprintOption[]>(`${this.apiUrl}/integrations/${integrationId}/sprints`)
+      );
+      this.sprints.set(result);
+      return result;
+    } catch {
+      this.sprints.set([]);
+      return [];
+    } finally {
+      this.loadingOptions.set(false);
+    }
+  }
+
+  async loadLabels(integrationId: number, projectKey?: string): Promise<LabelOption[]> {
+    this.loadingOptions.set(true);
+    try {
+      const params: Record<string, string> = {};
+      if (projectKey) {
+        params['project_key'] = projectKey;
+      }
+      const result = await firstValueFrom(
+        this.http.get<LabelOption[]>(`${this.apiUrl}/integrations/${integrationId}/labels`, { params })
+      );
+      this.labels.set(result);
+      return result;
+    } catch {
+      this.labels.set([]);
+      return [];
+    } finally {
+      this.loadingOptions.set(false);
+    }
+  }
+
+  clearOptions(): void {
+    this.projects.set([]);
+    this.fixVersions.set([]);
+    this.sprints.set([]);
+    this.labels.set([]);
   }
 
   // =========================================================================

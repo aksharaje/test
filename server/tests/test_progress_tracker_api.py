@@ -260,6 +260,55 @@ class TestTemplates:
         for template in data:
             assert template["provider"] in ["ado", "any"]
 
+    def test_jira_filter_excludes_ado_templates(self, client):
+        """Jira filter should not include ADO-specific templates."""
+        response = client.get("/api/progress-tracker/templates?provider=jira")
+        assert response.status_code == 200
+        data = response.json()
+        template_ids = [t["id"] for t in data]
+        # Should not include ADO-specific templates
+        assert "ado_agile" not in template_ids
+        assert "ado_scrum" not in template_ids
+        # Should include Jira-specific templates
+        assert "jira_scrum" in template_ids
+        assert "jira_safe" in template_ids
+
+    def test_ado_filter_excludes_jira_templates(self, client):
+        """ADO filter should not include Jira-specific templates."""
+        response = client.get("/api/progress-tracker/templates?provider=ado")
+        assert response.status_code == 200
+        data = response.json()
+        template_ids = [t["id"] for t in data]
+        # Should not include Jira-specific templates
+        assert "jira_scrum" not in template_ids
+        assert "jira_safe" not in template_ids
+        # Should include ADO-specific templates
+        assert "ado_agile" in template_ids
+        assert "ado_cmmi" in template_ids
+
+    def test_basic_template_included_for_all_providers(self, client):
+        """The 'basic' template (provider='any') should be included for all providers."""
+        # Check for Jira
+        response = client.get("/api/progress-tracker/templates?provider=jira")
+        assert response.status_code == 200
+        jira_templates = response.json()
+        assert any(t["id"] == "basic" for t in jira_templates)
+
+        # Check for ADO
+        response = client.get("/api/progress-tracker/templates?provider=ado")
+        assert response.status_code == 200
+        ado_templates = response.json()
+        assert any(t["id"] == "basic" for t in ado_templates)
+
+    def test_unknown_provider_returns_only_any(self, client):
+        """Unknown provider should only return templates with provider='any'."""
+        response = client.get("/api/progress-tracker/templates?provider=unknown")
+        assert response.status_code == 200
+        data = response.json()
+        # Should only include 'any' provider templates
+        for template in data:
+            assert template["provider"] == "any"
+
 
 # =============================================================================
 # SESSION CRUD TESTS
@@ -777,3 +826,214 @@ class TestBlockerDetection:
         assert item.is_blocked is True
         assert item.blocker_confidence == 100  # Weight 1.0 * 100
         assert "explicit_flag" in item.blocker_signals
+
+
+# =============================================================================
+# FIELD MAPPING TESTS
+# =============================================================================
+
+
+class TestFieldMappings:
+    """Tests for field mapping functionality in the service."""
+
+    def test_get_field_mappings_empty(self, session: Session, sample_integration):
+        """Returns empty dict when no mappings exist."""
+        from app.services.progress_tracker_service import ProgressTrackerService
+        service = ProgressTrackerService(session)
+
+        mappings = service._get_field_mappings(sample_integration.id)
+        assert mappings == {}
+
+    def test_get_field_mappings_with_data(self, session: Session, sample_integration):
+        """Returns mappings keyed by our_field."""
+        from app.models.jira import FieldMapping
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        # Create field mappings
+        mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="story_points",
+            provider_field_id="customfield_10050",
+            provider_field_name="Story Points Custom",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ProgressTrackerService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+
+        assert "story_points" in mappings
+        assert mappings["story_points"].provider_field_id == "customfield_10050"
+
+    def test_transform_jira_uses_mapped_story_points(self, session: Session, sample_integration):
+        """Transform uses mapped field for story points."""
+        from app.models.jira import FieldMapping
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        # Create custom story points mapping
+        mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="story_points",
+            provider_field_id="customfield_99999",
+            provider_field_name="Custom Points",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ProgressTrackerService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+
+        # Mock Jira issue with custom field
+        issue = {
+            "key": "TEST-1",
+            "fields": {
+                "summary": "Test issue",
+                "status": {"name": "In Progress", "statusCategory": {"key": "indeterminate"}},
+                "issuetype": {"name": "Story"},
+                "customfield_99999": 8,  # Custom story points field
+            }
+        }
+
+        result = service._transform_jira_issue(issue, mappings)
+
+        assert result["story_points"] == 8
+
+    def test_transform_jira_fallback_to_common_fields(self, session: Session, sample_integration):
+        """Transform falls back to common field names when no mapping exists."""
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        service = ProgressTrackerService(session)
+        mappings = {}  # No mappings
+
+        # Mock Jira issue with common field name
+        issue = {
+            "key": "TEST-2",
+            "fields": {
+                "summary": "Test issue",
+                "status": {"name": "Done", "statusCategory": {"key": "done"}},
+                "issuetype": {"name": "Story"},
+                "customfield_10016": 5,  # Common story points field
+            }
+        }
+
+        result = service._transform_jira_issue(issue, mappings)
+
+        assert result["story_points"] == 5
+
+    def test_transform_ado_uses_mapped_story_points(self, session: Session, ado_integration):
+        """Transform uses mapped field for story points in ADO."""
+        from app.models.jira import FieldMapping
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        # Create custom story points mapping
+        mapping = FieldMapping(
+            integration_id=ado_integration.id,
+            our_field="story_points",
+            provider_field_id="Custom.StoryPoints",
+            provider_field_name="Custom Story Points",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ProgressTrackerService(session)
+        mappings = service._get_field_mappings(ado_integration.id)
+
+        # Mock ADO work item with custom field
+        work_item = {
+            "id": 123,
+            "fields": {
+                "System.Title": "Test work item",
+                "System.State": "Active",
+                "System.WorkItemType": "User Story",
+                "Custom.StoryPoints": 13,  # Custom field
+            }
+        }
+
+        result = service._transform_ado_work_item(work_item, mappings, ado_integration.base_url)
+
+        assert result["story_points"] == 13
+
+    def test_transform_ado_uses_mapped_priority(self, session: Session, ado_integration):
+        """Transform uses mapped field for priority in ADO."""
+        from app.models.jira import FieldMapping
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        # Create custom priority mapping
+        mapping = FieldMapping(
+            integration_id=ado_integration.id,
+            our_field="priority",
+            provider_field_id="Custom.Priority",
+            provider_field_name="Custom Priority",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = ProgressTrackerService(session)
+        mappings = service._get_field_mappings(ado_integration.id)
+
+        # Mock ADO work item with custom priority
+        work_item = {
+            "id": 456,
+            "fields": {
+                "System.Title": "Priority test",
+                "System.State": "New",
+                "System.WorkItemType": "Bug",
+                "Custom.Priority": 1,
+            }
+        }
+
+        result = service._transform_ado_work_item(work_item, mappings, ado_integration.base_url)
+
+        assert result["priority"] == "Priority 1"
+
+
+# =============================================================================
+# SERVICE TEMPLATE TESTS
+# =============================================================================
+
+
+class TestServiceTemplates:
+    """Tests for template methods in the service."""
+
+    def test_get_templates_returns_all(self, session: Session):
+        """Service returns all templates when no provider specified."""
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        service = ProgressTrackerService(session)
+        templates = service.get_templates()
+
+        assert len(templates) == len(TRACKER_TEMPLATES)
+
+    def test_get_templates_filters_jira(self, session: Session):
+        """Service filters to Jira and 'any' templates."""
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        service = ProgressTrackerService(session)
+        templates = service.get_templates("jira")
+
+        for t in templates:
+            assert t.provider in ["jira", "any"]
+
+        # Verify no ADO-only templates
+        template_ids = [t.id for t in templates]
+        assert "ado_agile" not in template_ids
+        assert "ado_scrum" not in template_ids
+
+    def test_get_templates_filters_ado(self, session: Session):
+        """Service filters to ADO and 'any' templates."""
+        from app.services.progress_tracker_service import ProgressTrackerService
+
+        service = ProgressTrackerService(session)
+        templates = service.get_templates("ado")
+
+        for t in templates:
+            assert t.provider in ["ado", "any"]
+
+        # Verify no Jira-only templates
+        template_ids = [t.id for t in templates]
+        assert "jira_scrum" not in template_ids
+        assert "jira_safe" not in template_ids

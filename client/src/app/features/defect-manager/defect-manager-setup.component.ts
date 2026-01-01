@@ -4,8 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HlmButtonDirective } from '../../ui/button';
 import { HlmIconDirective } from '../../ui/icon';
-import { HlmInputDirective } from '../../ui/input';
-import { HlmLabelDirective } from '../../ui/label';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -25,8 +23,6 @@ import { DefectManagerService } from './defect-manager.service';
     RouterLink,
     HlmButtonDirective,
     HlmIconDirective,
-    HlmInputDirective,
-    HlmLabelDirective,
     NgIcon,
   ],
   providers: [
@@ -64,20 +60,19 @@ import { DefectManagerService } from './defect-manager.service';
       <div class="bg-card rounded-lg border p-6 space-y-6">
         <!-- Session Name -->
         <div class="space-y-2">
-          <label hlmLabel for="name">Analysis Name</label>
+          <label class="text-sm font-medium" for="name">Analysis Name</label>
           <input
-            hlmInput
             id="name"
             type="text"
             [(ngModel)]="sessionName"
             placeholder="e.g., Sprint 24 Defects, Q4 Bug Analysis"
-            class="w-full"
+            class="w-full px-3 py-2 border rounded-lg bg-background"
           />
         </div>
 
         <!-- Integration Selection -->
         <div class="space-y-2">
-          <label hlmLabel>Integration</label>
+          <label class="text-sm font-medium">Integration</label>
           <div class="grid grid-cols-1 gap-2">
             @for (integration of service.integrationCheck()?.integrations || []; track integration.id) {
               <button
@@ -109,14 +104,13 @@ import { DefectManagerService } from './defect-manager.service';
 
         <!-- Project Filter (optional) -->
         <div class="space-y-2">
-          <label hlmLabel for="project">Project Filter (optional)</label>
+          <label class="text-sm font-medium" for="project">Project Filter (optional)</label>
           <input
-            hlmInput
             id="project"
             type="text"
             [(ngModel)]="projectFilter"
             placeholder="e.g., PROJ, MYAPP"
-            class="w-full"
+            class="w-full px-3 py-2 border rounded-lg bg-background"
           />
           <p class="text-xs text-muted-foreground">
             Filter defects to a specific project key. Leave empty to analyze all.

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AuthenticatedLayoutComponent,
@@ -6,6 +6,7 @@ import {
 } from '../../shared/layouts/authenticated-layout';
 import type { User } from '../../shared/components/user-menu';
 import { AssistantWidgetComponent } from '../assistant/assistant-widget.component';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-authenticated-shell',
@@ -26,13 +27,26 @@ import { AssistantWidgetComponent } from '../assistant/assistant-widget.componen
 })
 export class AuthenticatedShellComponent {
   private router = inject(Router);
+  private authService = inject(AuthService);
 
-  // In a real app, this would come from an auth service
-  currentUser = signal<User>({
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    avatarUrl: undefined,
+  // Get user from AuthService
+  currentUser = computed<User>(() => {
+    const authUser = this.authService.currentUser();
+    if (authUser) {
+      return {
+        id: String(authUser.id),
+        name: authUser.full_name || authUser.email.split('@')[0],
+        email: authUser.email,
+        avatarUrl: undefined,
+      };
+    }
+    // Fallback for when user isn't loaded yet
+    return {
+      id: '0',
+      name: 'Loading...',
+      email: '',
+      avatarUrl: undefined,
+    };
   });
 
   navItems: NavItem[] = [
@@ -131,7 +145,14 @@ export class AuthenticatedShellComponent {
         { label: 'Release Prep', path: '/release-prep' },
       ],
     },
-    { label: 'Testing', path: '/testing', children: [] },
+    {
+      label: 'Testing',
+      path: '/testing',
+      children: [
+        { label: 'Defect Manager', path: '/testing/defect-manager' },
+        { label: 'Release Readiness', path: '/testing/release-readiness' },
+      ],
+    },
     { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
   ];
 
@@ -166,8 +187,7 @@ export class AuthenticatedShellComponent {
   }
 
   handleLogout(): void {
-    // In a real app, this would call an auth service to log out
-    console.log('Logging out...');
-    this.router.navigate(['/login']);
+    this.authService.logout();
   }
 }
+

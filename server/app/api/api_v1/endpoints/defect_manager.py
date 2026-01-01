@@ -17,6 +17,7 @@ from app.models.defect_manager import (
     PreventionRecommendation,
     AnalysisStatusResponse,
 )
+from app.models.release_readiness import ProjectOption
 from app.services.defect_manager_service import get_defect_manager_service
 
 router = APIRouter()
@@ -36,6 +37,21 @@ async def check_integrations(
     """
     service = get_defect_manager_service(session)
     return service.check_integrations()
+
+
+@router.get("/integrations/{integration_id}/projects", response_model=List[ProjectOption])
+async def get_projects(
+    integration_id: int,
+    session: Session = Depends(get_db_session),
+) -> List[ProjectOption]:
+    """
+    Get available projects from an integration.
+    """
+    service = get_defect_manager_service(session)
+    try:
+        return await service.get_projects(integration_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 # =============================================================================

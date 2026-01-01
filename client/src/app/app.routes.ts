@@ -686,6 +686,65 @@ export const routes: Routes = [
           },
         ],
       },
+      // Testing Section
+      {
+        path: 'testing',
+        children: [
+          {
+            path: '',
+            redirectTo: 'defect-manager',
+            pathMatch: 'full',
+          },
+          {
+            path: 'defect-manager',
+            title: 'Defect Manager | Product Studio',
+            loadComponent: () =>
+              import('./features/defect-manager/defect-manager.component').then(
+                (m) => m.DefectManagerComponent
+              ),
+          },
+          {
+            path: 'defect-manager/new',
+            title: 'New Defect Analysis | Product Studio',
+            loadComponent: () =>
+              import('./features/defect-manager/defect-manager-setup.component').then(
+                (m) => m.DefectManagerSetupComponent
+              ),
+          },
+          {
+            path: 'defect-manager/:id',
+            title: 'Defect Analysis | Product Studio',
+            loadComponent: () =>
+              import('./features/defect-manager/defect-manager-results.component').then(
+                (m) => m.DefectManagerResultsComponent
+              ),
+          },
+          {
+            path: 'release-readiness',
+            title: 'Release Readiness | Product Studio',
+            loadComponent: () =>
+              import('./features/release-readiness/release-readiness.component').then(
+                (m) => m.ReleaseReadinessComponent
+              ),
+          },
+          {
+            path: 'release-readiness/new',
+            title: 'New Release Assessment | Product Studio',
+            loadComponent: () =>
+              import('./features/release-readiness/release-readiness-setup.component').then(
+                (m) => m.ReleaseReadinessSetupComponent
+              ),
+          },
+          {
+            path: 'release-readiness/:id',
+            title: 'Release Assessment | Product Studio',
+            loadComponent: () =>
+              import('./features/release-readiness/release-readiness-results.component').then(
+                (m) => m.ReleaseReadinessResultsComponent
+              ),
+          },
+        ],
+      },
     ],
   },
 ];

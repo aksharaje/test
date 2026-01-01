@@ -189,7 +189,7 @@ export class ProgressTrackerSetupComponent implements OnInit {
   async ngOnInit() {
     // Check integrations and load templates
     const check = await this.service.checkIntegrations();
-    if (check?.hasValidIntegration) {
+    if (check?.has_valid_integration) {
       this.integrations.set(check.integrations);
     } else {
       // Redirect to integrations page

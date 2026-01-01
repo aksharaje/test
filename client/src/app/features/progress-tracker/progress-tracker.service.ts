@@ -36,7 +36,7 @@ export class ProgressTrackerService {
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   // Computed properties
-  hasValidIntegration = computed(() => this.integrationCheck()?.hasValidIntegration ?? false);
+  hasValidIntegration = computed(() => this.integrationCheck()?.has_valid_integration ?? false);
   isReady = computed(() => this.currentSession()?.status === 'ready');
   isSyncing = computed(() => this.currentSession()?.status === 'syncing' || this.syncing());
 
@@ -240,14 +240,14 @@ export class ProgressTrackerService {
         this.currentSession.update((s) =>
           s
             ? {
-                ...s,
-                status: result.status as TrackerSession['status'],
-                progressStep: result.progressStep,
-                progressMessage: result.progressMessage,
-                errorMessage: result.errorMessage,
-                itemsSynced: result.itemsSynced,
-                lastSyncAt: result.lastSyncAt,
-              }
+              ...s,
+              status: result.status as TrackerSession['status'],
+              progressStep: result.progressStep,
+              progressMessage: result.progressMessage,
+              errorMessage: result.errorMessage,
+              itemsSynced: result.itemsSynced,
+              lastSyncAt: result.lastSyncAt,
+            }
             : null
         );
       }
@@ -278,14 +278,14 @@ export class ProgressTrackerService {
         this.currentSession.update((s) =>
           s
             ? {
-                ...s,
-                status: result.status as TrackerSession['status'],
-                progressStep: result.progressStep,
-                progressMessage: result.progressMessage,
-                errorMessage: result.errorMessage,
-                itemsSynced: result.itemsSynced,
-                lastSyncAt: result.lastSyncAt,
-              }
+              ...s,
+              status: result.status as TrackerSession['status'],
+              progressStep: result.progressStep,
+              progressMessage: result.progressMessage,
+              errorMessage: result.errorMessage,
+              itemsSynced: result.itemsSynced,
+              lastSyncAt: result.lastSyncAt,
+            }
             : null
         );
       }

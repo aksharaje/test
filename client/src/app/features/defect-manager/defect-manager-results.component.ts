@@ -326,7 +326,7 @@ import type { AnalyzedDefect, PreventionRecommendation } from './defect-manager.
               <div class="bg-card rounded-lg border p-5">
                 <div class="flex items-start gap-4">
                   <div class="w-10 h-10 rounded-lg flex items-center justify-center" [class]="getRecCategoryBg(rec.category)">
-                    <ng-icon [hlmIcon]="getRecCategoryIcon(rec.category)" class="h-5 w-5" [class]="getRecCategoryColor(rec.category)" />
+                    <ng-icon hlmIcon [name]="getRecCategoryIcon(rec.category)" class="h-5 w-5" [class]="getRecCategoryColor(rec.category)" />
                   </div>
                   <div class="flex-1">
                     <div class="flex items-center gap-2 mb-1">

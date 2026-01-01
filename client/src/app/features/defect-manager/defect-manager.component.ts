@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,21 +6,22 @@ import { HlmButtonDirective } from '../../ui/button';
 import { HlmIconDirective } from '../../ui/icon';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  lucidePlus,
   lucideRefreshCw,
   lucideAlertCircle,
-  lucideCheck,
   lucideLink2,
   lucideArrowRight,
   lucideTrash2,
   lucideClock,
-  lucideAlertTriangle,
   lucideCheckCircle2,
   lucideBug,
-  lucideExternalLink,
+  lucideHistory,
+  lucideSparkles,
+  lucideChevronRight,
+  lucideChevronDown,
+  lucideSearch,
 } from '@ng-icons/lucide';
 import { DefectManagerService } from './defect-manager.service';
-import type { DefectManagerSession } from './defect-manager.types';
+import type { DefectManagerSession, ProjectOption } from './defect-manager.types';
 
 @Component({
   selector: 'app-defect-manager',
@@ -28,159 +29,319 @@ import type { DefectManagerSession } from './defect-manager.types';
   imports: [CommonModule, FormsModule, RouterLink, HlmButtonDirective, HlmIconDirective, NgIcon],
   providers: [
     provideIcons({
-      lucidePlus,
       lucideRefreshCw,
       lucideAlertCircle,
-      lucideCheck,
       lucideLink2,
       lucideArrowRight,
       lucideTrash2,
       lucideClock,
-      lucideAlertTriangle,
       lucideCheckCircle2,
       lucideBug,
-      lucideExternalLink,
+      lucideHistory,
+      lucideSparkles,
+      lucideChevronRight,
+      lucideChevronDown,
+      lucideSearch,
     }),
   ],
   template: `
-    <div class="container mx-auto p-6 max-w-6xl">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-bold">Defect Manager</h1>
-          <p class="text-muted-foreground mt-1">
+    <div class="flex h-full">
+      <!-- Left Panel: Input Form -->
+      <div class="w-1/2 border-r p-6 overflow-y-auto">
+        <div class="max-w-xl mx-auto">
+          <h1 class="text-2xl font-bold text-foreground">Defect Manager</h1>
+          <p class="mt-1 text-muted-foreground">
             Triage, analyze, and prevent defects with intelligent insights
           </p>
-        </div>
-        @if (service.hasValidIntegration()) {
-          <button hlmBtn variant="default" (click)="createNewSession()">
-            <ng-icon hlmIcon name="lucidePlus" class="mr-2 h-4 w-4" />
-            New Analysis
-          </button>
-        }
-      </div>
 
-      <!-- Error message -->
-      @if (service.error()) {
-        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-          <ng-icon hlmIcon name="lucideAlertCircle" class="h-5 w-5 text-red-600" />
-          <span class="text-red-800">{{ service.error() }}</span>
-        </div>
-      }
-
-      <!-- Loading state -->
-      @if (service.loading() && !initialized()) {
-        <div class="flex items-center justify-center py-12">
-          <ng-icon hlmIcon name="lucideRefreshCw" class="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      } @else {
-        <!-- No integration warning -->
-        @if (!service.hasValidIntegration()) {
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <ng-icon hlmIcon name="lucideLink2" class="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-            <h2 class="text-lg font-semibold text-yellow-800 mb-2">Integration Required</h2>
-            <p class="text-yellow-700 mb-4 max-w-md mx-auto">
-              {{ service.integrationCheck()?.message || 'Connect your Jira or Azure DevOps account to analyze defects.' }}
-            </p>
-            <a hlmBtn variant="default" routerLink="/settings/integrations">
-              <ng-icon hlmIcon name="lucideArrowRight" class="mr-2 h-4 w-4" />
-              Go to Integrations
-            </a>
-          </div>
-        } @else {
-          <!-- Sessions list -->
-          @if (service.sessions().length === 0) {
-            <div class="bg-muted/30 border-2 border-dashed rounded-lg p-12 text-center">
-              <ng-icon hlmIcon name="lucideBug" class="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h2 class="text-lg font-semibold mb-2">No Defect Analyses Yet</h2>
-              <p class="text-muted-foreground mb-4 max-w-md mx-auto">
-                Create an analysis to triage defects, detect patterns, and get prevention recommendations.
-              </p>
-              <button hlmBtn variant="default" (click)="createNewSession()">
-                <ng-icon hlmIcon name="lucidePlus" class="mr-2 h-4 w-4" />
-                Start First Analysis
-              </button>
+          <!-- Error message -->
+          @if (service.error()) {
+            <div class="mt-4 rounded-lg border border-destructive bg-destructive/10 p-4">
+              <p class="text-sm text-destructive">{{ service.error() }}</p>
             </div>
-          } @else {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              @for (session of service.sessions(); track session.id) {
-                <div
-                  class="bg-card rounded-lg border p-5 hover:border-primary/50 transition-colors cursor-pointer"
-                  (click)="openSession(session)"
-                >
-                  <div class="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 class="font-semibold">{{ session.name }}</h3>
-                      <p class="text-sm text-muted-foreground">
-                        {{ session.integrationName || 'Unknown' }} &middot; Level {{ session.dataLevel }}
-                      </p>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      @if (session.status === 'ready') {
-                        <span class="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                          <ng-icon hlmIcon name="lucideCheckCircle2" class="h-3 w-3" />
-                          Ready
-                        </span>
-                      } @else if (session.status === 'analyzing') {
-                        <span class="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                          <ng-icon hlmIcon name="lucideRefreshCw" class="h-3 w-3 animate-spin" />
-                          Analyzing
-                        </span>
-                      } @else if (session.status === 'error') {
-                        <span class="inline-flex items-center gap-1 text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                          <ng-icon hlmIcon name="lucideAlertCircle" class="h-3 w-3" />
-                          Error
-                        </span>
-                      } @else {
-                        <span class="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
-                          Draft
-                        </span>
+          }
+
+          <!-- No integration warning -->
+          @if (initialized() && !service.hasValidIntegration()) {
+            <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <ng-icon hlmIcon name="lucideLink2" class="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+              <h2 class="text-lg font-semibold text-yellow-800 mb-2">Integration Required</h2>
+              <p class="text-yellow-700 mb-4">
+                Connect your Jira or Azure DevOps account to analyze defects.
+              </p>
+              <a hlmBtn variant="default" routerLink="/settings/integrations">
+                <ng-icon hlmIcon name="lucideArrowRight" class="mr-2 h-4 w-4" />
+                Go to Integrations
+              </a>
+            </div>
+          } @else if (initialized()) {
+            <!-- Input Form -->
+            <form class="mt-6 space-y-6" (submit)="onSubmit($event)">
+              <!-- Session Name -->
+              <div class="rounded-lg border bg-card p-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <ng-icon hlmIcon name="lucideBug" class="h-5 w-5 text-primary" />
+                  <h2 class="font-semibold">Analysis Configuration</h2>
+                </div>
+
+                <div class="space-y-4">
+                  <div>
+                    <label class="text-sm font-medium block mb-1.5">Analysis Name</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="sessionName"
+                      name="sessionName"
+                      placeholder="e.g., Sprint 24 Defects, Q4 Bug Analysis"
+                      class="w-full px-3 py-2 border rounded-lg bg-background text-sm"
+                    />
+                  </div>
+
+                  <!-- Integration Selection -->
+                  <div>
+                    <label class="text-sm font-medium block mb-1.5">Integration</label>
+                    <div class="space-y-2">
+                      @for (integration of service.integrationCheck()?.integrations || []; track integration.id) {
+                        <button
+                          type="button"
+                          class="w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left"
+                          [class.border-primary]="selectedIntegrationId() === integration.id"
+                          [class.bg-primary/5]="selectedIntegrationId() === integration.id"
+                          (click)="onIntegrationSelected(integration.id)"
+                        >
+                          <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                              <ng-icon hlmIcon name="lucideBug" class="h-4 w-4" />
+                            </div>
+                            <div>
+                              <div class="font-medium text-sm">{{ integration.name }}</div>
+                              <div class="text-xs text-muted-foreground capitalize">{{ integration.provider }}</div>
+                            </div>
+                          </div>
+                          @if (selectedIntegrationId() === integration.id) {
+                            <div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                              </svg>
+                            </div>
+                          }
+                        </button>
                       }
                     </div>
                   </div>
 
-                  @if (session.status === 'ready' && session.analysisSnapshot) {
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                      <div class="text-center p-2 bg-muted/50 rounded">
-                        <div class="text-lg font-bold">{{ session.analysisSnapshot.totalDefects }}</div>
-                        <div class="text-xs text-muted-foreground">Total</div>
+                  <!-- Project Filter -->
+                  @if (selectedIntegrationId()) {
+                    <div>
+                      <label class="text-sm font-medium block mb-1.5">Project (optional)</label>
+                      <div class="relative">
+                        <button
+                          type="button"
+                          class="w-full flex items-center justify-between px-3 py-2 border rounded-lg bg-background text-sm text-left"
+                          (click)="projectDropdownOpen.set(!projectDropdownOpen())"
+                        >
+                          <span [class.text-muted-foreground]="!selectedProject()">
+                            {{ selectedProject() ? selectedProject()!.name + ' (' + selectedProject()!.key + ')' : 'All projects' }}
+                          </span>
+                          <ng-icon hlmIcon name="lucideChevronDown" class="h-4 w-4 text-muted-foreground" />
+                        </button>
+                        @if (projectDropdownOpen()) {
+                          <div class="absolute z-20 mt-1 w-full rounded-lg border bg-background shadow-lg max-h-64 overflow-y-auto">
+                            <input
+                              type="text"
+                              [(ngModel)]="projectSearchFilter"
+                              name="projectSearchFilter"
+                              placeholder="Search projects..."
+                              class="w-full px-3 py-2 border-b bg-background text-sm"
+                              (click)="$event.stopPropagation()"
+                            />
+                            @if (service.loadingOptions()) {
+                              <div class="p-3 text-sm text-muted-foreground text-center">
+                                <ng-icon hlmIcon name="lucideRefreshCw" class="h-4 w-4 animate-spin inline mr-2" />
+                                Loading projects...
+                              </div>
+                            } @else {
+                              <!-- All projects option -->
+                              <button
+                                type="button"
+                                class="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between"
+                                (click)="selectProject(null)"
+                              >
+                                <span>All projects</span>
+                                @if (!selectedProject()) {
+                                  <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                  </svg>
+                                }
+                              </button>
+                              @if (filteredProjects().length === 0) {
+                                <div class="p-3 text-sm text-muted-foreground text-center">No projects found</div>
+                              } @else {
+                                @for (project of filteredProjects(); track project.key) {
+                                  <button
+                                    type="button"
+                                    class="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between"
+                                    (click)="selectProject(project)"
+                                  >
+                                    <span>{{ project.name }} ({{ project.key }})</span>
+                                    @if (selectedProject()?.key === project.key) {
+                                      <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                      </svg>
+                                    }
+                                  </button>
+                                }
+                              }
+                            }
+                          </div>
+                        }
                       </div>
-                      <div class="text-center p-2 bg-muted/50 rounded">
-                        <div class="text-lg font-bold text-red-600">{{ session.analysisSnapshot.criticalOpen }}</div>
-                        <div class="text-xs text-muted-foreground">Critical</div>
-                      </div>
-                      <div class="text-center p-2 bg-muted/50 rounded">
-                        <div class="text-lg font-bold text-orange-600">{{ session.analysisSnapshot.potentialDuplicates }}</div>
-                        <div class="text-xs text-muted-foreground">Duplicates</div>
-                      </div>
+                      <p class="text-xs text-muted-foreground mt-1">
+                        Filter defects to a specific project. Leave as 'All projects' to analyze everything.
+                      </p>
                     </div>
                   }
+                </div>
+              </div>
 
-                  <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    @if (session.lastAnalysisAt) {
-                      <span class="flex items-center gap-1">
-                        <ng-icon hlmIcon name="lucideClock" class="h-3 w-3" />
-                        {{ formatRelativeTime(session.lastAnalysisAt) }}
-                      </span>
-                    } @else {
-                      <span>Never analyzed</span>
-                    }
-                    <button
-                      hlmBtn
-                      variant="ghost"
-                      size="sm"
-                      class="h-6 w-6 p-0"
-                      (click)="confirmDelete(session, $event)"
-                    >
-                      <ng-icon hlmIcon name="lucideTrash2" class="h-3 w-3 text-destructive" />
-                    </button>
+              <!-- Submit Button -->
+              <button
+                hlmBtn
+                type="submit"
+                class="w-full"
+                [disabled]="!canSubmit() || service.loading()"
+              >
+                @if (service.loading()) {
+                  <ng-icon hlmIcon name="lucideRefreshCw" class="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                } @else {
+                  <ng-icon hlmIcon name="lucideSparkles" class="mr-2 h-4 w-4" />
+                  Analyze Defects
+                }
+              </button>
+            </form>
+
+            <!-- Info Box -->
+            <div class="mt-6 p-4 bg-muted/50 rounded-lg">
+              <h3 class="font-medium text-sm mb-2">What happens during analysis?</h3>
+              <ul class="text-xs text-muted-foreground space-y-1">
+                <li>1. Fetches all bug/defect items from your integration</li>
+                <li>2. Normalizes severity levels across different naming conventions</li>
+                <li>3. Detects potential duplicate defects using fuzzy matching</li>
+                <li>4. Identifies patterns by component, label, and root cause</li>
+                <li>5. Generates prevention recommendations based on findings</li>
+              </ul>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right Panel: History -->
+      <div class="w-1/2 flex flex-col bg-muted/30">
+        <!-- History Header -->
+        <div class="border-b bg-background p-4">
+          <div class="flex items-center gap-2">
+            <ng-icon hlmIcon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
+            <h2 class="font-semibold">Analysis History</h2>
+          </div>
+          <p class="mt-1 text-sm text-muted-foreground">
+            View and manage your past defect analyses
+          </p>
+        </div>
+
+        <!-- History List -->
+        <div class="flex-1 overflow-y-auto">
+          @if (service.loading() && service.sessions().length === 0) {
+            <div class="p-4">
+              <div class="animate-pulse space-y-3">
+                @for (i of [1, 2, 3]; track i) {
+                  <div class="rounded-lg border bg-background p-4">
+                    <div class="h-4 bg-muted rounded w-3/4"></div>
+                    <div class="mt-2 h-3 bg-muted rounded w-1/2"></div>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else if (service.sessions().length === 0) {
+            <div class="flex-1 flex items-center justify-center p-6 h-full min-h-[300px]">
+              <div class="text-center">
+                <ng-icon hlmIcon name="lucideBug" class="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <h3 class="mt-4 text-lg font-medium text-muted-foreground">No history yet</h3>
+                <p class="mt-2 text-sm text-muted-foreground max-w-xs">
+                  Your defect analyses will appear here.
+                </p>
+              </div>
+            </div>
+          } @else {
+            <div class="p-4 space-y-2">
+              @for (session of service.sessions(); track session.id) {
+                <div
+                  class="group rounded-lg border bg-background p-4 hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
+                  (click)="viewSession(session)"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          [class.bg-green-100]="session.status === 'ready'"
+                          [class.text-green-700]="session.status === 'ready'"
+                          [class.bg-yellow-100]="session.status === 'analyzing'"
+                          [class.text-yellow-700]="session.status === 'analyzing'"
+                          [class.bg-red-100]="session.status === 'error'"
+                          [class.text-red-700]="session.status === 'error'"
+                          [class.bg-gray-100]="session.status === 'draft'"
+                          [class.text-gray-700]="session.status === 'draft'"
+                        >
+                          @if (session.status === 'ready') {
+                            <ng-icon hlmIcon name="lucideCheckCircle2" class="h-3 w-3 mr-1" />
+                          } @else if (session.status === 'analyzing') {
+                            <ng-icon hlmIcon name="lucideRefreshCw" class="h-3 w-3 mr-1 animate-spin" />
+                          } @else if (session.status === 'error') {
+                            <ng-icon hlmIcon name="lucideAlertCircle" class="h-3 w-3 mr-1" />
+                          }
+                          {{ session.status === 'ready' ? 'Complete' : session.status === 'analyzing' ? 'Analyzing' : session.status === 'error' ? 'Error' : 'Draft' }}
+                        </span>
+                      </div>
+                      <h3 class="mt-2 font-medium text-sm truncate">{{ session.name }}</h3>
+                      <p class="text-xs text-muted-foreground mt-1">
+                        {{ session.integrationName || 'Unknown' }} &middot; Level {{ session.dataLevel }}
+                      </p>
+                      @if (session.status === 'ready' && session.analysisSnapshot) {
+                        <div class="flex items-center gap-3 mt-2 text-xs">
+                          <span class="text-muted-foreground">
+                            {{ session.analysisSnapshot.totalDefects }} defects
+                          </span>
+                          @if (session.analysisSnapshot.criticalOpen > 0) {
+                            <span class="text-red-600 font-medium">
+                              {{ session.analysisSnapshot.criticalOpen }} critical
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        hlmBtn
+                        variant="ghost"
+                        size="sm"
+                        class="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        (click)="confirmDelete(session, $event)"
+                      >
+                        <ng-icon hlmIcon name="lucideTrash2" class="h-4 w-4 text-destructive" />
+                      </button>
+                      <ng-icon hlmIcon name="lucideChevronRight" class="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div class="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                    <ng-icon hlmIcon name="lucideClock" class="h-3 w-3" />
+                    {{ session.lastAnalysisAt ? formatRelativeTime(session.lastAnalysisAt) : 'Never analyzed' }}
                   </div>
                 </div>
               }
             </div>
           }
-        }
-      }
+        </div>
+      </div>
 
       <!-- Delete confirmation dialog -->
       @if (deleteCandidate()) {
@@ -214,19 +375,85 @@ export class DefectManagerComponent implements OnInit {
   initialized = signal(false);
   deleteCandidate = signal<DefectManagerSession | null>(null);
 
+  // Form fields
+  sessionName = '';
+  selectedIntegrationId = signal<number | null>(null);
+  selectedProject = signal<ProjectOption | null>(null);
+
+  // Dropdown states
+  projectDropdownOpen = signal(false);
+  projectSearchFilter = '';
+
   async ngOnInit() {
     await this.service.checkIntegrations();
     if (this.service.hasValidIntegration()) {
       await this.service.loadSessions();
+      // Auto-select first integration if only one
+      const integrations = this.service.integrationCheck()?.integrations || [];
+      if (integrations.length === 1) {
+        await this.onIntegrationSelected(integrations[0].id);
+      }
     }
     this.initialized.set(true);
   }
 
-  createNewSession() {
-    this.router.navigate(['/testing/defect-manager/new']);
+  // =========================================================================
+  // COMPUTED PROPERTIES
+  // =========================================================================
+
+  filteredProjects() {
+    const projects = this.service.projects();
+    if (!this.projectSearchFilter) return projects;
+    const filter = this.projectSearchFilter.toLowerCase();
+    return projects.filter(
+      (p) => p.name.toLowerCase().includes(filter) || p.key.toLowerCase().includes(filter)
+    );
   }
 
-  openSession(session: DefectManagerSession) {
+  // =========================================================================
+  // EVENT HANDLERS
+  // =========================================================================
+
+  async onIntegrationSelected(integrationId: number) {
+    this.selectedIntegrationId.set(integrationId);
+    this.selectedProject.set(null);
+    this.service.clearProjects();
+
+    // Load projects for the selected integration
+    await this.service.loadProjects(integrationId);
+  }
+
+  selectProject(project: ProjectOption | null) {
+    this.selectedProject.set(project);
+    this.projectDropdownOpen.set(false);
+    this.projectSearchFilter = '';
+  }
+
+  canSubmit(): boolean {
+    return this.selectedIntegrationId() !== null;
+  }
+
+  async onSubmit(event: Event) {
+    event.preventDefault();
+    if (!this.canSubmit()) return;
+
+    const integrationId = this.selectedIntegrationId();
+    if (!integrationId) return;
+
+    const session = await this.service.createSession({
+      name: this.sessionName || 'Defect Analysis',
+      integrationId,
+      projectFilter: this.selectedProject()?.key || undefined,
+    });
+
+    if (session) {
+      // Start analysis and navigate to results
+      await this.service.analyzeSession(session.id);
+      this.router.navigate(['/testing/defect-manager', session.id]);
+    }
+  }
+
+  viewSession(session: DefectManagerSession) {
     this.router.navigate(['/testing/defect-manager', session.id]);
   }
 

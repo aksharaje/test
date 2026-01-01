@@ -295,3 +295,100 @@ class TestPreventionRecommendations:
         assert response.status_code == 200
         # No recommendations for draft session
         assert response.json() == []
+
+
+# =============================================================================
+# PROJECT LOOKUP TESTS
+# =============================================================================
+
+
+class TestProjectLookup:
+    """Tests for /integrations/{id}/projects endpoint."""
+
+    def test_get_projects_not_found(self, client):
+        """Returns 404 when integration doesn't exist."""
+        response = client.get("/api/defect-manager/integrations/9999/projects")
+        assert response.status_code == 404
+
+    def test_get_projects_returns_list(self, client, sample_integration):
+        """Returns empty list when no projects available (mock scenario)."""
+        # Note: In real scenario, this would call Jira/ADO API
+        # Since we can't mock the external API call easily, we verify the endpoint exists
+        # and returns a list structure
+        response = client.get(f"/api/defect-manager/integrations/{sample_integration.id}/projects")
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+
+# =============================================================================
+# FIELD MAPPING TESTS
+# =============================================================================
+
+
+class TestFieldMappingsDefectManager:
+    """Tests for field mapping functionality in Defect Manager service."""
+
+    def test_get_field_mappings_empty(self, session: Session, sample_integration):
+        """Returns empty dict when no mappings exist."""
+        from app.services.defect_manager_service import DefectManagerService
+        service = DefectManagerService(session)
+
+        mappings = service._get_field_mappings(sample_integration.id)
+        assert mappings == {}
+
+    def test_get_field_mappings_with_data(self, session: Session, sample_integration):
+        """Returns mappings keyed by our_field."""
+        from app.models.jira import FieldMapping
+        from app.services.defect_manager_service import DefectManagerService
+
+        # Create field mapping for severity
+        mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="severity",
+            provider_field_id="customfield_10080",
+            provider_field_name="Severity",
+            auto_detected=False,
+        )
+        session.add(mapping)
+        session.commit()
+
+        service = DefectManagerService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+
+        assert "severity" in mappings
+        assert mappings["severity"].provider_field_id == "customfield_10080"
+
+    def test_build_jira_defect_fields_includes_mappings(self, session: Session, sample_integration):
+        """Build fields list includes mapped custom fields."""
+        from app.models.jira import FieldMapping
+        from app.services.defect_manager_service import DefectManagerService
+
+        # Create field mappings
+        severity_mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="severity",
+            provider_field_id="customfield_10080",
+            provider_field_name="Severity",
+            auto_detected=False,
+        )
+        root_cause_mapping = FieldMapping(
+            integration_id=sample_integration.id,
+            our_field="root_cause",
+            provider_field_id="customfield_10081",
+            provider_field_name="Root Cause",
+            auto_detected=False,
+        )
+        session.add(severity_mapping)
+        session.add(root_cause_mapping)
+        session.commit()
+
+        service = DefectManagerService(session)
+        mappings = service._get_field_mappings(sample_integration.id)
+        fields = service._build_jira_defect_fields(mappings)
+
+        # Should include custom fields
+        assert "customfield_10080" in fields
+        assert "customfield_10081" in fields
+        # Should include base fields
+        assert "summary" in fields
+        assert "status" in fields

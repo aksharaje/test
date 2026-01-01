@@ -27,8 +27,21 @@ from app.models.defect_manager import (
     SEVERITY_NORMALIZATION,
     SEVERITY_CANDIDATE_FIELDS,
 )
-from app.models.jira import Integration
+from app.models.release_readiness import ProjectOption
+from app.models.jira import Integration, FieldMapping
 from app.core.config import settings
+
+# Default field IDs when no mapping exists
+DEFAULT_JIRA_FIELDS = {
+    "severity": None,  # Often uses priority field
+    "root_cause": None,
+}
+
+DEFAULT_ADO_FIELDS = {
+    "severity": "Microsoft.VSTS.Common.Severity",
+    "priority": "Microsoft.VSTS.Common.Priority",
+    "root_cause": None,
+}
 
 
 class DefectManagerService:
@@ -64,6 +77,137 @@ class DefectManagerService:
             "integrations": valid_integrations,
             "message": "Ready to analyze defects" if valid_integrations else "Connect Jira or Azure DevOps to analyze defects"
         }
+
+    # =========================================================================
+    # INTEGRATION LOOKUPS
+    # =========================================================================
+
+    async def get_projects(self, integration_id: int) -> List[ProjectOption]:
+        """Get available projects from integration."""
+        integration = self.db.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+
+        if integration.provider == "jira":
+            return await self._get_jira_projects(integration)
+        elif integration.provider == "ado":
+            return await self._get_ado_projects(integration)
+        return []
+
+    async def _get_jira_projects(self, integration: Integration) -> List[ProjectOption]:
+        """Get projects from Jira."""
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"https://api.atlassian.com/ex/jira/{integration.cloud_id}/rest/api/3/project/search",
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    },
+                    params={"maxResults": 100}
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    return [
+                        ProjectOption(
+                            key=p["key"],
+                            name=p["name"],
+                            description=p.get("description")
+                        )
+                        for p in data.get("values", [])
+                    ]
+        except Exception:
+            pass
+        return []
+
+    async def _get_ado_projects(self, integration: Integration) -> List[ProjectOption]:
+        """Get projects from Azure DevOps."""
+        try:
+            # Extract org URL from base_url
+            org_url = integration.base_url.rsplit("/", 1)[0] if "/" in integration.base_url else integration.base_url
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{org_url}/_apis/projects",
+                    headers={
+                        "Authorization": f"Bearer {integration.access_token}",
+                        "Accept": "application/json"
+                    },
+                    params={"api-version": "7.0"}
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    return [
+                        ProjectOption(
+                            key=p["name"],  # ADO uses name as key
+                            name=p["name"],
+                            description=p.get("description")
+                        )
+                        for p in data.get("value", [])
+                    ]
+        except Exception:
+            pass
+        return []
+
+    def _get_field_mappings(self, integration_id: int) -> Dict[str, FieldMapping]:
+        """Get field mappings for an integration."""
+        statement = select(FieldMapping).where(
+            FieldMapping.integration_id == integration_id
+        )
+        mappings = self.db.exec(statement).all()
+        return {m.our_field: m for m in mappings}
+
+    def _get_mapped_field(
+        self,
+        mappings: Dict[str, FieldMapping],
+        our_field: str,
+        provider: str
+    ) -> Optional[str]:
+        """Get the provider field ID for our standard field."""
+        if our_field in mappings:
+            return mappings[our_field].provider_field_id
+
+        # Fall back to defaults
+        if provider == "jira":
+            return DEFAULT_JIRA_FIELDS.get(our_field)
+        elif provider == "ado":
+            return DEFAULT_ADO_FIELDS.get(our_field)
+        return None
+
+    def _build_jira_defect_fields(self, mappings: Dict[str, FieldMapping]) -> str:
+        """Build the fields parameter for Jira API based on mappings."""
+        base_fields = [
+            "summary", "description", "status", "priority",
+            "components", "labels", "assignee", "reporter",
+            "created", "updated", "resolutiondate"
+        ]
+
+        # Add mapped custom fields
+        for our_field in ["severity", "root_cause"]:
+            field_id = self._get_mapped_field(mappings, our_field, "jira")
+            if field_id and field_id not in base_fields:
+                base_fields.append(field_id)
+
+        return ",".join(base_fields)
+
+    def _build_ado_defect_fields(self, mappings: Dict[str, FieldMapping]) -> List[str]:
+        """Build the fields list for ADO API based on mappings."""
+        base_fields = [
+            "System.Id", "System.Title", "System.Description", "System.State",
+            "System.AssignedTo", "System.CreatedBy", "System.CreatedDate",
+            "System.ChangedDate", "System.Tags", "System.AreaPath",
+            "Microsoft.VSTS.Common.ResolvedDate"
+        ]
+
+        # Add mapped fields
+        for our_field in ["severity", "priority", "root_cause"]:
+            field_id = self._get_mapped_field(mappings, our_field, "ado")
+            if field_id and field_id not in base_fields:
+                base_fields.append(field_id)
+
+        return base_fields
 
     # =========================================================================
     # SESSION CRUD
@@ -262,6 +406,14 @@ class DefectManagerService:
         """Fetch defects from Jira."""
         defects = []
 
+        # Get field mappings
+        mappings = self._get_field_mappings(integration.id)
+        fields_param = self._build_jira_defect_fields(mappings)
+
+        # Get mapped field IDs
+        severity_field = self._get_mapped_field(mappings, "severity", "jira")
+        root_cause_field = self._get_mapped_field(mappings, "root_cause", "jira")
+
         # Build JQL query
         jql_parts = ["type = Bug"]
         if session.project_filter:
@@ -280,7 +432,7 @@ class DefectManagerService:
                     params={
                         "jql": jql,
                         "maxResults": 200,
-                        "fields": "summary,description,status,priority,components,labels,assignee,reporter,created,updated,resolutiondate"
+                        "fields": fields_param
                     },
                     headers={
                         "Authorization": f"Bearer {integration.access_token}",
@@ -292,6 +444,25 @@ class DefectManagerService:
                     data = response.json()
                     for issue in data.get("issues", []):
                         fields = issue.get("fields", {})
+
+                        # Extract severity from mapped field
+                        severity = None
+                        if severity_field:
+                            severity_value = fields.get(severity_field)
+                            if isinstance(severity_value, dict):
+                                severity = severity_value.get("value") or severity_value.get("name")
+                            else:
+                                severity = severity_value
+
+                        # Extract root cause from mapped field
+                        root_cause = None
+                        if root_cause_field:
+                            root_cause_value = fields.get(root_cause_field)
+                            if isinstance(root_cause_value, dict):
+                                root_cause = root_cause_value.get("value") or root_cause_value.get("name")
+                            else:
+                                root_cause = root_cause_value
+
                         defects.append({
                             "external_id": issue["key"],
                             "external_url": f"{integration.base_url}/browse/{issue['key']}",
@@ -300,6 +471,8 @@ class DefectManagerService:
                             "status": fields.get("status", {}).get("name", "Unknown"),
                             "status_category": fields.get("status", {}).get("statusCategory", {}).get("key", "new"),
                             "priority": fields.get("priority", {}).get("name") if fields.get("priority") else None,
+                            "severity": severity,
+                            "root_cause": root_cause,
                             "components": [c.get("name") for c in fields.get("components", [])],
                             "labels": fields.get("labels", []),
                             "assignee": fields.get("assignee", {}).get("displayName") if fields.get("assignee") else None,
@@ -319,6 +492,15 @@ class DefectManagerService:
     ) -> List[Dict[str, Any]]:
         """Fetch defects from Azure DevOps."""
         defects = []
+
+        # Get field mappings
+        mappings = self._get_field_mappings(integration.id)
+        ado_fields = self._build_ado_defect_fields(mappings)
+
+        # Get mapped field IDs
+        severity_field = self._get_mapped_field(mappings, "severity", "ado")
+        priority_field = self._get_mapped_field(mappings, "priority", "ado")
+        root_cause_field = self._get_mapped_field(mappings, "root_cause", "ado")
 
         # Build WIQL query
         wiql_parts = ["[System.WorkItemType] = 'Bug'"]
@@ -346,11 +528,12 @@ class DefectManagerService:
                     ids = [str(wi["id"]) for wi in work_items[:200]]
 
                     if ids:
-                        # Get full details
+                        # Get full details with mapped fields
                         details_response = await client.get(
                             f"{integration.base_url}/_apis/wit/workitems",
                             params={
                                 "ids": ",".join(ids),
+                                "fields": ",".join(ado_fields),
                                 "api-version": "7.0"
                             },
                             headers={
@@ -361,6 +544,23 @@ class DefectManagerService:
                         if details_response.status_code == 200:
                             for item in details_response.json().get("value", []):
                                 fields = item.get("fields", {})
+
+                                # Extract severity from mapped field
+                                severity = None
+                                if severity_field:
+                                    severity = fields.get(severity_field)
+
+                                # Extract priority from mapped field
+                                priority = None
+                                if priority_field:
+                                    priority_value = fields.get(priority_field)
+                                    priority = str(priority_value) if priority_value else None
+
+                                # Extract root cause from mapped field
+                                root_cause = None
+                                if root_cause_field:
+                                    root_cause = fields.get(root_cause_field)
+
                                 defects.append({
                                     "external_id": str(item["id"]),
                                     "external_url": item.get("_links", {}).get("html", {}).get("href"),
@@ -368,8 +568,9 @@ class DefectManagerService:
                                     "description": fields.get("System.Description", ""),
                                     "status": fields.get("System.State", "New"),
                                     "status_category": self._ado_status_to_category(fields.get("System.State", "New")),
-                                    "priority": str(fields.get("Microsoft.VSTS.Common.Priority", "")) if fields.get("Microsoft.VSTS.Common.Priority") else None,
-                                    "severity": fields.get("Microsoft.VSTS.Common.Severity"),
+                                    "priority": priority,
+                                    "severity": severity,
+                                    "root_cause": root_cause,
                                     "components": [fields.get("System.AreaPath", "").split("\\")[-1]] if fields.get("System.AreaPath") else [],
                                     "labels": fields.get("System.Tags", "").split(";") if fields.get("System.Tags") else [],
                                     "assignee": fields.get("System.AssignedTo", {}).get("displayName") if isinstance(fields.get("System.AssignedTo"), dict) else None,

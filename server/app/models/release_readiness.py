@@ -328,6 +328,41 @@ class AssessmentStatusResponse(SQLModel):
 
 
 # =============================================================================
+# INTEGRATION LOOKUP MODELS
+# =============================================================================
+
+
+class ProjectOption(SQLModel):
+    """Project available from integration."""
+    key: str
+    name: str
+    description: Optional[str] = None
+
+
+class FixVersionOption(SQLModel):
+    """Fix version available from Jira project."""
+    id: str
+    name: str
+    released: bool = False
+    release_date: Optional[str] = None
+    description: Optional[str] = None
+
+
+class SprintOption(SQLModel):
+    """Sprint/Iteration available from integration."""
+    id: str
+    name: str
+    state: str  # active, closed, future
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
+class LabelOption(SQLModel):
+    """Label/Tag available from integration."""
+    name: str
+
+
+# =============================================================================
 # CONFIGURATION DISCOVERY MODELS
 # =============================================================================
 

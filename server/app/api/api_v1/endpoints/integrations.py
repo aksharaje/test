@@ -181,6 +181,12 @@ async def get_integration_fields(
                     {"id": "System.Parent", "name": "Parent", "key": "parent", "custom": False, "schema": {"type": "string", "custom": "parent"}},
                 ]
             elif integration.provider == "jira":
+                # Auto-refresh token if expired
+                try:
+                    integration = await jira_service.ensure_valid_token(session, integration)
+                except ValueError as e:
+                    raise HTTPException(status_code=401, detail=str(e))
+                
                 # Jira: Get fields from API
                 headers = {
                     "Authorization": f"Bearer {integration.access_token}",
@@ -191,8 +197,16 @@ async def get_integration_fields(
                     headers=headers
                 )
 
+                if response.status_code == 401:
+                    # Token was valid but got rejected - mark as expired
+                    integration.status = "expired"
+                    integration.error_message = "Token rejected by Jira. Please reconnect."
+                    session.add(integration)
+                    session.commit()
+                    raise HTTPException(status_code=401, detail="Jira token expired. Please reconnect your integration.")
+
                 if response.status_code != 200:
-                    raise HTTPException(status_code=500, detail="Failed to fetch Jira fields")
+                    raise HTTPException(status_code=500, detail=f"Failed to fetch Jira fields: {response.status_code}")
 
                 fields = response.json()
                 return [
@@ -397,6 +411,34 @@ async def auto_detect_mappings(
                 lambda f: f["id"] == "components" or f.get("key") == "components",
                 lambda f: f["name"].lower() == "components",
             ],
+            "severity": [
+                lambda f: f["name"].lower() == "severity",
+                lambda f: "severity" in f["name"].lower(),
+                lambda f: f["name"].lower() == "impact",
+                lambda f: "impact" in f["name"].lower() and f.get("schema", {}).get("type") in ["option", "string"],
+                # ADO fields
+                lambda f: f.get("id", "").endswith("Severity"),
+                lambda f: "Microsoft.VSTS.Common.Severity" in f.get("id", ""),
+            ],
+            "acceptance_criteria": [
+                lambda f: "acceptance" in f["name"].lower() and "criteria" in f["name"].lower(),
+                lambda f: f["name"].lower() == "ac",
+                lambda f: "acceptance criteria" in f["name"].lower(),
+                # ADO fields
+                lambda f: "AcceptanceCriteria" in f.get("id", ""),
+                lambda f: f.get("id", "") == "Microsoft.VSTS.Common.AcceptanceCriteria",
+            ],
+            "root_cause": [
+                lambda f: "root" in f["name"].lower() and "cause" in f["name"].lower(),
+                lambda f: f["name"].lower() == "rca",
+                lambda f: f["name"].lower() == "root cause",
+                lambda f: "rootcause" in f["name"].lower().replace(" ", ""),
+            ],
+            "fix_version": [
+                lambda f: f["id"] == "fixVersions" or f.get("key") == "fixVersions",
+                lambda f: "fix" in f["name"].lower() and "version" in f["name"].lower(),
+                lambda f: f["name"].lower() == "release",
+            ],
         }
 
         field_rules = rules.get(our_field, [])
@@ -411,7 +453,10 @@ async def auto_detect_mappings(
 
     # Find matches for each of our standard fields
     suggested_mappings = []
-    our_fields = ["story_points", "sprint", "parent", "team", "priority", "labels", "components"]
+    our_fields = [
+        "story_points", "sprint", "parent", "team", "priority", "labels", "components",
+        "severity", "acceptance_criteria", "root_cause", "fix_version"
+    ]
 
     for our_field in our_fields:
         match = find_best_match(our_field, provider_fields)
