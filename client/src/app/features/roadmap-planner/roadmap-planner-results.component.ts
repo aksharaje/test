@@ -18,6 +18,7 @@ import {
   lucideLink,
   lucideArrowRight,
   lucideClipboardList,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { RoadmapPlannerService } from './roadmap-planner.service';
 import {
@@ -67,6 +68,7 @@ interface SprintColumn {
       lucideLink,
       lucideArrowRight,
       lucideClipboardList,
+      lucideFileText,
     }),
   ],
   template: `
@@ -151,6 +153,13 @@ interface SprintColumn {
             </div>
 
             <div class="flex items-center gap-3">
+              <button
+                (click)="exportToPdf()"
+                class="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-sm"
+              >
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                <span>Export PDF</span>
+              </button>
               <button
                 (click)="exportCsv()"
                 class="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-sm"
@@ -943,5 +952,518 @@ export class RoadmapPlannerResultsComponent implements OnInit {
 
   isDropTarget(team: number | null, sprint: number): boolean {
     return this.dropTargetTeam() === team && this.dropTargetSprint() === sprint;
+  }
+
+  // =========================================================================
+  // PDF Export
+  // =========================================================================
+
+  exportToPdf(): void {
+    const session = this.currentSession();
+    if (!session) return;
+
+    const ganttSegments = this.ganttSegments();
+    const ganttRows = this.ganttRows();
+    const sprintCols = this.sprintColumns();
+    const internalDeps = this.internalDependencies();
+    const externalDeps = this.externalDependencies();
+    const themes = session.themes || [];
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to export PDF');
+      return;
+    }
+
+    const html = this.buildPdfHtml(
+      session,
+      ganttSegments,
+      ganttRows,
+      sprintCols,
+      internalDeps,
+      externalDeps,
+      themes
+    );
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+
+    // Wait for content to load before printing
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  }
+
+  private buildPdfHtml(
+    session: RoadmapSessionResponse,
+    segments: GanttSegment[],
+    rows: GanttRow[],
+    sprintCols: SprintColumn[],
+    internalDeps: RoadmapDependency[],
+    externalDeps: RoadmapDependency[],
+    themes: RoadmapTheme[]
+  ): string {
+    const sessionData = session.session;
+    const items = session.items || [];
+    const generatedDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    // Build Timeline/Gantt section
+    let timelineHtml = '';
+    if (rows.length > 0 && segments.length > 0) {
+      timelineHtml = `
+        <div class="section">
+          <h2>Timeline</h2>
+          <table class="gantt-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Team</th>
+                ${sprintCols.map(s => `<th>Sprint ${s.number}<br><span class="sprint-date">${s.label}</span></th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td class="team-cell">${row.teamLabel}</td>
+                  ${sprintCols.map(sprint => {
+                    const itemsInSprint = row.segments.filter(seg =>
+                      seg.startSprint <= sprint.number && seg.endSprint >= sprint.number
+                    );
+                    return `<td class="sprint-cell">${itemsInSprint.map(seg => {
+                      const isStart = seg.startSprint === sprint.number;
+                      return isStart ? `
+                        <div class="gantt-item" style="background-color: ${seg.displayColor}; border-left: 3px solid ${this.darkenColor(seg.displayColor, 20)};">
+                          <div class="item-title">${seg.item.title}</div>
+                          <div class="item-meta">${seg.effortPoints} pts | ${seg.sprintCount} sprint${seg.sprintCount > 1 ? 's' : ''}</div>
+                        </div>
+                      ` : '';
+                    }).join('')}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      timelineHtml = `
+        <div class="section">
+          <h2>Timeline</h2>
+          <p class="empty-state">No items have been assigned to sprints yet.</p>
+        </div>
+      `;
+    }
+
+    // Build Dependencies section
+    let dependenciesHtml = '';
+    if (internalDeps.length > 0 || externalDeps.length > 0) {
+      dependenciesHtml = `<div class="section"><h2>Dependencies</h2>`;
+
+      if (internalDeps.length > 0) {
+        dependenciesHtml += `
+          <h3>Internal Dependencies</h3>
+          <p class="section-desc">Dependencies between selected items</p>
+          <table class="deps-table">
+            <thead>
+              <tr>
+                <th>From Item</th>
+                <th>Type</th>
+                <th>To Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${internalDeps.map(dep => `
+                <tr>
+                  <td>${this.getItemTitle(dep.fromItemId)}</td>
+                  <td><span class="dep-type ${dep.dependencyType === 'blocks' ? 'dep-blocks' : 'dep-other'}">${dep.dependencyType}</span></td>
+                  <td>${this.getItemTitle(dep.toItemId!)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+
+      if (externalDeps.length > 0) {
+        dependenciesHtml += `
+          <h3>External Prerequisites</h3>
+          <p class="section-desc">Work that may be needed but is not included in this roadmap</p>
+          <table class="deps-table external-deps">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Prerequisite Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${externalDeps.map(dep => `
+                <tr>
+                  <td>${this.getItemTitle(dep.fromItemId)}</td>
+                  <td><span class="dep-type dep-external">${this.formatPrerequisiteType(dep.dependencyType)}</span></td>
+                  <td>${dep.rationale || 'External dependency'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+
+      dependenciesHtml += `</div>`;
+    } else {
+      dependenciesHtml = `
+        <div class="section">
+          <h2>Dependencies</h2>
+          <p class="empty-state">No dependencies identified between items.</p>
+        </div>
+      `;
+    }
+
+    // Build Themes section
+    let themesHtml = '';
+    if (themes.length > 0) {
+      themesHtml = `
+        <div class="section">
+          <h2>Themes</h2>
+          <div class="themes-grid">
+            ${themes.map(theme => `
+              <div class="theme-card">
+                <div class="theme-color-bar" style="background-color: ${theme.color};"></div>
+                <div class="theme-content">
+                  <h4>${theme.name}</h4>
+                  ${theme.description ? `<p class="theme-desc">${theme.description}</p>` : ''}
+                  <div class="theme-stats">
+                    <span>${theme.totalItems} items</span>
+                    <span>${theme.totalEffortPoints} pts</span>
+                  </div>
+                  ${theme.businessObjective ? `
+                    <div class="theme-objective">
+                      <span class="objective-label">Objective</span>
+                      <p>${theme.businessObjective}</p>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      themesHtml = `
+        <div class="section">
+          <h2>Themes</h2>
+          <p class="empty-state">No themes have been identified.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${sessionData?.name || 'Roadmap'} - Export</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #1e293b;
+            background: #fff;
+            padding: 40px;
+          }
+
+          .header {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid #006450;
+          }
+
+          .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #006450;
+            margin-bottom: 8px;
+          }
+
+          .header-meta {
+            font-size: 14px;
+            color: #64748b;
+          }
+
+          .header-meta span {
+            margin-right: 16px;
+          }
+
+          .section {
+            margin-bottom: 32px;
+            page-break-inside: avoid;
+          }
+
+          .section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #006450;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+
+          .section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            margin: 16px 0 8px 0;
+          }
+
+          .section-desc {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 12px;
+          }
+
+          .empty-state {
+            color: #94a3b8;
+            font-style: italic;
+            padding: 24px;
+            text-align: center;
+            background: #f8fafc;
+            border-radius: 8px;
+          }
+
+          /* Gantt Table */
+          .gantt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+
+          .gantt-table th {
+            background: #f1f5f9;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+          }
+
+          .gantt-table th .sprint-date {
+            font-weight: 400;
+            font-size: 10px;
+            color: #64748b;
+          }
+
+          .gantt-table td {
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+            vertical-align: top;
+          }
+
+          .team-cell {
+            background: #dbeafe;
+            font-weight: 500;
+            color: #1e40af;
+            text-align: center;
+          }
+
+          .sprint-cell {
+            min-width: 100px;
+          }
+
+          .gantt-item {
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 10px;
+          }
+
+          .gantt-item:last-child {
+            margin-bottom: 0;
+          }
+
+          .item-title {
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 2px;
+          }
+
+          .item-meta {
+            color: #475569;
+            font-size: 9px;
+          }
+
+          /* Dependencies Table */
+          .deps-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+          }
+
+          .deps-table th {
+            background: #f1f5f9;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+          }
+
+          .deps-table td {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+          }
+
+          .dep-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+          }
+
+          .dep-blocks {
+            background: #fee2e2;
+            color: #b91c1c;
+          }
+
+          .dep-other {
+            background: #dbeafe;
+            color: #1e40af;
+          }
+
+          .dep-external {
+            background: #fef3c7;
+            color: #92400e;
+          }
+
+          .external-deps tr {
+            background: #fffbeb;
+          }
+
+          /* Themes Grid */
+          .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+          }
+
+          .theme-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+          }
+
+          .theme-color-bar {
+            height: 6px;
+          }
+
+          .theme-content {
+            padding: 12px;
+          }
+
+          .theme-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+          }
+
+          .theme-desc {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 8px;
+          }
+
+          .theme-stats {
+            font-size: 11px;
+            color: #64748b;
+          }
+
+          .theme-stats span {
+            margin-right: 12px;
+          }
+
+          .theme-objective {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+          }
+
+          .objective-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 4px;
+          }
+
+          .theme-objective p {
+            font-size: 11px;
+            color: #475569;
+          }
+
+          /* Footer */
+          .footer {
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 11px;
+          }
+
+          .footer-brand {
+            color: #006450;
+            font-weight: 500;
+          }
+
+          /* Print styles */
+          @media print {
+            body {
+              padding: 20px;
+            }
+
+            .section {
+              page-break-inside: avoid;
+            }
+
+            .themes-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sessionData?.name || 'Roadmap'}</h1>
+          <div class="header-meta">
+            <span>${items.length} items</span>
+            <span>${this.totalSprints()} sprints</span>
+            ${(sessionData?.teamCount || 1) > 1 ? `<span>${sessionData?.teamCount} teams</span>` : ''}
+            <span>Generated: ${generatedDate}</span>
+          </div>
+        </div>
+
+        ${timelineHtml}
+        ${dependenciesHtml}
+        ${themesHtml}
+
+        <div class="footer">
+          <span class="footer-brand">Generated by Product Studio</span>
+        </div>
+      </body>
+      </html>
+    `;
   }
 }

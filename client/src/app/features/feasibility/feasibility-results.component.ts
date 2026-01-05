@@ -10,6 +10,7 @@ import {
   lucideSave,
   lucideLoader2,
   lucideBriefcase,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { FeasibilityService } from './feasibility.service';
 import type {
@@ -41,6 +42,7 @@ interface Tab {
       lucideSave,
       lucideLoader2,
       lucideBriefcase,
+      lucideFileText,
     }),
   ],
   template: `
@@ -63,13 +65,23 @@ interface Tab {
               </p>
             </div>
           </div>
-          <button
-            hlmBtn
-            (click)="buildBusinessCase()"
-          >
-            <ng-icon name="lucideBriefcase" class="mr-2 h-4 w-4" />
-            Build Business Case
-          </button>
+          <div class="flex gap-2">
+            <button
+              hlmBtn
+              variant="outline"
+              (click)="exportToPdf()"
+            >
+              <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+              Export PDF
+            </button>
+            <button
+              hlmBtn
+              (click)="buildBusinessCase()"
+            >
+              <ng-icon name="lucideBriefcase" class="mr-2 h-4 w-4" />
+              Build Business Case
+            </button>
+          </div>
         </div>
       </div>
 
@@ -592,5 +604,226 @@ export class FeasibilityResultsComponent implements OnInit {
       integration: 'Integration',
     };
     return labels[category] || category;
+  }
+
+  exportToPdf() {
+    const session = this.session();
+    const components = this.components();
+    const scenarios = this.scenarios();
+    const risks = this.sortedRisks();
+    const skills = this.skills();
+    if (!session) return;
+
+    const goNoGoClass = session.goNoGoRecommendation === 'go' ? 'go' : session.goNoGoRecommendation === 'no_go' ? 'no-go' : 'conditional';
+    const goNoGoLabel = session.goNoGoRecommendation === 'go' ? 'GO' : session.goNoGoRecommendation === 'no_go' ? 'NO-GO' : 'CONDITIONAL';
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Feasibility Analysis</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #1a1a2e; padding: 48px; max-width: 900px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #6366f1; }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { font-size: 14px; color: #64748b; max-width: 600px; margin: 0 auto; }
+    .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: 600; margin: 16px 0; }
+    .badge.go { background: #dcfce7; color: #166534; }
+    .badge.no-go { background: #fee2e2; color: #b91c1c; }
+    .badge.conditional { background: #fef3c7; color: #b45309; }
+    .confidence { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 8px; }
+    .confidence.high { background: #dcfce7; color: #166534; }
+    .confidence.medium { background: #fef3c7; color: #b45309; }
+    .confidence.low { background: #fee2e2; color: #b91c1c; }
+    .section { margin-bottom: 32px; page-break-inside: avoid; }
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .summary-box { background: #f0f9ff; padding: 20px; border-radius: 12px; border-left: 4px solid #0ea5e9; margin-bottom: 24px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .metric { background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
+    .metric-value { font-size: 24px; font-weight: 700; color: #6366f1; }
+    .metric-label { font-size: 12px; color: #64748b; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    th { background: #f8fafc; font-weight: 600; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-yellow { background: #fef3c7; color: #b45309; }
+    .tag-red { background: #fee2e2; color: #b91c1c; }
+    .tag-gray { background: #f1f5f9; color: #475569; }
+    .scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .scenario { padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .scenario.optimistic { background: #f0fdf4; border-color: #86efac; }
+    .scenario.realistic { background: #eff6ff; border-color: #93c5fd; }
+    .scenario.pessimistic { background: #fff7ed; border-color: #fdba74; }
+    .scenario h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; text-transform: capitalize; }
+    .scenario-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .risk-card { padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; }
+    .risk-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .risk-desc { font-size: 14px; margin-bottom: 8px; }
+    .risk-mitigation { font-size: 12px; color: #64748b; padding-top: 8px; border-top: 1px dashed #e2e8f0; }
+    .tech-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+    @media print { body { padding: 24px; } .section { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Feasibility Analysis</h1>
+    <div class="subtitle">${session.featureDescription}</div>
+    <div>
+      <span class="badge ${goNoGoClass}">Recommendation: ${goNoGoLabel}</span>
+      <span class="confidence ${session.confidenceLevel}">${session.confidenceLevel?.charAt(0).toUpperCase()}${session.confidenceLevel?.slice(1)} Confidence</span>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div class="section">
+    <h2 class="section-title">Executive Summary</h2>
+    <div class="summary-box">
+      <p>${session.executiveSummary}</p>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-value">${components.length}</div>
+        <div class="metric-label">Components</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">${this.totalRealisticHours()}</div>
+        <div class="metric-label">Est. Hours</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">${this.realisticScenario()?.totalWeeks || '-'}</div>
+        <div class="metric-label">Est. Weeks</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">${risks.length}</div>
+        <div class="metric-label">Risks</div>
+      </div>
+    </div>
+    ${session.autoDetectedStack?.length ? `
+    <div>
+      <strong style="font-size: 13px;">Technologies Mentioned:</strong>
+      <div class="tech-tags">
+        ${session.autoDetectedStack.map(tech => `<span class="tag tag-gray">${tech}</span>`).join('')}
+      </div>
+    </div>
+    ` : ''}
+  </div>
+
+  <!-- Components -->
+  <div class="section">
+    <h2 class="section-title">Technical Components</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Category</th>
+          <th style="text-align:center">Optimistic</th>
+          <th style="text-align:center">Realistic</th>
+          <th style="text-align:center">Pessimistic</th>
+          <th style="text-align:center">Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${components.map(c => `
+        <tr>
+          <td><strong>${c.componentName}</strong><br><span style="font-size:11px;color:#64748b;">${c.componentDescription}</span></td>
+          <td><span class="tag tag-gray">${this.formatCategory(c.technicalCategory)}</span></td>
+          <td style="text-align:center">${c.optimisticHours}h</td>
+          <td style="text-align:center">${c.realisticHours}h</td>
+          <td style="text-align:center">${c.pessimisticHours}h</td>
+          <td style="text-align:center"><span class="tag tag-${c.confidenceLevel === 'high' ? 'green' : c.confidenceLevel === 'medium' ? 'yellow' : 'red'}">${c.confidenceLevel}</span></td>
+        </tr>
+        `).join('')}
+      </tbody>
+      <tfoot>
+        <tr style="font-weight:600;background:#f8fafc;">
+          <td colspan="2">Total</td>
+          <td style="text-align:center">${this.totalOptimisticHours()}h</td>
+          <td style="text-align:center">${this.totalRealisticHours()}h</td>
+          <td style="text-align:center">${this.totalPessimisticHours()}h</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Timeline Scenarios -->
+  <div class="section">
+    <h2 class="section-title">Timeline Scenarios</h2>
+    <div class="scenario-grid">
+      ${scenarios.map(s => `
+      <div class="scenario ${s.scenarioType}">
+        <h4>${s.scenarioType}</h4>
+        <div class="scenario-row"><span>Duration</span><strong>${s.totalWeeks} weeks</strong></div>
+        <div class="scenario-row"><span>Sprints</span><strong>${s.sprintCount}</strong></div>
+        <div class="scenario-row"><span>Team Size</span><strong>${s.teamSizeAssumed}</strong></div>
+        <div class="scenario-row"><span>Parallelization</span><strong>${(s.parallelizationFactor * 100).toFixed(0)}%</strong></div>
+        <div class="scenario-row"><span>Overhead</span><strong>${(s.overheadPercentage * 100).toFixed(0)}%</strong></div>
+        <p style="font-size:11px;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0;">${s.rationale}</p>
+      </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <!-- Risks -->
+  ${risks.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Risk Assessment</h2>
+    ${risks.map(r => `
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="tag tag-${r.riskScore >= 0.5 ? 'red' : r.riskScore >= 0.25 ? 'yellow' : 'green'}">Score: ${(r.riskScore * 100).toFixed(0)}%</span>
+        <span class="tag tag-gray">${this.formatRiskCategory(r.riskCategory)}</span>
+        <span style="margin-left:auto;font-size:11px;color:#64748b;">P: ${(r.probability * 100).toFixed(0)}% × I: ${(r.impact * 100).toFixed(0)}%</span>
+      </div>
+      <p class="risk-desc">${r.riskDescription}</p>
+      <p class="risk-mitigation"><strong>Mitigation:</strong> ${r.mitigationStrategy}</p>
+    </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  <!-- Skills -->
+  ${skills.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Skills Required</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Skill</th>
+          <th style="text-align:center">Proficiency Level</th>
+          <th style="text-align:center">Est. Person-Weeks</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${skills.map(s => `
+        <tr>
+          <td>${s.skillName}</td>
+          <td style="text-align:center"><span class="tag tag-gray" style="text-transform:capitalize;">${s.proficiencyLevel}</span></td>
+          <td style="text-align:center">${s.estimatedPersonWeeks}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
   }
 }

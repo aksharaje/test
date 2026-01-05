@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideRadar, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideAlertTriangle, lucideBell, lucideGitBranch, lucideShieldAlert } from '@ng-icons/lucide';
+import { lucideRadar, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideAlertTriangle, lucideBell, lucideGitBranch, lucideShieldAlert, lucideFileText } from '@ng-icons/lucide';
 import { ScopeMonitorService } from './scope-monitor.service';
 import type { ScopeMonitorSession, ScopeChange, ImpactAssessment, ScopeAlert } from './scope-monitor.types';
 import { HlmButtonDirective } from '../../ui/button';
@@ -10,19 +10,24 @@ import { HlmButtonDirective } from '../../ui/button';
   selector: 'app-scope-monitor-results',
   standalone: true,
   imports: [NgIcon, HlmButtonDirective],
-  viewProviders: [provideIcons({ lucideRadar, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideAlertTriangle, lucideBell, lucideGitBranch, lucideShieldAlert })],
+  viewProviders: [provideIcons({ lucideRadar, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideAlertTriangle, lucideBell, lucideGitBranch, lucideShieldAlert, lucideFileText })],
   template: `
     <div class="h-full overflow-y-auto">
       <div class="max-w-5xl mx-auto p-6">
-        <div class="flex items-center gap-4 mb-6">
-          <button hlmBtn variant="ghost" size="icon" (click)="goBack()"><ng-icon name="lucideArrowLeft" class="h-5 w-5" /></button>
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><ng-icon name="lucideRadar" class="h-5 w-5 text-primary" /></div>
-            <div>
-              <h1 class="text-2xl font-bold">{{ session()?.projectName || 'Scope Monitor' }}</h1>
-              <p class="text-sm text-muted-foreground">Scope Analysis Results</p>
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-4">
+            <button hlmBtn variant="ghost" size="icon" (click)="goBack()"><ng-icon name="lucideArrowLeft" class="h-5 w-5" /></button>
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><ng-icon name="lucideRadar" class="h-5 w-5 text-primary" /></div>
+              <div>
+                <h1 class="text-2xl font-bold">{{ session()?.projectName || 'Scope Monitor' }}</h1>
+                <p class="text-sm text-muted-foreground">Scope Analysis Results</p>
+              </div>
             </div>
           </div>
+          @if (session()?.status === 'completed') {
+            <button hlmBtn variant="outline" (click)="exportToPdf()"><ng-icon name="lucideFileText" class="mr-2 h-4 w-4" /> Export PDF</button>
+          }
         </div>
 
         @if (isLoading()) {
@@ -239,4 +244,276 @@ export class ScopeMonitorResultsComponent implements OnInit {
 
   async retry() { const id = this.session()?.id; if (id) { this.isLoading.set(true); await this.service.retrySession(id); await this.loadSession(id); } }
   goBack() { this.router.navigate(['/scoping/monitor']); }
+
+  exportToPdf() {
+    const session = this.session();
+    const scopeCreepChanges = this.scopeCreepChanges();
+    const otherChanges = this.otherChanges();
+    const impactAssessments = this.impactAssessments();
+    const alerts = this.alerts();
+
+    if (!session) return;
+
+    const getHealthColor = (score: number) => {
+      if (score >= 80) return { bg: '#dcfce7', text: '#15803d', border: '#22c55e' };
+      if (score >= 50) return { bg: '#fef9c3', text: '#a16207', border: '#eab308' };
+      return { bg: '#fee2e2', text: '#b91c1c', border: '#ef4444' };
+    };
+
+    const getRiskColor = (level: string) => {
+      if (level === 'critical') return { bg: '#fee2e2', text: '#b91c1c' };
+      if (level === 'high') return { bg: '#ffedd5', text: '#c2410c' };
+      if (level === 'medium') return { bg: '#fef9c3', text: '#a16207' };
+      return { bg: '#dcfce7', text: '#15803d' };
+    };
+
+    const getSeverityColor = (severity: string) => {
+      if (severity === 'critical') return { bg: '#fee2e2', text: '#b91c1c', border: '#ef4444' };
+      if (severity === 'warning') return { bg: '#ffedd5', text: '#c2410c', border: '#f97316' };
+      return { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' };
+    };
+
+    const getImpactColor = (level: string) => {
+      if (level === 'critical') return { bg: '#fee2e2', text: '#b91c1c' };
+      if (level === 'high') return { bg: '#ffedd5', text: '#c2410c' };
+      if (level === 'medium') return { bg: '#fef9c3', text: '#a16207' };
+      return { bg: '#dcfce7', text: '#15803d' };
+    };
+
+    const getImpactSeverityColor = (severity: string) => {
+      if (severity === 'critical' || severity === 'major_negative') return { bg: '#fee2e2', text: '#b91c1c' };
+      if (severity === 'minor_negative') return { bg: '#ffedd5', text: '#c2410c' };
+      if (severity === 'neutral') return { bg: '#f1f5f9', text: '#475569' };
+      return { bg: '#dcfce7', text: '#15803d' };
+    };
+
+    const healthScore = session.scopeHealthScore ?? 0;
+    const healthColor = getHealthColor(healthScore);
+    const riskColor = getRiskColor(session.creepRiskLevel || 'low');
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scope Analysis - ${session.projectName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #1a1a2e; padding: 48px; max-width: 900px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #6366f1; }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #6366f1; }
+    .header .subtitle { font-size: 14px; color: #64748b; }
+    .section { margin-bottom: 32px; page-break-inside: avoid; }
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+    .section-title .count { font-size: 14px; color: #64748b; font-weight: 400; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .summary-card { padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
+    .summary-card .value { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+    .summary-card .label { font-size: 13px; color: #64748b; }
+    .executive-summary { background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #6366f1; margin-bottom: 24px; }
+    .executive-summary h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .executive-summary p { color: #374151; font-size: 14px; white-space: pre-line; }
+    .recommendations { background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; }
+    .recommendations h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+    .recommendations ul { margin-left: 20px; }
+    .recommendations li { margin-bottom: 6px; font-size: 14px; color: #374151; }
+    .alert-item { padding: 16px; border-radius: 8px; border-left: 4px solid; margin-bottom: 12px; background: #fff; border: 1px solid #e2e8f0; }
+    .alert-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+    .alert-title { font-weight: 600; font-size: 14px; }
+    .alert-description { font-size: 13px; color: #64748b; }
+    .alert-action { font-size: 12px; margin-top: 8px; }
+    .escalation-badge { background: #fee2e2; color: #b91c1c; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-top: 8px; display: inline-block; }
+    .change-item { padding: 16px; border-radius: 8px; border-left: 4px solid; margin-bottom: 12px; background: #fff; border: 1px solid #e2e8f0; }
+    .change-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .change-title { font-weight: 600; font-size: 14px; }
+    .change-description { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+    .change-justification { font-size: 12px; color: #c2410c; margin-bottom: 8px; }
+    .change-recommendation { background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 12px; }
+    .change-recommendation strong { display: block; margin-bottom: 4px; }
+    .change-impacts { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; }
+    .impact-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .impact-item { padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; }
+    .impact-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .impact-description { font-size: 13px; color: #374151; margin-bottom: 10px; }
+    .impact-values { font-size: 12px; margin-bottom: 10px; }
+    .impact-values p { margin-bottom: 3px; }
+    .mitigation { background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 12px; }
+    .mitigation strong { display: block; margin-bottom: 6px; }
+    .mitigation ul { margin-left: 16px; }
+    .mitigation li { margin-bottom: 3px; }
+    .recommended-action { font-size: 12px; margin-top: 8px; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+    @media print { body { padding: 24px; } .section { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.projectName}</h1>
+    <div class="subtitle">Scope Analysis Results</div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card" style="background: ${healthColor.bg}; border-color: ${healthColor.border};">
+      <div class="value" style="color: ${healthColor.text};">${healthScore}%</div>
+      <div class="label">Scope Health</div>
+    </div>
+    <div class="summary-card" style="background: ${riskColor.bg};">
+      <div class="value" style="color: ${riskColor.text}; font-size: 24px; text-transform: capitalize;">${session.creepRiskLevel || 'Unknown'}</div>
+      <div class="label">Creep Risk Level</div>
+    </div>
+    <div class="summary-card">
+      <div class="value">${scopeCreepChanges.length + otherChanges.length}</div>
+      <div class="label">Total Changes</div>
+    </div>
+  </div>
+
+  ${session.executiveSummary ? `
+  <div class="section">
+    <div class="executive-summary">
+      <h3>Executive Summary</h3>
+      <p>${session.executiveSummary}</p>
+    </div>
+  </div>
+  ` : ''}
+
+  ${session.recommendations && session.recommendations.length > 0 ? `
+  <div class="section">
+    <div class="recommendations">
+      <h3>Recommendations</h3>
+      <ul>
+        ${session.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+      </ul>
+    </div>
+  </div>
+  ` : ''}
+
+  ${alerts.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Alerts <span class="count">(${alerts.length})</span></h2>
+    ${alerts.map(alert => {
+      const sevColor = getSeverityColor(alert.severity);
+      return `
+      <div class="alert-item" style="border-left-color: ${sevColor.border};">
+        <div class="alert-header">
+          <span class="badge" style="background: ${sevColor.bg}; color: ${sevColor.text};">${alert.severity}</span>
+          <span class="badge" style="background: #f1f5f9; color: #475569;">${alert.alertType}</span>
+          <span class="alert-title">${alert.title}</span>
+        </div>
+        <p class="alert-description">${alert.description}</p>
+        ${alert.suggestedAction ? `<p class="alert-action"><strong>Suggested Action:</strong> ${alert.suggestedAction}</p>` : ''}
+        ${alert.escalationNeeded ? `<span class="escalation-badge">Escalation Needed</span>` : ''}
+      </div>
+      `;
+    }).join('')}
+  </div>
+  ` : ''}
+
+  ${scopeCreepChanges.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Scope Creep Detected <span class="count">(${scopeCreepChanges.length})</span></h2>
+    ${scopeCreepChanges.map(change => {
+      const impactColor = getImpactColor(change.impactLevel);
+      return `
+      <div class="change-item" style="border-left-color: #ef4444;">
+        <div class="change-header">
+          <span class="badge" style="background: #fee2e2; color: #b91c1c;">${change.creepType || 'scope_creep'}</span>
+          <span class="badge" style="background: #f1f5f9; color: #475569;">${change.changeType}</span>
+          <span class="badge" style="background: ${impactColor.bg}; color: ${impactColor.text};">${change.impactLevel} impact</span>
+          <span class="change-title">${change.title}</span>
+        </div>
+        <p class="change-description">${change.description}</p>
+        ${change.justification ? `<p class="change-justification"><strong>Why it's creep:</strong> ${change.justification}</p>` : ''}
+        <div class="change-recommendation">
+          <strong>Recommendation: ${change.recommendation}</strong>
+          ${change.recommendationRationale ? `<span>${change.recommendationRationale}</span>` : ''}
+        </div>
+        ${change.effortImpact || change.timelineImpact || change.budgetImpact ? `
+        <div class="change-impacts">
+          ${change.effortImpact ? `<span><strong>Effort:</strong> ${change.effortImpact}</span>` : ''}
+          ${change.timelineImpact ? `<span><strong>Timeline:</strong> ${change.timelineImpact}</span>` : ''}
+          ${change.budgetImpact ? `<span><strong>Budget:</strong> ${change.budgetImpact}</span>` : ''}
+        </div>
+        ` : ''}
+      </div>
+      `;
+    }).join('')}
+  </div>
+  ` : ''}
+
+  ${otherChanges.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Other Changes <span class="count">(${otherChanges.length})</span></h2>
+    ${otherChanges.map(change => {
+      const impactColor = getImpactColor(change.impactLevel);
+      return `
+      <div class="change-item" style="border-left-color: #94a3b8;">
+        <div class="change-header">
+          <span class="badge" style="background: #f1f5f9; color: #475569;">${change.changeType}</span>
+          <span class="badge" style="background: #f1f5f9; color: #475569;">${change.category}</span>
+          <span class="badge" style="background: ${impactColor.bg}; color: ${impactColor.text};">${change.impactLevel} impact</span>
+          <span class="change-title">${change.title}</span>
+        </div>
+        <p class="change-description">${change.description}</p>
+        <div class="change-recommendation">
+          <strong>Recommendation: ${change.recommendation}</strong>
+          ${change.recommendationRationale ? `<span>${change.recommendationRationale}</span>` : ''}
+        </div>
+      </div>
+      `;
+    }).join('')}
+  </div>
+  ` : ''}
+
+  ${impactAssessments.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Impact Assessments <span class="count">(${impactAssessments.length})</span></h2>
+    <div class="impact-grid">
+      ${impactAssessments.map(impact => {
+        const sevColor = getImpactSeverityColor(impact.impactSeverity);
+        return `
+        <div class="impact-item">
+          <div class="impact-header">
+            <span class="badge" style="background: #f1f5f9; color: #475569; text-transform: capitalize;">${impact.area}</span>
+            <span class="badge" style="background: ${sevColor.bg}; color: ${sevColor.text};">${impact.impactSeverity}</span>
+          </div>
+          <p class="impact-description">${impact.impactDescription}</p>
+          ${impact.baselineValue || impact.currentValue || impact.projectedValue ? `
+          <div class="impact-values">
+            ${impact.baselineValue ? `<p><strong>Baseline:</strong> ${impact.baselineValue}</p>` : ''}
+            ${impact.currentValue ? `<p><strong>Current:</strong> ${impact.currentValue}</p>` : ''}
+            ${impact.projectedValue ? `<p><strong>Projected:</strong> ${impact.projectedValue}</p>` : ''}
+          </div>
+          ` : ''}
+          ${impact.mitigationOptions && impact.mitigationOptions.length > 0 ? `
+          <div class="mitigation">
+            <strong>Mitigation Options:</strong>
+            <ul>
+              ${impact.mitigationOptions.map(opt => `<li>${opt}</li>`).join('')}
+            </ul>
+          </div>
+          ` : ''}
+          ${impact.recommendedAction ? `<p class="recommended-action"><strong>Recommended:</strong> ${impact.recommendedAction}</p>` : ''}
+        </div>
+        `;
+      }).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    Generated by Product Studio &bull; ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
+  }
 }

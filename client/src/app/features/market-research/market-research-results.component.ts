@@ -14,6 +14,7 @@ import {
   lucideInfo,
   lucideExternalLink,
   lucideShield,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { MarketResearchService } from './market-research.service';
 import type { MarketInsight } from './market-research.types';
@@ -44,6 +45,7 @@ interface Tab {
       lucideInfo,
       lucideExternalLink,
       lucideShield,
+      lucideFileText,
     }),
   ],
   template: `
@@ -73,6 +75,15 @@ interface Tab {
           </div>
           <div class="flex items-center gap-2">
             @if (session()?.status === 'completed') {
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                (click)="exportToPdf()"
+              >
+                <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+                Export PDF
+              </button>
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
                 <ng-icon name="lucideCheckCircle2" class="h-4 w-4" />
                 Completed
@@ -701,5 +712,348 @@ export class MarketResearchResultsComponent implements OnInit, OnDestroy {
 
   getFocusAreaLabel(value: string): string {
     return this.service.getFocusAreaLabel(value);
+  }
+
+  exportToPdf(): void {
+    const session = this.session();
+    if (!session) return;
+
+    const trends = session.marketTrends || [];
+    const expectations = session.expectationShifts || [];
+    const risks = session.marketRisks || [];
+    const implications = session.implications || [];
+    const focusAreas = session.focusAreas || [];
+
+    const getConfidenceBadgeStyle = (confidence: string): string => {
+      switch (confidence) {
+        case 'HIGH':
+          return 'background-color: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;';
+        case 'MEDIUM':
+          return 'background-color: #fef9c3; color: #a16207; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;';
+        case 'LOW':
+          return 'background-color: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;';
+        default:
+          return 'background-color: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;';
+      }
+    };
+
+    const renderInsight = (insight: MarketInsight, index: number): string => {
+      return `
+        <div style="display: flex; gap: 12px; padding: 12px; background-color: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
+          <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background-color: #006450; color: white; border-radius: 50%; font-size: 12px; font-weight: 500; flex-shrink: 0;">${index + 1}</span>
+          <div style="flex: 1;">
+            <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.5;">${insight.text}</p>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="${getConfidenceBadgeStyle(insight.confidence)}">${insight.confidence}</span>
+              ${insight.sourceCount > 0 ? `<span style="font-size: 12px; color: #6b7280;">${insight.sourceCount} source${insight.sourceCount > 1 ? 's' : ''}</span>` : ''}
+            </div>
+            ${insight.sources.length > 0 ? `
+              <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                ${insight.sources.map(source => `<span style="display: inline-block; padding: 2px 8px; background-color: #e5e7eb; border-radius: 4px; font-size: 11px; color: #6b7280;">${source}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    };
+
+    const renderRisk = (risk: MarketInsight, index: number): string => {
+      return `
+        <div style="display: flex; gap: 12px; padding: 12px; background-color: #fefce8; border: 1px solid #fde68a; border-radius: 8px; margin-bottom: 8px;">
+          <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background-color: #fef9c3; color: #a16207; border-radius: 50%; font-size: 14px; font-weight: 600; flex-shrink: 0;">!</span>
+          <div style="flex: 1;">
+            <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.5;">${risk.text}</p>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="${getConfidenceBadgeStyle(risk.confidence)}">${risk.confidence}</span>
+              ${risk.sourceCount > 0 ? `<span style="font-size: 12px; color: #6b7280;">${risk.sourceCount} source${risk.sourceCount > 1 ? 's' : ''}</span>` : ''}
+            </div>
+            ${risk.sources.length > 0 ? `
+              <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                ${risk.sources.map(source => `<span style="display: inline-block; padding: 2px 8px; background-color: white; border-radius: 4px; font-size: 11px; color: #6b7280;">${source}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    };
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Market Research Report - ${session.problemArea}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: white;
+          }
+          h1 {
+            color: #006450;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            border-bottom: 3px solid #006450;
+            padding-bottom: 12px;
+          }
+          h2 {
+            color: #1f2937;
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          h3 {
+            color: #374151;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+          }
+          .header-meta {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 24px;
+          }
+          .section {
+            margin-bottom: 32px;
+            page-break-inside: avoid;
+          }
+          .card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+          }
+          .summary-text {
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-line;
+          }
+          .focus-areas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+          }
+          .focus-area-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: rgba(0, 100, 80, 0.1);
+            color: #006450;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 500;
+          }
+          .stats-row {
+            display: flex;
+            gap: 16px;
+            margin: 16px 0;
+          }
+          .stat-box {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+          }
+          .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #006450;
+          }
+          .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+          }
+          .section-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 8px;
+            font-size: 14px;
+          }
+          .icon-trends {
+            background-color: rgba(0, 100, 80, 0.1);
+            color: #006450;
+          }
+          .icon-expectations {
+            background-color: #dbeafe;
+            color: #2563eb;
+          }
+          .icon-risks {
+            background-color: #fef9c3;
+            color: #a16207;
+          }
+          .icon-implications {
+            background-color: rgba(0, 100, 80, 0.1);
+            color: #006450;
+          }
+          .implication-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+          }
+          .implication-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(0, 100, 80, 0.1);
+            color: #006450;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+          }
+          .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+          }
+          .footer-brand {
+            color: #006450;
+            font-weight: 600;
+          }
+          @media print {
+            body {
+              padding: 20px;
+            }
+            .section {
+              page-break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Market Research Report</h1>
+        <div class="header-meta">
+          <strong>${session.problemArea}</strong>
+          ${session.industryContext ? ` &bull; ${this.getIndustryLabel()}` : ''}
+          <br>
+          Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section">
+          <h2>Executive Summary</h2>
+          <div class="card">
+            <p class="summary-text">${session.executiveSummary || 'No summary available.'}</p>
+          </div>
+        </div>
+
+        <!-- Focus Areas -->
+        ${focusAreas.length > 0 ? `
+          <div class="section">
+            <h2>Focus Areas Analyzed</h2>
+            <div class="focus-areas">
+              ${focusAreas.map(area => `<span class="focus-area-tag">${this.getFocusAreaLabel(area)}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Findings Overview -->
+        <div class="section">
+          <h2>Findings Overview</h2>
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-number">${trends.length}</div>
+              <div class="stat-label">Market Trends</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">${expectations.length}</div>
+              <div class="stat-label">Expectation Shifts</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">${risks.length}</div>
+              <div class="stat-label">Market Risks</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">${implications.length}</div>
+              <div class="stat-label">Implications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Market Trends -->
+        ${trends.length > 0 ? `
+          <div class="section">
+            <h2><span class="section-icon icon-trends">&#8599;</span>Market Trends</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Current and emerging trends shaping the market</p>
+            ${trends.map((trend, i) => renderInsight(trend, i)).join('')}
+          </div>
+        ` : ''}
+
+        <!-- User Expectation Shifts -->
+        ${expectations.length > 0 ? `
+          <div class="section">
+            <h2><span class="section-icon icon-expectations">&#128101;</span>User Expectation Shifts</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">How user expectations are evolving in this space</p>
+            ${expectations.map((exp, i) => renderInsight(exp, i)).join('')}
+          </div>
+        ` : ''}
+
+        <!-- Market Risks -->
+        ${risks.length > 0 ? `
+          <div class="section">
+            <h2><span class="section-icon icon-risks">&#9888;</span>Market Risks</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Potential threats and challenges to consider</p>
+            ${risks.map((risk, i) => renderRisk(risk, i)).join('')}
+          </div>
+        ` : ''}
+
+        <!-- Strategic Implications -->
+        ${implications.length > 0 ? `
+          <div class="section">
+            <h2><span class="section-icon icon-implications">&#128161;</span>Strategic Implications</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">What these findings mean for your product or business</p>
+            ${implications.map((impl, i) => `
+              <div class="implication-item">
+                <span class="implication-number">${i + 1}</span>
+                <p style="margin: 0; font-size: 14px; line-height: 1.5;">${impl}</p>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>Generated by <span class="footer-brand">Product Studio</span></p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
   }
 }

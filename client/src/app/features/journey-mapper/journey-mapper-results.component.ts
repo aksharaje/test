@@ -28,6 +28,7 @@ import {
   lucideInfo,
   lucideMessageSquare,
   lucideZap,
+  lucideFileText,
 } from '@ng-icons/lucide';
 
 import { JourneyMapperService } from './journey-mapper.service';
@@ -45,7 +46,7 @@ import {
   selector: 'app-journey-mapper-results',
   standalone: true,
   imports: [CommonModule, FormsModule, NgIcon],
-  providers: [
+  viewProviders: [
     provideIcons({
       lucideLoader2,
       lucideArrowLeft,
@@ -66,6 +67,7 @@ import {
       lucideInfo,
       lucideMessageSquare,
       lucideZap,
+      lucideFileText,
     }),
   ],
   template: `
@@ -129,6 +131,13 @@ import {
               >
                 <ng-icon name="lucideDownload" size="16" />
                 Export
+              </button>
+              <button
+                (click)="exportToPdf()"
+                class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-1"
+              >
+                <ng-icon name="lucideFileText" size="16" />
+                Export PDF
               </button>
             </div>
           </div>
@@ -834,5 +843,480 @@ export class JourneyMapperResultsComponent implements OnInit {
     path += ` Z`;
 
     return path;
+  }
+
+  exportToPdf(): void {
+    const detail = this.sessionDetail();
+    if (!detail) return;
+
+    const session = detail.session;
+    const stages = this.stages();
+    const painPoints = this.painPoints();
+    const emotionCurve = this.emotionCurve();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Journey Map - ${session.journeyDescription}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #006450;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .header .meta {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .header .meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .stage {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      page-break-inside: avoid;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .stage-header {
+      background: linear-gradient(135deg, #006450 0%, #008060 100%);
+      padding: 16px 20px;
+      color: white;
+    }
+
+    .stage-header .tag {
+      font-size: 11px;
+      font-weight: 500;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .stage-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .stage-header .description {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    .stage-content {
+      padding: 16px 20px;
+    }
+
+    .stage-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    .stage-meta strong {
+      color: #1a1a2e;
+    }
+
+    .touchpoints {
+      margin-top: 12px;
+    }
+
+    .touchpoints-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .touchpoint {
+      display: inline-block;
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #475569;
+      margin-right: 8px;
+      margin-bottom: 6px;
+    }
+
+    .touchpoint-channel {
+      color: #94a3b8;
+      font-size: 11px;
+    }
+
+    .pain-point {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #fefefe;
+    }
+
+    .pain-point:last-child {
+      margin-bottom: 0;
+    }
+
+    .severity-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .pain-point-content {
+      flex: 1;
+    }
+
+    .pain-point-content h4 {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .pain-point-meta {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .pain-point-meta span {
+      margin-right: 12px;
+    }
+
+    .hypothesis-badge {
+      display: inline-block;
+      background: #f3e8ff;
+      color: #7c3aed;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+    }
+
+    .evidence {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border-left: 3px solid #cbd5e1;
+    }
+
+    .evidence-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .evidence-item {
+      font-size: 12px;
+      color: #475569;
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+
+    .evidence-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .evidence-source {
+      font-size: 10px;
+      color: #94a3b8;
+      font-style: normal;
+    }
+
+    .emotion-curve {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .emotion-curve-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0369a1;
+      margin-bottom: 12px;
+    }
+
+    .emotion-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .emotion-point {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .emotion-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .emotion-label {
+      color: #475569;
+    }
+
+    .emotion-score {
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #006450;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body { padding: 24px; }
+      .stage { break-inside: avoid; }
+      .pain-point { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.journeyDescription}</h1>
+    <div class="subtitle">${session.mode === 'multi_persona' ? 'Multi-Persona Journey Map' : session.mode === 'competitive' ? 'Competitive Journey Map' : 'Customer Journey Map'}</div>
+    <div class="meta">
+      <span>Version ${session.version}</span>
+      <span>${session.confidenceScore ? Math.round(session.confidenceScore * 100) + '% Confidence' : ''}</span>
+      <span>Generated ${new Date(session.createdAt).toLocaleDateString()}</span>
+    </div>
+  </div>
+
+  <div class="summary-stats">
+    <div class="stat-card">
+      <div class="stat-value">${stages.length}</div>
+      <div class="stat-label">Journey Stages</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${painPoints.length}</div>
+      <div class="stat-label">Pain Points</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${painPoints.filter(pp => pp.severity >= 7).length}</div>
+      <div class="stat-label">Critical Issues</div>
+    </div>
+  </div>
+
+  ${emotionCurve.length > 0 ? `
+  <div class="emotion-curve">
+    <div class="emotion-curve-title">Emotional Journey</div>
+    <div class="emotion-points">
+      ${emotionCurve.map(point => {
+        const stageName = stages.find(s => s.id === point.stageId)?.name || point.label || 'Stage';
+        return `
+        <div class="emotion-point">
+          <div class="emotion-dot" style="background-color: ${this.getEmotionColorForPdf(point.score)};"></div>
+          <span class="emotion-label">${stageName}:</span>
+          <span class="emotion-score">${point.score.toFixed(1)}/10</span>
+        </div>
+        `;
+      }).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <h2 class="section-title">Journey Stages</h2>
+    ${stages.map((stage, idx) => {
+      const stagePainPoints = painPoints.filter(pp => pp.stageId === stage.id);
+      return `
+    <div class="stage">
+      <div class="stage-header">
+        <span class="tag">Stage ${idx + 1}</span>
+        <h3>${stage.name}</h3>
+        ${stage.description ? `<p class="description">${stage.description}</p>` : ''}
+      </div>
+      <div class="stage-content">
+        <div class="stage-meta">
+          ${stage.durationEstimate ? `<span>Duration: <strong>${stage.durationEstimate}</strong></span>` : ''}
+          <span>Emotion Score: <strong>${stage.emotionScore.toFixed(1)}/10</strong></span>
+          ${stagePainPoints.length > 0 ? `<span>Pain Points: <strong>${stagePainPoints.length}</strong></span>` : ''}
+        </div>
+        ${stage.touchpoints && stage.touchpoints.length > 0 ? `
+        <div class="touchpoints">
+          <div class="touchpoints-title">Touchpoints</div>
+          ${stage.touchpoints.map(tp => `
+            <span class="touchpoint">${tp.name} <span class="touchpoint-channel">(${tp.channel})</span></span>
+          `).join('')}
+        </div>
+        ` : ''}
+      </div>
+    </div>
+      `;
+    }).join('')}
+  </div>
+
+  ${painPoints.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Pain Points (${painPoints.length})</h2>
+    ${painPoints.map(pp => {
+      const stageName = stages.find(s => s.id === pp.stageId)?.name || 'Unknown Stage';
+      return `
+    <div class="pain-point">
+      <div class="severity-indicator" style="background-color: ${this.getSeverityColorForPdf(pp.severity)};"></div>
+      <div class="pain-point-content">
+        <h4>
+          ${pp.description}
+          ${pp.isHypothetical ? '<span class="hypothesis-badge">AI Hypothesis</span>' : ''}
+        </h4>
+        <div class="pain-point-meta">
+          <span>Severity: <strong>${pp.severity.toFixed(1)}/10</strong></span>
+          <span>Stage: <strong>${stageName}</strong></span>
+          ${!pp.isHypothetical && pp.frequency > 1 ? `<span>Mentioned: <strong>${pp.frequency} times</strong></span>` : ''}
+        </div>
+        ${!pp.isHypothetical && pp.dataSources && pp.dataSources.length > 0 ? `
+        <div class="evidence">
+          <div class="evidence-title">Evidence</div>
+          ${pp.dataSources.slice(0, 3).map(source => `
+          <div class="evidence-item">
+            "${source.excerpt}"
+            <div class="evidence-source">${source.sourceType}</div>
+          </div>
+          `).join('')}
+          ${pp.dataSources.length > 3 ? `<div class="evidence-source">+${pp.dataSources.length - 3} more sources</div>` : ''}
+        </div>
+        ` : ''}
+      </div>
+    </div>
+      `;
+    }).join('')}
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    Generated by Product Studio
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  }
+
+  private getSeverityColorForPdf(severity: number): string {
+    if (severity >= 8) return '#EF4444';
+    if (severity >= 6) return '#F97316';
+    if (severity >= 4) return '#EAB308';
+    if (severity >= 2) return '#22C55E';
+    return '#3B82F6';
+  }
+
+  private getEmotionColorForPdf(score: number): string {
+    if (score >= 8) return '#22C55E';
+    if (score >= 6) return '#84CC16';
+    if (score >= 4) return '#EAB308';
+    if (score >= 2) return '#F97316';
+    return '#EF4444';
   }
 }

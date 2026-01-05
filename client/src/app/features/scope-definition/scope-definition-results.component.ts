@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideClipboardList, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideClock, lucideAlertTriangle, lucideShield, lucidePackage, lucideChevronRight, lucideActivity, lucidePencil, lucideTrash2, lucideGripVertical, lucideX, lucideCheck, lucidePlus } from '@ng-icons/lucide';
+import { lucideClipboardList, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideClock, lucideAlertTriangle, lucideShield, lucidePackage, lucideChevronRight, lucideActivity, lucidePencil, lucideTrash2, lucideGripVertical, lucideX, lucideCheck, lucidePlus, lucideFileText } from '@ng-icons/lucide';
 import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { ScopeDefinitionService } from './scope-definition.service';
 import type { ScopeDefinitionSession, ScopeItem, ScopeAssumption, ScopeConstraint, ScopeDeliverable } from './scope-definition.types';
@@ -12,19 +12,22 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-scope-definition-results',
   standalone: true,
   imports: [NgIcon, HlmButtonDirective, CdkDropList, CdkDrag, FormsModule],
-  viewProviders: [provideIcons({ lucideClipboardList, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideClock, lucideAlertTriangle, lucideShield, lucidePackage, lucideChevronRight, lucideActivity, lucidePencil, lucideTrash2, lucideGripVertical, lucideX, lucideCheck, lucidePlus })],
+  viewProviders: [provideIcons({ lucideClipboardList, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideCheckCircle, lucideXCircle, lucideClock, lucideAlertTriangle, lucideShield, lucidePackage, lucideChevronRight, lucideActivity, lucidePencil, lucideTrash2, lucideGripVertical, lucideX, lucideCheck, lucidePlus, lucideFileText })],
   template: `
     <div class="h-full overflow-y-auto">
       <div class="max-w-5xl mx-auto p-6">
-        <div class="flex items-center gap-4 mb-6">
-          <button hlmBtn variant="ghost" size="icon" (click)="goBack()"><ng-icon name="lucideArrowLeft" class="h-5 w-5" /></button>
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><ng-icon name="lucideClipboardList" class="h-5 w-5 text-primary" /></div>
-            <div>
-              <h1 class="text-2xl font-bold">{{ session()?.projectName || 'Scope Definition' }}</h1>
-              <p class="text-sm text-muted-foreground">Scope Definition Results</p>
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-4">
+            <button hlmBtn variant="ghost" size="icon" (click)="goBack()"><ng-icon name="lucideArrowLeft" class="h-5 w-5" /></button>
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><ng-icon name="lucideClipboardList" class="h-5 w-5 text-primary" /></div>
+              <div>
+                <h1 class="text-2xl font-bold">{{ session()?.projectName || 'Scope Definition' }}</h1>
+                <p class="text-sm text-muted-foreground">Scope Definition Results</p>
+              </div>
             </div>
           </div>
+          <button hlmBtn variant="outline" (click)="exportToPdf()"><ng-icon name="lucideFileText" class="mr-2 h-4 w-4" /> Export PDF</button>
         </div>
 
         @if (isLoading()) {
@@ -531,6 +534,172 @@ export class ScopeDefinitionResultsComponent implements OnInit {
     const sessionId = this.session()?.id;
     if (sessionId) {
       this.router.navigate(['/scoping/monitor'], { queryParams: { scopeDefinitionId: sessionId } });
+    }
+  }
+
+  exportToPdf() {
+    const session = this.session();
+    const inScope = this.inScopeItems();
+    const outOfScope = this.outOfScopeItems();
+    const deferred = this.deferredItems();
+    const assumptions = this.assumptions();
+    const constraints = this.constraints();
+    const deliverables = this.deliverables();
+
+    if (!session) return;
+
+    const renderScopeItems = (items: ScopeItem[], borderColor: string) => {
+      if (items.length === 0) return '<p class="empty">No items</p>';
+      return items.map(item => `
+        <div class="scope-item" style="border-left-color: ${borderColor};">
+          <h4>${item.title}</h4>
+          <p>${item.description}</p>
+        </div>
+      `).join('');
+    };
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scope Definition - ${session.projectName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #1a1a2e; padding: 48px; max-width: 900px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #006450; }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #006450; }
+    .header .subtitle { font-size: 14px; color: #64748b; }
+    .section { margin-bottom: 32px; page-break-inside: avoid; }
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+    .section-title .count { font-size: 14px; color: #64748b; font-weight: 400; }
+    .scope-statement { background: #f0fdf4; padding: 20px; border-radius: 12px; border-left: 4px solid #006450; margin-bottom: 24px; }
+    .scope-statement p { color: #374151; }
+    .scope-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .scope-column { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+    .scope-column h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .scope-column h3 .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .scope-column h3 .dot.green { background: #22c55e; }
+    .scope-column h3 .dot.red { background: #ef4444; }
+    .scope-column h3 .dot.amber { background: #f59e0b; }
+    .scope-item { padding: 12px; border-left: 3px solid #e2e8f0; margin-bottom: 10px; background: #fafafa; border-radius: 0 6px 6px 0; }
+    .scope-item h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .scope-item p { font-size: 12px; color: #64748b; }
+    .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+    .assumption-item, .constraint-item { padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 10px; }
+    .assumption-item p, .constraint-item p { font-size: 13px; }
+    .assumption-item .risk { font-size: 12px; color: #64748b; margin-top: 6px; }
+    .constraint-item .category { display: inline-block; padding: 2px 8px; background: #f1f5f9; border-radius: 10px; font-size: 11px; font-weight: 500; color: #475569; margin-bottom: 6px; }
+    .constraint-item .impact { font-size: 12px; color: #64748b; margin-top: 6px; }
+    .deliverables-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .deliverable { padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .deliverable .type { display: inline-block; padding: 3px 10px; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 11px; font-weight: 500; margin-bottom: 8px; }
+    .deliverable h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .deliverable p { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+    .deliverable .acceptance { font-size: 12px; }
+    .deliverable .acceptance strong { display: block; margin-bottom: 4px; }
+    .deliverable .acceptance ul { margin-left: 16px; }
+    .deliverable .acceptance li { margin-bottom: 2px; }
+    .empty { font-size: 13px; color: #94a3b8; font-style: italic; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+    @media print { body { padding: 24px; } .section { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.projectName}</h1>
+    <div class="subtitle">Scope Definition Results</div>
+  </div>
+
+  ${session.scopeStatement ? `
+  <div class="section">
+    <h2 class="section-title">Scope Statement</h2>
+    <div class="scope-statement">
+      <p>${session.scopeStatement}</p>
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <h2 class="section-title">Scope Items</h2>
+    <div class="scope-grid">
+      <div class="scope-column">
+        <h3><span class="dot green"></span> In Scope (${inScope.length})</h3>
+        ${renderScopeItems(inScope, '#22c55e')}
+      </div>
+      <div class="scope-column">
+        <h3><span class="dot red"></span> Out of Scope (${outOfScope.length})</h3>
+        ${renderScopeItems(outOfScope, '#ef4444')}
+      </div>
+      <div class="scope-column">
+        <h3><span class="dot amber"></span> Deferred (${deferred.length})</h3>
+        ${renderScopeItems(deferred, '#f59e0b')}
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="two-column">
+      <div class="card">
+        <h3>Assumptions (${assumptions.length})</h3>
+        ${assumptions.length === 0 ? '<p class="empty">No assumptions defined</p>' : assumptions.map(a => `
+          <div class="assumption-item">
+            <p>${a.assumption}</p>
+            <p class="risk"><strong>Risk if wrong:</strong> ${a.riskIfWrong}</p>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card">
+        <h3>Constraints (${constraints.length})</h3>
+        ${constraints.length === 0 ? '<p class="empty">No constraints defined</p>' : constraints.map(c => `
+          <div class="constraint-item">
+            <span class="category">${c.category}</span>
+            <p>${c.constraint}</p>
+            <p class="impact"><strong>Impact:</strong> ${c.impact}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Deliverables <span class="count">(${deliverables.length})</span></h2>
+    ${deliverables.length === 0 ? '<p class="empty">No deliverables defined</p>' : `
+    <div class="deliverables-grid">
+      ${deliverables.map(d => `
+        <div class="deliverable">
+          <span class="type">${d.type}</span>
+          <h4>${d.name}</h4>
+          <p>${d.description}</p>
+          ${d.acceptanceCriteria && d.acceptanceCriteria.length > 0 ? `
+            <div class="acceptance">
+              <strong>Acceptance Criteria:</strong>
+              <ul>
+                ${d.acceptanceCriteria.map(ac => `<li>${ac}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+    `}
+  </div>
+
+  <div class="footer">
+    Generated by Product Studio &bull; ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
     }
   }
 }

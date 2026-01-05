@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideSparkles, lucideArrowLeft, lucideDownload } from '@ng-icons/lucide';
+import { lucideSparkles, lucideArrowLeft, lucideDownload, lucideFileText } from '@ng-icons/lucide';
 import { OpportunityLinkerService } from './opportunity-linker.service';
 import { HlmButtonDirective } from '../../ui/button';
 import type { PrioritizedIdeaWithOriginal } from './opportunity-linker.types';
@@ -31,6 +31,7 @@ import type { PrioritizedIdeaWithOriginal } from './opportunity-linker.types';
       lucideSparkles,
       lucideArrowLeft,
       lucideDownload,
+      lucideFileText,
     }),
   ],
   template: `
@@ -54,9 +55,13 @@ import type { PrioritizedIdeaWithOriginal } from './opportunity-linker.types';
                 Strategic prioritization with opportunity mapping
               </p>
             </div>
+            <button hlmBtn variant="outline" (click)="exportToPdf()" class="mr-2">
+              <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+              Export PDF
+            </button>
             <button hlmBtn (click)="exportResults()">
               <ng-icon name="lucideDownload" class="mr-2 h-4 w-4" />
-              Export
+              Export JSON
             </button>
           </div>
         </div>
@@ -276,5 +281,206 @@ export class OpportunityLinkerResultsComponent implements OnInit {
     a.download = `prioritized-backlog-${this.session()?.id}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Export prioritized backlog to PDF via print dialog.
+   */
+  exportToPdf() {
+    const session = this.session();
+    const ideasByTier = this.ideasByTier();
+    if (!session) return;
+
+    const getTierColor = (tier: string) => {
+      const colors: Record<string, { bg: string; text: string }> = {
+        P0: { bg: '#dcfce7', text: '#166534' },
+        P1: { bg: '#dbeafe', text: '#1e40af' },
+        P2: { bg: '#fef9c3', text: '#854d0e' },
+        P3: { bg: '#f3f4f6', text: '#374151' },
+      };
+      return colors[tier] || colors['P3'];
+    };
+
+    let ideasHtml = '';
+    for (const tier of ['P0', 'P1', 'P2', 'P3']) {
+      const tierIdeas = ideasByTier[tier];
+      if (tierIdeas && tierIdeas.length > 0) {
+        const tierColor = getTierColor(tier);
+        ideasHtml += `
+          <div class="section">
+            <h2 class="section-title">
+              <span class="tier-badge" style="background: ${tierColor.bg}; color: ${tierColor.text};">${tier}</span>
+              ${this.getTierLabel(tier)} (${tierIdeas.length})
+            </h2>
+            ${tierIdeas.map(idea => `
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">${idea.title}</div>
+                  <div class="score-badge">${idea.priorityScore?.toFixed(1) || 'N/A'}</div>
+                </div>
+                <p class="card-desc">${idea.description}</p>
+                <div class="card-meta">
+                  ${idea.marketOpportunity ? `<div><strong>Market:</strong> ${idea.marketOpportunity.estimatedMarketSize}</div>` : ''}
+                  ${idea.strategicFitScore ? `<div><strong>Strategic Fit:</strong> ${idea.strategicFitScore.toFixed(1)}/10</div>` : ''}
+                  ${idea.customerOpportunity ? `<div><strong>Customer Value:</strong> ${idea.customerOpportunity.valueDelivered}</div>` : ''}
+                  ${idea.tshirtSize ? `<div><strong>T-Shirt Size:</strong> ${idea.tshirtSize}</div>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Prioritized Backlog</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { font-size: 14px; color: #64748b; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .summary-card .label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+    .summary-card .value { font-size: 32px; font-weight: 700; }
+    .summary-card .sublabel { font-size: 11px; color: #94a3b8; }
+    .p0-value { color: #16a34a; }
+    .p1-value { color: #2563eb; }
+    .p23-value { color: #6b7280; }
+    .section { margin-bottom: 32px; }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .tier-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      page-break-inside: avoid;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .card-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .score-badge {
+      background: #6366f1;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      margin-left: 12px;
+    }
+    .card-desc { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+    .card-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .card-meta strong { color: #1a1a2e; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    @media print {
+      body { padding: 24px; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Prioritized Backlog</h1>
+    <div class="subtitle">Strategic prioritization with opportunity mapping</div>
+  </div>
+
+  ${session.portfolioSummary ? `
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">P0 Ideas</div>
+      <div class="value p0-value">${session.portfolioSummary.byTier.p0}</div>
+      <div class="sublabel">Do Now</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">P1 Ideas</div>
+      <div class="value p1-value">${session.portfolioSummary.byTier.p1}</div>
+      <div class="sublabel">Next Quarter</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">P2/P3 Ideas</div>
+      <div class="value p23-value">${session.portfolioSummary.byTier.p2 + session.portfolioSummary.byTier.p3}</div>
+      <div class="sublabel">Backlog</div>
+    </div>
+  </div>
+  ` : ''}
+
+  ${ideasHtml}
+
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
   }
 }

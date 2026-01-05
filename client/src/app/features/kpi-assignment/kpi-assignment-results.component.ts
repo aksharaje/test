@@ -229,9 +229,14 @@ export class KpiAssignmentResultsComponent implements OnInit {
   }
 
   continueToMeasurementFramework() {
-    const sessionId = this.session()?.goalSessionId;
-    if (sessionId) {
-      this.router.navigate(['/measurements/framework'], { queryParams: { goalSessionId: sessionId } });
+    const kpiSessionId = this.session()?.id;
+    const goalSessionId = this.session()?.goalSessionId;
+    if (goalSessionId) {
+      // If KPIs were generated from a Goal session, use goalSessionId (which loads goals + KPIs)
+      this.router.navigate(['/measurements/framework'], { queryParams: { goalSessionId } });
+    } else if (kpiSessionId) {
+      // Otherwise use the KPI session directly
+      this.router.navigate(['/measurements/framework'], { queryParams: { kpiSessionId } });
     } else {
       this.router.navigate(['/measurements/framework']);
     }

@@ -17,6 +17,7 @@ import {
   lucideChevronRight,
   lucideEdit,
   lucideRefreshCw,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { BusinessCaseService } from './business-case.service';
 import type { SessionDetail, FinancialScenario, CostItem, BenefitItem, SensitivityAnalysis, RateAssumption } from './business-case.types';
@@ -41,6 +42,7 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideChevronRight,
       lucideEdit,
       lucideRefreshCw,
+      lucideFileText,
     }),
   ],
   template: `
@@ -76,6 +78,15 @@ import { HlmButtonDirective } from '../../ui/button';
                 </div>
               </div>
               <div class="flex items-center gap-3">
+                <!-- Export PDF Button -->
+                <button
+                  hlmBtn
+                  variant="outline"
+                  (click)="exportToPdf()"
+                >
+                  <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+                  Export PDF
+                </button>
                 <!-- Recommendation Badge -->
                 @if (detail()!.session.recommendation) {
                   <span
@@ -761,5 +772,371 @@ export class BusinessCaseResultsComponent implements OnInit {
 
   hasUserOverrides(): boolean {
     return this.detail()?.rates?.some(r => r.isUserOverride) ?? false;
+  }
+
+  exportToPdf() {
+    const detail = this.detail();
+    if (!detail) return;
+
+    const session = detail.session;
+    const scenarios = this.sortedScenarios();
+    const costs = detail.costs;
+    const benefits = detail.benefits;
+    const sensitivity = detail.sensitivity;
+    const assumptions = detail.assumptions;
+    const rates = detail.rates;
+    const baseScenario = this.baseScenario();
+
+    const recommendationClass = session.recommendation === 'invest' ? 'invest' :
+      session.recommendation === 'conditional' ? 'conditional' : 'defer';
+    const recommendationLabel = this.formatRecommendation(session.recommendation || '');
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Business Case Analysis - ${session.featureName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #1a1a2e; padding: 48px; max-width: 900px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #006450; }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { font-size: 14px; color: #64748b; }
+    .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: 600; margin: 16px 0; }
+    .badge.invest { background: #dcfce7; color: #166534; }
+    .badge.conditional { background: #fef3c7; color: #b45309; }
+    .badge.defer { background: #fee2e2; color: #b91c1c; }
+    .confidence { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 8px; }
+    .confidence.high { background: #dcfce7; color: #166534; }
+    .confidence.medium { background: #fef3c7; color: #b45309; }
+    .confidence.low { background: #fee2e2; color: #b91c1c; }
+    .section { margin-bottom: 32px; page-break-inside: avoid; }
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; color: #006450; }
+    .summary-box { background: #f0f9ff; padding: 20px; border-radius: 12px; border-left: 4px solid #006450; margin-bottom: 24px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .metric { background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
+    .metric-value { font-size: 20px; font-weight: 700; color: #006450; }
+    .metric-value.positive { color: #166534; }
+    .metric-value.negative { color: #b91c1c; }
+    .metric-label { font-size: 11px; color: #64748b; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    th { background: #f8fafc; font-weight: 600; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-yellow { background: #fef3c7; color: #b45309; }
+    .tag-red { background: #fee2e2; color: #b91c1c; }
+    .tag-gray { background: #f1f5f9; color: #475569; }
+    .tag-blue { background: #dbeafe; color: #1e40af; }
+    .positive { color: #166534; }
+    .negative { color: #b91c1c; }
+    .scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .scenario { padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .scenario.conservative { background: #fef3c7; border-color: #fbbf24; }
+    .scenario.base { background: #dbeafe; border-color: #60a5fa; }
+    .scenario.optimistic { background: #dcfce7; border-color: #4ade80; }
+    .scenario h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; text-transform: capitalize; }
+    .scenario-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .cost-benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .cost-benefit-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .cost-benefit-header { background: #f8fafc; padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+    .cost-benefit-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+    .cost-benefit-item:last-child { border-bottom: none; }
+    .cost-benefit-footer { background: #f8fafc; padding: 12px 16px; font-weight: 600; border-top: 1px solid #e2e8f0; }
+    .item-row { display: flex; justify-content: space-between; align-items: flex-start; }
+    .item-name { font-weight: 500; }
+    .item-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .item-amount { font-weight: 500; text-align: right; }
+    .sensitivity-row { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+    .sensitivity-row.critical { background: #fef2f2; }
+    .assumption-item { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 12px; }
+    .assumption-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; }
+    .assumption-icon.high { background: #fee2e2; color: #b91c1c; }
+    .assumption-icon.medium { background: #fef3c7; color: #b45309; }
+    .assumption-icon.low { background: #f1f5f9; color: #64748b; }
+    .rate-item { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .cash-flow-table td, .cash-flow-table th { padding: 10px 12px; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+    @media print { body { padding: 24px; } .section { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.featureName}</h1>
+    <div class="subtitle">Business Case Analysis</div>
+    <div>
+      <span class="badge ${recommendationClass}">${recommendationLabel}</span>
+      <span class="confidence ${session.confidenceLevel}">${this.capitalizeFirst(session.confidenceLevel || '')} Confidence</span>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  ${session.executiveSummary ? `
+  <div class="section">
+    <h2 class="section-title">Executive Summary</h2>
+    <div class="summary-box">
+      <p>${session.executiveSummary}</p>
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- Key Financial Metrics -->
+  <div class="section">
+    <h2 class="section-title">Key Financial Metrics</h2>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-value">${this.formatCurrency(session.totalInvestment || 0)}</div>
+        <div class="metric-label">Total Investment (Year 1)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value ${(session.netPresentValue || 0) > 0 ? 'positive' : 'negative'}">${this.formatCurrency(session.netPresentValue || 0)}</div>
+        <div class="metric-label">Net Present Value (5-Year)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value ${(session.internalRateOfReturn || 0) > 15 ? 'positive' : ''}">${session.internalRateOfReturn !== null ? session.internalRateOfReturn?.toFixed(1) + '%' : 'N/A'}</div>
+        <div class="metric-label">Internal Rate of Return</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">${session.paybackMonths !== null ? session.paybackMonths + ' months' : 'N/A'}</div>
+        <div class="metric-label">Payback Period</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario Analysis -->
+  ${scenarios.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Scenario Analysis</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          ${scenarios.map(s => `<th class="text-right">${this.capitalizeFirst(s.scenarioType)}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Year 1 Investment</td>
+          ${scenarios.map(s => `<td class="text-right">${this.formatCurrency(s.totalInvestmentYear1)}</td>`).join('')}
+        </tr>
+        <tr>
+          <td>5-Year Investment</td>
+          ${scenarios.map(s => `<td class="text-right">${this.formatCurrency(s.totalInvestment5Year)}</td>`).join('')}
+        </tr>
+        <tr>
+          <td>Year 1 Benefits</td>
+          ${scenarios.map(s => `<td class="text-right positive">${this.formatCurrency(s.totalAnnualBenefitsYear1)}</td>`).join('')}
+        </tr>
+        <tr>
+          <td>5-Year Benefits</td>
+          ${scenarios.map(s => `<td class="text-right positive">${this.formatCurrency(s.totalBenefits5Year)}</td>`).join('')}
+        </tr>
+        <tr style="font-weight:600;background:#f8fafc;">
+          <td>Net Present Value</td>
+          ${scenarios.map(s => `<td class="text-right ${s.netPresentValue > 0 ? 'positive' : 'negative'}">${this.formatCurrency(s.netPresentValue)}</td>`).join('')}
+        </tr>
+        <tr>
+          <td>IRR</td>
+          ${scenarios.map(s => `<td class="text-right">${s.internalRateOfReturn !== null ? s.internalRateOfReturn.toFixed(1) + '%' : 'N/A'}</td>`).join('')}
+        </tr>
+        <tr>
+          <td>ROI</td>
+          ${scenarios.map(s => `<td class="text-right ${s.roiPercentage > 0 ? 'positive' : ''}">${s.roiPercentage.toFixed(0)}%</td>`).join('')}
+        </tr>
+        <tr>
+          <td>Payback Period</td>
+          ${scenarios.map(s => `<td class="text-right">${s.paybackPeriodMonths !== null ? s.paybackPeriodMonths + ' mo' : 'Never'}</td>`).join('')}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
+
+  <!-- Costs and Benefits -->
+  <div class="section">
+    <h2 class="section-title">Costs & Benefits Breakdown</h2>
+    <div class="cost-benefit-grid">
+      <!-- Costs -->
+      <div class="cost-benefit-card">
+        <div class="cost-benefit-header">Cost Breakdown</div>
+        ${costs.map(cost => `
+        <div class="cost-benefit-item">
+          <div class="item-row">
+            <div>
+              <div class="item-name">${cost.itemName}</div>
+              <div class="item-desc">
+                <span class="tag tag-gray">${this.formatCostType(cost.costType)}</span>
+                ${cost.isUserOverride ? '<span class="tag tag-blue" style="margin-left:4px;">User Override</span>' : ''}
+              </div>
+            </div>
+            <div class="item-amount">${this.formatCurrency(cost.realisticAmount)}</div>
+          </div>
+        </div>
+        `).join('')}
+        <div class="cost-benefit-footer">
+          <div class="item-row">
+            <span>Total One-Time</span>
+            <span>${this.formatCurrency(this.totalOneTimeCosts())}</span>
+          </div>
+          <div class="item-row" style="margin-top:8px;">
+            <span>Total Annual</span>
+            <span>${this.formatCurrency(this.totalRecurringCosts())}/year</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits -->
+      <div class="cost-benefit-card">
+        <div class="cost-benefit-header">Benefit Projections</div>
+        ${benefits.map(benefit => `
+        <div class="cost-benefit-item">
+          <div class="item-row">
+            <div>
+              <div class="item-name">${benefit.itemName}</div>
+              <div class="item-desc">
+                <span class="tag tag-gray">${benefit.benefitCategory.replace('_', ' ')}</span>
+                ${benefit.isUserOverride ? '<span class="tag tag-blue" style="margin-left:4px;">User Override</span>' : ''}
+              </div>
+            </div>
+            <div class="item-amount positive">
+              ${benefit.realisticAmount !== null ? this.formatCurrency(benefit.realisticAmount) : '<em style="color:#64748b;">Qualitative</em>'}
+              ${benefit.realisticAmount !== null && benefit.recurrence ? `<div style="font-size:10px;color:#64748b;">per ${benefit.recurrence === 'monthly' ? 'month' : 'year'}</div>` : ''}
+            </div>
+          </div>
+        </div>
+        `).join('')}
+        <div class="cost-benefit-footer positive">
+          <div class="item-row">
+            <span>Total Annual Benefits (Year 3)</span>
+            <span>${this.formatCurrency(baseScenario?.totalAnnualBenefitsYear3 || 0)}/year</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sensitivity Analysis -->
+  ${sensitivity.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Sensitivity Analysis</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Type</th>
+          <th class="text-right">Base Value</th>
+          <th class="text-right">NPV at -20%</th>
+          <th class="text-right">NPV at +20%</th>
+          <th class="text-center">Critical?</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sensitivity.map(item => `
+        <tr ${item.isCritical ? 'style="background:#fef2f2;"' : ''}>
+          <td><strong>${item.variableName}</strong></td>
+          <td style="text-transform:capitalize;">${item.variableType}</td>
+          <td class="text-right">${this.formatCurrency(item.baseValue)}</td>
+          <td class="text-right ${item.npvAtLow > 0 ? 'positive' : 'negative'}">${this.formatCurrency(item.npvAtLow)}</td>
+          <td class="text-right ${item.npvAtHigh > 0 ? 'positive' : 'negative'}">${this.formatCurrency(item.npvAtHigh)}</td>
+          <td class="text-center">${item.isCritical ? '<span class="tag tag-yellow">Critical</span>' : ''}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
+
+  <!-- Key Assumptions -->
+  ${assumptions.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Key Assumptions</h2>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+      ${assumptions.map(assumption => `
+      <div class="assumption-item">
+        <div class="assumption-icon ${assumption.impactIfWrong}">!</div>
+        <div style="flex:1;">
+          <p style="font-size:13px;">${assumption.assumptionText}</p>
+          <div style="font-size:11px;color:#64748b;margin-top:4px;">
+            <span style="text-transform:capitalize;">Category: ${assumption.assumptionCategory}</span>
+            <span style="margin-left:12px;">Impact if wrong: <span class="${assumption.impactIfWrong === 'high' ? 'negative' : ''}" style="text-transform:capitalize;">${assumption.impactIfWrong}</span></span>
+          </div>
+        </div>
+      </div>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- Rate Assumptions -->
+  ${rates && rates.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Calculation Assumptions</h2>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+      ${rates.map(rate => `
+      <div class="rate-item">
+        <div>
+          <div style="font-weight:500;">${rate.rateName}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px;">
+            <span class="tag tag-gray">${this.formatRateType(rate.rateType)}</span>
+            ${rate.isUserOverride ? '<span class="tag tag-blue" style="margin-left:4px;">Custom</span>' : ''}
+          </div>
+        </div>
+        <div style="font-weight:600;">${this.formatRateValue(rate)}</div>
+      </div>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- 5-Year Cash Flow -->
+  ${baseScenario?.yearlyCashFlows ? `
+  <div class="section">
+    <h2 class="section-title">5-Year Cash Flow Projection (Base Scenario)</h2>
+    <table class="cash-flow-table">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th class="text-right">Benefits</th>
+          <th class="text-right">Costs</th>
+          <th class="text-right">Net Cash Flow</th>
+          <th class="text-right">Cumulative NPV</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${baseScenario.yearlyCashFlows.map(cf => `
+        <tr>
+          <td><strong>Year ${cf.year}</strong></td>
+          <td class="text-right positive">${this.formatCurrency(cf.benefits)}</td>
+          <td class="text-right negative">${this.formatCurrency(cf.costs)}</td>
+          <td class="text-right ${cf.netCashFlow > 0 ? 'positive' : 'negative'}" style="font-weight:500;">${this.formatCurrency(cf.netCashFlow)}</td>
+          <td class="text-right ${cf.cumulativeNpv > 0 ? 'positive' : 'negative'}" style="font-weight:500;">${this.formatCurrency(cf.cumulativeNpv)}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    Generated by Product Studio &bull; ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
+  }
+
+  private capitalizeFirst(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 }

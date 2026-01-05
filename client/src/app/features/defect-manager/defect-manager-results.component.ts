@@ -21,6 +21,7 @@ import {
   lucideTestTube,
   lucideUsers,
   lucideSettings,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { DefectManagerService } from './defect-manager.service';
 import type { AnalyzedDefect, PreventionRecommendation } from './defect-manager.types';
@@ -46,6 +47,7 @@ import type { AnalyzedDefect, PreventionRecommendation } from './defect-manager.
       lucideTestTube,
       lucideUsers,
       lucideSettings,
+      lucideFileText,
     }),
   ],
   template: `
@@ -65,10 +67,16 @@ import type { AnalyzedDefect, PreventionRecommendation } from './defect-manager.
             </p>
           </div>
           @if (service.isReady()) {
-            <button hlmBtn variant="outline" (click)="reanalyze()">
-              <ng-icon hlmIcon name="lucideRefreshCw" class="mr-2 h-4 w-4" />
-              Re-analyze
-            </button>
+            <div class="flex gap-2">
+              <button hlmBtn variant="outline" (click)="exportToPdf()">
+                <ng-icon hlmIcon name="lucideFileText" class="mr-2 h-4 w-4" />
+                Export PDF
+              </button>
+              <button hlmBtn variant="outline" (click)="reanalyze()">
+                <ng-icon hlmIcon name="lucideRefreshCw" class="mr-2 h-4 w-4" />
+                Re-analyze
+              </button>
+            </div>
           }
         </div>
       </div>
@@ -557,6 +565,588 @@ export class DefectManagerResultsComponent implements OnInit, OnDestroy {
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  exportToPdf() {
+    const session = this.service.currentSession();
+    const triageResult = this.service.triageResult();
+    const recommendations = this.service.recommendations();
+
+    if (!session || !triageResult) return;
+
+    const defects = triageResult.defects || [];
+    const severityBreakdown = this.severityBreakdown();
+    const componentBreakdown = this.componentBreakdown();
+    const statusBreakdown = this.statusBreakdown();
+
+    const getSeverityColor = (severity: string): string => {
+      switch (severity.toLowerCase()) {
+        case 'critical': return '#dc2626';
+        case 'high': return '#ea580c';
+        case 'medium': return '#ca8a04';
+        case 'low': return '#16a34a';
+        default: return '#6b7280';
+      }
+    };
+
+    const getSeverityBg = (severity: string): string => {
+      switch (severity.toLowerCase()) {
+        case 'critical': return '#fef2f2';
+        case 'high': return '#fff7ed';
+        case 'medium': return '#fefce8';
+        case 'low': return '#f0fdf4';
+        default: return '#f9fafb';
+      }
+    };
+
+    const getRecCategoryIcon = (category: string): string => {
+      switch (category) {
+        case 'testing': return '🧪';
+        case 'process': return '⚙️';
+        case 'training': return '👥';
+        case 'tooling': return '🔧';
+        default: return '💡';
+      }
+    };
+
+    const getRecCategoryColor = (category: string): string => {
+      switch (category) {
+        case 'testing': return '#2563eb';
+        case 'process': return '#9333ea';
+        case 'training': return '#16a34a';
+        case 'tooling': return '#ea580c';
+        default: return '#6b7280';
+      }
+    };
+
+    const getRecPriorityColor = (priority: string): string => {
+      switch (priority) {
+        case 'high': return '#dc2626';
+        case 'medium': return '#ca8a04';
+        case 'low': return '#16a34a';
+        default: return '#6b7280';
+      }
+    };
+
+    const getRecPriorityBg = (priority: string): string => {
+      switch (priority) {
+        case 'high': return '#fef2f2';
+        case 'medium': return '#fefce8';
+        case 'low': return '#f0fdf4';
+        default: return '#f9fafb';
+      }
+    };
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Defect Analysis - ${session.name}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .summary-card .label {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .summary-card .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .value-default { color: #1a1a2e; }
+    .value-critical { color: #dc2626; }
+    .value-duplicates { color: #ea580c; }
+    .value-aging { color: #ca8a04; }
+
+    /* Defects Table */
+    .defect-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+
+    .defect-table th {
+      background: #f1f5f9;
+      padding: 12px 8px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .defect-table td {
+      padding: 12px 8px;
+      font-size: 13px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+    }
+
+    .defect-table tr:hover td {
+      background: #fafafa;
+    }
+
+    .severity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .duplicate-badge {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+      background: #fff7ed;
+      color: #ea580c;
+    }
+
+    .defect-title {
+      font-weight: 500;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .defect-meta {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .days-open-warning {
+      color: #dc2626;
+      font-weight: 500;
+    }
+
+    .suggested-priority {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px dashed #e2e8f0;
+    }
+
+    /* Insights */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .insight-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .insight-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 16px;
+    }
+
+    .breakdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .breakdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-label {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .breakdown-stats {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .breakdown-bar {
+      width: 80px;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .breakdown-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .breakdown-count {
+      font-size: 13px;
+      font-weight: 600;
+      width: 32px;
+      text-align: right;
+    }
+
+    /* Recommendations */
+    .recommendation-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+    }
+
+    .rec-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .rec-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .rec-content {
+      flex: 1;
+    }
+
+    .rec-badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .rec-priority-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .rec-category-badge {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: capitalize;
+    }
+
+    .rec-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .rec-description {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    .rec-based-on {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    .rec-actions {
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .rec-actions-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+
+    .rec-action-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: #475569;
+      padding: 4px 0;
+    }
+
+    .rec-action-bullet {
+      color: #6366f1;
+      font-weight: bold;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body { padding: 24px; }
+      .recommendation-card { break-inside: avoid; }
+      .defect-table { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.name}</h1>
+    <div class="subtitle">${session.integrationName || 'Defect Analysis'} &bull; Data Level ${session.dataLevel} &bull; ${defects.length} Defects Analyzed</div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Total Defects</div>
+      <div class="value value-default">${triageResult.totalDefects}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Critical Open</div>
+      <div class="value value-critical">${triageResult.criticalOpen}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Potential Duplicates</div>
+      <div class="value value-duplicates">${triageResult.potentialDuplicates}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Aging (>14 days)</div>
+      <div class="value value-aging">${triageResult.agingDefects}</div>
+    </div>
+  </div>
+
+  <!-- Defect Triage Section -->
+  <div class="section">
+    <h2 class="section-title">Defect Triage</h2>
+    <table class="defect-table">
+      <thead>
+        <tr>
+          <th style="width: 15%">Severity / ID</th>
+          <th style="width: 40%">Title</th>
+          <th style="width: 15%">Status</th>
+          <th style="width: 15%">Component</th>
+          <th style="width: 15%">Days Open</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${defects.map(defect => `
+        <tr>
+          <td>
+            <span class="severity-badge" style="background: ${getSeverityBg(defect.severity)}; color: ${getSeverityColor(defect.severity)};">
+              ${defect.severity.toUpperCase()}
+            </span>
+            ${defect.duplicateOf ? `<span class="duplicate-badge">Dup</span>` : ''}
+            <div class="defect-meta" style="margin-top: 4px;">${defect.externalId}</div>
+          </td>
+          <td>
+            <div class="defect-title">${defect.title}</div>
+            ${defect.assignee ? `<div class="defect-meta">Assignee: ${defect.assignee}</div>` : ''}
+            ${defect.duplicateOf ? `<div class="defect-meta" style="color: #ea580c;">Potential duplicate of ${defect.duplicateOf}</div>` : ''}
+            ${defect.suggestedPriority !== null ? `
+            <div class="suggested-priority">
+              Suggested Priority: <strong>${defect.suggestedPriority}</strong>
+              ${defect.priorityReasoning ? ` - ${defect.priorityReasoning}` : ''}
+            </div>
+            ` : ''}
+          </td>
+          <td>${defect.status}</td>
+          <td>${defect.component || '-'}</td>
+          <td class="${defect.daysOpen !== null && defect.daysOpen > 14 ? 'days-open-warning' : ''}">${defect.daysOpen !== null ? defect.daysOpen + ' days' : '-'}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Insights Section -->
+  <div class="section">
+    <h2 class="section-title">Insights & Patterns</h2>
+    <div class="insights-grid">
+      <div class="insight-card">
+        <h3>By Severity</h3>
+        ${severityBreakdown.map(item => `
+        <div class="breakdown-item">
+          <span class="breakdown-label" style="color: ${getSeverityColor(item.severity)}">${item.severity}</span>
+          <div class="breakdown-stats">
+            <div class="breakdown-bar">
+              <div class="breakdown-bar-fill" style="width: ${item.percent}%; background: ${getSeverityColor(item.severity)};"></div>
+            </div>
+            <span class="breakdown-count">${item.count}</span>
+          </div>
+        </div>
+        `).join('')}
+      </div>
+
+      <div class="insight-card">
+        <h3>By Component</h3>
+        ${componentBreakdown.map(item => `
+        <div class="breakdown-item">
+          <span class="breakdown-label">${item.component || 'Unassigned'}</span>
+          <div class="breakdown-stats">
+            <div class="breakdown-bar">
+              <div class="breakdown-bar-fill" style="width: ${item.percent}%; background: #6366f1;"></div>
+            </div>
+            <span class="breakdown-count">${item.count}</span>
+          </div>
+        </div>
+        `).join('')}
+      </div>
+
+      <div class="insight-card">
+        <h3>By Status</h3>
+        ${statusBreakdown.map(item => `
+        <div class="breakdown-item">
+          <span class="breakdown-label">${item.status}</span>
+          <div class="breakdown-stats">
+            <div class="breakdown-bar">
+              <div class="breakdown-bar-fill" style="width: ${item.percent}%; background: #3b82f6;"></div>
+            </div>
+            <span class="breakdown-count">${item.count}</span>
+          </div>
+        </div>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendations Section -->
+  ${recommendations.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Prevention Recommendations</h2>
+    ${recommendations.map(rec => `
+    <div class="recommendation-card">
+      <div class="rec-header">
+        <div class="rec-icon" style="background: ${getRecCategoryColor(rec.category)}15;">
+          ${getRecCategoryIcon(rec.category)}
+        </div>
+        <div class="rec-content">
+          <div class="rec-badges">
+            <span class="rec-priority-badge" style="background: ${getRecPriorityBg(rec.priority)}; color: ${getRecPriorityColor(rec.priority)};">
+              ${rec.priority.toUpperCase()}
+            </span>
+            <span class="rec-category-badge">${rec.category}</span>
+          </div>
+          <h4 class="rec-title">${rec.title}</h4>
+          <p class="rec-description">${rec.description}</p>
+          <p class="rec-based-on">Based on: ${rec.basedOn}</p>
+          ${rec.actions.length > 0 ? `
+          <div class="rec-actions">
+            <div class="rec-actions-title">Recommended Actions:</div>
+            ${rec.actions.map(action => `
+            <div class="rec-action-item">
+              <span class="rec-action-bullet">&bull;</span>
+              <span>${action}</span>
+            </div>
+            `).join('')}
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    Generated by Product Studio &bull; ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
     }
   }
 }

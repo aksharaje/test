@@ -31,6 +31,11 @@ export class MeasurementFrameworkService {
   selectedKpiSession = signal<KpiAssignmentSession | null>(null);
   selectedKpiAssignments = signal<KpiAssignmentFullItem[]>([]);
 
+  // Direct KPI session import
+  kpiSessions = signal<KpiAssignmentSession[]>([]);
+  directKpiSession = signal<KpiAssignmentSession | null>(null);
+  directKpiAssignments = signal<KpiAssignmentFullItem[]>([]);
+
   // Knowledge bases
   knowledgeBases = signal<KnowledgeBase[]>([]);
 
@@ -199,6 +204,57 @@ export class MeasurementFrameworkService {
     this.selectedGoals.set([]);
     this.selectedKpiSession.set(null);
     this.selectedKpiAssignments.set([]);
+  }
+
+  // Direct KPI session methods for import functionality
+  async loadKpiSessions(): Promise<void> {
+    try {
+      const sessions = await this.http.get<KpiAssignmentSession[]>('/api/kpi-assignment/sessions', { params: { limit: '50' } }).toPromise();
+      // Filter to only completed sessions
+      this.kpiSessions.set((sessions || []).filter((s) => s.status === 'completed'));
+    } catch (err: any) {
+      console.error('Failed to load KPI sessions:', err);
+    }
+  }
+
+  async loadKpiSessionFull(sessionId: number): Promise<void> {
+    try {
+      const response = await this.http.get<{ session: KpiAssignmentSession; assignments: KpiAssignmentFullItem[] }>(`/api/kpi-assignment/sessions/${sessionId}/full`).toPromise();
+      if (response) {
+        this.directKpiSession.set(response.session);
+        this.directKpiAssignments.set(response.assignments || []);
+      }
+    } catch (err: any) {
+      this.error.set(err.error?.detail || 'Failed to load KPI session');
+    }
+  }
+
+  // Build objectives description from direct KPI session data
+  buildDescriptionFromKpi(): string {
+    const session = this.directKpiSession();
+    const assignments = this.directKpiAssignments();
+
+    if (!session || assignments.length === 0) return '';
+
+    let description = `KPI Assignments:\n`;
+
+    for (const kpi of assignments) {
+      description += `\n- Goal: ${kpi.goalTitle} (${kpi.goalCategory})\n`;
+      description += `  Primary KPI: ${kpi.primaryKpi} (${kpi.measurementUnit})\n`;
+      if (kpi.secondaryKpi) {
+        description += `  Secondary KPI: ${kpi.secondaryKpi}\n`;
+      }
+      description += `  Check Frequency: ${kpi.checkFrequency}\n`;
+      if (kpi.rationale) {
+        description += `  Rationale: ${kpi.rationale}\n`;
+      }
+    }
+    return description;
+  }
+
+  clearKpiSelection(): void {
+    this.directKpiSession.set(null);
+    this.directKpiAssignments.set([]);
   }
 
   // Knowledge base methods (only ready KBs for select dropdown)

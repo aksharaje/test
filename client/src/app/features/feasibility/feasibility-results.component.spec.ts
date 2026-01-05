@@ -477,4 +477,103 @@ describe('FeasibilityResultsComponent', () => {
       expect(content).toContain('CONDITIONAL');
     });
   });
+
+  describe('PDF Export', () => {
+    let mockOpen: ReturnType<typeof vi.fn>;
+    let mockDocument: { write: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
+
+    beforeEach(async () => {
+      mockDocument = {
+        write: vi.fn(),
+        close: vi.fn(),
+      };
+      mockOpen = vi.fn().mockReturnValue({
+        document: mockDocument,
+        print: vi.fn(),
+      });
+      vi.stubGlobal('open', mockOpen);
+
+      await component.ngOnInit();
+      fixture.detectChanges();
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('should have exportToPdf method', () => {
+      expect(typeof component.exportToPdf).toBe('function');
+    });
+
+    it('should open new window when exporting PDF', () => {
+      component.exportToPdf();
+      expect(mockOpen).toHaveBeenCalledWith('', '_blank');
+    });
+
+    it('should write HTML content to new window', () => {
+      component.exportToPdf();
+      expect(mockDocument.write).toHaveBeenCalled();
+      const htmlContent = mockDocument.write.mock.calls[0][0];
+      expect(htmlContent).toContain('<!DOCTYPE html>');
+    });
+
+    it('should include session data in PDF', () => {
+      component.exportToPdf();
+      const htmlContent = mockDocument.write.mock.calls[0][0];
+
+      // Check for executive summary
+      expect(htmlContent).toContain('This feature is feasible');
+
+      // Check for GO recommendation
+      expect(htmlContent).toContain('GO');
+
+      // Check for components
+      expect(htmlContent).toContain('OAuth Integration');
+      expect(htmlContent).toContain('User Management UI');
+
+      // Check for timeline scenarios
+      expect(htmlContent).toContain('optimistic');
+      expect(htmlContent).toContain('realistic');
+      expect(htmlContent).toContain('pessimistic');
+
+      // Check for risks
+      expect(htmlContent).toContain('OAuth provider API changes');
+    });
+
+    it('should include styling in PDF', () => {
+      component.exportToPdf();
+      const htmlContent = mockDocument.write.mock.calls[0][0];
+
+      // Check for font import
+      expect(htmlContent).toContain('fonts.googleapis.com');
+      expect(htmlContent).toContain('Inter');
+
+      // Check for primary color
+      expect(htmlContent).toContain('#6366f1');
+    });
+
+    it('should include footer with Product Studio branding', () => {
+      component.exportToPdf();
+      const htmlContent = mockDocument.write.mock.calls[0][0];
+      expect(htmlContent).toContain('Product Studio');
+    });
+
+    it('should close document after writing', () => {
+      component.exportToPdf();
+      expect(mockDocument.close).toHaveBeenCalled();
+    });
+
+    it('should handle null session gracefully', () => {
+      (mockFeasibilityService.currentSession as any).set(null);
+      fixture.detectChanges();
+
+      // Should not throw
+      expect(() => component.exportToPdf()).not.toThrow();
+    });
+
+    it('should display Export PDF button when session is completed', () => {
+      const content = fixture.nativeElement.textContent;
+      expect(content).toContain('Export PDF');
+    });
+  });
 });

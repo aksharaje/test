@@ -33,6 +33,7 @@ import {
   lucideCheck,
   lucideX,
   lucideGripVertical,
+  lucideFileText,
 } from '@ng-icons/lucide';
 
 import { ExperienceGapAnalyzerService } from './experience-gap-analyzer.service';
@@ -76,6 +77,7 @@ import {
       lucideCheck,
       lucideX,
       lucideGripVertical,
+      lucideFileText,
     }),
   ],
   template: `
@@ -101,14 +103,24 @@ import {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              (click)="exportAnalysis()"
-              class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-muted"
-            >
-              <ng-icon name="lucideDownload" class="h-4 w-4" />
-              Export
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="exportToPdf()"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+              >
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Export PDF
+              </button>
+              <button
+                type="button"
+                (click)="exportAnalysis()"
+                class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-muted"
+              >
+                <ng-icon name="lucideDownload" class="h-4 w-4" />
+                Export JSON
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -557,6 +569,456 @@ export class ExperienceGapAnalyzerResultsComponent implements OnInit {
     a.download = `gap-analysis-${sessionId}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  exportToPdf(): void {
+    const sessionData = this.session();
+    if (!sessionData) return;
+
+    const { session, gaps, capabilityMatrix } = sessionData;
+    const assessment = session.overallAssessment;
+    const advantages = session.competitiveAdvantages || [];
+
+    // Build HTML document
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experience Gap Analysis - ${this.escapeHtml(session.analysisName || 'Report')}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #1f2937;
+      background: #ffffff;
+      padding: 40px;
+    }
+    .header {
+      border-bottom: 3px solid #006450;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #006450;
+      margin-bottom: 8px;
+    }
+    .header .subtitle {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .section {
+      margin-bottom: 32px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #006450;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .metric-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .metric-sub {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+    .health-excellent { color: #22c55e; }
+    .health-good { color: #84cc16; }
+    .health-moderate { color: #eab308; }
+    .health-warning { color: #f97316; }
+    .health-critical { color: #ef4444; }
+    .summary-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .summary-box p {
+      color: #166534;
+      font-size: 13px;
+    }
+    .tier-section {
+      margin-bottom: 24px;
+    }
+    .tier-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .tier-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .tier-1 { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    .tier-2 { background: #ffedd5; color: #9a3412; border-left: 4px solid #f97316; }
+    .tier-3 { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+    .gap-list {
+      list-style: none;
+    }
+    .gap-item {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .gap-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .gap-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .cat-capability { background: #8b5cf6; }
+    .cat-experience { background: #3b82f6; }
+    .cat-quality { background: #22c55e; }
+    .cat-process { background: #f97316; }
+    .gap-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: #1f2937;
+    }
+    .gap-meta {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .gap-description {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #4b5563;
+    }
+    .gap-scores {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .score-item {
+      background: #f3f4f6;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .score-label {
+      color: #6b7280;
+    }
+    .score-value {
+      font-weight: 600;
+      margin-left: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .score-your { background: #dbeafe; color: #1e40af; }
+    .score-comp { background: #f3e8ff; color: #6b21a8; }
+    .gap-positive { background: #dcfce7; color: #166534; }
+    .gap-negative { background: #fee2e2; color: #991b1b; }
+    .gap-neutral { background: #f3f4f6; color: #374151; }
+    .strength-card {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .strength-title {
+      font-weight: 600;
+      color: #166534;
+      margin-bottom: 6px;
+    }
+    .strength-desc {
+      color: #15803d;
+      font-size: 12px;
+    }
+    .strength-evidence {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #059669;
+      font-style: italic;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 11px;
+    }
+    .focus-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .focus-tag {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    @media print {
+      body { padding: 20px; }
+      .section { page-break-inside: avoid; }
+      .tier-section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${this.escapeHtml(session.analysisName || 'Experience Gap Analysis Report')}</h1>
+    <p class="subtitle">${this.escapeHtml(this.analysisTypeLabel())} | Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+  </div>
+
+  <!-- Overall Assessment Section -->
+  <div class="section">
+    <h2 class="section-title">Overall Assessment</h2>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Health Score</div>
+        <div class="metric-value ${this.getHealthScoreClass(assessment?.overallHealthScore || 0)}">${assessment?.overallHealthScore ?? 0}</div>
+        <div class="metric-sub">out of 100</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Gaps</div>
+        <div class="metric-value">${assessment?.totalGapsIdentified ?? 0}</div>
+        <div class="metric-sub"><span style="color: #ef4444; font-weight: 600;">${assessment?.criticalGapsCount ?? 0}</span> critical</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Strengths Found</div>
+        <div class="metric-value health-excellent">${assessment?.competitiveAdvantagesCount ?? 0}</div>
+        <div class="metric-sub">areas you excel</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Focus Areas</div>
+        <div class="focus-tags">
+          ${(assessment?.recommendedFocusAreas || []).slice(0, 3).map(area => `<span class="focus-tag">${this.escapeHtml(area)}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+    ${assessment?.summary ? `
+    <div class="summary-box">
+      <p>${this.escapeHtml(assessment.summary)}</p>
+    </div>
+    ` : ''}
+  </div>
+
+  <!-- Prioritized Roadmap Section -->
+  <div class="section">
+    <h2 class="section-title">Prioritized Roadmap</h2>
+    ${this.buildTierSection(1, 'Critical', 'Address immediately - high impact, high urgency', gaps)}
+    ${this.buildTierSection(2, 'Important', 'Schedule for next quarter - moderate priority', gaps)}
+    ${this.buildTierSection(3, 'Nice-to-have', 'Consider when resources allow', gaps)}
+  </div>
+
+  <!-- Capability Comparison Section -->
+  ${capabilityMatrix && capabilityMatrix.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Capability Comparison</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th style="text-align: center;">Your Score</th>
+          <th style="text-align: center;">Comparison</th>
+          <th style="text-align: center;">Gap</th>
+          <th>Suggestion</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${capabilityMatrix.map(item => `
+        <tr>
+          <td>
+            <div style="font-weight: 500;">${this.escapeHtml(item.capabilityName)}</div>
+            <div style="font-size: 10px; color: #6b7280;">${this.escapeHtml(item.category)}</div>
+          </td>
+          <td style="text-align: center;">
+            <span class="score-badge score-your">${item.yourScore}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="score-badge score-comp">${item.comparisonScore}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="score-badge ${item.gapScore > 0 ? 'gap-negative' : item.gapScore < 0 ? 'gap-positive' : 'gap-neutral'}">
+              ${item.gapScore > 0 ? '-' + item.gapScore : item.gapScore < 0 ? '+' + Math.abs(item.gapScore) : '0'}
+            </span>
+          </td>
+          <td style="font-size: 11px; color: #6b7280;">${this.escapeHtml(item.improvementSuggestion || '-')}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
+
+  <!-- Relative Strengths Section -->
+  ${advantages.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Relative Strengths</h2>
+    <p style="color: #6b7280; font-size: 12px; margin-bottom: 16px;">Based on evidence in your journey data (emotion scores, pain points)</p>
+    ${advantages.map(adv => `
+    <div class="strength-card">
+      <div class="strength-title">${this.escapeHtml(adv.title)}</div>
+      <div class="strength-desc">${this.escapeHtml(adv.description)}</div>
+      ${adv.evidence ? `<div class="strength-evidence">Evidence: ${this.escapeHtml(adv.evidence)}</div>` : ''}
+    </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    <p>Generated by Product Studio</p>
+    <p style="margin-top: 4px;">${new Date().toLocaleString()}</p>
+  </div>
+</body>
+</html>
+    `;
+
+    // Open print window
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      // Small delay to ensure content is loaded before print dialog
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+  }
+
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  private getHealthScoreClass(score: number): string {
+    if (score >= 80) return 'health-excellent';
+    if (score >= 60) return 'health-good';
+    if (score >= 40) return 'health-moderate';
+    if (score >= 20) return 'health-warning';
+    return 'health-critical';
+  }
+
+  private buildTierSection(tier: PriorityTier, label: string, description: string, gaps: GapItem[]): string {
+    const tierGaps = gaps.filter(g => g.priorityTier === tier).sort((a, b) => b.opportunityScore - a.opportunityScore);
+
+    if (tierGaps.length === 0) {
+      return `
+      <div class="tier-section">
+        <div class="tier-header">
+          <span class="tier-badge tier-${tier}">Tier ${tier}: ${label}</span>
+          <span style="color: #6b7280; font-size: 11px;">${description}</span>
+        </div>
+        <p style="color: #9ca3af; font-size: 12px; font-style: italic; padding: 12px;">No gaps in this tier</p>
+      </div>
+      `;
+    }
+
+    return `
+    <div class="tier-section">
+      <div class="tier-header">
+        <span class="tier-badge tier-${tier}">Tier ${tier}: ${label} (${tierGaps.length})</span>
+        <span style="color: #6b7280; font-size: 11px;">${description}</span>
+      </div>
+      <ul class="gap-list">
+        ${tierGaps.map(gap => `
+        <li class="gap-item">
+          <div class="gap-header">
+            <div class="gap-indicator cat-${gap.category}"></div>
+            <div>
+              <div class="gap-title">${this.escapeHtml(gap.title)}</div>
+              <div class="gap-meta">
+                <span>Score: ${gap.opportunityScore}</span>
+                ${gap.stageName ? `<span>| ${this.escapeHtml(gap.stageName)}</span>` : ''}
+                <span>| Category: ${gap.category}</span>
+              </div>
+            </div>
+          </div>
+          ${gap.description ? `<p class="gap-description">${this.escapeHtml(gap.description)}</p>` : ''}
+          <div class="gap-scores">
+            <span class="score-item"><span class="score-label">Impact:</span><span class="score-value">${gap.impactScore}</span></span>
+            <span class="score-item"><span class="score-label">Urgency:</span><span class="score-value">${gap.urgencyScore}</span></span>
+            <span class="score-item"><span class="score-label">Effort:</span><span class="score-value">${gap.effortScore}</span></span>
+          </div>
+          ${gap.evidence ? `<p style="margin-top: 10px; font-size: 11px; color: #6b7280;"><strong>Evidence:</strong> ${this.escapeHtml(gap.evidence)}</p>` : ''}
+        </li>
+        `).join('')}
+      </ul>
+    </div>
+    `;
   }
 
   goBack(): void {

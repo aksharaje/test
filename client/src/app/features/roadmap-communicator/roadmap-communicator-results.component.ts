@@ -69,6 +69,15 @@ import type {
               </p>
             </div>
           </div>
+          @if (session()?.status === 'completed' && presentations().length > 0) {
+            <button
+              (click)="exportAllToPdf()"
+              class="px-4 py-2 border rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-slate-50"
+            >
+              <ng-icon name="lucideFileText" class="h-4 w-4" />
+              Export All PDF
+            </button>
+          }
         </div>
       </div>
 
@@ -396,4 +405,252 @@ export class RoadmapCommunicatorResultsComponent implements OnInit, OnDestroy {
     }
   }
 
+  exportAllToPdf() {
+    const session = this.session();
+    const presentations = this.presentations();
+    if (!session || presentations.length === 0) return;
+
+    const getAudienceLabel = (type: string) => {
+      const labels: Record<string, string> = {
+        executive: 'Executive Leadership',
+        product_team: 'Product Team',
+        engineering: 'Engineering',
+        customer: 'Customer',
+        board: 'Board',
+      };
+      return labels[type] || type;
+    };
+
+    const presentationsHtml = presentations.map(pres => {
+      const keyMessagesHtml = pres.talkingPoints?.keyMessages?.map(msg => `
+        <div class="message-card">
+          <p class="message-text">${msg.message}</p>
+          <ul class="supporting-points">
+            ${msg.supportingPoints?.map(point => `<li>${point}</li>`).join('') || ''}
+          </ul>
+          ${msg.dataPoint ? `<p class="data-point">Data: ${msg.dataPoint}</p>` : ''}
+        </div>
+      `).join('') || '';
+
+      const qaHtml = pres.talkingPoints?.anticipatedQa?.map(qa => `
+        <div class="qa-card">
+          <p class="question">Q: ${qa.question}</p>
+          <p class="answer">A: ${qa.suggestedResponse}</p>
+          ${qa.backupData ? `<p class="backup-data">Backup: ${qa.backupData}</p>` : ''}
+        </div>
+      `).join('') || '';
+
+      const transitionsHtml = pres.talkingPoints?.transitionPhrases?.map(phrase =>
+        `<span class="transition-phrase">"${phrase}"</span>`
+      ).join('') || '';
+
+      return `
+        <div class="presentation page-break">
+          <div class="pres-header">
+            <h2>${getAudienceLabel(pres.audienceType)}</h2>
+            <span class="audience-badge">${pres.audienceName || pres.audienceType}</span>
+          </div>
+
+          <div class="pres-section">
+            <h3>Presentation Content</h3>
+            <div class="formatted-content">${pres.formattedContent || '<p class="muted">No content generated</p>'}</div>
+          </div>
+
+          ${keyMessagesHtml ? `
+          <div class="pres-section">
+            <h3>Key Messages</h3>
+            ${keyMessagesHtml}
+          </div>
+          ` : ''}
+
+          ${qaHtml ? `
+          <div class="pres-section">
+            <h3>Anticipated Q&A</h3>
+            ${qaHtml}
+          </div>
+          ` : ''}
+
+          ${transitionsHtml ? `
+          <div class="pres-section">
+            <h3>Transition Phrases</h3>
+            <div class="transitions-container">${transitionsHtml}</div>
+          </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${session.name || 'Roadmap Presentations'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { font-size: 14px; color: #64748b; }
+    .presentation {
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .page-break { page-break-before: always; }
+    .page-break:first-of-type { page-break-before: avoid; }
+    .pres-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #6366f1;
+    }
+    .pres-header h2 { font-size: 20px; font-weight: 700; color: #6366f1; }
+    .audience-badge {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .pres-section {
+      margin-bottom: 24px;
+    }
+    .pres-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .formatted-content {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      font-size: 13px;
+    }
+    .formatted-content h1, .formatted-content h2, .formatted-content h3 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .formatted-content h1 { font-size: 18px; }
+    .formatted-content h2 { font-size: 16px; }
+    .formatted-content h3 { font-size: 14px; }
+    .formatted-content p { margin-bottom: 8px; }
+    .formatted-content ul, .formatted-content ol { margin-left: 20px; margin-bottom: 12px; }
+    .formatted-content li { margin-bottom: 4px; }
+    .message-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .message-text {
+      font-weight: 600;
+      color: #6366f1;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .supporting-points {
+      margin-left: 20px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .supporting-points li { margin-bottom: 4px; }
+    .data-point {
+      font-size: 12px;
+      color: #6366f1;
+      font-style: italic;
+      margin-top: 8px;
+    }
+    .qa-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .question {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .answer {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .backup-data {
+      font-size: 12px;
+      color: #6366f1;
+      margin-top: 8px;
+    }
+    .transitions-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .transition-phrase {
+      background: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .muted { color: #94a3b8; font-style: italic; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    @media print {
+      body { padding: 24px; }
+      .presentation { break-inside: avoid; }
+      .page-break { page-break-before: always; }
+      .page-break:first-of-type { page-break-before: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.name || 'Roadmap Presentations'}</h1>
+    <div class="subtitle">${presentations.length} presentation(s) for different audiences</div>
+  </div>
+
+  ${presentationsHtml}
+
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
+  }
 }

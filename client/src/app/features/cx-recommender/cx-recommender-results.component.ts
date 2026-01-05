@@ -37,6 +37,7 @@ import {
   lucideAlertTriangle,
   lucideTarget,
   lucideActivity,
+  lucideFileText,
 } from '@ng-icons/lucide';
 
 import { CxRecommenderService } from './cx-recommender.service';
@@ -88,6 +89,7 @@ function getRiskColor(risk: string): string {
       lucideAlertTriangle,
       lucideTarget,
       lucideActivity,
+      lucideFileText,
     }),
   ],
   template: `
@@ -121,6 +123,14 @@ function getRiskColor(risk: string): string {
               >
                 <ng-icon name="lucideCalendar" class="h-4 w-4" />
                 Sprint Plan
+              </button>
+              <button
+                type="button"
+                (click)="exportToPdf()"
+                class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-muted"
+              >
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Export PDF
               </button>
               <button
                 type="button"
@@ -659,6 +669,360 @@ export class CxRecommenderResultsComponent implements OnInit {
     a.download = `cx-recommendations-${data.session.id}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  exportToPdf(): void {
+    const data = this.sessionDetail();
+    if (!data) return;
+
+    const quickWins = this.quickWins();
+    const highImpact = this.highImpact();
+    const strategic = this.strategic();
+    const sprintPlan = this.sprintPlan();
+
+    const getScoreColorPdf = (score: number): string => {
+      if (score >= 8) return '#22c55e';
+      if (score >= 6) return '#eab308';
+      if (score >= 4) return '#f97316';
+      return '#ef4444';
+    };
+
+    const getRiskColorPdf = (risk: string): string => {
+      switch (risk) {
+        case 'low': return '#22c55e';
+        case 'medium': return '#eab308';
+        case 'high': return '#ef4444';
+        default: return '#6b7280';
+      }
+    };
+
+    const renderRecommendation = (rec: Recommendation, colorClass: string): string => {
+      const colors: Record<string, { bg: string; border: string; text: string }> = {
+        yellow: { bg: '#fef9c3', border: '#fde047', text: '#854d0e' },
+        blue: { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af' },
+        purple: { bg: '#f3e8ff', border: '#d8b4fe', text: '#6b21a8' },
+      };
+      const color = colors[colorClass] || colors['yellow'];
+
+      let painPointsHtml = '';
+      if (rec.addressesPainPoints?.length) {
+        painPointsHtml = `
+          <div style="margin-top: 12px;">
+            <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: #374151;">Addresses Pain Points:</div>
+            ${rec.addressesPainPoints.map(pp => `
+              <div style="font-size: 11px; padding: 6px 8px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; margin-bottom: 4px;">
+                <span style="color: #b91c1c;">${pp.description}</span>
+                <span style="color: #6b7280; margin-left: 8px;">(Severity: ${pp.severity})</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      let gapsHtml = '';
+      if (rec.addressesGaps?.length) {
+        gapsHtml = `
+          <div style="margin-top: 12px;">
+            <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: #374151;">Closes Competitive Gaps:</div>
+            ${rec.addressesGaps.map(gap => `
+              <div style="font-size: 11px; padding: 6px 8px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; margin-bottom: 4px;">
+                <span style="color: #1d4ed8;">${gap.title}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      let solutionsHtml = '';
+      if (rec.solutionApproaches?.length) {
+        solutionsHtml = `
+          <div style="margin-top: 12px;">
+            <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: #374151;">Solution Approaches:</div>
+            ${rec.solutionApproaches.map((approach, i) => `
+              <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin-bottom: 8px; background: #f9fafb;">
+                <div style="font-weight: 600; font-size: 12px; color: #111827;">${i + 1}. ${approach.title}</div>
+                <p style="font-size: 11px; color: #6b7280; margin: 6px 0 8px 0;">${approach.description}</p>
+                <div style="display: flex; gap: 16px;">
+                  <div style="flex: 1;">
+                    <span style="font-weight: 600; font-size: 11px; color: #15803d;">Pros:</span>
+                    <ul style="margin: 4px 0 0 16px; padding: 0; font-size: 11px; color: #6b7280;">
+                      ${approach.pros?.map(pro => `<li>${pro}</li>`).join('') || ''}
+                    </ul>
+                  </div>
+                  <div style="flex: 1;">
+                    <span style="font-weight: 600; font-size: 11px; color: #b91c1c;">Cons:</span>
+                    <ul style="margin: 4px 0 0 16px; padding: 0; font-size: 11px; color: #6b7280;">
+                      ${approach.cons?.map(con => `<li>${con}</li>`).join('') || ''}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      let metricsHtml = '';
+      if (rec.successMetrics?.length) {
+        metricsHtml = `
+          <div style="margin-top: 12px;">
+            <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: #374151;">Success Metrics:</div>
+            <ul style="margin: 0 0 0 16px; padding: 0; font-size: 11px; color: #6b7280;">
+              ${rec.successMetrics.map(m => `<li>${m}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      let businessMetricsHtml = '';
+      if (rec.businessMetrics) {
+        const bm = rec.businessMetrics;
+        businessMetricsHtml = `
+          <div style="margin-top: 12px;">
+            <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px; color: #374151;">Projected Business Impact:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              ${bm.timeSavings ? `<div style="font-size: 11px; padding: 4px 8px; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 4px;"><span style="font-weight: 600; color: #15803d;">Time Savings:</span> <span style="color: #16a34a;">${bm.timeSavings}</span></div>` : ''}
+              ${bm.conversionLift ? `<div style="font-size: 11px; padding: 4px 8px; background: #dbeafe; border: 1px solid #bfdbfe; border-radius: 4px;"><span style="font-weight: 600; color: #1d4ed8;">Conversion:</span> <span style="color: #2563eb;">${bm.conversionLift}</span></div>` : ''}
+              ${bm.npsImpact ? `<div style="font-size: 11px; padding: 4px 8px; background: #f3e8ff; border: 1px solid #e9d5ff; border-radius: 4px;"><span style="font-weight: 600; color: #7c3aed;">NPS:</span> <span style="color: #8b5cf6;">${bm.npsImpact}</span></div>` : ''}
+              ${bm.retentionImpact ? `<div style="font-size: 11px; padding: 4px 8px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px;"><span style="font-weight: 600; color: #d97706;">Retention:</span> <span style="color: #f59e0b;">${bm.retentionImpact}</span></div>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: white; page-break-inside: avoid;">
+          <div style="border-left: 4px solid ${color.border}; padding-left: 12px; margin-bottom: 12px;">
+            <h4 style="font-weight: 600; font-size: 14px; margin: 0 0 4px 0; color: #111827;">${rec.title}</h4>
+            <p style="font-size: 12px; color: #6b7280; margin: 0;">${rec.description}</p>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+            <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: ${getScoreColorPdf(rec.impactScore)}20; color: ${getScoreColorPdf(rec.impactScore)};">
+              Impact: ${rec.impactScore}
+            </span>
+            <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: ${getScoreColorPdf(11 - rec.effortScore)}20; color: ${getScoreColorPdf(11 - rec.effortScore)};">
+              Effort: ${rec.effortScore}
+            </span>
+            <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: ${getScoreColorPdf(rec.urgencyScore)}20; color: ${getScoreColorPdf(rec.urgencyScore)};">
+              Urgency: ${rec.urgencyScore}
+            </span>
+            <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: #006450; color: white;">
+              Opportunity: ${rec.opportunityScore}
+            </span>
+            ${rec.quickWin ? `<span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: #fef9c3; color: #854d0e;">Quick Win</span>` : ''}
+          </div>
+
+          <div style="display: flex; gap: 16px; font-size: 12px; margin-bottom: 8px;">
+            ${rec.totalEffortDays ? `
+              <div>
+                <span style="font-weight: 600; color: #374151;">Estimated Effort:</span>
+                <span style="color: #6b7280; margin-left: 4px;">
+                  ${rec.totalEffortDays} days total
+                  ${(rec.designDays || rec.engineeringDays || rec.testingDays) ? `(${rec.designDays || 0}d design, ${rec.engineeringDays || 0}d eng, ${rec.testingDays || 0}d test)` : ''}
+                </span>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="font-size: 12px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 600; color: #374151;">Risk:</span>
+            <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: ${getRiskColorPdf(rec.riskLevel)}20; color: ${getRiskColorPdf(rec.riskLevel)};">
+              ${rec.riskLevel.charAt(0).toUpperCase() + rec.riskLevel.slice(1)}
+            </span>
+            <span style="margin-left: auto; font-size: 11px; color: #9ca3af;">Priority Tier ${rec.priorityTier}</span>
+          </div>
+
+          ${painPointsHtml}
+          ${gapsHtml}
+          ${solutionsHtml}
+
+          ${rec.implementationApproach ? `
+            <div style="margin-top: 12px;">
+              <div style="font-weight: 600; font-size: 12px; margin-bottom: 4px; color: #374151;">Implementation:</div>
+              <p style="font-size: 11px; color: #6b7280; margin: 0;">${rec.implementationApproach}</p>
+            </div>
+          ` : ''}
+
+          ${metricsHtml}
+          ${businessMetricsHtml}
+        </div>
+      `;
+    };
+
+    let sprintPlanHtml = '';
+    if (sprintPlan) {
+      sprintPlanHtml = `
+        <div style="margin-bottom: 32px; page-break-inside: avoid;">
+          <h2 style="font-size: 18px; font-weight: 600; color: #111827; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+            <span style="color: #006450;">&#128197;</span> Suggested Sprint Plan
+          </h2>
+          ${sprintPlan.capacityWarning ? `
+            <div style="margin-bottom: 16px; padding: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;">
+              <span style="color: #d97706; font-size: 13px;">&#9888; ${sprintPlan.capacityWarning}</span>
+            </div>
+          ` : ''}
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div>
+              <h4 style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0; color: #854d0e;">Sprint 1-2 (Quick Wins)</h4>
+              ${sprintPlan.sprint1_2?.length ? sprintPlan.sprint1_2.map(item => `
+                <div style="font-size: 12px; padding: 8px; background: #fef9c3; border: 1px solid #fde047; border-radius: 6px; margin-bottom: 6px;">
+                  <p style="font-weight: 500; margin: 0 0 2px 0; color: #111827;">${item.title}</p>
+                  <p style="font-size: 11px; color: #6b7280; margin: 0;">${item.effortDays} days</p>
+                </div>
+              `).join('') : '<p style="font-size: 12px; color: #9ca3af; font-style: italic;">No items</p>'}
+            </div>
+            <div>
+              <h4 style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0; color: #1e40af;">Sprint 3-4 (High Impact)</h4>
+              ${sprintPlan.sprint3_4?.length ? sprintPlan.sprint3_4.map(item => `
+                <div style="font-size: 12px; padding: 8px; background: #dbeafe; border: 1px solid #93c5fd; border-radius: 6px; margin-bottom: 6px;">
+                  <p style="font-weight: 500; margin: 0 0 2px 0; color: #111827;">${item.title}</p>
+                  <p style="font-size: 11px; color: #6b7280; margin: 0;">${item.effortDays} days</p>
+                </div>
+              `).join('') : '<p style="font-size: 12px; color: #9ca3af; font-style: italic;">No items</p>'}
+            </div>
+            <div>
+              <h4 style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0; color: #6b21a8;">Q2+ (Strategic)</h4>
+              ${sprintPlan.q2Plus?.length ? sprintPlan.q2Plus.map(item => `
+                <div style="font-size: 12px; padding: 8px; background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 6px; margin-bottom: 6px;">
+                  <p style="font-weight: 500; margin: 0 0 2px 0; color: #111827;">${item.title}</p>
+                  <p style="font-size: 11px; color: #6b7280; margin: 0;">${item.effortDays} days</p>
+                </div>
+              `).join('') : '<p style="font-size: 12px; color: #9ca3af; font-style: italic;">No items</p>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>CX Recommendations - ${data.session.sessionName}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: white;
+            color: #111827;
+            font-size: 14px;
+            line-height: 1.5;
+          }
+          @media print {
+            body {
+              padding: 20px;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
+          @page {
+            margin: 0.75in;
+            size: A4;
+          }
+        </style>
+      </head>
+      <body>
+        <!-- Header -->
+        <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #006450;">
+          <h1 style="font-size: 28px; font-weight: 700; color: #006450; margin: 0 0 8px 0;">CX Improvement Recommendations</h1>
+          <p style="font-size: 16px; color: #6b7280; margin: 0 0 16px 0;">${data.session.sessionName}</p>
+          <div style="display: flex; gap: 24px; font-size: 13px; color: #374151;">
+            <span>Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span>Total Recommendations: ${data.totals.total}</span>
+            <span>Total Effort: ${this.totalEffortDays()} days</span>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;">
+          <div style="padding: 16px; border: 1px solid #fde047; border-radius: 12px; background: #fefce8;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #854d0e; font-weight: 600; font-size: 14px;">
+              <span>&#9889;</span> Quick Wins
+            </div>
+            <div style="font-size: 32px; font-weight: 700; margin-top: 8px; color: #111827;">${data.totals.quickWins}</div>
+            <p style="font-size: 11px; color: #6b7280; margin: 4px 0 0 0;">High impact, low effort</p>
+          </div>
+          <div style="padding: 16px; border: 1px solid #93c5fd; border-radius: 12px; background: #eff6ff;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #1e40af; font-weight: 600; font-size: 14px;">
+              <span>&#128200;</span> High Impact
+            </div>
+            <div style="font-size: 32px; font-weight: 700; margin-top: 8px; color: #111827;">${data.totals.highImpact}</div>
+            <p style="font-size: 11px; color: #6b7280; margin: 4px 0 0 0;">Important improvements</p>
+          </div>
+          <div style="padding: 16px; border: 1px solid #d8b4fe; border-radius: 12px; background: #faf5ff;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #6b21a8; font-weight: 600; font-size: 14px;">
+              <span>&#129517;</span> Strategic
+            </div>
+            <div style="font-size: 32px; font-weight: 700; margin-top: 8px; color: #111827;">${data.totals.strategic}</div>
+            <p style="font-size: 11px; color: #6b7280; margin: 4px 0 0 0;">Long-term initiatives</p>
+          </div>
+          <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #6b7280; font-weight: 600; font-size: 14px;">
+              <span>&#128202;</span> Total Effort
+            </div>
+            <div style="font-size: 32px; font-weight: 700; margin-top: 8px; color: #111827;">${this.totalEffortDays()}</div>
+            <p style="font-size: 11px; color: #6b7280; margin: 4px 0 0 0;">days estimated</p>
+          </div>
+        </div>
+
+        ${sprintPlanHtml}
+
+        <!-- Quick Wins Section -->
+        ${quickWins.length > 0 ? `
+          <div style="margin-bottom: 32px;">
+            <h2 style="font-size: 18px; font-weight: 600; color: #854d0e; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #fde047;">
+              <span>&#9889;</span> Quick Wins (${quickWins.length})
+            </h2>
+            ${quickWins.map(rec => renderRecommendation(rec, 'yellow')).join('')}
+          </div>
+        ` : ''}
+
+        <!-- High Impact Section -->
+        ${highImpact.length > 0 ? `
+          <div style="margin-bottom: 32px;">
+            <h2 style="font-size: 18px; font-weight: 600; color: #1e40af; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #93c5fd;">
+              <span>&#128200;</span> High Impact (${highImpact.length})
+            </h2>
+            ${highImpact.map(rec => renderRecommendation(rec, 'blue')).join('')}
+          </div>
+        ` : ''}
+
+        <!-- Strategic Section -->
+        ${strategic.length > 0 ? `
+          <div style="margin-bottom: 32px;">
+            <h2 style="font-size: 18px; font-weight: 600; color: #6b21a8; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #d8b4fe;">
+              <span>&#129517;</span> Strategic (${strategic.length})
+            </h2>
+            ${strategic.map(rec => renderRecommendation(rec, 'purple')).join('')}
+          </div>
+        ` : ''}
+
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">Generated by Product Studio</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
   }
 
   goBack(): void {

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideBarChart3, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideDatabase, lucideLayoutDashboard } from '@ng-icons/lucide';
+import { lucideBarChart3, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideDatabase, lucideLayoutDashboard, lucideFileText } from '@ng-icons/lucide';
 import { MeasurementFrameworkService } from './measurement-framework.service';
 import type { MeasurementFrameworkSession, FrameworkMetric, FrameworkDataSource, FrameworkDashboard } from './measurement-framework.types';
 import { HlmButtonDirective } from '../../ui/button';
@@ -10,7 +10,7 @@ import { HlmButtonDirective } from '../../ui/button';
   selector: 'app-measurement-framework-results',
   standalone: true,
   imports: [NgIcon, HlmButtonDirective],
-  viewProviders: [provideIcons({ lucideBarChart3, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideDatabase, lucideLayoutDashboard })],
+  viewProviders: [provideIcons({ lucideBarChart3, lucideLoader2, lucideArrowLeft, lucideRotateCw, lucideAlertCircle, lucideDatabase, lucideLayoutDashboard, lucideFileText })],
   template: `
     <div class="h-full overflow-y-auto">
       <div class="max-w-5xl mx-auto p-6">
@@ -23,6 +23,14 @@ import { HlmButtonDirective } from '../../ui/button';
               <p class="text-sm text-muted-foreground">Measurement Framework</p>
             </div>
           </div>
+          @if (session()?.status === 'completed') {
+            <div class="ml-auto">
+              <button hlmBtn variant="ghost" size="sm" (click)="exportToPdf()">
+                <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+                Export PDF
+              </button>
+            </div>
+          }
         </div>
 
         @if (isLoading()) {
@@ -165,4 +173,257 @@ export class MeasurementFrameworkResultsComponent implements OnInit {
 
   async retry() { const id = this.session()?.id; if (id) { this.isLoading.set(true); await this.service.retrySession(id); await this.loadSession(id); } }
   goBack() { this.router.navigate(['/measurements/framework']); }
+
+  exportToPdf() {
+    const session = this.session();
+    const metrics = this.metrics();
+    const dataSources = this.dataSources();
+    const dashboards = this.dashboards();
+    if (!session) return;
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${session.name || 'Measurement Framework'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .summary {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      border-left: 4px solid #0ea5e9;
+    }
+
+    .summary h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0369a1;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .summary p {
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      page-break-inside: avoid;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .tag-metric { background: #dbeafe; color: #1d4ed8; }
+    .tag-source { background: #dcfce7; color: #166534; }
+    .tag-dashboard { background: #f3e8ff; color: #7c3aed; }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .card-meta strong {
+      color: #1a1a2e;
+    }
+
+    .metric-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .metric-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: #f1f5f9;
+      border-radius: 4px;
+      color: #475569;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body { padding: 24px; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.name || 'Measurement Framework'}</h1>
+    <div class="subtitle">${metrics.length} Metrics • ${dataSources.length} Data Sources • ${dashboards.length} Dashboards</div>
+  </div>
+
+  ${session.executiveSummary ? `
+  <div class="summary">
+    <h2>Executive Summary</h2>
+    <p>${session.executiveSummary}</p>
+  </div>
+  ` : ''}
+
+  ${metrics.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Metrics</h2>
+    ${metrics.map(m => `
+    <div class="card">
+      <div class="card-header">
+        <span class="tag tag-metric">${m.category}</span>
+        <span class="card-title">${m.name}</span>
+      </div>
+      <p class="card-desc">${m.description}</p>
+      <div class="card-meta">
+        ${m.target ? `<div><strong>Target:</strong> ${m.target}${m.unit ? ' ' + m.unit : ''}</div>` : ''}
+        ${m.baseline ? `<div><strong>Baseline:</strong> ${m.baseline}</div>` : ''}
+        <div><strong>Collection:</strong> ${m.collectionFrequency}</div>
+        <div><strong>Method:</strong> ${m.collectionMethod}</div>
+      </div>
+    </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  ${dataSources.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Data Sources</h2>
+    ${dataSources.map(s => `
+    <div class="card">
+      <div class="card-header">
+        <span class="tag tag-source">${s.sourceType}</span>
+        <span class="card-title">${s.name}</span>
+      </div>
+      <p class="card-desc">${s.description}</p>
+      <div class="card-meta">
+        <div><strong>Refresh:</strong> ${s.refreshFrequency}</div>
+      </div>
+    </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  ${dashboards.length > 0 ? `
+  <div class="section">
+    <h2 class="section-title">Dashboards</h2>
+    ${dashboards.map(d => `
+    <div class="card">
+      <div class="card-header">
+        <span class="tag tag-dashboard">${d.audience}</span>
+        <span class="card-title">${d.name}</span>
+      </div>
+      <p class="card-desc">${d.description}</p>
+      ${d.keyMetrics && d.keyMetrics.length > 0 ? `
+      <div class="metric-tags">
+        ${d.keyMetrics.map(m => `<span class="metric-tag">${m}</span>`).join('')}
+      </div>
+      ` : ''}
+    </div>
+    `).join('')}
+  </div>
+  ` : ''}
+
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  }
 }

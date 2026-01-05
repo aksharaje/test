@@ -28,6 +28,7 @@ import {
   lucideDatabase,
   lucideLightbulb,
   lucideInfo,
+  lucideFileText,
 } from '@ng-icons/lucide';
 
 import { ResearchPlannerService } from './research-planner.service';
@@ -66,6 +67,7 @@ import {
       lucideDatabase,
       lucideLightbulb,
       lucideInfo,
+      lucideFileText,
     }),
   ],
   template: `
@@ -524,6 +526,13 @@ import {
                   Here's what we created for you. Review and customize as needed.
                 </p>
               </div>
+              <button
+                (click)="exportToPdf()"
+                class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+              >
+                <ng-icon name="lucideFileText" size="16" />
+                Export PDF
+              </button>
             </div>
 
             <!-- Tabs -->
@@ -1036,5 +1045,493 @@ export class ResearchPlannerResultsComponent implements OnInit {
     a.download = 'conversation-guide.md';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  exportToPdf(): void {
+    const detail = this.sessionDetail();
+    if (!detail) return;
+
+    const session = detail.session;
+    const interviewGuide = detail.interviewGuides[0];
+    const survey = detail.surveys[0];
+    const recruitingPlan = detail.recruitingPlans[0];
+
+    // Build conversation guide section
+    let conversationGuideHtml = '';
+    if (interviewGuide) {
+      const guideContent = this.getGuideContent(interviewGuide);
+      // Convert markdown to HTML (simple conversion for common patterns)
+      const guideHtml = this.markdownToHtml(guideContent);
+      conversationGuideHtml = `
+        <div class="section">
+          <h2 class="section-title">
+            <span class="section-icon">&#128172;</span>
+            Conversation Guide
+          </h2>
+          <div class="content-box">
+            ${guideHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // Build questionnaire section
+    let questionnaireHtml = '';
+    if (survey && survey.questions) {
+      const questionsHtml = survey.questions.map((q, i) => `
+        <div class="question-item">
+          <div class="question-header">
+            <span class="question-number">${i + 1}</span>
+            <div class="question-content">
+              <p class="question-text">${q.text}</p>
+              <div class="question-meta">
+                <span class="question-type">${q.type}</span>
+                ${q.required ? '<span class="question-required">Required</span>' : ''}
+              </div>
+              ${q.options && q.options.length > 0 ? `
+                <ul class="options-list">
+                  ${q.options.map(opt => `<li>${opt}</li>`).join('')}
+                </ul>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      questionnaireHtml = `
+        <div class="section">
+          <h2 class="section-title">
+            <span class="section-icon">&#128203;</span>
+            Questionnaire
+          </h2>
+          <p class="section-subtitle">Estimated completion time: ${survey.estimatedCompletionTime}</p>
+          <div class="content-box">
+            ${questionsHtml}
+          </div>
+          ${survey.analysisPlan ? `
+            <div class="analysis-plan">
+              <h4>How to Make Sense of Responses</h4>
+              <p>${survey.analysisPlan}</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // Build recruiting section
+    let recruitingHtml = '';
+    if (recruitingPlan) {
+      const criteriaHtml = recruitingPlan.detailedCriteria ? `
+        <div class="criteria-box">
+          <h4>Who You're Looking For</h4>
+          ${recruitingPlan.detailedCriteria.mustHave.length ? `
+            <div class="criteria-section">
+              <strong>Must have:</strong>
+              <ul>
+                ${recruitingPlan.detailedCriteria.mustHave.map(item => `<li>${item}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          ${recruitingPlan.detailedCriteria.niceToHave.length ? `
+            <div class="criteria-section">
+              <strong>Nice to have:</strong>
+              <ul>
+                ${recruitingPlan.detailedCriteria.niceToHave.map(item => `<li>${item}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      ` : '';
+
+      const screenerHtml = recruitingPlan.screenerQuestions?.length ? `
+        <div class="screener-box">
+          <h4>Questions to Find the Right People</h4>
+          ${recruitingPlan.screenerQuestions.map((q, i) => `
+            <div class="screener-question">
+              <p><strong>${i + 1}. ${q.question}</strong></p>
+              <p class="qualifying-answer">Qualifying answer: <span class="green-text">${q.qualifyingAnswer}</span></p>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const emailsHtml = recruitingPlan.emailTemplates?.length ? `
+        <div class="emails-box">
+          <h4>Ready-to-Use Emails</h4>
+          ${recruitingPlan.emailTemplates.map(template => `
+            <div class="email-template">
+              <p class="email-type">${template.type.toUpperCase()}</p>
+              <p class="email-subject"><strong>Subject:</strong> ${template.subject}</p>
+              <pre class="email-body">${template.body}</pre>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      recruitingHtml = `
+        <div class="section">
+          <h2 class="section-title">
+            <span class="section-icon">&#128101;</span>
+            Finding People
+          </h2>
+          ${criteriaHtml}
+          ${screenerHtml}
+          <div class="stats-grid">
+            <div class="stat-box">
+              <p class="stat-value">${recruitingPlan.contactsNeeded}</p>
+              <p class="stat-label">People to Reach Out To</p>
+            </div>
+            <div class="stat-box">
+              <p class="stat-value">${(recruitingPlan.expectedResponseRate * 100).toFixed(0)}%</p>
+              <p class="stat-label">Expected to Say Yes</p>
+            </div>
+            <div class="stat-box">
+              <p class="stat-value">${recruitingPlan.incentiveRecommendation}</p>
+              <p class="stat-label">Thank You Gift</p>
+            </div>
+          </div>
+          ${emailsHtml}
+        </div>
+      `;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Research Plan - ${session.objective}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #ffffff;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+          }
+          .header {
+            border-bottom: 3px solid #006450;
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+          }
+          .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #006450;
+            margin-bottom: 8px;
+          }
+          .header .objective {
+            font-size: 16px;
+            color: #666;
+          }
+          .header .date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+          }
+          .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+          }
+          .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #006450;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 8px;
+          }
+          .section-icon {
+            font-size: 24px;
+          }
+          .section-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+          }
+          .content-box {
+            background: #f9fafb;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 20px;
+          }
+          .content-box h1, .content-box h2, .content-box h3, .content-box h4 {
+            color: #006450;
+            margin-top: 16px;
+            margin-bottom: 8px;
+          }
+          .content-box h1 { font-size: 20px; }
+          .content-box h2 { font-size: 18px; }
+          .content-box h3 { font-size: 16px; }
+          .content-box h4 { font-size: 14px; }
+          .content-box p {
+            margin-bottom: 12px;
+            color: #444;
+          }
+          .content-box ul, .content-box ol {
+            margin-left: 20px;
+            margin-bottom: 12px;
+          }
+          .content-box li {
+            margin-bottom: 6px;
+            color: #444;
+          }
+          .question-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #e5e5e5;
+          }
+          .question-item:last-child {
+            border-bottom: none;
+          }
+          .question-header {
+            display: flex;
+            gap: 12px;
+          }
+          .question-number {
+            width: 24px;
+            height: 24px;
+            background: #006450;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+          }
+          .question-content {
+            flex: 1;
+          }
+          .question-text {
+            font-weight: 500;
+            margin-bottom: 8px;
+          }
+          .question-meta {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+          }
+          .question-type {
+            background: #e5e5e5;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+          }
+          .question-required {
+            color: #dc2626;
+            font-size: 12px;
+            font-weight: 500;
+          }
+          .options-list {
+            margin-left: 20px;
+            margin-top: 8px;
+          }
+          .options-list li {
+            color: #666;
+            font-size: 14px;
+          }
+          .analysis-plan {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+          }
+          .analysis-plan h4 {
+            color: #166534;
+            margin-bottom: 8px;
+          }
+          .analysis-plan p {
+            color: #166534;
+            font-size: 14px;
+          }
+          .criteria-box, .screener-box, .emails-box {
+            background: #f9fafb;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+          }
+          .criteria-box h4, .screener-box h4, .emails-box h4 {
+            color: #006450;
+            margin-bottom: 12px;
+          }
+          .criteria-section {
+            margin-bottom: 12px;
+          }
+          .criteria-section ul {
+            margin-left: 20px;
+            margin-top: 4px;
+          }
+          .screener-question {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e5e5;
+          }
+          .screener-question:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+          }
+          .qualifying-answer {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+          }
+          .green-text {
+            color: #16a34a;
+            font-weight: 500;
+          }
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+          }
+          .stat-box {
+            background: #f9fafb;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+          }
+          .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #006450;
+          }
+          .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+          }
+          .email-template {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 12px;
+          }
+          .email-template:last-child {
+            margin-bottom: 0;
+          }
+          .email-type {
+            font-size: 10px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+          }
+          .email-subject {
+            font-size: 14px;
+            margin-bottom: 8px;
+          }
+          .email-body {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #666;
+            white-space: pre-wrap;
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+          }
+          .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e5e5;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+          }
+          .footer .brand {
+            color: #006450;
+            font-weight: 600;
+          }
+          @media print {
+            body {
+              padding: 20px;
+            }
+            .section {
+              page-break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Research Plan</h1>
+          <p class="objective">${session.objective}</p>
+          <p class="date">Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+
+        ${conversationGuideHtml}
+        ${questionnaireHtml}
+        ${recruitingHtml}
+
+        <div class="footer">
+          <p>Generated by <span class="brand">Product Studio</span></p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      // Delay print to allow fonts to load
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  }
+
+  private markdownToHtml(markdown: string): string {
+    // Simple markdown to HTML conversion
+    let html = markdown
+      // Escape HTML
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // Headers
+      .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Unordered lists
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+      // Ordered lists
+      .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+      // Line breaks to paragraphs
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+
+    // Wrap in paragraph if not already
+    if (!html.startsWith('<')) {
+      html = '<p>' + html + '</p>';
+    }
+
+    return html;
   }
 }

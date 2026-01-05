@@ -85,6 +85,13 @@ type ActiveTab = 'release-notes' | 'decisions' | 'debt' | 'stories';
             Unrelease Stories
           </button>
           <button
+            (click)="exportAllToPdf()"
+            class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <ng-icon name="lucideFileText" class="h-4 w-4" />
+            Export All PDF
+          </button>
+          <button
             (click)="exportCurrentTab()"
             class="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
           >
@@ -759,5 +766,472 @@ export class ReleasePrepResultsComponent implements OnInit {
     this.toastMessage.set(message);
     this.showToast.set(true);
     setTimeout(() => this.showToast.set(false), 2000);
+  }
+
+  exportAllToPdf(): void {
+    const session = this.session();
+    const releaseNotes = this.activeReleaseNotes();
+    const decisions = this.activeDecisions();
+    const debtItems = this.activeDebtItems();
+    const storiesList = this.stories();
+
+    if (!session) return;
+
+    // Helper functions for badge colors
+    const getCategoryBadgeStyle = (category: ReleaseNoteCategory): string => {
+      const styles: Record<ReleaseNoteCategory, string> = {
+        feature: 'background: #dbeafe; color: #1e40af;',
+        improvement: 'background: #dcfce7; color: #166534;',
+        fix: 'background: #fef3c7; color: #92400e;',
+        security: 'background: #fee2e2; color: #991b1b;',
+        performance: 'background: #f3e8ff; color: #6b21a8;',
+        breaking_change: 'background: #fee2e2; color: #991b1b;',
+      };
+      return styles[category] || 'background: #f1f5f9; color: #475569;';
+    };
+
+    const getDecisionTypeBadgeStyle = (type: string): string => {
+      const styles: Record<string, string> = {
+        technical: 'background: #dbeafe; color: #1e40af;',
+        architectural: 'background: #f3e8ff; color: #6b21a8;',
+        product: 'background: #dcfce7; color: #166534;',
+        process: 'background: #fef3c7; color: #92400e;',
+        security: 'background: #fee2e2; color: #991b1b;',
+      };
+      return styles[type] || 'background: #f1f5f9; color: #475569;';
+    };
+
+    const getImpactBadgeStyle = (level: ImpactLevel): string => {
+      const styles: Record<ImpactLevel, string> = {
+        critical: 'background: #fee2e2; color: #991b1b;',
+        high: 'background: #fef3c7; color: #92400e;',
+        medium: 'background: #fef9c3; color: #854d0e;',
+        low: 'background: #dcfce7; color: #166534;',
+      };
+      return styles[level] || 'background: #f1f5f9; color: #475569;';
+    };
+
+    const getDebtTypeBadgeStyle = (type: string): string => {
+      return 'background: #f1f5f9; color: #475569;';
+    };
+
+    const getStoryTypeBadgeStyle = (type: string): string => {
+      const styles: Record<string, string> = {
+        epic: 'background: #f3e8ff; color: #6b21a8;',
+        feature: 'background: #dbeafe; color: #1e40af;',
+        user_story: 'background: #dcfce7; color: #166534;',
+        manual: 'background: #f1f5f9; color: #475569;',
+      };
+      return styles[type] || 'background: #f1f5f9; color: #475569;';
+    };
+
+    const getBorderColor = (category: ReleaseNoteCategory): string => {
+      const colors: Record<ReleaseNoteCategory, string> = {
+        feature: '#3b82f6',
+        improvement: '#22c55e',
+        fix: '#f59e0b',
+        security: '#ef4444',
+        performance: '#a855f7',
+        breaking_change: '#ef4444',
+      };
+      return colors[category] || '#e2e8f0';
+    };
+
+    const getDebtBorderColor = (level: ImpactLevel): string => {
+      const colors: Record<ImpactLevel, string> = {
+        critical: '#ef4444',
+        high: '#f59e0b',
+        medium: '#eab308',
+        low: '#22c55e',
+      };
+      return colors[level] || '#e2e8f0';
+    };
+
+    const formatCategory = (category: string): string => {
+      return category.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    };
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Release Prep - ${session.releaseName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .quality-scores {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .quality-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .quality-card .label {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .quality-card .value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .quality-card .value.blue { color: #3b82f6; }
+    .quality-card .value.purple { color: #a855f7; }
+    .quality-card .value.amber { color: #f59e0b; }
+
+    .quality-card .progress-bar {
+      margin-top: 8px;
+      height: 6px;
+      background: #f1f5f9;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .quality-card .progress-bar .fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .quality-card .progress-bar .fill.blue { background: #3b82f6; }
+    .quality-card .progress-bar .fill.purple { background: #a855f7; }
+    .quality-card .progress-bar .fill.amber { background: #f59e0b; }
+
+    .quality-card .progress-text {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .section {
+      margin-bottom: 40px;
+      page-break-inside: avoid;
+    }
+
+    .section-header {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-header .count {
+      font-size: 14px;
+      color: #64748b;
+      font-weight: 400;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card.bordered-left {
+      border-left: 4px solid;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .star {
+      color: #f59e0b;
+      font-size: 14px;
+    }
+
+    .card-description {
+      font-size: 14px;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+
+    .card-meta {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .card-meta strong {
+      color: #475569;
+    }
+
+    .rationale-box {
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .rationale-box .label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    .rationale-box p {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .alternatives {
+      margin-top: 12px;
+    }
+
+    .alternatives .label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    .alternatives ul {
+      margin-left: 20px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .alternatives li {
+      margin-bottom: 2px;
+    }
+
+    .risk-box {
+      background: #fef2f2;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #991b1b;
+    }
+
+    .story-content {
+      font-size: 13px;
+      color: #64748b;
+      white-space: pre-wrap;
+      margin-top: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: #94a3b8;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body { padding: 24px; }
+      .section { break-inside: avoid; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.releaseName}</h1>
+    <div class="subtitle">Release Prep Report</div>
+  </div>
+
+  <!-- Quality Scores -->
+  <div class="quality-scores">
+    <div class="quality-card">
+      <div class="label">Release Notes</div>
+      <div class="value blue">${releaseNotes.length}</div>
+      ${session.releaseNotesCompleteness ? `
+        <div class="progress-bar"><div class="fill blue" style="width: ${session.releaseNotesCompleteness}%;"></div></div>
+        <div class="progress-text"><span>Quality</span><span>${session.releaseNotesCompleteness}%</span></div>
+      ` : ''}
+    </div>
+    <div class="quality-card">
+      <div class="label">Decisions</div>
+      <div class="value purple">${decisions.length}</div>
+      ${session.decisionLogCompleteness ? `
+        <div class="progress-bar"><div class="fill purple" style="width: ${session.decisionLogCompleteness}%;"></div></div>
+        <div class="progress-text"><span>Quality</span><span>${session.decisionLogCompleteness}%</span></div>
+      ` : ''}
+    </div>
+    <div class="quality-card">
+      <div class="label">Debt Items</div>
+      <div class="value amber">${debtItems.length}</div>
+      ${session.debtInventoryCompleteness ? `
+        <div class="progress-bar"><div class="fill amber" style="width: ${session.debtInventoryCompleteness}%;"></div></div>
+        <div class="progress-text"><span>Quality</span><span>${session.debtInventoryCompleteness}%</span></div>
+      ` : ''}
+    </div>
+  </div>
+
+  <!-- Release Notes Section -->
+  <div class="section">
+    <h2 class="section-header">Release Notes <span class="count">(${releaseNotes.length})</span></h2>
+    ${releaseNotes.length === 0 ? '<div class="empty-state">No release notes generated.</div>' : releaseNotes.map(note => `
+      <div class="card bordered-left" style="border-left-color: ${getBorderColor(note.category)};">
+        <div class="card-header">
+          ${note.isHighlighted ? '<span class="star">&#9733;</span>' : ''}
+          <span class="card-title">${note.title}</span>
+          <span class="badge" style="${getCategoryBadgeStyle(note.category)}">${formatCategory(note.category)}</span>
+        </div>
+        <p class="card-description">${note.description}</p>
+        ${note.userImpact ? `<p class="card-meta"><strong>Impact:</strong> ${note.userImpact}</p>` : ''}
+      </div>
+    `).join('')}
+  </div>
+
+  <!-- Decision Log Section -->
+  <div class="section">
+    <h2 class="section-header">Decision Log <span class="count">(${decisions.length})</span></h2>
+    ${decisions.length === 0 ? '<div class="empty-state">No decisions extracted.</div>' : decisions.map(decision => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${decision.title}</span>
+          <span class="badge" style="${getDecisionTypeBadgeStyle(decision.decisionType)}">${decision.decisionType.charAt(0).toUpperCase() + decision.decisionType.slice(1)}</span>
+          <span class="badge" style="${getImpactBadgeStyle(decision.impactLevel)}">${decision.impactLevel.charAt(0).toUpperCase() + decision.impactLevel.slice(1)}</span>
+        </div>
+        <p class="card-description">${decision.description}</p>
+        ${decision.rationale ? `
+          <div class="rationale-box">
+            <div class="label">Rationale</div>
+            <p>${decision.rationale}</p>
+          </div>
+        ` : ''}
+        ${decision.alternativesConsidered && decision.alternativesConsidered.length > 0 ? `
+          <div class="alternatives">
+            <div class="label">Alternatives Considered</div>
+            <ul>
+              ${decision.alternativesConsidered.map(alt => `<li>${alt}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+      </div>
+    `).join('')}
+  </div>
+
+  <!-- Technical Debt Section -->
+  <div class="section">
+    <h2 class="section-header">Technical Debt <span class="count">(${debtItems.length})</span></h2>
+    ${debtItems.length === 0 ? '<div class="empty-state">No technical debt items identified.</div>' : debtItems.map(item => `
+      <div class="card bordered-left" style="border-left-color: ${getDebtBorderColor(item.impactLevel)};">
+        <div class="card-header">
+          <span class="card-title">${item.title}</span>
+          <span class="badge" style="${getDebtTypeBadgeStyle(item.debtType)}">${item.debtType.charAt(0).toUpperCase() + item.debtType.slice(1)}</span>
+          <span class="badge" style="${getImpactBadgeStyle(item.impactLevel)}">${item.impactLevel.charAt(0).toUpperCase() + item.impactLevel.slice(1)}</span>
+        </div>
+        <p class="card-description">${item.description}</p>
+        ${item.affectedArea ? `<p class="card-meta"><strong>Area:</strong> ${item.affectedArea}</p>` : ''}
+        ${item.effortEstimate ? `<p class="card-meta"><strong>Effort:</strong> ${item.effortEstimate}</p>` : ''}
+        ${item.riskIfUnaddressed ? `
+          <div class="risk-box">
+            <strong>Risk:</strong> ${item.riskIfUnaddressed}
+          </div>
+        ` : ''}
+      </div>
+    `).join('')}
+  </div>
+
+  <!-- Stories Section -->
+  <div class="section">
+    <h2 class="section-header">Stories <span class="count">(${storiesList.length})</span></h2>
+    ${storiesList.length === 0 ? '<div class="empty-state">No stories included in this release.</div>' : storiesList.map(story => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${story.title}</span>
+          <span class="badge" style="${getStoryTypeBadgeStyle(story.storyType)}">${story.storyType === 'user_story' ? 'Story' : (story.storyType.charAt(0).toUpperCase() + story.storyType.slice(1))}</span>
+        </div>
+        <div class="story-content">${story.content}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="footer">
+    Generated by Product Studio &bull; ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
   }
 }

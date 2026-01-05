@@ -15,6 +15,7 @@ import {
   lucideFlag,
   lucideCode,
   lucideInfo,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { CompetitiveAnalysisService } from './competitive-analysis.service';
 import type { Opportunity } from './competitive-analysis.types';
@@ -45,6 +46,7 @@ interface Tab {
       lucideFlag,
       lucideCode,
       lucideInfo,
+      lucideFileText,
     }),
   ],
   template: `
@@ -74,6 +76,15 @@ interface Tab {
           </div>
           <div class="flex items-center gap-2">
             @if (session()?.status === 'completed') {
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                (click)="exportToPdf()"
+              >
+                <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+                Export PDF
+              </button>
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
                 <ng-icon name="lucideCheckCircle2" class="h-4 w-4" />
                 Completed
@@ -688,5 +699,605 @@ export class CompetitiveAnalysisResultsComponent implements OnInit, OnDestroy {
       return session.customFocusArea;
     }
     return this.service.getFocusAreaLabel(session.focusArea);
+  }
+
+  exportToPdf(): void {
+    const session = this.session();
+    if (!session) return;
+
+    const focusAreaLabel = this.getFocusAreaLabel();
+    const competitors = session.referenceCompetitors?.join(', ') || 'N/A';
+    const generatedDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    // Helper to escape HTML
+    const escapeHtml = (text: string): string => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
+
+    // Helper to get priority color
+    const getPriorityColor = (priority: string): string => {
+      switch (priority) {
+        case 'high':
+          return '#dc2626';
+        case 'medium':
+          return '#ca8a04';
+        case 'low':
+          return '#16a34a';
+        default:
+          return '#6b7280';
+      }
+    };
+
+    // Build HTML sections
+    let industryStandardsHtml = '';
+    if (session.industryStandards?.length) {
+      industryStandardsHtml = session.industryStandards
+        .map(
+          (standard, i) => `
+          <div class="list-item">
+            <span class="item-number">${i + 1}</span>
+            <span class="item-text">${escapeHtml(standard)}</span>
+          </div>
+        `
+        )
+        .join('');
+    } else {
+      industryStandardsHtml = '<p class="empty-state">No industry standards identified</p>';
+    }
+
+    let bestPracticesHtml = '';
+    if (session.bestPractices?.length) {
+      bestPracticesHtml = session.bestPractices
+        .map(
+          practice => `
+          <div class="list-item practice-item">
+            <span class="checkmark">&#10003;</span>
+            <span class="item-text">${escapeHtml(practice)}</span>
+          </div>
+        `
+        )
+        .join('');
+    } else {
+      bestPracticesHtml = '<p class="empty-state">No best practices identified</p>';
+    }
+
+    let pitfallsHtml = '';
+    if (session.commonPitfalls?.length) {
+      pitfallsHtml = session.commonPitfalls
+        .map(
+          pitfall => `
+          <div class="list-item pitfall-item">
+            <span class="warning-icon">!</span>
+            <span class="item-text">${escapeHtml(pitfall)}</span>
+          </div>
+        `
+        )
+        .join('');
+    } else {
+      pitfallsHtml = '<p class="empty-state">No common pitfalls identified</p>';
+    }
+
+    let gapsHtml = '';
+    if (this.hasProductContext() && session.productGaps?.length) {
+      gapsHtml = session.productGaps
+        .map(
+          (gap, i) => `
+          <div class="list-item gap-item">
+            <span class="item-number gap-number">${i + 1}</span>
+            <span class="item-text">${escapeHtml(gap)}</span>
+          </div>
+        `
+        )
+        .join('');
+    } else if (this.hasProductContext()) {
+      gapsHtml = '<p class="empty-state">No product gaps identified</p>';
+    }
+
+    let opportunitiesHtml = '';
+    if (session.opportunities?.length) {
+      opportunitiesHtml = session.opportunities
+        .map(
+          opp => `
+          <div class="opportunity-item" style="border-left: 4px solid ${getPriorityColor(opp.priority)};">
+            <div class="opportunity-content">
+              <p class="opportunity-text">${escapeHtml(opp.text)}</p>
+              <div class="opportunity-meta">
+                <span class="priority-badge" style="background-color: ${getPriorityColor(opp.priority)}20; color: ${getPriorityColor(opp.priority)};">
+                  ${opp.priority.toUpperCase()} PRIORITY
+                </span>
+                ${opp.tag ? `<span class="tag-badge">${escapeHtml(opp.tag)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `
+        )
+        .join('');
+    } else {
+      opportunitiesHtml = '<p class="empty-state">No opportunities identified</p>';
+    }
+
+    let codeComparisonHtml = '';
+    if (session.codeComparison) {
+      codeComparisonHtml = `<pre class="code-block">${escapeHtml(session.codeComparison)}</pre>`;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Competitive Analysis - ${escapeHtml(focusAreaLabel)}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: #ffffff;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+          }
+
+          .header {
+            border-bottom: 3px solid #006450;
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+          }
+
+          .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #006450;
+            margin-bottom: 8px;
+          }
+
+          .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            font-size: 14px;
+            color: #6b7280;
+          }
+
+          .header-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+
+          .header-meta-label {
+            font-weight: 600;
+            color: #374151;
+          }
+
+          .section {
+            margin-bottom: 36px;
+            page-break-inside: avoid;
+          }
+
+          .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+
+          .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+          }
+
+          .section-icon.primary {
+            background-color: #006450;
+            color: white;
+          }
+
+          .section-icon.green {
+            background-color: #dcfce7;
+            color: #16a34a;
+          }
+
+          .section-icon.yellow {
+            background-color: #fef9c3;
+            color: #ca8a04;
+          }
+
+          .section-icon.orange {
+            background-color: #fed7aa;
+            color: #ea580c;
+          }
+
+          .section-icon.blue {
+            background-color: #dbeafe;
+            color: #2563eb;
+          }
+
+          .section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+          }
+
+          .section-description {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 2px;
+          }
+
+          .summary-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+          }
+
+          .summary-box p {
+            white-space: pre-line;
+            color: #4b5563;
+          }
+
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+          }
+
+          .stat-card {
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+          }
+
+          .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #006450;
+          }
+
+          .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+          }
+
+          .list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+          }
+
+          .item-number {
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #006450;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .gap-number {
+            background-color: #ea580c;
+          }
+
+          .checkmark {
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #dcfce7;
+            color: #16a34a;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .warning-icon {
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #fef9c3;
+            color: #ca8a04;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .pitfall-item {
+            background-color: #fffbeb;
+            border-color: #fde68a;
+          }
+
+          .item-text {
+            font-size: 14px;
+            color: #374151;
+          }
+
+          .opportunity-item {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+          }
+
+          .opportunity-text {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+          }
+
+          .opportunity-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+          }
+
+          .priority-badge {
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+
+          .tag-badge {
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            background-color: #e5e7eb;
+            color: #4b5563;
+          }
+
+          .code-block {
+            background-color: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+          }
+
+          .empty-state {
+            color: #9ca3af;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+          }
+
+          .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+          }
+
+          .footer strong {
+            color: #006450;
+          }
+
+          @media print {
+            body {
+              padding: 20px;
+            }
+
+            .section {
+              page-break-inside: avoid;
+            }
+
+            .header {
+              page-break-after: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Competitive Analysis Report</h1>
+          <div class="header-meta">
+            <div class="header-meta-item">
+              <span class="header-meta-label">Focus Area:</span>
+              <span>${escapeHtml(focusAreaLabel)}</span>
+            </div>
+            ${
+              session.referenceCompetitors?.length
+                ? `
+              <div class="header-meta-item">
+                <span class="header-meta-label">Competitors:</span>
+                <span>${escapeHtml(competitors)}</span>
+              </div>
+            `
+                : ''
+            }
+            <div class="header-meta-item">
+              <span class="header-meta-label">Generated:</span>
+              <span>${generatedDate}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-icon primary">S</div>
+            <div>
+              <h2>Executive Summary</h2>
+            </div>
+          </div>
+          <div class="summary-box">
+            <p>${escapeHtml(session.executiveSummary || 'No executive summary available.')}</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">${session.industryStandards?.length || 0}</div>
+              <div class="stat-label">Standards</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${session.bestPractices?.length || 0}</div>
+              <div class="stat-label">Best Practices</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${session.commonPitfalls?.length || 0}</div>
+              <div class="stat-label">Pitfalls</div>
+            </div>
+            ${
+              this.hasProductContext()
+                ? `
+              <div class="stat-card">
+                <div class="stat-value">${session.productGaps?.length || 0}</div>
+                <div class="stat-label">Gaps</div>
+              </div>
+            `
+                : ''
+            }
+            <div class="stat-card">
+              <div class="stat-value">${session.opportunities?.length || 0}</div>
+              <div class="stat-label">Opportunities</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Industry Standards -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-icon primary">&#9673;</div>
+            <div>
+              <h2>Industry Standards</h2>
+              <p class="section-description">Established norms and expectations in this focus area</p>
+            </div>
+          </div>
+          ${industryStandardsHtml}
+        </div>
+
+        <!-- Best Practices -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-icon green">&#8593;</div>
+            <div>
+              <h2>Best Practices</h2>
+              <p class="section-description">Proven approaches that lead to success</p>
+            </div>
+          </div>
+          ${bestPracticesHtml}
+        </div>
+
+        <!-- Common Pitfalls -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-icon yellow">&#9888;</div>
+            <div>
+              <h2>Common Pitfalls</h2>
+              <p class="section-description">Mistakes to avoid based on industry experience</p>
+            </div>
+          </div>
+          ${pitfallsHtml}
+        </div>
+
+        ${
+          this.hasProductContext()
+            ? `
+          <!-- Product Gaps -->
+          <div class="section">
+            <div class="section-header">
+              <div class="section-icon orange">&#9873;</div>
+              <div>
+                <h2>Product Gaps</h2>
+                <p class="section-description">Areas where existing solutions fall short</p>
+              </div>
+            </div>
+            ${gapsHtml}
+          </div>
+        `
+            : ''
+        }
+
+        <!-- Opportunities -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-icon primary">&#128161;</div>
+            <div>
+              <h2>Opportunities</h2>
+              <p class="section-description">Actionable opportunities to differentiate and improve</p>
+            </div>
+          </div>
+          ${opportunitiesHtml}
+        </div>
+
+        ${
+          session.codeComparison
+            ? `
+          <!-- Code Comparison -->
+          <div class="section">
+            <div class="section-header">
+              <div class="section-icon blue">&lt;/&gt;</div>
+              <div>
+                <h2>Code Comparison</h2>
+                <p class="section-description">Analysis of how your code compares to industry best practices</p>
+              </div>
+            </div>
+            ${codeComparisonHtml}
+          </div>
+        `
+            : ''
+        }
+
+        <div class="footer">
+          <p>Generated by <strong>Product Studio</strong></p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      // Delay print to ensure styles are loaded
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
   }
 }

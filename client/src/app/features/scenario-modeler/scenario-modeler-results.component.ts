@@ -22,6 +22,7 @@ import {
   lucideRefreshCw,
   lucideDownload,
   lucidePresentation,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { ScenarioModelerService } from './scenario-modeler.service';
 import type {
@@ -55,6 +56,7 @@ import type {
       lucideRefreshCw,
       lucideDownload,
       lucidePresentation,
+      lucideFileText,
     }),
   ],
   template: `
@@ -75,6 +77,13 @@ import type {
           </div>
           <div class="flex items-center gap-2">
             @if (session()?.status === 'completed') {
+              <button
+                (click)="exportToPdf()"
+                class="px-4 py-2 border rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-slate-50"
+              >
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Export PDF
+              </button>
               <button
                 (click)="navigateToCommunicator()"
                 class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-primary/90"
@@ -483,5 +492,275 @@ export class ScenarioModelerResultsComponent implements OnInit, OnDestroy {
 
   getCapacityComparison(variantId: number) {
     return this.comparison()?.capacityComparison?.[variantId];
+  }
+
+  exportToPdf() {
+    const session = this.session();
+    const variants = this.variants();
+    const comparison = this.comparison();
+    if (!session || variants.length === 0) return;
+
+    const getRiskColor = (score: number) => {
+      if (score < 30) return { bg: '#dcfce7', text: '#166534' };
+      if (score < 60) return { bg: '#fef9c3', text: '#854d0e' };
+      return { bg: '#fee2e2', text: '#b91c1c' };
+    };
+
+    const variantsHtml = variants.map(variant => {
+      const riskColor = getRiskColor(variant.riskScore || 0);
+      const timelineComp = comparison?.timelineComparison?.[variant.id];
+      const capacityComp = comparison?.capacityComparison?.[variant.id];
+
+      let timelineDelta = 'N/A';
+      if (timelineComp) {
+        if (timelineComp.deltaFromBaseline < 0) {
+          timelineDelta = `<span style="color: #16a34a;">↓ ${Math.abs(timelineComp.deltaFromBaseline)} sprints</span>`;
+        } else if (timelineComp.deltaFromBaseline > 0) {
+          timelineDelta = `<span style="color: #dc2626;">↑ +${timelineComp.deltaFromBaseline} sprints</span>`;
+        } else {
+          timelineDelta = '<span style="color: #6b7280;">No change</span>';
+        }
+      }
+
+      let capacityDelta = 'N/A';
+      if (capacityComp) {
+        if (capacityComp.deltaFromBaseline > 0) {
+          capacityDelta = `<span style="color: #16a34a;">↑ +${capacityComp.deltaFromBaseline}</span>`;
+        } else if (capacityComp.deltaFromBaseline < 0) {
+          capacityDelta = `<span style="color: #dc2626;">↓ ${capacityComp.deltaFromBaseline}</span>`;
+        } else {
+          capacityDelta = '<span style="color: #6b7280;">No change</span>';
+        }
+      }
+
+      return `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+            ${variant.isBaseline ? '<span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px;">Baseline</span>' : ''}
+            <strong>${variant.name}</strong>
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${timelineDelta}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${capacityDelta}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+            <span style="background: ${riskColor.bg}; color: ${riskColor.text}; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">${variant.riskScore || 0}</span>
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+            ${variant.isViable ? '✓' : '✗'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    const variantDetailsHtml = variants.map(variant => `
+      <div class="variant-detail">
+        <h3 class="variant-name">${variant.name} ${variant.isBaseline ? '<span class="baseline-tag">Baseline</span>' : ''}</h3>
+
+        <div class="detail-grid">
+          <div class="detail-section">
+            <h4>Impact Summary</h4>
+            <div class="stat-row"><span>Items Accelerated</span><span class="stat-value green">${variant.impactSummary?.itemsAcceleratedCount || 0}</span></div>
+            <div class="stat-row"><span>Items Deferred</span><span class="stat-value amber">${variant.impactSummary?.itemsDeferredCount || 0}</span></div>
+            <div class="stat-row"><span>Items Excluded</span><span class="stat-value red">${variant.impactSummary?.itemsExcludedCount || 0}</span></div>
+            <div class="stat-row border-top"><span>Timeline Change</span><span class="stat-value">${variant.impactSummary?.timelineDelta || 0} sprints</span></div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Risk Factors</h4>
+            ${(variant.riskFactors?.length || 0) === 0 ? '<p class="muted">No significant risks identified</p>' :
+              variant.riskFactors?.map(risk => `
+                <div class="risk-item ${risk.severity}">${risk.description}</div>
+              `).join('') || ''}
+          </div>
+
+          <div class="detail-section">
+            <h4>Trade-offs</h4>
+            ${(variant.tradeOffs?.length || 0) === 0 ? '<p class="muted">No significant trade-offs</p>' :
+              variant.tradeOffs?.map(tradeOff => `
+                <div class="tradeoff-item">
+                  <div class="gain">↑ ${tradeOff.gain}</div>
+                  <div class="cost">↓ ${tradeOff.cost}</div>
+                </div>
+              `).join('') || ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${session.name || 'Scenario Analysis'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { font-size: 14px; color: #64748b; }
+    .section { margin-bottom: 32px; }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+    th { background: #f8fafc; padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid #e2e8f0; }
+    th:not(:first-child) { text-align: center; }
+    .variant-detail {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+    }
+    .variant-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .baseline-tag {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .detail-section h4 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 6px 0;
+    }
+    .stat-row.border-top { border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; }
+    .stat-value { font-weight: 600; }
+    .stat-value.green { color: #16a34a; }
+    .stat-value.amber { color: #d97706; }
+    .stat-value.red { color: #dc2626; }
+    .muted { color: #94a3b8; font-size: 13px; }
+    .risk-item {
+      font-size: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+    .risk-item.high { background: #fee2e2; color: #b91c1c; }
+    .risk-item.medium { background: #fef9c3; color: #854d0e; }
+    .risk-item.low { background: #f1f5f9; color: #475569; }
+    .tradeoff-item {
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    .gain { color: #16a34a; margin-bottom: 4px; }
+    .cost { color: #dc2626; }
+    .recommendations {
+      background: #f0f9ff;
+      border-left: 4px solid #0ea5e9;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .recommendations h3 { font-size: 14px; font-weight: 600; color: #0369a1; margin-bottom: 12px; }
+    .recommendations ul { margin: 0; padding-left: 20px; }
+    .recommendations li { font-size: 13px; color: #334155; margin-bottom: 8px; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    @media print {
+      body { padding: 24px; }
+      .variant-detail { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.name || 'Scenario Analysis'}</h1>
+    <div class="subtitle">${variants.length} scenarios generated</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Scenario Comparison</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Timeline</th>
+          <th>Capacity</th>
+          <th>Risk</th>
+          <th>Viable</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${variantsHtml}
+      </tbody>
+    </table>
+  </div>
+
+  ${comparison?.recommendations?.length ? `
+  <div class="section">
+    <div class="recommendations">
+      <h3>Recommendations</h3>
+      <ul>
+        ${comparison.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+      </ul>
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <h2 class="section-title">Scenario Details</h2>
+    ${variantDetailsHtml}
+  </div>
+
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 500);
+    }
   }
 }

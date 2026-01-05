@@ -7,7 +7,7 @@ import type { MeasurementFrameworkSession } from './measurement-framework.types'
 import { HlmButtonDirective } from '../../ui/button';
 import { SlicePipe } from '@angular/common';
 
-type SourceType = 'goal-session' | 'okr-session' | 'custom';
+type SourceType = 'goal-session' | 'okr-session' | 'kpi-session' | 'custom';
 
 @Component({
   selector: 'app-measurement-framework-input',
@@ -43,6 +43,11 @@ type SourceType = 'goal-session' | 'okr-session' | 'custom';
               @if (hasOkrSessions()) {
                 <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'okr-session'" [class.text-primary-foreground]="sourceType() === 'okr-session'" [class.hover:bg-muted]="sourceType() !== 'okr-session'" (click)="setSourceType('okr-session')">
                   <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
+                </button>
+              }
+              @if (hasKpiSessions()) {
+                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'kpi-session'" [class.text-primary-foreground]="sourceType() === 'kpi-session'" [class.hover:bg-muted]="sourceType() !== 'kpi-session'" (click)="setSourceType('kpi-session')">
+                  <ng-icon name="lucideBarChart3" class="h-4 w-4" /> From KPIs
                 </button>
               }
               <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
@@ -118,6 +123,39 @@ type SourceType = 'goal-session' | 'okr-session' | 'custom';
                             }
                           </ul>
                         }
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            } @else if (sourceType() === 'kpi-session') {
+              <!-- KPI Session Picker -->
+              <div>
+                <label class="text-sm font-medium">Select KPI Assignment Session <span class="text-destructive">*</span></label>
+                <p class="text-xs text-muted-foreground mt-1">Import KPIs from a completed KPI Assignment session</p>
+                <select class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="selectedKpiSessionId()" (change)="onKpiSessionChange($event)">
+                  <option value="">-- Select a KPI Session --</option>
+                  @for (kpiSession of service.kpiSessions(); track kpiSession.id) {
+                    <option [value]="kpiSession.id">{{ getKpiSessionLabel(kpiSession) }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (selectedKpiSessionId() && service.directKpiAssignments().length > 0) {
+                <div class="rounded-lg border bg-muted/30 p-4">
+                  <h4 class="text-sm font-medium mb-2">Imported KPIs</h4>
+                  <ul class="text-sm space-y-2">
+                    @for (kpi of service.directKpiAssignments(); track kpi.id) {
+                      <li>
+                        <span class="font-medium">{{ kpi.goalTitle }}</span>
+                        <span class="text-xs text-muted-foreground ml-2">({{ kpi.goalCategory }})</span>
+                        <div class="ml-4 mt-1 text-muted-foreground text-xs">
+                          <div>• Primary: {{ kpi.primaryKpi }} ({{ kpi.measurementUnit }})</div>
+                          @if (kpi.secondaryKpi) {
+                            <div>• Secondary: {{ kpi.secondaryKpi }}</div>
+                          }
+                          <div>• Frequency: {{ kpi.checkFrequency }}</div>
+                        </div>
                       </li>
                     }
                   </ul>
@@ -291,6 +329,7 @@ export class MeasurementFrameworkInputComponent implements OnInit {
   sourceType = signal<SourceType>('goal-session');
   selectedGoalSessionId = signal<string>('');
   selectedOkrSessionId = signal<string>('');
+  selectedKpiSessionId = signal<string>('');
   name = signal('');
   objectivesDescription = signal('');
   existingDataSources = signal('');
@@ -308,7 +347,8 @@ export class MeasurementFrameworkInputComponent implements OnInit {
   // Computed - check which importable sources are available
   hasGoalSessions = computed(() => this.service.goalSettingSessions().length > 0);
   hasOkrSessions = computed(() => this.service.okrSessions().length > 0);
-  hasImportableSources = computed(() => this.hasGoalSessions() || this.hasOkrSessions());
+  hasKpiSessions = computed(() => this.service.kpiSessions().length > 0);
+  hasImportableSources = computed(() => this.hasGoalSessions() || this.hasOkrSessions() || this.hasKpiSessions());
 
   canSubmit = computed(() => {
     if (this.name().length === 0) return false;
@@ -317,6 +357,9 @@ export class MeasurementFrameworkInputComponent implements OnInit {
     }
     if (this.sourceType() === 'okr-session') {
       return !!this.selectedOkrSessionId() && this.service.okrObjectives().length > 0;
+    }
+    if (this.sourceType() === 'kpi-session') {
+      return !!this.selectedKpiSessionId() && this.service.directKpiAssignments().length > 0;
     }
     return this.objectivesLength() >= 50;
   });
@@ -343,6 +386,7 @@ export class MeasurementFrameworkInputComponent implements OnInit {
       this.service.loadSessions(),
       this.service.loadOkrSessions(),
       this.service.loadGoalSettingSessions(),
+      this.service.loadKpiSessions(),
       this.service.loadKnowledgeBases(),
     ]);
 
@@ -375,11 +419,23 @@ export class MeasurementFrameworkInputComponent implements OnInit {
       return;
     }
 
+    // Check for kpiSessionId query param (from KPI Assignment CTA)
+    const kpiSessionId = this.route.snapshot.queryParams['kpiSessionId'];
+    if (kpiSessionId) {
+      this.sourceType.set('kpi-session');
+      this.selectedKpiSessionId.set(kpiSessionId);
+      await this.service.loadKpiSessionFull(Number(kpiSessionId));
+      // Auto-generate framework name
+      this.name.set('KPI-Based Measurement Framework');
+      return;
+    }
+
     // Set default source type based on available import sources
     const hasGoals = this.service.goalSettingSessions().length > 0;
     const hasOkrs = this.service.okrSessions().length > 0;
+    const hasKpis = this.service.kpiSessions().length > 0;
 
-    if (!hasGoals && !hasOkrs) {
+    if (!hasGoals && !hasOkrs && !hasKpis) {
       // No importable sources, default to custom
       this.sourceType.set('custom');
     } else if (hasGoals) {
@@ -388,6 +444,9 @@ export class MeasurementFrameworkInputComponent implements OnInit {
     } else if (hasOkrs) {
       // Fall back to OKR sessions
       this.sourceType.set('okr-session');
+    } else if (hasKpis) {
+      // Fall back to KPI sessions
+      this.sourceType.set('kpi-session');
     }
   }
 
@@ -395,17 +454,29 @@ export class MeasurementFrameworkInputComponent implements OnInit {
     this.sourceType.set(type);
     if (type === 'goal-session') {
       this.selectedOkrSessionId.set('');
+      this.selectedKpiSessionId.set('');
       this.service.selectedOkrSession.set(null);
       this.service.okrObjectives.set([]);
+      this.service.clearKpiSelection();
     } else if (type === 'okr-session') {
       this.selectedGoalSessionId.set('');
+      this.selectedKpiSessionId.set('');
       this.service.clearGoalSelection();
-    } else {
+      this.service.clearKpiSelection();
+    } else if (type === 'kpi-session') {
       this.selectedGoalSessionId.set('');
       this.selectedOkrSessionId.set('');
       this.service.clearGoalSelection();
       this.service.selectedOkrSession.set(null);
       this.service.okrObjectives.set([]);
+    } else {
+      this.selectedGoalSessionId.set('');
+      this.selectedOkrSessionId.set('');
+      this.selectedKpiSessionId.set('');
+      this.service.clearGoalSelection();
+      this.service.selectedOkrSession.set(null);
+      this.service.okrObjectives.set([]);
+      this.service.clearKpiSelection();
     }
   }
 
@@ -441,6 +512,28 @@ export class MeasurementFrameworkInputComponent implements OnInit {
     }
   }
 
+  async onKpiSessionChange(e: Event) {
+    const value = (e.target as HTMLSelectElement).value;
+    this.selectedKpiSessionId.set(value);
+    if (value) {
+      await this.service.loadKpiSessionFull(Number(value));
+      // Auto-generate framework name
+      if (!this.name()) {
+        this.name.set('KPI-Based Measurement Framework');
+      }
+    } else {
+      this.service.clearKpiSelection();
+    }
+  }
+
+  getKpiSessionLabel(session: any): string {
+    if (session.executiveSummary) {
+      const summary = session.executiveSummary.slice(0, 50);
+      return summary + (session.executiveSummary.length > 50 ? '...' : '');
+    }
+    return `KPI Session #${session.id}`;
+  }
+
   onNameInput(e: Event) { this.name.set((e.target as HTMLInputElement).value); }
   onObjectivesInput(e: Event) { this.objectivesDescription.set((e.target as HTMLTextAreaElement).value); }
   onDataSourcesInput(e: Event) { this.existingDataSources.set((e.target as HTMLTextAreaElement).value); }
@@ -472,6 +565,8 @@ export class MeasurementFrameworkInputComponent implements OnInit {
       description = this.service.buildDescriptionFromGoals();
     } else if (this.sourceType() === 'okr-session') {
       description = this.service.buildDescriptionFromOkr();
+    } else if (this.sourceType() === 'kpi-session') {
+      description = this.service.buildDescriptionFromKpi();
     }
 
     const session = await this.service.createSession({
