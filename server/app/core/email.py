@@ -21,6 +21,12 @@ def _get_resend_client():
 
 async def send_magic_link(email: str, token: str):
     """Send magic link email for passwordless authentication."""
+    # Debug: Show what env vars are set
+    print(f"[EMAIL DEBUG] send_magic_link called for {email}")
+    print(f"[EMAIL DEBUG] RESEND_API_KEY set: {bool(os.getenv('RESEND_API_KEY'))}")
+    print(f"[EMAIL DEBUG] SMTP_HOST: {os.getenv('SMTP_HOST')}")
+    print(f"[EMAIL DEBUG] SMTP_USER: {os.getenv('SMTP_USER')}")
+
     base_url = os.getenv("FRONTEND_URL", "http://localhost:4200")
     link = f"{base_url}/auth/verify?token={token}"
 
