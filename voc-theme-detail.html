@@ -152,21 +152,24 @@
                     <div class="detail-card">
                         <h3 style="font-size: 16px; margin-bottom: 16px;">Evidence Breakdown</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div class="evidence-counter">
+                            <div class="evidence-counter" style="cursor: pointer;"
+                                onclick="window.location.href='voc-evidence-explorer.html?type=jira'">
                                 <div style="font-size: 24px; font-weight: 700; color: #0052CC;">23</div>
                                 <div style="font-size: 12px; color: var(--text-secondary);">Jira Tickets</div>
                             </div>
-                            <div class="evidence-counter">
+                            <div class="evidence-counter" style="cursor: pointer;"
+                                onclick="window.location.href='voc-evidence-explorer.html?type=survey'">
                                 <div style="font-size: 24px; font-weight: 700; color: #00B4EF;">12</div>
                                 <div style="font-size: 12px; color: var(--text-secondary);">Survey Mentions</div>
                             </div>
-                            <div class="evidence-counter">
+                            <div class="evidence-counter" style="cursor: pointer;"
+                                onclick="window.location.href='voc-evidence-explorer.html?type=app_reviews'">
                                 <div style="font-size: 24px; font-weight: 700; color: #F59E0B;">8</div>
                                 <div style="font-size: 12px; color: var(--text-secondary);">App Reviews</div>
                             </div>
                             <div class="evidence-counter"
                                 style="cursor: pointer; border-color: #FECACA; background: #FEF2F2;"
-                                onclick="window.location.href='voc-sessions-queue.html'">
+                                onclick="window.location.href='voc-evidence-explorer.html?type=sessions'">
                                 <div style="font-size: 24px; font-weight: 700; color: #DC2626;">5</div>
                                 <div style="font-size: 12px; color: #991B1B; text-decoration: underline;">Flagged
                                     Sessions</div>

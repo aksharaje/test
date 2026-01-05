@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidence Explorer - VoC</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .split-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 32px;
+            margin-top: 24px;
+        }
+
+        .filter-panel {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            height: fit-content;
+        }
+
+        .evidence-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .evidence-tag {
+            display: inline-block;
+            background: #F1F5F9;
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .source-badge {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC;">
+
+    <div class="app-container" style="display: block;">
+        <!-- Header -->
+        <header style="background: white; border-bottom: 1px solid var(--border-color); padding: 16px 32px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <a href="voc-theme-detail.html"
+                    style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                    <i class="ph ph-arrow-left"></i> Back to Theme: Login Issues
+                </a>
+                <h1 style="margin: 0; font-size: 24px;">Evidence Explorer</h1>
+                <p style="color: var(--text-secondary); margin-top: 4px;">Showing evidence for: Login Issues</p>
+            </div>
+        </header>
+
+        <main style="max-width: 1200px; margin: 0 auto; padding: 0 32px;">
+
+            <div class="split-layout">
+                <!-- Filter Panel -->
+                <div class="filter-panel">
+                    <h3
+                        style="font-size: 14px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 16px; font-weight: 600;">
+                        Filter by evidence type</h3>
+                    <div id="filter-checkboxes">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Main Feed -->
+                <div>
+                    <!-- Controls -->
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+                        <input type="text" id="search-input" placeholder="Search evidence..."
+                            style="padding: 10px; width: 300px; border: 1px solid var(--border-color); border-radius: 6px;">
+                        <select id="sort-select"
+                            style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;">
+                            <option value="recent">Most recent</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="impact">Highest sentiment impact</option>
+                        </select>
+                    </div>
+
+                    <!-- Feed -->
+                    <div style="margin-bottom: 16px; font-weight: 600; color: var(--text-secondary);"
+                        id="results-count">Evidence (0)</div>
+                    <div id="evidence-feed">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Mock Data ---
+        const evidenceData = [
+            // Survey Mentions (12) - Seeded a few
+            { type: 'survey', id: 's1', text: "Login keeps failing on my phone.", source: "Qualtrics — NPS Q1", date: "2026-03-02", sentiment: "Negative", tag: "Login Issues" },
+            { type: 'survey', id: 's2', text: "Login screen reloads and doesn’t explain why.", source: "Qualtrics — Checkout UX Survey", date: "2026-03-01", sentiment: "Negative", tag: "Login Issues" },
+            { type: 'survey', id: 's3', text: "I can't access my account history.", source: "Qualtrics — Support Feedback", date: "2026-02-28", sentiment: "Negative", tag: "Login Issues" },
+            { type: 'survey', id: 's4', text: "Password reset link never arrived.", source: "Qualtrics — NPS Q1", date: "2026-02-25", sentiment: "Neutral", tag: "Login Issues" },
+
+            // App Reviews (8) - Seeded a few
+            { type: 'app_reviews', id: 'ar1', rating: 1, text: "App won’t let me log in half the time.", source: "App Store", version: "iOS 5.2", date: "2026-02-28", tag: "Login Issues" },
+            { type: 'app_reviews', id: 'ar2', rating: 2, text: "Update broke the login flow.", source: "Play Store", version: "Android 4.1", date: "2026-02-27", tag: "Login Issues" },
+            { type: 'app_reviews', id: 'ar3', rating: 1, text: "Infinite spinner on login.", source: "App Store", version: "iOS 5.2", date: "2026-02-26", tag: "Login Issues" },
+
+            // Flagged Sessions (5)
+            { type: 'sessions', id: 'S-10234', reason: ["Repeated login attempts (x4)", "No error message shown"], device: "iOS · Safari", date: "2026-03-03" },
+            { type: 'sessions', id: 'S-10235', reason: ["Rage clicks on Login button"], device: "Android · Chrome", date: "2026-03-02" },
+
+            // Jira (23) - Seeded a few
+            { type: 'jira', id: 'PROJ-123', title: "Login API returns 500 intermittently", status: "In Progress", created: "2026-02-20" },
+            { type: 'jira', id: 'PROJ-124', title: "Mobile login UI misalignment", status: "Open", created: "2026-02-22" },
+        ];
+
+        // --- State ---
+        let state = {
+            filters: {
+                survey: true,
+                app_reviews: true,
+                sessions: true,
+                jira: true
+            },
+            search: "",
+            sort: "recent"
+        };
+
+        const filterLabels = {
+            survey: `Survey Mentions (12)`, // Mock counts for simplified UI
+            app_reviews: `App Reviews (8)`,
+            sessions: `Flagged Sessions (5)`,
+            jira: `Jira Tickets (23)`
+        };
+
+        // --- Init ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Parse Query Params
+            const urlParams = new URLSearchParams(window.location.search);
+            const typeParam = urlParams.get('type');
+
+            if (typeParam && state.filters.hasOwnProperty(typeParam)) {
+                // If param exists, select ONLY that type
+                Object.keys(state.filters).forEach(key => {
+                    state.filters[key] = (key === typeParam);
+                });
+            } else {
+                // Default all true (already set)
+            }
+
+            renderFilters();
+            renderFeed();
+
+            // Event Listeners
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                state.search = e.target.value;
+                renderFeed();
+            });
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                state.sort = e.target.value;
+                renderFeed();
+            });
+        });
+
+        // --- Renderers ---
+        function renderFilters() {
+            const container = document.getElementById('filter-checkboxes');
+            container.innerHTML = '';
+
+            Object.keys(state.filters).forEach(key => {
+                const checked = state.filters[key];
+                const div = document.createElement('div');
+                div.className = 'filter-checkbox';
+                div.innerHTML = `
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
+                        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFilter('${key}')">
+                        ${filterLabels[key]}
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleFilter(key) {
+            state.filters[key] = !state.filters[key];
+            renderFeed();
+        }
+
+        function renderFeed() {
+            const feed = document.getElementById('evidence-feed');
+            const countLabel = document.getElementById('results-count');
+            feed.innerHTML = '';
+
+            // Filter
+            let filtered = evidenceData.filter(item => {
+                if (!state.filters[item.type]) return false;
+                if (state.search) {
+                    const searchStr = (item.text || item.title || item.id || "").toLowerCase();
+                    return searchStr.includes(state.search.toLowerCase());
+                }
+                return true;
+            });
+
+            // Sort (Mock - just simple date or reverse)
+            if (state.sort === 'oldest') {
+                filtered.reverse(); // simple hack for mock data
+            }
+
+            countLabel.textContent = `Evidence (${filtered.length})`;
+
+            if (filtered.length === 0) {
+                feed.innerHTML = '<div style="color: var(--text-secondary); padding: 24px; text-align: center;">No evidence found matching filters.</div>';
+                return;
+            }
+
+            filtered.forEach(item => {
+                feed.appendChild(createCard(item));
+            });
+        }
+
+        function createCard(item) {
+            const div = document.createElement('div');
+            div.className = 'evidence-card';
+
+            let content = '';
+
+            if (item.type === 'survey') {
+                content = `
+                    <div style="font-size: 16px; margin-bottom: 8px;">“${item.text}”</div>
+                    <div class="source-badge">Source: ${item.source} <span style="color: #CBD5E1">|</span> ${item.date}</div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+                        <span style="background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${item.sentiment}</span>
+                        <span class="evidence-tag">${item.tag}</span>
+                    </div>
+                    <div style="margin-top: 16px; display: flex; gap: 12px;">
+                        <button class="btn btn-outline-sm" style="font-size: 13px;">View in Qualtrics <i class="ph ph-arrow-square-out"></i></button>
+                        <button class="btn btn-outline-sm" style="font-size: 13px;">Highlight in Theme</button>
+                    </div>
+                `;
+            } else if (item.type === 'app_reviews') {
+                const stars = '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating);
+                content = `
+                    <div style="color: #F59E0B; margin-bottom: 4px;">${stars}</div>
+                    <div style="font-size: 16px; margin-bottom: 8px;">“${item.text}”</div>
+                    <div class="source-badge">Source: ${item.source} · ${item.version} <span style="color: #CBD5E1">|</span> ${item.date}</div>
+                    <div style="margin-top: 12px;">
+                        <span class="evidence-tag">${item.tag}</span>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <button class="btn btn-outline-sm" style="font-size: 13px;">View App Store Review <i class="ph ph-arrow-square-out"></i></button>
+                    </div>
+                `;
+            } else if (item.type === 'sessions') {
+                const reasons = item.reason.map(r => `<div>• ${r}</div>`).join('');
+                content = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 600;">Session ID: ${item.id}</span>
+                        <span style="font-size: 12px; color: var(--text-secondary);">${item.date}</span>
+                    </div>
+                    <div style="background: #FFF1F2; color: #BE123C; padding: 12px; border-radius: 6px; font-size: 14px; margin-bottom: 12px;">
+                        <strong style="display: block; margin-bottom: 4px;">Flag reasons:</strong>
+                        ${reasons}
+                    </div>
+                    <div class="source-badge" style="margin-bottom: 16px;"><i class="ph ph-device-mobile"></i> ${item.device}</div>
+                    <button class="btn btn-primary" style="font-size: 13px;" onclick="window.location.href='voc-sessions-queue.html?highlight=${item.id}'">Review Session</button>
+                `;
+            } else if (item.type === 'jira') {
+                content = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 600; color: #0052CC;">${item.id}</span>
+                        <span style="font-size: 12px; color: var(--text-secondary);">${item.created}</span>
+                    </div>
+                    <div style="font-size: 16px; margin-bottom: 12px;">${item.title}</div>
+                    <div class="evidence-tag">${item.status}</div>
+                    <div style="margin-top: 16px;">
+                        <button class="btn btn-outline-sm" style="font-size: 13px;">Open Ticket <i class="ph ph-arrow-square-out"></i></button>
+                    </div>
+                `;
+            }
+
+            div.innerHTML = content;
+            return div;
+        }
+
+    </script>
+</body>
+
+</html>
