@@ -15,6 +15,7 @@ class UserBase(SQLModel):
     is_active: bool = Field(default=True)
     full_name: Optional[str] = None
     has_accepted_terms: bool = Field(default=False)
+    hashed_password: Optional[str] = Field(default=None)  # None for dev mode users
 
 class User(UserBase, table=True):
     __tablename__ = "users"
@@ -25,3 +26,23 @@ class User(UserBase, table=True):
 class UserUpdate(SQLModel):
     full_name: Optional[str] = None
     email: Optional[str] = None # Optional: allow email change? Maybe later.
+
+
+class UserCreate(SQLModel):
+    """Admin creates a user with these fields."""
+    email: str
+    full_name: str
+    password: str
+    role: UserRole = UserRole.MEMBER
+
+
+class UserLogin(SQLModel):
+    """Login request."""
+    email: str
+    password: Optional[str] = None  # Optional for dev mode
+
+
+class DevUserRegister(SQLModel):
+    """Dev mode self-registration."""
+    email: str
+    full_name: str

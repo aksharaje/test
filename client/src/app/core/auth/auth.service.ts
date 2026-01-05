@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, of, map, throwError } from 'rxjs';
+import { Observable, tap, catchError, of, map } from 'rxjs';
 
 
 export interface User {
@@ -21,6 +21,31 @@ export interface AuthResponse {
     user: User;
     is_new?: boolean;
     needs_onboarding?: boolean;
+    needs_registration?: boolean;
+    email?: string;
+}
+
+export interface AuthMode {
+    dev_mode: boolean;
+    allowed_domains: string[];
+}
+
+export interface ManagedUser {
+    id: number;
+    email: string;
+    fullName: string | null;
+    role: string;
+    isActive: boolean;
+    createdAt: string | null;
+}
+
+export interface CreateUserResponse {
+    id: number;
+    email: string;
+    fullName: string;
+    role: string;
+    password: string;
+    message: string;
 }
 
 @Injectable({
@@ -29,7 +54,6 @@ export interface AuthResponse {
 export class AuthService {
     private http = inject(HttpClient);
     private router = inject(Router);
-    // Removed unused apiUrl property since we use full paths
 
     // Signals
     private _currentUser = signal<User | null>(null);
@@ -37,15 +61,23 @@ export class AuthService {
     isLoading = signal(true);
     isAuthenticated = computed(() => !!this._currentUser());
 
-    // Public setter for isAuthenticated to allow testing/mocking if needed
-    // but primarily we derive it from currentUser.
-    // However, some components might check it synchronously before currentUser is loaded?
-    // Let's keep a private signal that we update.
+    // Auth mode
+    authMode = signal<AuthMode | null>(null);
+    isDevMode = computed(() => this.authMode()?.dev_mode ?? false);
+
     private _isAuthenticated = signal(false);
 
     constructor() {
+        this.loadAuthMode();
         this.checkAuth().subscribe(() => {
             this.isLoading.set(false);
+        });
+    }
+
+    loadAuthMode(): void {
+        this.http.get<AuthMode>('/api/auth/mode').subscribe({
+            next: (mode) => this.authMode.set(mode),
+            error: () => this.authMode.set({ dev_mode: true, allowed_domains: [] })
         });
     }
 
@@ -56,7 +88,6 @@ export class AuthService {
             return of(false);
         }
 
-        // Use /api/auth/me (bypassing /v1 prefix issue)
         return this.http.get<User>(`/api/auth/me`).pipe(
             map(user => {
                 this._currentUser.set(user);
@@ -70,6 +101,30 @@ export class AuthService {
         );
     }
 
+    login(email: string, password?: string): Observable<AuthResponse> {
+        return this.http.post<AuthResponse>(`/api/auth/login`, { email, password }).pipe(
+            tap(response => {
+                if (response.access_token) {
+                    this.setSession(response);
+                }
+            })
+        );
+    }
+
+    devRegister(email: string, fullName: string): Observable<AuthResponse> {
+        return this.http.post<AuthResponse>(`/api/auth/dev-register`, {
+            email,
+            full_name: fullName
+        }).pipe(
+            tap(response => {
+                if (response.access_token) {
+                    this.setSession(response);
+                }
+            })
+        );
+    }
+
+    // Keep for backwards compatibility but deprecated
     sendMagicLink(email: string): Observable<any> {
         return this.http.post(`/api/auth/login`, { email });
     }
@@ -121,5 +176,27 @@ export class AuthService {
         localStorage.setItem('access_token', authResult.access_token);
         this._currentUser.set(authResult.user);
         this._isAuthenticated.set(true);
+    }
+
+    // ==================== Admin User Management ====================
+
+    listUsers(): Observable<ManagedUser[]> {
+        return this.http.get<ManagedUser[]>('/api/auth/users');
+    }
+
+    createUser(data: { email: string; full_name: string; password: string; role: string }): Observable<CreateUserResponse> {
+        return this.http.post<CreateUserResponse>('/api/auth/users', data);
+    }
+
+    deleteUser(userId: number): Observable<any> {
+        return this.http.delete(`/api/auth/users/${userId}`);
+    }
+
+    toggleUserActive(userId: number): Observable<any> {
+        return this.http.patch(`/api/auth/users/${userId}/toggle-active`, {});
+    }
+
+    resetUserPassword(userId: number, newPassword: string): Observable<any> {
+        return this.http.patch(`/api/auth/users/${userId}/reset-password`, { new_password: newPassword });
     }
 }
