@@ -351,6 +351,16 @@
                 document.getElementById('compare-content').style.display = 'block';
             }
         }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set dynamic date
+            const dateSpan = document.getElementById('analysis-date');
+            if (dateSpan) {
+                const options = { month: 'short', day: 'numeric' };
+                dateSpan.textContent = new Date().toLocaleDateString('en-US', options);
+            }
+        });
     </script>
 </body>
 
