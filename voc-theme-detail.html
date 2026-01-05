@@ -222,17 +222,31 @@
                             </div>
 
                             <!-- Review Sessions Step -->
-                            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
-                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-                                    <i class="ph ph-eye" style="color: #4F46E5;"></i>
-                                    <strong style="color: #1E293B;">Review Sessions</strong>
+                            <div id="next-step-review-sessions"
+                                style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
+                                <div id="review-sessions-active">
+                                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                                        <i class="ph ph-eye" style="color: #4F46E5;"></i>
+                                        <strong style="color: #1E293B;">Review Sessions</strong>
+                                    </div>
+                                    <p
+                                        style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; margin-left: 24px;">
+                                        See real user behavior signals tied to this theme.
+                                    </p>
+                                    <button class="btn btn-outline full-width" style="margin-left: 0;"
+                                        onclick="openSessionsModal()">Review Sessions</button>
                                 </div>
-                                <p
-                                    style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; margin-left: 24px;">
-                                    See real user behavior signals tied to this theme.
-                                </p>
-                                <button class="btn btn-outline full-width" style="margin-left: 0;"
-                                    onclick="openSessionsModal()">Review Sessions</button>
+                                <div id="review-sessions-unavailable" style="display: none;">
+                                    <div
+                                        style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px; opacity: 0.5;">
+                                        <i class="ph ph-eye-slash" style="color: var(--text-secondary);"></i>
+                                        <strong style="color: var(--text-secondary);">Review Sessions</strong>
+                                    </div>
+                                    <p
+                                        style="font-size: 13px; color: var(--text-secondary); margin-bottom: 0; margin-left: 24px;">
+                                        Review session unavailable (No behavioral signals detected).
+                                    </p>
+                                </div>
                             </div>
 
                         </div>
@@ -363,20 +377,32 @@
             title: "Checkout feels slow & confusing",
             confidence: "Medium", // Low, Medium, High
             sourcesIncluded: ["Qualtrics", "Jira"], // App Reviews missing
-            appReviewsIncluded: false
+            appReviewsIncluded: false,
+            hasBehavioralSignals: true // Set to false to test "Unavailable" state
         };
 
         function checkNextSteps() {
-            const btnContainer = document.getElementById('next-step-app-reviews');
-
-            // Logic: Show if App Reviews NOT included AND Confidence <= Medium
+            // 1. App Reviews Logic
+            const appReviewsContainer = document.getElementById('next-step-app-reviews');
             const isAppReviewsMissing = !themeData.appReviewsIncluded;
             const isConfidenceLowOrMed = (themeData.confidence === "Low" || themeData.confidence === "Medium");
 
             if (isAppReviewsMissing && isConfidenceLowOrMed) {
-                btnContainer.style.display = 'block';
+                appReviewsContainer.style.display = 'block';
             } else {
-                btnContainer.style.display = 'none';
+                appReviewsContainer.style.display = 'none';
+            }
+
+            // 2. Review Sessions Logic
+            const sessionsActive = document.getElementById('review-sessions-active');
+            const sessionsUnavailable = document.getElementById('review-sessions-unavailable');
+
+            if (themeData.hasBehavioralSignals) {
+                sessionsActive.style.display = 'block';
+                sessionsUnavailable.style.display = 'none';
+            } else {
+                sessionsActive.style.display = 'none';
+                sessionsUnavailable.style.display = 'block';
             }
         }
 
