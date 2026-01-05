@@ -27,7 +27,7 @@ import { CompetitiveAnalysisService } from './competitive-analysis.service';
 import type { CompetitiveAnalysisSession, EpicOrFeature, ScopeDefinitionSummary, IdeationSessionSummary } from './competitive-analysis.types';
 import { HlmButtonDirective } from '../../ui/button';
 
-type InputSourceType = 'none' | 'epic_feature' | 'scope_definition' | 'ideation' | 'code_repository';
+type InputSourceType = 'none' | 'epic_feature' | 'ideation' | 'code_repository';
 type FocusAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
 
 @Component({
@@ -397,20 +397,6 @@ type FocusAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
                       Epic/Feature
                     </button>
                   }
-                  @if (service.scopeDefinitions().length > 0) {
-                    <button
-                      type="button"
-                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors"
-                      [class.bg-primary]="inputSourceType() === 'scope_definition'"
-                      [class.text-primary-foreground]="inputSourceType() === 'scope_definition'"
-                      [class.bg-muted]="inputSourceType() !== 'scope_definition'"
-                      [class.hover:bg-muted/80]="inputSourceType() !== 'scope_definition'"
-                      (click)="setInputSourceType('scope_definition')"
-                    >
-                      <ng-icon name="lucideFileText" class="h-3.5 w-3.5" />
-                      Scope Definition
-                    </button>
-                  }
                   @if (service.ideationSessions().length > 0) {
                     <button
                       type="button"
@@ -452,22 +438,6 @@ type FocusAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
                     @for (item of service.epicsAndFeatures(); track item.id) {
                       <option [value]="item.id">
                         [{{ item.type.toUpperCase() }}] {{ item.title }}
-                      </option>
-                    }
-                  </select>
-                }
-
-                <!-- Scope Definition Selection -->
-                @if (inputSourceType() === 'scope_definition') {
-                  <select
-                    class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    [value]="selectedInputSourceId()"
-                    (change)="onScopeDefinitionSelect($event)"
-                  >
-                    <option value="">Select a scope definition...</option>
-                    @for (session of service.scopeDefinitions(); track session.id) {
-                      <option [value]="session.id">
-                        {{ session.projectName }}
                       </option>
                     }
                   </select>
@@ -549,7 +519,7 @@ type FocusAreaSourceType = 'manual' | 'ideation' | 'okr' | 'scope_definition';
                     No existing work available to import.
                   </p>
                   <p class="text-xs text-muted-foreground mt-1">
-                    Create Epics/Features, Scope Definitions, Ideation sessions, or import a code repository first.
+                    Create Epics/Features, Ideation sessions, or import a code repository first.
                   </p>
                 </div>
               }
@@ -757,7 +727,6 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
 
   hasInputSources = computed(() =>
     this.service.epicsAndFeatures().length > 0 ||
-    this.service.scopeDefinitions().length > 0 ||
     this.service.ideationSessions().length > 0 ||
     this.service.codeKnowledgeBases().length > 0
   );
@@ -934,21 +903,6 @@ export class CompetitiveAnalysisInputComponent implements OnInit {
     if (item) {
       this.selectedInputSourceId.set(id);
       this.inputSourceDescription.set(`${item.title}\n\n${item.description}`);
-    }
-  }
-
-  onScopeDefinitionSelect(event: Event) {
-    const id = parseInt((event.target as HTMLSelectElement).value, 10);
-    if (!id) {
-      this.selectedInputSourceId.set(null);
-      this.inputSourceDescription.set('');
-      return;
-    }
-
-    const session = this.service.scopeDefinitions().find((s) => s.id === id);
-    if (session) {
-      this.selectedInputSourceId.set(id);
-      this.inputSourceDescription.set(`Project: ${session.projectName}\n\nVision: ${session.productVision}`);
     }
   }
 
