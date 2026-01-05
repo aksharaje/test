@@ -182,11 +182,52 @@
                     </div>
                 </div>
 
+                <!-- App Reviews Source -->
                 <div style="margin-top: 12px;">
-                    <label class="list-option">
-                        <input type="checkbox">
+                    <label class="list-option" style="margin-bottom: 4px;">
+                        <input type="checkbox" id="app-reviews-check" onchange="updateAppReviewsState()">
                         <span><strong>App store reviews</strong></span>
                     </label>
+
+                    <!-- App Reviews: Unauthorized State -->
+                    <div id="app-reviews-unauth"
+                        style="display: none; margin-left: 32px; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-warning"
+                                style="color: #F59E0B; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #DC2626; font-weight: 500;">Access not authorized
+                                </div>
+                                <div style="font-size: 13px; color: #9A3412; margin-top: 2px;">Product Studio needs
+                                    permission to fetch public reviews.</div>
+                                <button type="button" class="btn btn-outline-sm"
+                                    style="margin-top: 8px; background: white; border-color: #FDBA74; color: #C2410C;"
+                                    onclick="openAppAuthModal()">Manage Access</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Reviews: Authorized State -->
+                    <div id="app-reviews-auth"
+                        style="display: none; margin-left: 32px; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-check-circle"
+                                style="color: #16A34A; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <span style="font-weight: 600; color: #166534;">Connected</span>
+                                </div>
+                                <div style="font-size: 13px; color: #15803D; margin-top: 4px;">
+                                    Public data only | Stores: App Store, Google Play
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-outline-sm"
+                                        style="background: white; border-color: #FCA5A5; color: #DC2626;"
+                                        onclick="disconnectAppReviews()">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -291,7 +332,7 @@
             </div>
         </div>
 
-        <!-- Permission Gate Modal -->
+        <!-- Permission Gate Modal (Qualtrics) -->
         <div id="auth-modal"
             style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
             <div
@@ -364,8 +405,73 @@
             </div>
         </div>
 
+        <!-- App Review Modal -->
+        <div id="app-auth-modal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+            <div
+                style="background: white; width: 600px; border-radius: var(--radius-lg); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                <div
+                    style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 16px;">
+                    Authorize App Review Access
+                </div>
+                <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Product Studio
+                            will read public app reviews only:</strong>
+                        <div
+                            style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px; margin-top: 8px;">
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Review
+                                text</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled>
+                                Rating</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled>
+                                Date</label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">App
+                            stores</strong>
+                        <div
+                            style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
+                                    type="checkbox" checked> App Store</label>
+                            <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox" checked>
+                                Google Play</label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <strong
+                            style="display: block; margin-bottom: 8px; color: var(--text-primary);">Coverage</strong>
+                        <select class="select-input">
+                            <option selected>Since last analysis</option>
+                            <option>Last 30 days</option>
+                            <option>All time</option>
+                        </select>
+                    </div>
+
+                    <div style="padding: 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
+                        <label
+                            style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #1E3A8A;">
+                            <input type="checkbox" id="app-modal-auth-check" onchange="checkAppModalAuth()">
+                            <span>I authorize Product Studio to fetch app reviews (public data only)</span>
+                        </label>
+                    </div>
+                </div>
+                <div
+                    style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
+                    <button class="btn btn-outline" onclick="closeAppAuthModal()">Cancel</button>
+                    <button id="app-modal-confirm-btn" class="btn btn-primary" disabled style="opacity: 0.5;"
+                        onclick="confirmAppAuth()">Authorize Access</button>
+                </div>
+            </div>
+        </div>
+
+
         <script>
             let isQualtricsAuthorized = false;
+            let isAppReviewsAuthorized = false;
 
             function togglePermissionBox() {
                 // Give slight delay to allow checkbox state to update
@@ -402,12 +508,33 @@
                 checkRunButton();
             }
 
+            function updateAppReviewsState() {
+                const checked = document.getElementById('app-reviews-check').checked;
+                const unauthBlock = document.getElementById('app-reviews-unauth');
+                const authBlock = document.getElementById('app-reviews-auth');
+
+                if (!checked) {
+                    unauthBlock.style.display = 'none';
+                    authBlock.style.display = 'none';
+                } else {
+                    if (!isAppReviewsAuthorized) {
+                        unauthBlock.style.display = 'block';
+                        authBlock.style.display = 'none';
+                    } else {
+                        unauthBlock.style.display = 'none';
+                        authBlock.style.display = 'block';
+                    }
+                }
+                checkRunButton();
+            }
+
             function checkRunButton() {
                 const jiraChecked = document.getElementById('jira-check').checked;
                 const jiraAuthChecked = document.getElementById('jira-auth').checked;
 
                 const qualtricsChecked = document.getElementById('qualtrics-check').checked;
-                // isQualtricsAuthorized is the auth flag
+
+                const appReviewsChecked = document.getElementById('app-reviews-check').checked;
 
                 const btn = document.getElementById('run-btn');
 
