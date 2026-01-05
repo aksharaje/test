@@ -357,29 +357,3 @@ async def reset_user_password(
         "password": new_password,  # Return plain password for admin to share
         "message": "Password reset successfully. Share the new password with the user."
     }
-
-
-# TEMPORARY: One-time bootstrap endpoint - REMOVE AFTER USE
-@router.post("/bootstrap-admin")
-async def bootstrap_admin(
-    secret: str = Body(..., embed=True),
-    session: Session = Depends(deps.get_session)
-):
-    """
-    One-time endpoint to set the initial admin.
-    Call with: POST /api/auth/bootstrap-admin {"secret": "ps-bootstrap-2026"}
-    REMOVE THIS ENDPOINT AFTER USE
-    """
-    if secret != "ps-bootstrap-2026":
-        raise HTTPException(status_code=403, detail="Invalid secret")
-    
-    user = session.exec(select(User).where(User.email == "ryanc@moodysnwc.com")).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user.role = UserRole.ADMIN
-    user.updated_at = datetime.utcnow()
-    session.add(user)
-    session.commit()
-    
-    return {"message": f"User {user.email} is now an admin", "role": user.role}
