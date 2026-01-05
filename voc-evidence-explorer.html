@@ -288,18 +288,6 @@
                     <div class="source-badge" style="margin-bottom: 16px;"><i class="ph ph-device-mobile"></i> ${item.device}</div>
                     <button class="btn btn-primary" style="font-size: 13px;" onclick="window.location.href='voc-sessions-queue.html?highlight=${item.id}'">Review Session</button>
                 `;
-            } else if (item.type === 'jira') {
-                content = `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-weight: 600; color: #0052CC;">${item.id}</span>
-                        <span style="font-size: 12px; color: var(--text-secondary);">${item.created}</span>
-                    </div>
-                    <div style="font-size: 16px; margin-bottom: 12px;">${item.title}</div>
-                    <div class="evidence-tag">${item.status}</div>
-                    <div style="margin-top: 16px;">
-                        <button class="btn btn-outline-sm" style="font-size: 13px;">Open Ticket <i class="ph ph-arrow-square-out"></i></button>
-                    </div>
-                `;
             }
 
             div.innerHTML = content;
