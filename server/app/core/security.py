@@ -8,7 +8,7 @@ import hashlib
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "super_secret_key_change_in_production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Short lived access token
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080  # 7 days (60 * 24 * 7)
 MAGIC_LINK_EXPIRE_MINUTES = 15
 
 # Debug: Print hash of secret key at startup

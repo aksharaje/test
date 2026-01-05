@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -60,35 +60,37 @@ type SourceType = 'goal-session' | 'custom';
             </div>
           }
 
-          <!-- Source Type Tabs -->
-          <div class="flex gap-2 mb-6">
-            <button
-              type="button"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
-              [class.border-primary]="sourceType() === 'goal-session'"
-              [class.bg-primary/5]="sourceType() === 'goal-session'"
-              [class.text-primary]="sourceType() === 'goal-session'"
-              [class.border-border]="sourceType() !== 'goal-session'"
-              [class.hover:border-primary/50]="sourceType() !== 'goal-session'"
-              (click)="setSourceType('goal-session')"
-            >
-              <ng-icon name="lucideFileText" class="h-4 w-4" />
-              Goal Setting Session
-            </button>
-            <button
-              type="button"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
-              [class.border-primary]="sourceType() === 'custom'"
-              [class.bg-primary/5]="sourceType() === 'custom'"
-              [class.text-primary]="sourceType() === 'custom'"
-              [class.border-border]="sourceType() !== 'custom'"
-              [class.hover:border-primary/50]="sourceType() !== 'custom'"
-              (click)="setSourceType('custom')"
-            >
-              <ng-icon name="lucidePencil" class="h-4 w-4" />
-              Enter Goals Manually
-            </button>
-          </div>
+          <!-- Source Type Tabs (only show if there are importable sources) -->
+          @if (hasImportableSources()) {
+            <div class="flex gap-2 mb-6">
+              <button
+                type="button"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
+                [class.border-primary]="sourceType() === 'goal-session'"
+                [class.bg-primary/5]="sourceType() === 'goal-session'"
+                [class.text-primary]="sourceType() === 'goal-session'"
+                [class.border-border]="sourceType() !== 'goal-session'"
+                [class.hover:border-primary/50]="sourceType() !== 'goal-session'"
+                (click)="setSourceType('goal-session')"
+              >
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Goal Setting Session
+              </button>
+              <button
+                type="button"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
+                [class.border-primary]="sourceType() === 'custom'"
+                [class.bg-primary/5]="sourceType() === 'custom'"
+                [class.text-primary]="sourceType() === 'custom'"
+                [class.border-border]="sourceType() !== 'custom'"
+                [class.hover:border-primary/50]="sourceType() !== 'custom'"
+                (click)="setSourceType('custom')"
+              >
+                <ng-icon name="lucidePencil" class="h-4 w-4" />
+                Enter Goals Manually
+              </button>
+            </div>
+          }
 
           <!-- Goal Session Picker -->
           @if (sourceType() === 'goal-session') {
@@ -310,6 +312,9 @@ export class KpiAssignmentInputComponent implements OnInit {
   manualGoals = signal<{ id: number; title: string }[]>([]);
   isGenerating = signal(false);
 
+  // Computed - check if there are importable sources
+  hasImportableSources = computed(() => this.service.goalSettingSessions().length > 0);
+
   async ngOnInit() {
     await Promise.all([
       this.service.loadGoalSettingSessions(),
@@ -322,6 +327,9 @@ export class KpiAssignmentInputComponent implements OnInit {
       this.sourceType.set('goal-session');
       this.selectedGoalSessionId.set(goalSessionId);
       await this.service.loadGoalsForSession(Number(goalSessionId));
+    } else if (this.service.goalSettingSessions().length === 0) {
+      // No importable sources available, default to custom input
+      this.sourceType.set('custom');
     }
   }
 

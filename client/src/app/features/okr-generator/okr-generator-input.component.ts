@@ -85,35 +85,37 @@ function getTimeframeOptions(): { value: string; label: string }[] {
             </div>
           }
 
-          <!-- Source Type Tabs -->
-          <div class="flex gap-2 mb-6">
-            <button
-              type="button"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
-              [class.border-primary]="sourceType() === 'goal-session'"
-              [class.bg-primary/5]="sourceType() === 'goal-session'"
-              [class.text-primary]="sourceType() === 'goal-session'"
-              [class.border-border]="sourceType() !== 'goal-session'"
-              [class.hover:border-primary/50]="sourceType() !== 'goal-session'"
-              (click)="setSourceType('goal-session')"
-            >
-              <ng-icon name="lucideFileText" class="h-4 w-4" />
-              Goal Setting Session
-            </button>
-            <button
-              type="button"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
-              [class.border-primary]="sourceType() === 'custom'"
-              [class.bg-primary/5]="sourceType() === 'custom'"
-              [class.text-primary]="sourceType() === 'custom'"
-              [class.border-border]="sourceType() !== 'custom'"
-              [class.hover:border-primary/50]="sourceType() !== 'custom'"
-              (click)="setSourceType('custom')"
-            >
-              <ng-icon name="lucidePencil" class="h-4 w-4" />
-              Write Custom
-            </button>
-          </div>
+          <!-- Source Type Tabs (only show if there are importable sources) -->
+          @if (hasImportableSources()) {
+            <div class="flex gap-2 mb-6">
+              <button
+                type="button"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
+                [class.border-primary]="sourceType() === 'goal-session'"
+                [class.bg-primary/5]="sourceType() === 'goal-session'"
+                [class.text-primary]="sourceType() === 'goal-session'"
+                [class.border-border]="sourceType() !== 'goal-session'"
+                [class.hover:border-primary/50]="sourceType() !== 'goal-session'"
+                (click)="setSourceType('goal-session')"
+              >
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Goal Setting Session
+              </button>
+              <button
+                type="button"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-all"
+                [class.border-primary]="sourceType() === 'custom'"
+                [class.bg-primary/5]="sourceType() === 'custom'"
+                [class.text-primary]="sourceType() === 'custom'"
+                [class.border-border]="sourceType() !== 'custom'"
+                [class.hover:border-primary/50]="sourceType() !== 'custom'"
+                (click)="setSourceType('custom')"
+              >
+                <ng-icon name="lucidePencil" class="h-4 w-4" />
+                Write Custom
+              </button>
+            </div>
+          }
 
           <form class="space-y-6" (submit)="onSubmit($event)">
             <!-- Goal Session Picker (when goal-session source type) -->
@@ -348,6 +350,7 @@ export class OkrGeneratorInputComponent implements OnInit {
   // Computed
   goalLength = computed(() => this.goalDescription().length);
   selectedGoalCount = computed(() => this.service.goalsForSelection().filter(g => g.selected).length);
+  hasImportableSources = computed(() => this.service.goalSettingSessions().length > 0);
   canSubmit = computed(() => {
     if (this.sourceType() === 'goal-session') {
       // Must have at least one goal selected
@@ -381,6 +384,9 @@ export class OkrGeneratorInputComponent implements OnInit {
       this.sourceType.set('goal-session');
       this.selectedGoalSessionId.set(goalSessionId);
       await this.service.loadGoalsForSession(Number(goalSessionId));
+    } else if (this.service.goalSettingSessions().length === 0) {
+      // No importable sources available, default to custom input
+      this.sourceType.set('custom');
     }
   }
 

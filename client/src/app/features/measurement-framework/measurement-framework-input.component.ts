@@ -32,18 +32,24 @@ type SourceType = 'goal-session' | 'okr-session' | 'custom';
             </div>
           }
 
-          <!-- Source Type Tabs -->
-          <div class="flex rounded-lg border p-1 mb-6">
-            <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'goal-session'" [class.text-primary-foreground]="sourceType() === 'goal-session'" [class.hover:bg-muted]="sourceType() !== 'goal-session'" (click)="setSourceType('goal-session')">
-              <ng-icon name="lucideFileText" class="h-4 w-4" /> From Goals
-            </button>
-            <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'okr-session'" [class.text-primary-foreground]="sourceType() === 'okr-session'" [class.hover:bg-muted]="sourceType() !== 'okr-session'" (click)="setSourceType('okr-session')">
-              <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
-            </button>
-            <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
-              <ng-icon name="lucidePenLine" class="h-4 w-4" /> Custom
-            </button>
-          </div>
+          <!-- Source Type Tabs (only show if there are importable sources) -->
+          @if (hasImportableSources()) {
+            <div class="flex rounded-lg border p-1 mb-6">
+              @if (hasGoalSessions()) {
+                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'goal-session'" [class.text-primary-foreground]="sourceType() === 'goal-session'" [class.hover:bg-muted]="sourceType() !== 'goal-session'" (click)="setSourceType('goal-session')">
+                  <ng-icon name="lucideFileText" class="h-4 w-4" /> From Goals
+                </button>
+              }
+              @if (hasOkrSessions()) {
+                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'okr-session'" [class.text-primary-foreground]="sourceType() === 'okr-session'" [class.hover:bg-muted]="sourceType() !== 'okr-session'" (click)="setSourceType('okr-session')">
+                  <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
+                </button>
+              }
+              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
+                <ng-icon name="lucidePenLine" class="h-4 w-4" /> Custom
+              </button>
+            </div>
+          }
 
           <form class="space-y-6" (submit)="onSubmit($event)">
             <div>
@@ -298,6 +304,12 @@ export class MeasurementFrameworkInputComponent implements OnInit {
   kbSearchFilter = signal('');
 
   objectivesLength = computed(() => this.objectivesDescription().length);
+
+  // Computed - check which importable sources are available
+  hasGoalSessions = computed(() => this.service.goalSettingSessions().length > 0);
+  hasOkrSessions = computed(() => this.service.okrSessions().length > 0);
+  hasImportableSources = computed(() => this.hasGoalSessions() || this.hasOkrSessions());
+
   canSubmit = computed(() => {
     if (this.name().length === 0) return false;
     if (this.sourceType() === 'goal-session') {
@@ -360,6 +372,22 @@ export class MeasurementFrameworkInputComponent implements OnInit {
       if (session) {
         this.name.set(`${session.timeframe} Measurement Framework`);
       }
+      return;
+    }
+
+    // Set default source type based on available import sources
+    const hasGoals = this.service.goalSettingSessions().length > 0;
+    const hasOkrs = this.service.okrSessions().length > 0;
+
+    if (!hasGoals && !hasOkrs) {
+      // No importable sources, default to custom
+      this.sourceType.set('custom');
+    } else if (hasGoals) {
+      // Prefer goal sessions if available
+      this.sourceType.set('goal-session');
+    } else if (hasOkrs) {
+      // Fall back to OKR sessions
+      this.sourceType.set('okr-session');
     }
   }
 

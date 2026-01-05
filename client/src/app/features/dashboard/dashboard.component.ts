@@ -212,17 +212,24 @@ import { ActivityService } from '../../core/services/activity.service';
                     <h3 class="font-semibold text-lg">Recent Artifacts</h3>
                 </div>
                 <div class="divide-y">
-                     @for (output of recentOutputs(); track output.id + output.type) {
-                        <a [routerLink]="output.url" class="flex items-center justify-between p-4 py-3 hover:bg-muted/50 transition-colors group">
-                           <div class="min-w-0 pr-4">
-                              <div class="font-medium text-sm group-hover:text-primary transition-colors truncate">{{ output.title }}</div>
-                              <div class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mt-0.5">{{ output.type.replace('_', ' ') }}</div>
-                           </div>
-                           <div class="text-xs text-muted-foreground font-mono whitespace-nowrap text-right">
-                              <div>{{ (output.updated_at.endsWith('Z') ? output.updated_at : output.updated_at + 'Z') | date:'mediumDate' }}</div>
-                              <div class="text-[10px] opacity-70">{{ (output.updated_at.endsWith('Z') ? output.updated_at : output.updated_at + 'Z') | date:'shortTime' }}</div>
-                           </div>
-                        </a>
+                     @if (recentOutputs().length === 0) {
+                        <div class="p-6 text-center text-muted-foreground">
+                           <p class="text-sm">No artifacts created yet.</p>
+                           <p class="text-xs mt-1">Your recent PRDs, research plans, and other outputs will appear here.</p>
+                        </div>
+                     } @else {
+                        @for (output of recentOutputs(); track output.id + output.type) {
+                           <a [routerLink]="output.url" class="flex items-center justify-between p-4 py-3 hover:bg-muted/50 transition-colors group">
+                              <div class="min-w-0 pr-4">
+                                 <div class="font-medium text-sm group-hover:text-primary transition-colors truncate">{{ output.title }}</div>
+                                 <div class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mt-0.5">{{ output.type.replace('_', ' ') }}</div>
+                              </div>
+                              <div class="text-xs text-muted-foreground font-mono whitespace-nowrap text-right">
+                                 <div>{{ (output.updated_at.endsWith('Z') ? output.updated_at : output.updated_at + 'Z') | date:'mediumDate' }}</div>
+                                 <div class="text-[10px] opacity-70">{{ (output.updated_at.endsWith('Z') ? output.updated_at : output.updated_at + 'Z') | date:'shortTime' }}</div>
+                              </div>
+                           </a>
+                        }
                      }
                 </div>
             </div>
