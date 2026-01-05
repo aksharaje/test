@@ -114,7 +114,7 @@
                             <div style="margin-top: 4px; display: flex; gap: 4px;">
                                 <strong style="color: var(--text-primary);">Coverage:</strong>
                                 <span style="display: flex; flex-direction: column;">
-                                    <span>• Qualtrics: Since Mar 3 (14 responses)</span>
+                                    <span>• Qualtrics: Since <span id="coverage-date">Mar 3</span> (14 responses)</span>
                                 </span>
                             </div>
                         </div>
@@ -294,11 +294,21 @@
 
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Set dynamic date
+            // Set dynamic date (Today)
             const dateSpan = document.getElementById('analysis-date');
+            const options = { month: 'short', day: 'numeric' };
+            const today = new Date();
+
             if (dateSpan) {
-                const options = { month: 'short', day: 'numeric' };
-                dateSpan.textContent = new Date().toLocaleDateString('en-US', options);
+                dateSpan.textContent = today.toLocaleDateString('en-US', options);
+            }
+
+            // Set coverage date (Yesterday)
+            const coverageSpan = document.getElementById('coverage-date');
+            if (coverageSpan) {
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                coverageSpan.textContent = yesterday.toLocaleDateString('en-US', options);
             }
         });
     </script>
