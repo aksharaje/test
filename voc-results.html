@@ -105,7 +105,8 @@
                 </a>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <h1 style="margin: 0; font-size: 24px;">VoC Analysis — Weekly · Defect-Focused (Mar 4)</h1>
+                        <h1 style="margin: 0; font-size: 24px;">VoC Analysis — Weekly · Defect-Focused (<span
+                                id="analysis-date">Mar 4</span>)</h1>
                         <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
                             <div><strong style="color: var(--text-primary);">Sources analyzed:</strong> Qualtrics</div>
                             <div><strong style="color: var(--text-primary);">Sources not included:</strong> App Reviews
@@ -330,13 +331,19 @@
     </div>
 
     <script>
-        function switchTab(tabId) {
-            // Update tabs
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('[id$="-content"]'); // simplistic content hider if divs exist, or just active class logic
+
+            tabs.forEach(t => t.classList.remove('active'));
+            // Find clicked tab logic would go here. 
+            // Since this is a mock results page, we just toggle styles for demo if needed.
+            // For now, let's just highlight the clicked one.
+            const clickedTab = Array.from(tabs).find(t => t.textContent.toLowerCase().includes(tabName));
+            if (clickedTab) clickedTab.classList.add('active');
 
             // Toggle content
-            if (tabId === 'overview') {
+            if (tabName === 'overview') {
                 document.getElementById('overview-content').style.display = 'block';
                 document.getElementById('compare-content').style.display = 'none';
             } else {
