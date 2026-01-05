@@ -9,6 +9,8 @@ from sqlmodel import Session
 from pydantic import BaseModel, Field
 
 from app.core.db import get_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.business_case import (
     BusinessCaseSession,
     CostItem,
@@ -85,7 +87,8 @@ class UpdateRateRequest(BaseModel):
 def create_session(
     request: CreateSessionRequest,
     background_tasks: BackgroundTasks,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Create business case session and start async processing"""
     try:
@@ -96,7 +99,7 @@ def create_session(
             business_context=request.business_context,
             target_market=request.target_market,
             feasibility_session_id=request.feasibility_session_id,
-            user_id=request.user_id
+            user_id=current_user.id
         )
 
         # Trigger background processing
@@ -131,10 +134,11 @@ def _transform_cash_flow_keys(cash_flows):
 @router.get("/sessions/{session_id}")
 def get_session_detail_endpoint(
     session_id: int,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get session with all costs, benefits, scenarios, assumptions, sensitivity"""
-    result = business_case_service.get_session_detail(db_session, session_id)
+    result = business_case_service.get_session_detail(db_session, session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -149,10 +153,11 @@ def get_session_detail_endpoint(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get session status for polling"""
-    session_obj = business_case_service.get_session(db_session, session_id)
+    session_obj = business_case_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -167,18 +172,19 @@ def get_session_status(
 
 @router.get("/sessions", response_model=List[BusinessCaseSession])
 def list_sessions(
-    user_id: Optional[int] = None,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    """List all sessions, optionally filtered by user"""
-    return business_case_service.list_sessions(db_session, user_id=user_id)
+    """List all sessions for the authenticated user"""
+    return business_case_service.list_sessions(db_session, user_id=current_user.id)
 
 
 @router.patch("/costs/{cost_id}", response_model=CostItem)
 def update_cost(
     cost_id: int,
     request: UpdateCostRequest,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Update cost item with user override"""
     cost = business_case_service.update_cost_item(
@@ -197,7 +203,8 @@ def update_cost(
 def update_benefit(
     benefit_id: int,
     request: UpdateBenefitRequest,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Update benefit item with user override"""
     benefit = business_case_service.update_benefit_item(
@@ -216,7 +223,8 @@ def update_benefit(
 def update_rate(
     rate_id: int,
     request: UpdateRateRequest,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Update a rate assumption with user override"""
     rate = business_case_service.update_rate_assumption(
@@ -235,10 +243,11 @@ def update_rate(
 def save_learning(
     session_id: int,
     request: SaveLearningRequest,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Save user correction for future learning"""
-    session_obj = business_case_service.get_session(db_session, session_id)
+    session_obj = business_case_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -250,7 +259,7 @@ def save_learning(
         original_value=request.original_value,
         corrected_value=request.corrected_value,
         context=request.context,
-        user_id=request.user_id
+        user_id=current_user.id
     )
 
     return {"success": True, "learningId": learning.id}
@@ -259,10 +268,11 @@ def save_learning(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Delete a session and all related data"""
-    success = business_case_service.delete_session(db_session, session_id)
+    success = business_case_service.delete_session(db_session, session_id, user_id=current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True}
@@ -272,10 +282,11 @@ def delete_session(
 def recalculate_financials(
     session_id: int,
     background_tasks: BackgroundTasks,
-    db_session: Session = Depends(get_session)
+    db_session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Recalculate financials after user overrides"""
-    session_obj = business_case_service.get_session(db_session, session_id)
+    session_obj = business_case_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 

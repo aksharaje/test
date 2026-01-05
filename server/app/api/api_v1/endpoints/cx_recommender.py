@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session
 from pydantic import BaseModel, Field
 
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.core.db import get_session
 from app.services.cx_recommender_service import cx_recommender_service
 
@@ -62,12 +64,12 @@ class AddCustomRecommendationRequest(BaseModel):
 
 @router.get("/context-sources")
 def get_available_context_sources(
-    user_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get available context sources for recommendation generation."""
-    journey_maps = cx_recommender_service.list_available_journey_maps(db_session, user_id)
-    gap_analyses = cx_recommender_service.list_available_gap_analyses(db_session, user_id)
+    journey_maps = cx_recommender_service.list_available_journey_maps(db_session, current_user.id)
+    gap_analyses = cx_recommender_service.list_available_gap_analyses(db_session, current_user.id)
 
     return {
         "journeyMaps": journey_maps,
@@ -81,6 +83,7 @@ def get_available_context_sources(
 def create_session(
     request: CreateSessionRequest,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Create a new recommendation session and start the pipeline."""
@@ -95,7 +98,7 @@ def create_session(
             team_capacity=request.team_capacity,
             recommendation_type=request.recommendation_type,
             session_name=request.session_name,
-            user_id=request.user_id
+            user_id=current_user.id
         )
 
         # Run pipeline in background
@@ -113,15 +116,15 @@ def create_session(
 
 @router.get("/sessions")
 def list_sessions(
-    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """List all recommendation sessions."""
     sessions = cx_recommender_service.list_sessions(
         db=db_session,
-        user_id=user_id,
+        user_id=current_user.id,
         skip=skip,
         limit=limit
     )
@@ -131,9 +134,14 @@ def list_sessions(
 @router.get("/sessions/{session_id}")
 def get_session_detail(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get complete session detail with all recommendations."""
+    # Verify user has access
+    session_obj = cx_recommender_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = cx_recommender_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -143,10 +151,11 @@ def get_session_detail(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get session status for polling during processing."""
-    session_obj = cx_recommender_service.get_session(db_session, session_id)
+    session_obj = cx_recommender_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -162,9 +171,14 @@ def get_session_status(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a session and all related data."""
+    # Verify user has access
+    session_obj = cx_recommender_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
     success = cx_recommender_service.delete_session(db_session, session_id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -175,12 +189,13 @@ def delete_session(
 def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Retry a failed recommendation session."""
     from datetime import datetime
 
-    session_obj = cx_recommender_service.get_session(db_session, session_id)
+    session_obj = cx_recommender_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -209,6 +224,7 @@ def retry_session(
 def update_recommendation(
     rec_id: int,
     request: UpdateRecommendationRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update a recommendation (user edits)."""
@@ -240,11 +256,12 @@ def update_recommendation(
 def add_custom_recommendation(
     session_id: int,
     request: AddCustomRecommendationRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Add a custom recommendation to a session."""
-    # Verify session exists
-    session_obj = cx_recommender_service.get_session(db_session, session_id)
+    # Verify session exists and user has access
+    session_obj = cx_recommender_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -265,6 +282,7 @@ def add_custom_recommendation(
 @router.delete("/recommendations/{rec_id}")
 def dismiss_recommendation(
     rec_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Dismiss (soft delete) a recommendation."""
@@ -277,6 +295,7 @@ def dismiss_recommendation(
 @router.post("/recommendations/{rec_id}/restore")
 def restore_recommendation(
     rec_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Restore a dismissed recommendation."""
@@ -292,9 +311,14 @@ def restore_recommendation(
 def export_session(
     session_id: int,
     format: str = "json",  # json, csv
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Export recommendation session (JSON only for now)."""
+    # Verify user has access
+    session_obj = cx_recommender_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = cx_recommender_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")

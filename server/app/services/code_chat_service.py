@@ -60,12 +60,12 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         # We can replicate that if needed, but simpler to return all ready KBs for now.
         return session.exec(select(KnowledgeBase).where(KnowledgeBase.status == "ready").order_by(desc(KnowledgeBase.createdAt))).all()
 
-    def create_session(self, session: Session, data: Dict[str, Any]) -> CodeChatSession:
+    def create_session(self, session: Session, data: Dict[str, Any], user_id: Optional[int] = None) -> CodeChatSession:
         if not data.get("knowledgeBaseIds"):
             raise ValueError("At least one knowledge base must be selected")
-            
+
         chat_session = CodeChatSession(
-            user_id=data.get("userId"),
+            user_id=user_id if user_id else data.get("userId"),
             knowledge_base_ids=data["knowledgeBaseIds"],
             title=data.get("title") or "New Chat"
         )
@@ -74,17 +74,21 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         session.refresh(chat_session)
         return chat_session
 
-    def get_session(self, session: Session, session_id: int) -> Optional[Dict[str, Any]]:
+    def get_session(self, session: Session, session_id: int, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
         chat_session = session.get(CodeChatSession, session_id)
         if not chat_session:
             return None
-            
+
+        # Check user_id scoping
+        if user_id and chat_session.user_id and chat_session.user_id != user_id:
+            return None
+
         messages = session.exec(
             select(CodeChatMessage)
             .where(CodeChatMessage.session_id == session_id)
             .order_by(CodeChatMessage.created_at)
         ).all()
-        
+
         # Get KB info
         kbs = []
         if chat_session.knowledge_base_ids:
@@ -92,7 +96,7 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
                 select(KnowledgeBase)
                 .where(col(KnowledgeBase.id).in_(chat_session.knowledge_base_ids))
             ).all()
-            
+
         return {
             "session": chat_session,
             "messages": messages,
@@ -106,25 +110,33 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         query = query.order_by(desc(CodeChatSession.updated_at))
         return session.exec(query).all()
 
-    def delete_session(self, session: Session, session_id: int) -> bool:
+    def delete_session(self, session: Session, session_id: int, user_id: Optional[int] = None) -> bool:
         chat_session = session.get(CodeChatSession, session_id)
         if not chat_session:
             return False
-            
+
+        # Check user_id scoping
+        if user_id and chat_session.user_id and chat_session.user_id != user_id:
+            return False
+
         # Delete messages first to avoid FK constraint violation
         messages = session.exec(select(CodeChatMessage).where(CodeChatMessage.session_id == session_id)).all()
         for msg in messages:
             session.delete(msg)
-            
+
         session.delete(chat_session)
         session.commit()
         return True
 
-    def update_session_knowledge_bases(self, session: Session, session_id: int, kb_ids: List[int]) -> Optional[CodeChatSession]:
+    def update_session_knowledge_bases(self, session: Session, session_id: int, kb_ids: List[int], user_id: Optional[int] = None) -> Optional[CodeChatSession]:
         chat_session = session.get(CodeChatSession, session_id)
         if not chat_session:
             return None
-            
+
+        # Check user_id scoping
+        if user_id and chat_session.user_id and chat_session.user_id != user_id:
+            return None
+
         chat_session.knowledge_base_ids = kb_ids
         chat_session.updated_at = datetime.utcnow()
         session.add(chat_session)
@@ -132,11 +144,15 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         session.refresh(chat_session)
         return chat_session
 
-    def send_message(self, session: Session, session_id: int, user_message: str) -> Dict[str, CodeChatMessage]:
+    def send_message(self, session: Session, session_id: int, user_message: str, user_id: Optional[int] = None) -> Dict[str, CodeChatMessage]:
         start_time = time.time()
-        
+
         chat_session = session.get(CodeChatSession, session_id)
         if not chat_session:
+            raise ValueError(f"Session {session_id} not found")
+
+        # Check user_id scoping
+        if user_id and chat_session.user_id and chat_session.user_id != user_id:
             raise ValueError(f"Session {session_id} not found")
             
         # Save user message

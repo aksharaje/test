@@ -89,21 +89,25 @@ class KpiAssignmentService:
 
     # ==================== SESSION MANAGEMENT ====================
 
-    def create_session(self, db: Session, data: KpiAssignmentSessionCreate) -> KpiAssignmentSession:
+    def create_session(self, db: Session, data: KpiAssignmentSessionCreate, user_id: Optional[int] = None) -> KpiAssignmentSession:
         """Create a new KPI assignment session."""
         session = KpiAssignmentSession(
             goal_session_id=data.goal_session_id,
             okr_session_id=data.okr_session_id,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
         db.refresh(session)
         return session
 
-    def get_session(self, db: Session, session_id: int) -> Optional[KpiAssignmentSession]:
-        """Get a session by ID."""
-        return db.get(KpiAssignmentSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[KpiAssignmentSession]:
+        """Get a session by ID, optionally filtered by user."""
+        session = db.get(KpiAssignmentSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None  # User doesn't own this session
+        return session
 
     def get_session_by_goal(self, db: Session, goal_session_id: int) -> Optional[KpiAssignmentSession]:
         """Get KPI assignment session for a Goal Setting session."""
@@ -126,16 +130,15 @@ class KpiAssignmentService:
     def list_sessions(
         self,
         db: Session,
+        user_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> List[KpiAssignmentSession]:
-        """List sessions with pagination."""
-        statement = (
-            select(KpiAssignmentSession)
-            .order_by(desc(KpiAssignmentSession.created_at))
-            .offset(skip)
-            .limit(limit)
-        )
+        """List sessions with pagination, filtered by user."""
+        statement = select(KpiAssignmentSession)
+        if user_id:
+            statement = statement.where(KpiAssignmentSession.user_id == user_id)
+        statement = statement.order_by(desc(KpiAssignmentSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
     def delete_session(self, db: Session, session_id: int) -> bool:

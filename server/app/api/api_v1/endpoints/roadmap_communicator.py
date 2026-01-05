@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlmodel import Session
 
 from app.core.db import get_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.services.roadmap_communicator_service import RoadmapCommunicatorService
 from app.models.roadmap_communicator import (
     CommunicatorSession,
@@ -33,11 +35,12 @@ def get_service(db: Session = Depends(get_session)) -> RoadmapCommunicatorServic
 @router.post("/sessions")
 def create_session(
     data: CommunicatorSessionCreate,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Create a new communicator session from a roadmap or scenario"""
     try:
-        session = service.create_session(data)
+        session = service.create_session(data, user_id=current_user.id)
         # Return as dict to avoid serialization issues
         return {
             "id": session.id,
@@ -63,12 +66,13 @@ def create_session(
 @router.get("/sessions", response_model=List[CommunicatorSession])
 def list_sessions(
     roadmap_session_id: int = None,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """List all communicator sessions, optionally filtered by roadmap"""
     if roadmap_session_id:
         return service.get_sessions_for_roadmap(roadmap_session_id)
-    return service.get_sessions()
+    return service.get_sessions(user_id=current_user.id)
 
 
 def _presentation_to_camel(pres: GeneratedPresentation) -> Dict[str, Any]:
@@ -96,10 +100,15 @@ def _presentation_to_camel(pres: GeneratedPresentation) -> Dict[str, Any]:
 @router.get("/sessions/{session_id}")
 def get_session_by_id(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Get a session with all presentations"""
     from humps import camelize
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = service.get_full_session(session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -132,9 +141,14 @@ def get_session_by_id(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Delete a session and all its presentations"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     if not service.delete_session(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"status": "deleted"}
@@ -143,10 +157,11 @@ def delete_session(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Get session processing status (for polling)"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -166,9 +181,14 @@ def get_session_status(
 @router.get("/sessions/{session_id}/presentations", response_model=List[GeneratedPresentation])
 def get_presentations(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Get all presentations for a session"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_presentations(session_id)
 
 
@@ -176,10 +196,15 @@ def get_presentations(
 async def generate_presentation(
     session_id: int,
     config: PresentationConfig,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Generate a presentation for a specific audience"""
     try:
+        # First check access via user_id scoped get_session
+        session_check = service.get_session(session_id, user_id=current_user.id)
+        if not session_check:
+            raise HTTPException(status_code=404, detail="Session not found")
         return await service.generate_presentation(session_id, config)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -190,11 +215,16 @@ async def generate_presentation(
 @router.get("/presentations/{presentation_id}", response_model=GeneratedPresentation)
 def get_presentation(
     presentation_id: int,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Get a specific presentation"""
     presentation = service.get_presentation(presentation_id)
     if not presentation:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+    # Check access via user_id scoped get_session
+    session_check = service.get_session(presentation.session_id, user_id=current_user.id)
+    if not session_check:
         raise HTTPException(status_code=404, detail="Presentation not found")
     return presentation
 
@@ -202,9 +232,17 @@ def get_presentation(
 @router.delete("/presentations/{presentation_id}")
 def delete_presentation(
     presentation_id: int,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Delete a presentation"""
+    presentation = service.get_presentation(presentation_id)
+    if not presentation:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+    # Check access via user_id scoped get_session
+    session_check = service.get_session(presentation.session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Presentation not found")
     if not service.delete_presentation(presentation_id):
         raise HTTPException(status_code=404, detail="Presentation not found")
     return {"status": "deleted"}
@@ -218,11 +256,16 @@ def delete_presentation(
 def export_presentation(
     presentation_id: int,
     format: str,
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Export a presentation in various formats"""
     presentation = service.get_presentation(presentation_id)
     if not presentation:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+    # Check access via user_id scoped get_session
+    session_check = service.get_session(presentation.session_id, user_id=current_user.id)
+    if not session_check:
         raise HTTPException(status_code=404, detail="Presentation not found")
 
     if format not in ["markdown", "html", "json"]:
@@ -257,6 +300,7 @@ def export_presentation(
 
 @router.get("/audience-types", response_model=List[Dict[str, Any]])
 def get_audience_types(
+    current_user: User = Depends(get_current_user),
     service: RoadmapCommunicatorService = Depends(get_service),
 ):
     """Get available audience types with their configurations"""

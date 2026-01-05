@@ -7,7 +7,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.models.scope_definition import (
     ScopeDefinitionSession,
     ScopeItem,
@@ -29,9 +30,10 @@ async def create_session(
     data: ScopeDefinitionSessionCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new scope definition session and start generation."""
-    session = service.create_session(db, data)
+    session = service.create_session(db, data, user_id=current_user.id)
     background_tasks.add_task(service.generate_scope, db, session.id)
     return session
 
@@ -41,18 +43,20 @@ async def list_sessions(
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """List scope definition sessions with pagination."""
-    return service.list_sessions(db, skip=skip, limit=limit)
+    return service.list_sessions(db, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/sessions/{session_id}", response_model=ScopeDefinitionSessionResponse)
 async def get_session(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get a specific session by ID."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
@@ -62,8 +66,13 @@ async def get_session(
 async def delete_session(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Delete a session and all related data."""
+    # Verify ownership first
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     success = service.delete_session(db, session_id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -75,9 +84,10 @@ async def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retry a failed session."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -93,8 +103,12 @@ async def retry_session(
 async def get_scope_items(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all scope items for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_scope_items(db, session_id)
 
 
@@ -102,8 +116,12 @@ async def get_scope_items(
 async def get_assumptions(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all assumptions for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_assumptions(db, session_id)
 
 
@@ -111,8 +129,12 @@ async def get_assumptions(
 async def get_constraints(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all constraints for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_constraints(db, session_id)
 
 
@@ -120,8 +142,12 @@ async def get_constraints(
 async def get_deliverables(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all deliverables for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_deliverables(db, session_id)
 
 
@@ -129,9 +155,10 @@ async def get_deliverables(
 async def get_session_full(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get a session with all scope components."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -160,9 +187,10 @@ async def create_scope_item(
     session_id: int,
     data: dict,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new scope item."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     item = service.create_scope_item(db, session_id, data)
@@ -174,9 +202,10 @@ async def create_assumption(
     session_id: int,
     data: dict,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new assumption."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return service.create_assumption(db, session_id, data)
@@ -187,9 +216,10 @@ async def create_constraint(
     session_id: int,
     data: dict,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new constraint."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return service.create_constraint(db, session_id, data)
@@ -200,9 +230,10 @@ async def create_deliverable(
     session_id: int,
     data: dict,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new deliverable."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return service.create_deliverable(db, session_id, data)

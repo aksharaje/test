@@ -3,6 +3,8 @@ from typing import List, Any, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Response, Form, UploadFile, File
 from sqlmodel import Session
 from app.core.db import get_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.story_generator import GeneratedArtifact
 from app.services.story_generator_service import story_generator_service
 
@@ -12,9 +14,9 @@ router = APIRouter()
 @router.get("", response_model=List[GeneratedArtifact], include_in_schema=False)
 def list_artifacts(
     session: Session = Depends(get_session),
-    userId: Optional[int] = None
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    return story_generator_service.list_artifacts(session, userId)
+    return story_generator_service.list_artifacts(session, user_id=current_user.id)
 
 @router.post("/generate", response_model=GeneratedArtifact)
 def generate_artifact(
@@ -23,7 +25,8 @@ def generate_artifact(
     description: str = Form(...),
     knowledgeBaseIds: str = Form("[]"),
     files: List[UploadFile] = File(default=[]),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     try:
         kb_ids = json.loads(knowledgeBaseIds)
@@ -46,7 +49,7 @@ def generate_artifact(
         "files": file_data
     }
     try:
-        return story_generator_service.generate(session, request)
+        return story_generator_service.generate(session, request, user_id=current_user.id)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -55,9 +58,10 @@ def generate_artifact(
 @router.get("/{id}", response_model=GeneratedArtifact)
 def get_artifact(
     id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    artifact = story_generator_service.get_artifact(session, id)
+    artifact = story_generator_service.get_artifact(session, id, user_id=current_user.id)
     if not artifact:
         raise HTTPException(status_code=404, detail="Artifact not found")
     return artifact
@@ -66,9 +70,10 @@ def get_artifact(
 def update_artifact(
     id: int,
     data: Dict[str, Any],
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    artifact = story_generator_service.update_artifact(session, id, data)
+    artifact = story_generator_service.update_artifact(session, id, data, user_id=current_user.id)
     if not artifact:
         raise HTTPException(status_code=404, detail="Artifact not found")
     return artifact
@@ -76,9 +81,10 @@ def update_artifact(
 @router.delete("/{id}")
 def delete_artifact(
     id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    if not story_generator_service.delete_artifact(session, id):
+    if not story_generator_service.delete_artifact(session, id, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="Artifact not found")
     return Response(status_code=204)
 

@@ -8,6 +8,8 @@ from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session
 
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.core.db import get_session
 from app.services.scenario_modeler_service import ScenarioModelerService
 from app.models.scenario_modeler import (
@@ -35,11 +37,12 @@ def get_service(db: Session = Depends(get_session)) -> ScenarioModelerService:
 @router.post("/sessions")
 def create_session(
     data: ScenarioSessionCreate,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Create a new scenario modeling session from an existing roadmap"""
     try:
-        session = service.create_session(data)
+        session = service.create_session(data, user_id=current_user.id)
         # Return as dict to avoid serialization issues
         return {
             "id": session.id,
@@ -65,12 +68,13 @@ def create_session(
 @router.get("/sessions", response_model=List[ScenarioSession])
 def list_sessions(
     roadmap_session_id: int = None,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """List all scenario sessions, optionally filtered by roadmap"""
     if roadmap_session_id:
         return service.get_sessions_for_roadmap(roadmap_session_id)
-    return service.get_sessions()
+    return service.get_sessions(user_id=current_user.id)
 
 
 def _variant_to_camel(variant: ScenarioVariant) -> Dict[str, Any]:
@@ -99,11 +103,12 @@ def _variant_to_camel(variant: ScenarioVariant) -> Dict[str, Any]:
 @router.get("/sessions/{session_id}")
 def get_session_by_id(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Get a session with all variants and comparison"""
     from humps import camelize
-    result = service.get_full_session(session_id)
+    result = service.get_full_session(session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -141,10 +146,11 @@ def get_session_by_id(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Delete a session and all its variants"""
-    if not service.delete_session(session_id):
+    if not service.delete_session(session_id, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"status": "deleted"}
 
@@ -152,10 +158,11 @@ def delete_session(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Get session processing status (for polling)"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -182,11 +189,12 @@ async def run_pipeline_task(session_id: int, db: Session):
 async def generate_scenarios(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
     """Start the scenario generation pipeline"""
     service = ScenarioModelerService(db)
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -207,6 +215,7 @@ async def generate_scenarios(
 @router.get("/sessions/{session_id}/variants", response_model=List[ScenarioVariant])
 def get_variants(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Get all variants for a session"""
@@ -217,6 +226,7 @@ def get_variants(
 def get_variant(
     session_id: int,
     variant_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Get a specific variant"""
@@ -230,6 +240,7 @@ def get_variant(
 def create_variant(
     session_id: int,
     data: ScenarioVariantCreate,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Create a new scenario variant"""
@@ -243,6 +254,7 @@ def create_variant(
 def create_variant_from_template(
     session_id: int,
     template_name: str,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Create a variant from a predefined template"""
@@ -257,6 +269,7 @@ def update_variant(
     session_id: int,
     variant_id: int,
     data: ScenarioVariantUpdate,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Update a scenario variant"""
@@ -273,6 +286,7 @@ def update_variant(
 def delete_variant(
     session_id: int,
     variant_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Delete a variant"""
@@ -288,6 +302,7 @@ def delete_variant(
 async def promote_variant(
     session_id: int,
     variant_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Promote a variant to become the new baseline roadmap"""
@@ -307,10 +322,11 @@ async def promote_variant(
 @router.get("/sessions/{session_id}/comparison", response_model=ScenarioComparisonReport)
 def get_comparison(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Get comparison report for all completed variants"""
-    result = service.get_full_session(session_id)
+    result = service.get_full_session(session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -326,6 +342,7 @@ def get_comparison(
 
 @router.get("/templates", response_model=List[Dict[str, Any]])
 def get_templates(
+    current_user: User = Depends(get_current_user),
     service: ScenarioModelerService = Depends(get_service),
 ):
     """Get available scenario templates"""

@@ -59,8 +59,8 @@ async def list_projects(
     """
     try:
         if sync:
-            return await ado_service.sync_projects(db, integration_id)
+            return await ado_service.sync_projects(db, integration_id, user_id=current_user.id)
         else:
-            return await ado_service.get_projects(db, integration_id)
+            return await ado_service.get_projects(db, integration_id, user_id=current_user.id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Form
 from sqlmodel import Session, select, desc
 from pydantic import BaseModel, Field
 
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.core.db import get_session
 from app.models.experience_gap_analyzer import (
     GapAnalysisSession,
@@ -72,14 +74,13 @@ class ReorderRoadmapRequest(BaseModel):
 
 @router.get("/context-sources")
 def get_available_context_sources(
-    user_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get available context sources for gap analysis (completed journey maps)"""
     # Get completed journey maps
     journey_query = select(JourneyMapSession).where(JourneyMapSession.status == "completed")
-    if user_id:
-        journey_query = journey_query.where(JourneyMapSession.user_id == user_id)
+    journey_query = journey_query.where(JourneyMapSession.user_id == current_user.id)
     journey_query = journey_query.order_by(desc(JourneyMapSession.created_at)).limit(50)
     journey_maps = list(db_session.exec(journey_query).all())
 
@@ -102,6 +103,7 @@ def get_available_context_sources(
 def create_session(
     request: CreateGapAnalysisRequest,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Create a new gap analysis session and start analysis"""
@@ -112,7 +114,7 @@ def create_session(
             your_journey_id=request.your_journey_id,
             comparison_journey_id=request.comparison_journey_id,
             analysis_name=request.analysis_name,
-            user_id=request.user_id,
+            user_id=current_user.id,
             knowledge_base_ids=request.knowledge_base_ids,
             analysis_parameters=request.analysis_parameters
         )
@@ -133,10 +135,11 @@ def create_session(
 @router.get("/sessions/{session_id}")
 def get_session_detail(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get gap analysis session with all related data"""
-    result = experience_gap_analyzer_service.get_session_detail(db_session, session_id)
+    result = experience_gap_analyzer_service.get_session_detail(db_session, session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
     return result
@@ -145,10 +148,11 @@ def get_session_detail(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get session status for polling during analysis"""
-    session_obj = experience_gap_analyzer_service.get_session(db_session, session_id)
+    session_obj = experience_gap_analyzer_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -163,23 +167,24 @@ def get_session_status(
 
 @router.get("/sessions")
 def list_sessions(
-    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """List all gap analysis sessions"""
-    sessions = experience_gap_analyzer_service.list_sessions(db_session, user_id=user_id, skip=skip, limit=limit)
+    sessions = experience_gap_analyzer_service.list_sessions(db_session, user_id=current_user.id, skip=skip, limit=limit)
     return sessions
 
 
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a gap analysis session and all related data"""
-    success = experience_gap_analyzer_service.delete_session(db_session, session_id)
+    success = experience_gap_analyzer_service.delete_session(db_session, session_id, user_id=current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True}
@@ -189,10 +194,11 @@ def delete_session(
 def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Retry a failed gap analysis"""
-    session_obj = experience_gap_analyzer_service.get_session(db_session, session_id)
+    session_obj = experience_gap_analyzer_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -220,6 +226,7 @@ def retry_session(
 def update_gap(
     gap_id: int,
     request: UpdateGapRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update a gap item (user edits)"""
@@ -247,6 +254,7 @@ def update_gap(
 def add_gap(
     session_id: int,
     request: AddGapRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Manually add a gap to an analysis"""
@@ -271,6 +279,7 @@ def add_gap(
 @router.delete("/gaps/{gap_id}")
 def delete_gap(
     gap_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a gap"""
@@ -286,6 +295,7 @@ def delete_gap(
 def reorder_roadmap(
     session_id: int,
     request: ReorderRoadmapRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Reorder a gap in the roadmap (drag-drop between tiers)"""
@@ -299,7 +309,7 @@ def reorder_roadmap(
         raise HTTPException(status_code=404, detail="Gap not found or doesn't belong to this session")
 
     # Return updated session with new roadmap
-    return experience_gap_analyzer_service.get_session_detail(db_session, session_id)
+    return experience_gap_analyzer_service.get_session_detail(db_session, session_id, user_id=current_user.id)
 
 
 # --- Export ---
@@ -308,10 +318,11 @@ def reorder_roadmap(
 def export_analysis(
     session_id: int,
     format: str = "json",  # json, pdf
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Export gap analysis (currently JSON only, PDF in future)"""
-    result = experience_gap_analyzer_service.get_session_detail(db_session, session_id)
+    result = experience_gap_analyzer_service.get_session_detail(db_session, session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
 

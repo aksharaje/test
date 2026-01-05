@@ -247,21 +247,21 @@ class PrdGeneratorService:
             cleaned = cleaned[:-3]
         return cleaned.strip()
 
-    def create_prd(self, session: Session, request: Dict[str, Any]) -> GeneratedPrd:
+    def create_prd(self, session: Session, request: Dict[str, Any], user_id: Optional[int] = None) -> GeneratedPrd:
         """Create PRD record in pending state"""
         # Get template
         template_id = request.get("templateId")
         template = None
         if template_id:
             template = self.get_template(session, template_id)
-        
+
         if not template:
             self.ensure_default_templates(session)
             templates = self.get_templates(session)
             template = next((t for t in templates if t.is_default == 1), templates[0])
 
         prd = GeneratedPrd(
-            user_id=request.get("userId"),
+            user_id=user_id if user_id else request.get("userId"),
             title="Generating PRD...",
             content="",  # Empty content initially
             concept=request.get("concept", ""),
@@ -495,48 +495,60 @@ Generate the complete updated PRD in the same JSON format."""
         query = query.order_by(desc(GeneratedPrd.created_at)).offset(skip).limit(limit)
         return session.exec(query).all()
 
-    def get_prd(self, session: Session, id: int) -> Optional[GeneratedPrd]:
-        return session.get(GeneratedPrd, id)
+    def get_prd(self, session: Session, id: int, user_id: Optional[int] = None) -> Optional[GeneratedPrd]:
+        prd = session.get(GeneratedPrd, id)
+        if prd and user_id and prd.user_id and prd.user_id != user_id:
+            return None
+        return prd
 
-    def update_prd(self, session: Session, id: int, data: Dict[str, Any]) -> Optional[GeneratedPrd]:
+    def update_prd(self, session: Session, id: int, data: Dict[str, Any], user_id: Optional[int] = None) -> Optional[GeneratedPrd]:
         prd = session.get(GeneratedPrd, id)
         if not prd:
             return None
-            
+
+        # Check user_id scoping
+        if user_id and prd.user_id and prd.user_id != user_id:
+            return None
+
         for key, value in data.items():
             setattr(prd, key, value)
-            
+
         prd.updated_at = datetime.utcnow()
         session.add(prd)
         session.commit()
         session.refresh(prd)
         return prd
 
-    def delete_prd(self, session: Session, id: int) -> bool:
+    def delete_prd(self, session: Session, id: int, user_id: Optional[int] = None) -> bool:
         prd = session.get(GeneratedPrd, id)
         if not prd:
             return False
+
+        # Check user_id scoping
+        if user_id and prd.user_id and prd.user_id != user_id:
+            return False
+
         session.delete(prd)
         session.commit()
         return True
 
-    def retry_prd(self, session: Session, id: int) -> Optional[GeneratedPrd]:
+    def retry_prd(self, session: Session, id: int, user_id: Optional[int] = None) -> Optional[GeneratedPrd]:
         """Reset failed PRD to pending for retry"""
-        prd = self.get_prd(session, id)
+        prd = self.get_prd(session, id, user_id=user_id)
         if not prd:
             return None
-            
+
         # Reset state
         prd.status = "pending"
         prd.error_message = None
         prd.progress_step = 0
         prd.progress_message = "Retrying generation..."
         prd.updated_at = datetime.utcnow()
-        
+
         session.add(prd)
         session.commit()
         session.refresh(prd)
-        
+
         return prd
 
 prd_generator_service = PrdGeneratorService()

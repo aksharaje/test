@@ -38,9 +38,8 @@ def get_current_user(
     auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"
     
     if not auth_enabled:
-        # Development Bypass
-        # Check if Dev User exists, if not create it
-        dev_email = "dev@example.com"
+        # Development Bypass - use existing user or create dev user
+        dev_email = os.getenv("DEV_USER_EMAIL", "ryanachin@gmail.com")
         dev_user = session.exec(select(User).where(User.email == dev_email)).first()
         if not dev_user:
             dev_user = User(

@@ -315,9 +315,12 @@ class BusinessCaseService:
             truncated = truncated[:last_space]
         return truncated + "..."
 
-    def get_session(self, db: Session, session_id: int) -> Optional[BusinessCaseSession]:
-        """Get a session by ID"""
-        return db.get(BusinessCaseSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[BusinessCaseSession]:
+        """Get a session by ID, optionally filtered by user_id"""
+        session = db.get(BusinessCaseSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def list_sessions(self, db: Session, user_id: Optional[int] = None) -> List[BusinessCaseSession]:
         """List all sessions, optionally filtered by user"""
@@ -327,9 +330,9 @@ class BusinessCaseService:
         statement = statement.order_by(desc(BusinessCaseSession.created_at))
         return list(db.exec(statement).all())
 
-    def get_session_detail(self, db: Session, session_id: int) -> Optional[Dict[str, Any]]:
+    def get_session_detail(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
         """Get complete session with all related data"""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             return None
 
@@ -461,11 +464,11 @@ class BusinessCaseService:
 
         return benefit
 
-    def delete_session(self, db: Session, session_id: int) -> bool:
+    def delete_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete session and all related data"""
         from sqlalchemy import text
 
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             return False
 

@@ -238,9 +238,12 @@ class ExperienceGapAnalyzerService:
 
         return session_obj
 
-    def get_session(self, db: Session, session_id: int) -> Optional[GapAnalysisSession]:
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[GapAnalysisSession]:
         """Get a session by ID."""
-        return db.get(GapAnalysisSession, session_id)
+        session = db.get(GapAnalysisSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def list_sessions(
         self,
@@ -256,9 +259,9 @@ class ExperienceGapAnalyzerService:
         statement = statement.order_by(desc(GapAnalysisSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
-    def get_session_detail(self, db: Session, session_id: int) -> Optional[Dict[str, Any]]:
+    def get_session_detail(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
         """Get complete session detail with all related data."""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             return None
 
@@ -298,9 +301,9 @@ class ExperienceGapAnalyzerService:
             "comparisonJourney": _camelize_nested(comparison_journey.model_dump()) if comparison_journey else None
         }
 
-    def delete_session(self, db: Session, session_id: int) -> bool:
+    def delete_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete a session and all related data."""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             return False
 

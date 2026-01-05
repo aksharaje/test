@@ -35,6 +35,7 @@ class MarketResearchSession(SQLModel, table=True):
     __tablename__ = "market_research_sessions"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id")
 
     # Input fields
     problem_area: str = Field(default="", description="Problem area to research")

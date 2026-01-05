@@ -44,10 +44,9 @@ export class VerifyComponent implements OnInit {
         this.authService.verifyMagicToken(token).subscribe({
             next: (res) => {
                 this.verifying.set(false);
-                // Redirect to dashboard or where they came from
-                if (res.is_new) {
-                    // Maybe go to onboarding?
-                    this.router.navigate(['/']);
+                // Redirect to onboarding if profile incomplete, otherwise dashboard
+                if (res.needs_onboarding) {
+                    this.router.navigate(['/auth/onboarding']);
                 } else {
                     this.router.navigate(['/']);
                 }

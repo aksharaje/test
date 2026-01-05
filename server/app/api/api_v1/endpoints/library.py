@@ -2,6 +2,8 @@ from typing import List, Any, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response
 from sqlmodel import Session
 from app.core.db import get_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.library import LibraryBook, LibraryPage, LibraryIntegration
 from app.services.library_service import library_service
 
@@ -9,42 +11,46 @@ router = APIRouter()
 
 @router.get("/books", response_model=List[LibraryBook])
 def list_books(
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> Any:
-    return library_service.list_books(session)
+    return library_service.list_books(session, user_id=current_user.id)
 
 @router.post("/books", response_model=LibraryBook)
 def create_book(
     payload: Dict[str, int],
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> Any:
     kb_id = payload.get("knowledgeBaseId")
     if not kb_id:
         raise HTTPException(status_code=400, detail="knowledgeBaseId is required")
-        
-    book = library_service.create_book(session, kb_id)
-    
+
+    book = library_service.create_book(session, kb_id, user_id=current_user.id)
+
     # Trigger background generation
     background_tasks.add_task(library_service.generate_book_content, session, book.id, kb_id)
-    
+
     return book
 
 @router.delete("/books/{id}")
 def delete_book(
     id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> Any:
-    if not library_service.delete_book(session, id):
+    if not library_service.delete_book(session, id, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="Book not found")
     return Response(status_code=204)
 
 @router.get("/books/{id}", response_model=LibraryBook)
 def get_book(
     id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> Any:
-    book = library_service.get_book(session, id)
+    book = library_service.get_book(session, id, user_id=current_user.id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
@@ -52,16 +58,22 @@ def get_book(
 @router.get("/books/{id}/pages", response_model=List[Dict[str, Any]])
 def get_book_pages(
     id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> Any:
+    # Verify user owns the book
+    book = library_service.get_book(session, id, user_id=current_user.id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
     return library_service.get_book_pages(session, id)
 
 @router.get("/pages/{id}", response_model=LibraryPage)
 def get_page(
     id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> Any:
-    page = library_service.get_page(session, id)
+    page = library_service.get_page(session, id, user_id=current_user.id)
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
     return page

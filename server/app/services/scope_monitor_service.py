@@ -82,7 +82,7 @@ class ScopeMonitorService:
 
     # ==================== SESSION MANAGEMENT ====================
 
-    def create_session(self, db: Session, data: ScopeMonitorSessionCreate) -> ScopeMonitorSession:
+    def create_session(self, db: Session, data: ScopeMonitorSessionCreate, user_id: Optional[int] = None) -> ScopeMonitorSession:
         """Create a new scope monitor session."""
         # Build baseline description from linked session if available
         baseline_desc = data.baseline_description
@@ -108,35 +108,45 @@ class ScopeMonitorService:
             current_requirements=data.current_requirements,
             change_context=data.change_context,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
         db.refresh(session)
         return session
 
-    def get_session(self, db: Session, session_id: int) -> Optional[ScopeMonitorSession]:
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[ScopeMonitorSession]:
         """Get a session by ID."""
-        return db.get(ScopeMonitorSession, session_id)
+        session = db.get(ScopeMonitorSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def list_sessions(
         self,
         db: Session,
+        user_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> List[ScopeMonitorSession]:
         """List sessions with pagination."""
+        statement = select(ScopeMonitorSession)
+        if user_id:
+            statement = statement.where(ScopeMonitorSession.user_id == user_id)
         statement = (
-            select(ScopeMonitorSession)
+            statement
             .order_by(desc(ScopeMonitorSession.created_at))
             .offset(skip)
             .limit(limit)
         )
         return list(db.exec(statement).all())
 
-    def delete_session(self, db: Session, session_id: int) -> bool:
+    def delete_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete a session and all related data."""
         session = db.get(ScopeMonitorSession, session_id)
         if not session:
+            return False
+        if user_id and session.user_id and session.user_id != user_id:
             return False
 
         # Delete related data

@@ -88,7 +88,7 @@ class OkrGeneratorService:
 
     # ==================== SESSION MANAGEMENT ====================
 
-    def create_session(self, db: Session, data: OkrSessionCreate) -> OkrSession:
+    def create_session(self, db: Session, data: OkrSessionCreate, user_id: Optional[int] = None) -> OkrSession:
         """Create a new OKR session."""
         session = OkrSession(
             goal_description=data.goal_description,
@@ -97,29 +97,32 @@ class OkrGeneratorService:
             team_context=data.team_context,
             measurement_preferences=data.measurement_preferences,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
         db.refresh(session)
         return session
 
-    def get_session(self, db: Session, session_id: int) -> Optional[OkrSession]:
-        """Get a session by ID."""
-        return db.get(OkrSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[OkrSession]:
+        """Get a session by ID, optionally filtered by user."""
+        session = db.get(OkrSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None  # User doesn't own this session
+        return session
 
     def list_sessions(
         self,
         db: Session,
+        user_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> List[OkrSession]:
-        """List sessions with pagination."""
-        statement = (
-            select(OkrSession)
-            .order_by(desc(OkrSession.created_at))
-            .offset(skip)
-            .limit(limit)
-        )
+        """List sessions with pagination, filtered by user."""
+        statement = select(OkrSession)
+        if user_id:
+            statement = statement.where(OkrSession.user_id == user_id)
+        statement = statement.order_by(desc(OkrSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
     def delete_session(self, db: Session, session_id: int) -> bool:

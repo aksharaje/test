@@ -29,7 +29,7 @@ class MarketResearchService:
         self.llm = OpenRouterService()
 
     def create_session(
-        self, db: Session, data: MarketResearchSessionCreate
+        self, db: Session, data: MarketResearchSessionCreate, user_id: Optional[int] = None
     ) -> MarketResearchSession:
         """Create a new market research session"""
         session = MarketResearchSession(
@@ -40,6 +40,7 @@ class MarketResearchService:
             industry_context=data.industry_context,
             focus_areas=data.focus_areas,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
@@ -47,22 +48,23 @@ class MarketResearchService:
         return session
 
     def list_sessions(
-        self, db: Session, skip: int = 0, limit: int = 20
+        self, db: Session, user_id: Optional[int] = None, skip: int = 0, limit: int = 20
     ) -> List[MarketResearchSession]:
-        """List all market research sessions"""
-        statement = (
-            select(MarketResearchSession)
-            .order_by(MarketResearchSession.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
+        """List all market research sessions, filtered by user"""
+        statement = select(MarketResearchSession)
+        if user_id:
+            statement = statement.where(MarketResearchSession.user_id == user_id)
+        statement = statement.order_by(MarketResearchSession.created_at.desc()).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
     def get_session(
-        self, db: Session, session_id: int
+        self, db: Session, session_id: int, user_id: Optional[int] = None
     ) -> Optional[MarketResearchSession]:
-        """Get a specific session by ID"""
-        return db.get(MarketResearchSession, session_id)
+        """Get a specific session by ID, optionally filtered by user"""
+        session = db.get(MarketResearchSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None  # User doesn't own this session
+        return session
 
     def delete_session(self, db: Session, session_id: int) -> bool:
         """Delete a session"""

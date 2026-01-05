@@ -46,7 +46,7 @@ from app.models.roadmap_planner import (
 )
 from app.models.story_generator import GeneratedArtifact
 from app.models.feasibility import FeasibilitySession, TechnicalComponent, TimelineScenario
-from app.models.ideation import GeneratedIdea
+from app.models.ideation import GeneratedIdea, IdeationSession
 from app.services.llm_json_utils import get_strict_json_llm, create_json_prompt, StrictJSONLLM
 
 
@@ -106,9 +106,12 @@ class RoadmapPlannerService:
         self.db.refresh(session)
         return session
 
-    def get_session(self, session_id: int) -> Optional[RoadmapSession]:
-        """Get a session by ID"""
-        return self.db.get(RoadmapSession, session_id)
+    def get_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[RoadmapSession]:
+        """Get a session by ID, optionally filtered by user_id"""
+        session = self.db.get(RoadmapSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def get_sessions(self, user_id: Optional[int] = None) -> List[RoadmapSession]:
         """Get all sessions, optionally filtered by user"""
@@ -189,13 +192,16 @@ class RoadmapPlannerService:
     # Available Artifacts (Epics/Features from Story Generator)
     # =========================================================================
 
-    def get_available_artifacts(self) -> List[AvailableArtifactForRoadmap]:
+    def get_available_artifacts(self, user_id: Optional[int] = None) -> List[AvailableArtifactForRoadmap]:
         """Get epics and features from Story Generator available for roadmap planning"""
         # Only fetch epics and features, not individual user stories
         query = select(GeneratedArtifact).where(
             GeneratedArtifact.status.in_(["draft", "final"]),
             GeneratedArtifact.type.in_(["epic", "feature"])
-        ).order_by(GeneratedArtifact.created_at.desc())
+        )
+        if user_id:
+            query = query.where(GeneratedArtifact.user_id == user_id)
+        query = query.order_by(GeneratedArtifact.created_at.desc())
 
         artifacts = self.db.exec(query).all()
         result = []
@@ -252,11 +258,14 @@ class RoadmapPlannerService:
 
         return result
 
-    def get_available_feasibility_analyses(self) -> List[AvailableFeasibilityForRoadmap]:
+    def get_available_feasibility_analyses(self, user_id: Optional[int] = None) -> List[AvailableFeasibilityForRoadmap]:
         """Get completed feasibility analyses available for roadmap planning"""
         query = select(FeasibilitySession).where(
             FeasibilitySession.status == "completed"
-        ).order_by(FeasibilitySession.created_at.desc())
+        )
+        if user_id:
+            query = query.where(FeasibilitySession.user_id == user_id)
+        query = query.order_by(FeasibilitySession.created_at.desc())
 
         sessions = self.db.exec(query).all()
         result = []
@@ -296,12 +305,18 @@ class RoadmapPlannerService:
 
         return result
 
-    def get_available_ideation_ideas(self) -> List[AvailableIdeaForRoadmap]:
+    def get_available_ideation_ideas(self, user_id: Optional[int] = None) -> List[AvailableIdeaForRoadmap]:
         """Get ideation ideas available for roadmap planning (final, non-duplicate)"""
         query = select(GeneratedIdea).where(
             GeneratedIdea.is_final == True,
             GeneratedIdea.is_duplicate == False
-        ).order_by(GeneratedIdea.composite_score.desc())
+        )
+        if user_id:
+            # Join through IdeationSession to filter by user_id
+            query = query.join(IdeationSession, GeneratedIdea.session_id == IdeationSession.id).where(
+                IdeationSession.user_id == user_id
+            )
+        query = query.order_by(GeneratedIdea.composite_score.desc())
 
         ideas = self.db.exec(query).all()
         result = []
@@ -321,12 +336,12 @@ class RoadmapPlannerService:
 
         return result
 
-    def get_all_available_sources(self) -> AllAvailableSourcesResponse:
+    def get_all_available_sources(self, user_id: Optional[int] = None) -> AllAvailableSourcesResponse:
         """Get all available sources for roadmap planning in one call"""
         return AllAvailableSourcesResponse(
-            artifacts=self.get_available_artifacts(),
-            feasibility_analyses=self.get_available_feasibility_analyses(),
-            ideation_ideas=self.get_available_ideation_ideas(),
+            artifacts=self.get_available_artifacts(user_id=user_id),
+            feasibility_analyses=self.get_available_feasibility_analyses(user_id=user_id),
+            ideation_ideas=self.get_available_ideation_ideas(user_id=user_id),
         )
 
     # =========================================================================

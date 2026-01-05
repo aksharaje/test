@@ -27,6 +27,7 @@ from app.models.progress_tracker import (
 )
 from app.models.jira import Integration, FieldMapping
 from app.core.config import settings
+from app.core.token_refresh import ensure_valid_token
 
 
 class ProgressTrackerService:
@@ -73,9 +74,12 @@ class ProgressTrackerService:
         self.db.refresh(session)
         return session
 
-    def get_session(self, session_id: int) -> Optional[ProgressTrackerSession]:
+    def get_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[ProgressTrackerSession]:
         """Get a tracker session by ID."""
-        return self.db.get(ProgressTrackerSession, session_id)
+        session = self.db.get(ProgressTrackerSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def get_session_response(self, session_id: int) -> Optional[SessionResponse]:
         """Get a tracker session with integration details."""
@@ -194,12 +198,14 @@ class ProgressTrackerService:
     # INTEGRATION CHECKS
     # =========================================================================
 
-    def check_integrations(self) -> IntegrationCheckResponse:
+    def check_integrations(self, user_id: Optional[int] = None) -> IntegrationCheckResponse:
         """Check if user has valid Jira or ADO integrations."""
         statement = select(Integration).where(
             Integration.provider.in_(["jira", "ado"]),
             Integration.status == "connected",
         )
+        if user_id:
+            statement = statement.where(Integration.user_id == user_id)
         integrations = self.db.exec(statement).all()
 
         if not integrations:
@@ -260,6 +266,9 @@ class ProgressTrackerService:
         integration = self.db.get(Integration, session.integration_id)
         if not integration:
             raise ValueError("Integration not found")
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         # Update status to syncing
         session.status = "syncing"
@@ -1073,12 +1082,17 @@ class ProgressTrackerService:
     # =========================================================================
 
     async def get_available_sprints(
-        self, integration_id: int
+        self, integration_id: int, user_id: Optional[int] = None
     ) -> List[SprintOption]:
         """Get available sprints/iterations from an integration."""
         integration = self.db.get(Integration, integration_id)
         if not integration:
             raise ValueError("Integration not found")
+        if user_id and integration.user_id and integration.user_id != user_id:
+            raise ValueError("Integration not found")
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         if integration.provider == "jira":
             return await self._get_jira_sprints(integration)

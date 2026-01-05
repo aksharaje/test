@@ -67,9 +67,12 @@ class ReleasePrepService:
         self.db.refresh(session)
         return session
 
-    def get_session(self, session_id: int) -> Optional[ReleasePrepSession]:
+    def get_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[ReleasePrepSession]:
         """Get a session by ID"""
-        return self.db.get(ReleasePrepSession, session_id)
+        session = self.db.get(ReleasePrepSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def get_sessions(self, user_id: Optional[int] = None) -> List[ReleasePrepSession]:
         """Get all sessions, optionally filtered by user"""

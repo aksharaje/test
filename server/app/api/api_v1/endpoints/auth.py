@@ -11,6 +11,16 @@ import os
 
 router = APIRouter()
 
+# Allowed email domains for authentication
+ALLOWED_DOMAINS = ["@ascendion.com", "@moodysnwc.com", "@nitorinfotech.com"]
+
+
+def is_allowed_domain(email_address: str) -> bool:
+    """Check if email domain is in the allowed list."""
+    email_lower = email_address.lower()
+    return any(email_lower.endswith(domain) for domain in ALLOWED_DOMAINS)
+
+
 @router.post("/login")
 async def login(
     email: str = Body(..., embed=True),
@@ -19,6 +29,13 @@ async def login(
     """
     Request a magic link implementation.
     """
+    # Validate email domain
+    if not is_allowed_domain(email):
+        raise HTTPException(
+            status_code=403,
+            detail="Email domain not allowed. Please use an email from an approved organization."
+        )
+
     # Create magic token
     token = security.create_magic_link_token(email)
     
@@ -37,14 +54,13 @@ async def login(
     
     response = {"message": "Magic link sent"}
     
-    # DEV MODE: Return link in response if no SMTP
-    if not os.getenv("SMTP_HOST"):
+    # DEV MODE: Return link in response if no email provider configured
+    if not os.getenv("SMTP_HOST") and not os.getenv("RESEND_API_KEY"):
         import urllib.parse
         base_url = os.getenv("FRONTEND_URL", "http://localhost:4200")
-        # Ensure token is URL safe mostly, but let's be safe
         encoded_token = urllib.parse.quote(token)
         response["dev_magic_link"] = f"{base_url}/auth/verify?token={encoded_token}"
-        
+
     return response
 
 @router.post("/verify")
@@ -86,30 +102,59 @@ async def verify_token(
     user = session.exec(user_stmt).first()
     
     is_new_user = False
+    needs_onboarding = False
+
     if not user:
-        # Check if they have an invite waiting? 
-        # For now, we allow sign up if they don't have an invite only if it's the specific flow
-        # But let's say "Login" finds existing users, "Join" handles new ones via invite.
-        # Actually, for magic link, typically it handles both.
-        # Let's create a partial user if not exists, but maybe restrict access until they join an account?
-        # For simplicity: Create basic user.
-        user = User(email=email, role=UserRole.MEMBER) # Default Member, promoted if owner later
+        # Create new user - they'll need to complete their profile
+        user = User(email=email, role=UserRole.MEMBER)
         session.add(user)
-        session.commit() # Commit to get ID
+        session.commit()
         session.refresh(user)
         is_new_user = True
-    
+        needs_onboarding = True
+    else:
+        # Existing user needs onboarding if they haven't set their name
+        needs_onboarding = not user.full_name
+
     session.commit()
-    
+
     # 4. Create Access Token (Long lived session)
     access_token = security.create_access_token(user.id)
-    
+
     return {
-        "access_token": access_token, 
+        "access_token": access_token,
         "token_type": "bearer",
         "user": user,
-        "is_new": is_new_user
+        "is_new": is_new_user,
+        "needs_onboarding": needs_onboarding
     }
+
+@router.post("/complete-profile")
+async def complete_profile(
+    full_name: str = Body(...),
+    accept_terms: bool = Body(...),
+    session: Session = Depends(deps.get_session),
+    current_user: User = Depends(deps.get_current_user)
+):
+    """
+    Complete user profile after first login (onboarding).
+    """
+    if not accept_terms:
+        raise HTTPException(status_code=400, detail="Must accept terms of service")
+
+    if not full_name or not full_name.strip():
+        raise HTTPException(status_code=400, detail="Name is required")
+
+    current_user.full_name = full_name.strip()
+    current_user.has_accepted_terms = True
+    current_user.updated_at = datetime.utcnow()
+
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+
+    return current_user
+
 
 @router.get("/me")
 async def read_users_me(current_user: User = Depends(deps.get_current_user)):

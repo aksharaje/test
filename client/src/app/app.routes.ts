@@ -19,6 +19,11 @@ export const routes: Routes = [
         path: 'join',
         title: 'Join Team | Product Studio',
         loadComponent: () => import('./features/auth/join.component').then(m => m.JoinComponent)
+      },
+      {
+        path: 'onboarding',
+        title: 'Complete Profile | Product Studio',
+        loadComponent: () => import('./features/auth/onboarding.component').then(m => m.OnboardingComponent)
       }
     ]
   },

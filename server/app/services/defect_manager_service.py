@@ -30,6 +30,7 @@ from app.models.defect_manager import (
 from app.models.release_readiness import ProjectOption
 from app.models.jira import Integration, FieldMapping
 from app.core.config import settings
+from app.core.token_refresh import ensure_valid_token
 
 # Default field IDs when no mapping exists
 DEFAULT_JIRA_FIELDS = {
@@ -54,12 +55,14 @@ class DefectManagerService:
     # INTEGRATION CHECK
     # =========================================================================
 
-    def check_integrations(self) -> Dict[str, Any]:
+    def check_integrations(self, user_id: Optional[int] = None) -> Dict[str, Any]:
         """Check for valid Jira/ADO integrations."""
         stmt = select(Integration).where(
             Integration.provider.in_(["jira", "ado"]),
             Integration.status == "connected"
         )
+        if user_id:
+            stmt = stmt.where(Integration.user_id == user_id)
         integrations = list(self.db.exec(stmt))
 
         valid_integrations = [
@@ -82,11 +85,16 @@ class DefectManagerService:
     # INTEGRATION LOOKUPS
     # =========================================================================
 
-    async def get_projects(self, integration_id: int) -> List[ProjectOption]:
+    async def get_projects(self, integration_id: int, user_id: Optional[int] = None) -> List[ProjectOption]:
         """Get available projects from integration."""
         integration = self.db.get(Integration, integration_id)
         if not integration:
             raise ValueError("Integration not found")
+        if user_id and integration.user_id and integration.user_id != user_id:
+            raise ValueError("Integration not found")
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         if integration.provider == "jira":
             return await self._get_jira_projects(integration)
@@ -244,13 +252,16 @@ class DefectManagerService:
         self.db.refresh(session)
         return session
 
-    def get_session(self, session_id: int) -> Optional[DefectManagerSession]:
-        """Get a session by ID."""
-        return self.db.get(DefectManagerSession, session_id)
+    def get_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[DefectManagerSession]:
+        """Get a session by ID, optionally filtered by user_id."""
+        session = self.db.get(DefectManagerSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
-    def get_session_response(self, session_id: int) -> Optional[DefectSessionResponse]:
+    def get_session_response(self, session_id: int, user_id: Optional[int] = None) -> Optional[DefectSessionResponse]:
         """Get session with integration details."""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session:
             return None
 
@@ -279,15 +290,17 @@ class DefectManagerService:
             created_at=session.created_at,
         )
 
-    def list_sessions(self) -> List[DefectSessionResponse]:
-        """List all defect sessions."""
+    def list_sessions(self, user_id: Optional[int] = None) -> List[DefectSessionResponse]:
+        """List all defect sessions, optionally filtered by user."""
         stmt = select(DefectManagerSession).order_by(DefectManagerSession.updated_at.desc())
+        if user_id:
+            stmt = stmt.where(DefectManagerSession.user_id == user_id)
         sessions = list(self.db.exec(stmt))
-        return [self.get_session_response(s.id) for s in sessions if s]
+        return [self.get_session_response(s.id, user_id=user_id) for s in sessions if s]
 
-    def delete_session(self, session_id: int) -> bool:
+    def delete_session(self, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete a session and its analyzed defects."""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session:
             return False
 
@@ -311,9 +324,9 @@ class DefectManagerService:
     # ANALYSIS ORCHESTRATION
     # =========================================================================
 
-    async def analyze_defects(self, session_id: int) -> AnalysisStatusResponse:
+    async def analyze_defects(self, session_id: int, user_id: Optional[int] = None) -> AnalysisStatusResponse:
         """Run full defect analysis."""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session:
             raise ValueError("Session not found")
 
@@ -860,9 +873,9 @@ class DefectManagerService:
     # TRIAGE RESULTS
     # =========================================================================
 
-    def get_triage_result(self, session_id: int) -> Optional[TriageResult]:
+    def get_triage_result(self, session_id: int, user_id: Optional[int] = None) -> Optional[TriageResult]:
         """Get triage results for a session."""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session or session.status != "ready":
             return None
 
@@ -909,10 +922,10 @@ class DefectManagerService:
     # =========================================================================
 
     def get_prevention_recommendations(
-        self, session_id: int
+        self, session_id: int, user_id: Optional[int] = None
     ) -> List[PreventionRecommendation]:
         """Generate prevention recommendations based on analysis."""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session or session.status != "ready":
             return []
 

@@ -32,12 +32,32 @@ _patch_fastapi_mail()
 
 import pytest
 from typing import Generator
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 from app.main import app
 from app.core.db import get_session
 from app.models.user import User
+
+
+@pytest.fixture(autouse=True)
+def mock_auth():
+    """Auto-use fixture to mock authentication for all tests"""
+    from app.api.deps import get_current_user
+
+    # Create a mock user that will be returned for all auth checks
+    mock_user = User(id=1, email="test@example.com", is_active=True)
+
+    def mock_get_current_user():
+        return mock_user
+
+    # Override at the app level
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    yield mock_user
+    # Cleanup - don't remove other overrides
+    if get_current_user in app.dependency_overrides:
+        del app.dependency_overrides[get_current_user]
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -65,12 +85,23 @@ def session_fixture():
         session.commit()
         yield session
 
+@pytest.fixture(name="test_user")
+def test_user_fixture(session: Session):
+    """Get the default test user from the session"""
+    return session.get(User, 1)
+
 @pytest.fixture(name="client")
-def client_fixture(session: Session):
+def client_fixture(session: Session, test_user: User):
+    from app.api.deps import get_current_user
+
     def get_session_override():
         return session
 
+    def get_current_user_override():
+        return test_user
+
     app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_current_user] = get_current_user_override
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()

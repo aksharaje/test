@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Form, Up
 from sqlmodel import Session, select, desc
 from pydantic import BaseModel, Field
 
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.core.db import get_session
 from app.models.journey_mapper import (
     JourneyMapSession,
@@ -124,13 +126,15 @@ async def read_file_content(file: UploadFile, max_chars: int = 50000) -> str:
 
 @router.get("/context-sources")
 def get_available_context_sources(
-    user_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get available context sources for journey mapping (KBs, ideation, feasibility, business case sessions)"""
     from app.models.ideation import IdeationSession
     from app.models.feasibility import FeasibilitySession
     from app.models.business_case import BusinessCaseSession
+
+    user_id = current_user.id
 
     # Get ready knowledge bases
     kb_query = select(KnowledgeBase).where(KnowledgeBase.status == "ready")
@@ -198,13 +202,13 @@ async def create_session(
     mode: str = Form(default="standard"),
     journeyDescription: str = Form(...),
     competitorName: Optional[str] = Form(default=None),
-    userId: Optional[int] = Form(default=None),
     knowledgeBaseIds: str = Form(default="[]"),
     ideationSessionId: Optional[int] = Form(default=None),
     feasibilitySessionId: Optional[int] = Form(default=None),
     businessCaseSessionId: Optional[int] = Form(default=None),
     personas: str = Form(default="[]"),
     files: List[UploadFile] = File(default=[]),
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Create a new journey mapping session and start generation"""
@@ -229,7 +233,7 @@ async def create_session(
             db=db_session,
             mode=mode,
             journey_description=journeyDescription,
-            user_id=userId,
+            user_id=current_user.id,
             file_metadata=file_metadata if file_metadata else None,
             knowledge_base_ids=kb_ids if kb_ids else None,
             ideation_session_id=ideationSessionId,
@@ -257,9 +261,14 @@ async def create_session(
 @router.get("/sessions/{session_id}")
 def get_session_detail(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get journey map session with all related data"""
+    # Verify user has access
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = journey_mapper_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -269,10 +278,11 @@ def get_session_detail(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get session status for polling during generation"""
-    session_obj = journey_mapper_service.get_session(db_session, session_id)
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -288,22 +298,27 @@ def get_session_status(
 
 @router.get("/sessions")
 def list_sessions(
-    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """List all journey map sessions"""
-    sessions = journey_mapper_service.list_sessions(db_session, user_id=user_id, skip=skip, limit=limit)
+    sessions = journey_mapper_service.list_sessions(db_session, user_id=current_user.id, skip=skip, limit=limit)
     return sessions
 
 
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a journey map session and all related data"""
+    # Verify user has access
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
     success = journey_mapper_service.delete_session(db_session, session_id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -314,10 +329,11 @@ def delete_session(
 def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Retry a failed journey generation"""
-    session_obj = journey_mapper_service.get_session(db_session, session_id)
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -345,6 +361,7 @@ def retry_session(
 def update_pain_point(
     pain_point_id: int,
     request: UpdatePainPointRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update a pain point (user edits)"""
@@ -366,9 +383,14 @@ def update_pain_point(
 def add_pain_point(
     session_id: int,
     request: AddPainPointRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Manually add a pain point to a journey"""
+    # Verify user has access
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
     try:
         pain_point = journey_mapper_service.add_pain_point(
             db=db_session,
@@ -386,6 +408,7 @@ def add_pain_point(
 @router.delete("/pain-points/{pain_point_id}")
 def delete_pain_point(
     pain_point_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a pain point"""
@@ -402,9 +425,14 @@ def update_stage(
     session_id: int,
     stage_id: str,
     request: UpdateStageRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update a stage in the journey map"""
+    # Verify user has access
+    session_check = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     updates = {}
     if request.name is not None:
         updates["name"] = request.name
@@ -423,9 +451,14 @@ def update_stage(
 def add_stage(
     session_id: int,
     request: AddStageRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Add a new stage to the journey map"""
+    # Verify user has access
+    session_check = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     session_obj = journey_mapper_service.add_stage(
         db=db_session,
         session_id=session_id,
@@ -442,9 +475,14 @@ def add_stage(
 def delete_stage(
     session_id: int,
     stage_id: str,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a stage from the journey map"""
+    # Verify user has access
+    session_check = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     session_obj = journey_mapper_service.delete_stage(db_session, session_id, stage_id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session or stage not found")
@@ -457,10 +495,11 @@ def delete_stage(
 def add_competitor_observation(
     session_id: int,
     request: AddCompetitorObservationRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Add an observation during competitive journey walkthrough"""
-    session_obj = journey_mapper_service.get_session(db_session, session_id)
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
     if session_obj.mode != "competitive":
@@ -485,10 +524,11 @@ def add_competitor_observation(
 def generate_from_observations(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Generate competitive journey map from user observations"""
-    session_obj = journey_mapper_service.get_session(db_session, session_id)
+    session_obj = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
     if session_obj.mode != "competitive":
@@ -513,9 +553,14 @@ async def create_new_version(
     updateType: str = Form(default="refresh"),
     knowledgeBaseIds: str = Form(default="[]"),
     files: List[UploadFile] = File(default=[]),
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Create a new version of a journey map with updated data"""
+    # Verify user has access
+    session_check = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     try:
         kb_ids = json.loads(knowledgeBaseIds) if knowledgeBaseIds else []
 
@@ -558,9 +603,17 @@ async def create_new_version(
 def compare_versions(
     session_id: int,
     compare_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Compare two journey map versions"""
+    # Verify user has access to both sessions
+    session_check = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
+    compare_check = journey_mapper_service.get_session(db_session, compare_id, user_id=current_user.id)
+    if not compare_check:
+        raise HTTPException(status_code=404, detail="Comparison session not found")
     try:
         result = journey_mapper_service.compare_versions(db_session, session_id, compare_id)
         return result
@@ -574,9 +627,14 @@ def compare_versions(
 def export_journey(
     session_id: int,
     format: str = "json",  # json, pdf, png
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Export journey map (currently JSON only, PDF/PNG in future)"""
+    # Verify user has access
+    session_check = journey_mapper_service.get_session(db_session, session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = journey_mapper_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")

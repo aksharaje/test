@@ -333,9 +333,12 @@ class JourneyMapperService:
 
         return session_obj
 
-    def get_session(self, db: Session, session_id: int) -> Optional[JourneyMapSession]:
-        """Get a session by ID."""
-        return db.get(JourneyMapSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[JourneyMapSession]:
+        """Get a session by ID, optionally filtered by user_id."""
+        session = db.get(JourneyMapSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def list_sessions(
         self,

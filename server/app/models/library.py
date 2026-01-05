@@ -4,6 +4,7 @@ from sqlmodel import SQLModel, Field, Column, JSON, Relationship
 
 class LibraryBookBase(SQLModel):
     knowledge_base_id: int = Field(foreign_key="knowledge_bases.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id")
     title: str
     description: Optional[str] = None
     status: str = "generating" # 'generating', 'ready', 'error'

@@ -31,7 +31,7 @@ class CompetitiveAnalysisService:
         self.llm = OpenRouterService()
 
     def create_session(
-        self, db: Session, data: CompetitiveAnalysisSessionCreate
+        self, db: Session, data: CompetitiveAnalysisSessionCreate, user_id: Optional[int] = None
     ) -> CompetitiveAnalysisSession:
         """Create a new competitive analysis session"""
         session = CompetitiveAnalysisSession(
@@ -49,6 +49,7 @@ class CompetitiveAnalysisService:
             input_source_description=data.input_source_description,
             knowledge_base_id=data.knowledge_base_id,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
@@ -56,22 +57,23 @@ class CompetitiveAnalysisService:
         return session
 
     def list_sessions(
-        self, db: Session, skip: int = 0, limit: int = 20
+        self, db: Session, user_id: Optional[int] = None, skip: int = 0, limit: int = 20
     ) -> List[CompetitiveAnalysisSession]:
-        """List all competitive analysis sessions"""
-        statement = (
-            select(CompetitiveAnalysisSession)
-            .order_by(CompetitiveAnalysisSession.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
+        """List all competitive analysis sessions, filtered by user"""
+        statement = select(CompetitiveAnalysisSession)
+        if user_id:
+            statement = statement.where(CompetitiveAnalysisSession.user_id == user_id)
+        statement = statement.order_by(CompetitiveAnalysisSession.created_at.desc()).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
     def get_session(
-        self, db: Session, session_id: int
+        self, db: Session, session_id: int, user_id: Optional[int] = None
     ) -> Optional[CompetitiveAnalysisSession]:
-        """Get a specific session by ID"""
-        return db.get(CompetitiveAnalysisSession, session_id)
+        """Get a specific session by ID, optionally filtered by user"""
+        session = db.get(CompetitiveAnalysisSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None  # User doesn't own this session
+        return session
 
     def delete_session(self, db: Session, session_id: int) -> bool:
         """Delete a session"""

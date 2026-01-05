@@ -86,9 +86,12 @@ class RoadmapCommunicatorService:
         self.db.refresh(session)
         return session
 
-    def get_session(self, session_id: int) -> Optional[CommunicatorSession]:
+    def get_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[CommunicatorSession]:
         """Get a session by ID"""
-        return self.db.get(CommunicatorSession, session_id)
+        session = self.db.get(CommunicatorSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def get_sessions(self, user_id: Optional[int] = None) -> List[CommunicatorSession]:
         """Get all sessions, optionally filtered by user"""

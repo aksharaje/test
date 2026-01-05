@@ -7,7 +7,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.models.okr_generator import (
     OkrSession,
     Objective,
@@ -30,9 +31,10 @@ async def create_session(
     data: OkrSessionCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new OKR session and start generation."""
-    session = service.create_session(db, data)
+    session = service.create_session(db, data, user_id=current_user.id)
     background_tasks.add_task(service.generate_okrs, db, session.id)
     return session
 
@@ -42,18 +44,20 @@ async def list_sessions(
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """List OKR sessions with pagination."""
-    return service.list_sessions(db, skip=skip, limit=limit)
+    return service.list_sessions(db, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/sessions/{session_id}", response_model=OkrSessionResponse)
 async def get_session(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get a specific session by ID."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
@@ -63,8 +67,13 @@ async def get_session(
 async def delete_session(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Delete a session and all related data."""
+    # Verify user owns this session
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     success = service.delete_session(db, session_id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -76,9 +85,10 @@ async def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retry a failed session."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -94,8 +104,12 @@ async def retry_session(
 async def get_objectives(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all objectives for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_objectives(db, session_id)
 
 
@@ -103,8 +117,12 @@ async def get_objectives(
 async def get_key_results(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all key results for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_key_results_for_session(db, session_id)
 
 
@@ -112,8 +130,12 @@ async def get_key_results(
 async def get_kpis(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all KPIs for a session."""
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_kpis(db, session_id)
 
 
@@ -121,9 +143,10 @@ async def get_kpis(
 async def get_session_full(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get a session with all OKRs and KPIs."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 

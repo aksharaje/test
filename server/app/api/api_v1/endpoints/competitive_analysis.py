@@ -7,7 +7,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session, select
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.models.competitive_analysis import (
     CompetitiveAnalysisSessionCreate,
     CompetitiveAnalysisSessionResponse,
@@ -80,9 +81,10 @@ async def create_session(
     data: CompetitiveAnalysisSessionCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new competitive analysis session and start analysis."""
-    session = service.create_session(db, data)
+    session = service.create_session(db, data, user_id=current_user.id)
     background_tasks.add_task(service.run_analysis, db, session.id)
     return session
 
@@ -92,18 +94,20 @@ async def list_sessions(
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """List competitive analysis sessions with pagination."""
-    return service.list_sessions(db, skip=skip, limit=limit)
+    return service.list_sessions(db, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/sessions/{session_id}", response_model=CompetitiveAnalysisSessionResponse)
 async def get_session(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get a specific session by ID."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
@@ -113,9 +117,10 @@ async def get_session(
 async def get_session_status(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get session status for polling."""
-    session = service.get_session(db, session_id)
+    session = service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return {
@@ -129,8 +134,13 @@ async def get_session_status(
 async def delete_session(
     session_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Delete a session."""
+    # Verify ownership first
+    session = service.get_session(db, session_id, user_id=current_user.id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
     success = service.delete_session(db, session_id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -142,8 +152,13 @@ async def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retry a failed session."""
+    # Verify ownership
+    existing = service.get_session(db, session_id, user_id=current_user.id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Session not found")
     session = service.retry_session(db, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")

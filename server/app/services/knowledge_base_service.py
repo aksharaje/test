@@ -17,8 +17,11 @@ class KnowledgeBaseService:
         query = query.order_by(desc(KnowledgeBase.createdAt))
         return session.exec(query).all()
 
-    def get_knowledge_base(self, session: Session, kb_id: int) -> Optional[KnowledgeBase]:
-        return session.get(KnowledgeBase, kb_id)
+    def get_knowledge_base(self, session: Session, kb_id: int, user_id: Optional[int] = None) -> Optional[KnowledgeBase]:
+        kb = session.get(KnowledgeBase, kb_id)
+        if kb and user_id and kb.userId and kb.userId != user_id:
+            return None
+        return kb
 
     def create_knowledge_base(self, session: Session, kb_data: KnowledgeBase) -> KnowledgeBase:
         session.add(kb_data)
@@ -26,31 +29,31 @@ class KnowledgeBaseService:
         session.refresh(kb_data)
         return kb_data
 
-    def update_knowledge_base(self, session: Session, kb_id: int, update_data: Dict[str, Any]) -> Optional[KnowledgeBase]:
-        kb = session.get(KnowledgeBase, kb_id)
+    def update_knowledge_base(self, session: Session, kb_id: int, update_data: Dict[str, Any], user_id: Optional[int] = None) -> Optional[KnowledgeBase]:
+        kb = self.get_knowledge_base(session, kb_id, user_id)
         if not kb:
             return None
-        
+
         for key, value in update_data.items():
             setattr(kb, key, value)
-        
+
         kb.updatedAt = datetime.utcnow()
         session.add(kb)
         session.commit()
         session.refresh(kb)
         return kb
 
-    def delete_knowledge_base(self, session: Session, kb_id: int) -> bool:
-        kb = session.get(KnowledgeBase, kb_id)
+    def delete_knowledge_base(self, session: Session, kb_id: int, user_id: Optional[int] = None) -> bool:
+        kb = self.get_knowledge_base(session, kb_id, user_id)
         if not kb:
             return False
-            
+
         # Delete all document chunks associated with this KB
         session.exec(delete(DocumentChunk).where(DocumentChunk.knowledge_base_id == kb_id))
-        
+
         # Delete all documents associated with this KB
         session.exec(delete(Document).where(Document.knowledgeBaseId == kb_id))
-        
+
         session.delete(kb)
         session.commit()
         return True

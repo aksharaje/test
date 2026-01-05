@@ -21,3 +21,4 @@ cryptography
 python-jose[cryptography]
 passlib[bcrypt]
 fastapi-mail
+resend>=2.0.0

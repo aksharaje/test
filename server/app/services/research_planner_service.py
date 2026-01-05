@@ -527,9 +527,12 @@ class ResearchPlannerService:
 
         return session_obj
 
-    def get_session(self, db: Session, session_id: int) -> Optional[ResearchPlanSession]:
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[ResearchPlanSession]:
         """Get a session by ID"""
-        return db.get(ResearchPlanSession, session_id)
+        session = db.get(ResearchPlanSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def list_sessions(
         self,
@@ -545,9 +548,9 @@ class ResearchPlannerService:
         statement = statement.order_by(desc(ResearchPlanSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
-    def get_session_detail(self, db: Session, session_id: int) -> Optional[Dict[str, Any]]:
+    def get_session_detail(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
         """Get complete session detail with all related data"""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             return None
 
@@ -599,10 +602,11 @@ class ResearchPlannerService:
         self,
         db: Session,
         session_id: int,
-        method_names: List[str]
+        method_names: List[str],
+        user_id: Optional[int] = None
     ) -> ResearchPlanSession:
         """User selects which methods to proceed with"""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             raise ValueError("Session not found")
 
@@ -623,9 +627,9 @@ class ResearchPlannerService:
 
         return session_obj
 
-    def retry_session(self, db: Session, session_id: int) -> ResearchPlanSession:
+    def retry_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> ResearchPlanSession:
         """Retry a failed session"""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             raise ValueError("Session not found")
 
@@ -652,9 +656,9 @@ class ResearchPlannerService:
 
         return session_obj
 
-    def delete_session(self, db: Session, session_id: int) -> bool:
+    def delete_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete a session and all related data"""
-        session_obj = self.get_session(db, session_id)
+        session_obj = self.get_session(db, session_id, user_id=user_id)
         if not session_obj:
             return False
 

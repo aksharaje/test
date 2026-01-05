@@ -158,18 +158,24 @@ class AdoService:
                 "return_url": return_url
             }
 
-    async def get_projects(self, session: Session, integration_id: int) -> List[AdoProject]:
-        # Return cached projects first
+    async def get_projects(self, session: Session, integration_id: int, user_id: Optional[int] = None) -> List[AdoProject]:
+        # Verify ownership if user_id provided
+        integration = session.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+        if user_id and integration.user_id and integration.user_id != user_id:
+            raise ValueError("Integration not found")
+
+        # Return cached projects
         statement = select(AdoProject).where(AdoProject.integration_id == integration_id)
         projects = session.exec(statement).all()
-        
-        # If no projects or stale, trigger sync (omitted for MVP speed, assume check sync endpoint)
         return projects
 
-    async def sync_projects(self, session: Session, integration_id: int) -> List[AdoProject]:
-        statement = select(Integration).where(Integration.id == integration_id)
-        integration = session.exec(statement).first()
+    async def sync_projects(self, session: Session, integration_id: int, user_id: Optional[int] = None) -> List[AdoProject]:
+        integration = session.get(Integration, integration_id)
         if not integration:
+            raise ValueError("Integration not found")
+        if user_id and integration.user_id and integration.user_id != user_id:
             raise ValueError("Integration not found")
 
         # Get Accounts/Orgs first

@@ -65,6 +65,7 @@ class CompetitiveAnalysisSession(SQLModel, table=True):
     __tablename__ = "competitive_analysis_sessions"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id")
 
     # Input fields
     focus_area: str = Field(default="", description="Selected focus area category")

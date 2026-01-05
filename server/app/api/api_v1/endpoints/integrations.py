@@ -6,6 +6,8 @@ from sqlmodel import Session, select
 import httpx
 from app.core.db import get_session
 from app.core.config import settings
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.services.jira_service import jira_service
 from app.models.jira import Integration, FieldMapping
 from app.services.llm_service import llm_service
@@ -13,9 +15,12 @@ from app.services.llm_service import llm_service
 router = APIRouter()
 
 @router.post("/jira/oauth/start")
-def start_jira_oauth(payload: Dict[str, Any] = Body(...)) -> Any:
+def start_jira_oauth(
+    payload: Dict[str, Any] = Body(...),
+    current_user: User = Depends(get_current_user)
+) -> Any:
     return_url = payload.get("returnUrl")
-    auth_url = jira_service.get_oauth_url(return_url)
+    auth_url = jira_service.get_oauth_url(return_url, user_id=current_user.id)
     return {"authUrl": auth_url}
 
 @router.get("/jira/oauth/callback")
@@ -45,16 +50,20 @@ async def jira_oauth_callback(
         return RedirectResponse(f"http://localhost:4200/settings/integrations?error={str(e)}")
 
 @router.get("")
-def list_integrations(session: Session = Depends(get_session)) -> Any:
-    return jira_service.list_integrations(session)
+def list_integrations(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    return jira_service.list_integrations(session, user_id=current_user.id)
 
 @router.get("/{integration_id}")
 def get_integration(
     integration_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get a single integration by ID."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
     return integration
@@ -62,10 +71,11 @@ def get_integration(
 @router.delete("/{integration_id}")
 def delete_integration(
     integration_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Delete an integration."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
     session.delete(integration)
@@ -75,10 +85,11 @@ def delete_integration(
 @router.post("/{integration_id}/sync")
 async def sync_integration(
     integration_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Sync an integration - verifies connection and refreshes token if needed."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
@@ -155,10 +166,11 @@ async def sync_integration(
 @router.get("/{integration_id}/fields")
 async def get_integration_fields(
     integration_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get available fields from the integration provider."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
@@ -229,10 +241,11 @@ async def get_integration_fields(
 @router.get("/{integration_id}/mappings")
 def get_field_mappings(
     integration_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get field mappings for an integration."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
@@ -257,10 +270,11 @@ def update_field_mapping(
     integration_id: int,
     our_field: str,
     payload: Dict[str, Any] = Body(...),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Update a field mapping."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
@@ -311,10 +325,11 @@ def update_field_mapping(
 def delete_field_mapping(
     integration_id: int,
     our_field: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Delete a field mapping."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
@@ -334,10 +349,11 @@ def delete_field_mapping(
 @router.post("/{integration_id}/mappings/auto-detect")
 async def auto_detect_mappings(
     integration_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """Automatically detect field mappings based on field names using rule-based matching."""
-    integration = session.get(Integration, integration_id)
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
     if not integration:
         raise HTTPException(status_code=404, detail="Integration not found")
 
@@ -504,7 +520,14 @@ async def auto_detect_mappings(
     return {"mappings": suggested_mappings, "message": f"Auto-detected {len(suggested_mappings)} field mappings"}
 
 @router.get("/jira/{integration_id}/projects")
-def list_jira_projects(integration_id: int) -> Any:
+def list_jira_projects(
+    integration_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
+    if not integration:
+        raise HTTPException(status_code=404, detail="Integration not found")
     # return jira_service.list_projects(session, integration_id)
     return [
         {"key": "PROJ1", "name": "Project 1"},
@@ -512,16 +535,27 @@ def list_jira_projects(integration_id: int) -> Any:
     ]
 
 @router.get("/jira/{integration_id}/boards")
-def list_jira_boards(integration_id: int) -> Any:
+def list_jira_boards(
+    integration_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    integration = jira_service.get_integration(session, integration_id, user_id=current_user.id)
+    if not integration:
+        raise HTTPException(status_code=404, detail="Integration not found")
     return [
         {"id": 1, "name": "Board 1", "type": "scrum"},
         {"id": 2, "name": "Board 2", "type": "kanban"}
     ]
 
 @router.get("/pi-planning/boards")
-def list_pi_boards() -> Any:
+def list_pi_boards(
+    current_user: User = Depends(get_current_user)
+) -> Any:
     return []
 
 @router.get("/split-tests")
-def list_split_tests() -> Any:
+def list_split_tests(
+    current_user: User = Depends(get_current_user)
+) -> Any:
     return []

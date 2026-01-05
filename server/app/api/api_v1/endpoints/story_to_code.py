@@ -9,6 +9,8 @@ from sqlmodel import Session
 from pydantic import BaseModel, Field
 
 from app.core.db import get_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.services.story_to_code_service import story_to_code_service
 
 router = APIRouter()
@@ -44,11 +46,11 @@ class LegacyGenerateRequest(BaseModel):
 
 @router.get("/artifacts", response_model=List[Any])
 def list_story_artifacts(
-    user_id: Optional[int] = None,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """List user story artifacts (epics, features, user stories) for selection."""
-    artifacts = story_to_code_service.list_story_artifacts(db, user_id=user_id)
+    artifacts = story_to_code_service.list_story_artifacts(db, user_id=current_user.id)
     return [
         {
             "id": a.id,
@@ -63,11 +65,11 @@ def list_story_artifacts(
 
 @router.get("/knowledge-bases", response_model=List[Any])
 def list_code_knowledge_bases(
-    user_id: Optional[int] = None,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """List knowledge bases with code/GitHub content."""
-    kbs = story_to_code_service.list_code_knowledge_bases(db, user_id=user_id)
+    kbs = story_to_code_service.list_code_knowledge_bases(db, user_id=current_user.id)
     return [
         {
             "id": kb.id,
@@ -87,7 +89,8 @@ def list_code_knowledge_bases(
 def create_session(
     request: CreateSessionRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Create a new story-to-code session.
@@ -104,7 +107,7 @@ def create_session(
             source_artifact_id=request.source_artifact_id,
             tech_stack=request.tech_stack,
             knowledge_base_ids=request.knowledge_base_ids,
-            user_id=request.user_id
+            user_id=current_user.id
         )
 
         # Process in background
@@ -121,22 +124,23 @@ def create_session(
 
 @router.get("/sessions", response_model=List[Any])
 def list_sessions(
-    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """List story-to-code sessions with pagination."""
-    return story_to_code_service.list_sessions(db, user_id=user_id, skip=skip, limit=limit)
+    return story_to_code_service.list_sessions(db, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get("/sessions/{session_id}", response_model=Any)
 def get_session(
     session_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """Get a specific session by ID."""
-    session = story_to_code_service.get_session(db, session_id)
+    session = story_to_code_service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
@@ -145,10 +149,11 @@ def get_session(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """Delete a session."""
-    success = story_to_code_service.delete_session(db, session_id)
+    success = story_to_code_service.delete_session(db, session_id, user_id=current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"status": "deleted"}
@@ -158,10 +163,11 @@ def delete_session(
 def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """Retry a failed session."""
-    session = story_to_code_service.retry_session(db, session_id)
+    session = story_to_code_service.retry_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -178,10 +184,11 @@ def retry_session(
 @router.get("/sessions/{session_id}/download")
 def download_session_zip(
     session_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """Download generated code as a ZIP file."""
-    session = story_to_code_service.get_session(db, session_id)
+    session = story_to_code_service.get_session(db, session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -209,7 +216,8 @@ def download_session_zip(
 @router.post("/generate", response_model=Any)
 def generate_code(
     request: LegacyGenerateRequest,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """
     [LEGACY] Generate code from user stories.
@@ -223,7 +231,7 @@ def generate_code(
             "stories": request.stories,
             "techStack": request.tech_stack,
             "knowledgeBaseIds": request.knowledge_base_ids,
-            "userId": request.user_id
+            "userId": current_user.id
         }
         artifact = story_to_code_service.generate(db, req_dict)
         return artifact
@@ -233,23 +241,22 @@ def generate_code(
 
 @router.get("/history", response_model=List[Any])
 def list_history(
-    user_id: Optional[int] = None,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """[LEGACY] List previous code generations for a user."""
-    if user_id is None:
-        return []
-    return story_to_code_service.list_requests(db, user_id)
+    return story_to_code_service.list_requests(db, current_user.id)
 
 
 # Dynamic ID routes MUST be last
 @router.get("/{id}", response_model=Any)
 def get_generation(
     id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """[LEGACY] Get details of a specific generation."""
-    artifact = story_to_code_service.get_artifact(db, id)
+    artifact = story_to_code_service.get_artifact(db, id, user_id=current_user.id)
     if not artifact:
         raise HTTPException(status_code=404, detail="Generation not found")
     return artifact
@@ -258,11 +265,12 @@ def get_generation(
 @router.get("/{id}/download")
 def download_zip(
     id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """[LEGACY] Download the generated code as a ZIP file."""
     # Use session-based approach internally
-    session = story_to_code_service.get_session(db, id)
+    session = story_to_code_service.get_session(db, id, user_id=current_user.id)
     if session:
         # New session-based record
         if session.status != "completed":
@@ -271,7 +279,7 @@ def download_zip(
         title = session.title or "generated_code"
     else:
         # Try legacy artifact
-        artifact = story_to_code_service.get_artifact(db, id)
+        artifact = story_to_code_service.get_artifact(db, id, user_id=current_user.id)
         if not artifact:
             raise HTTPException(status_code=404, detail="Generation not found")
 
@@ -304,13 +312,14 @@ def download_zip(
 def reprocess_generation(
     id: int,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """[LEGACY] Reprocess a failed or incomplete generation."""
     # Try new session-based approach first
-    session = story_to_code_service.get_session(db, id)
+    session = story_to_code_service.get_session(db, id, user_id=current_user.id)
     if session:
-        result = story_to_code_service.retry_session(db, id)
+        result = story_to_code_service.retry_session(db, id, user_id=current_user.id)
         if result:
             background_tasks.add_task(
                 story_to_code_service.process_session,
@@ -320,7 +329,7 @@ def reprocess_generation(
             return result
 
     # Fallback to legacy artifact
-    artifact = story_to_code_service.get_artifact(db, id)
+    artifact = story_to_code_service.get_artifact(db, id, user_id=current_user.id)
     if not artifact:
         raise HTTPException(status_code=404, detail="Generation not found")
 
@@ -329,7 +338,7 @@ def reprocess_generation(
         "stories": artifact.input_description,
         "techStack": artifact.generation_metadata.get("techStack") if artifact.generation_metadata else None,
         "knowledgeBaseIds": artifact.knowledge_base_ids or [],
-        "userId": artifact.user_id
+        "userId": current_user.id
     }
 
     try:

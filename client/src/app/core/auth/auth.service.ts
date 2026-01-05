@@ -20,6 +20,7 @@ export interface AuthResponse {
     token_type: string;
     user: User;
     is_new?: boolean;
+    needs_onboarding?: boolean;
 }
 
 @Injectable({
@@ -95,6 +96,14 @@ export class AuthService {
 
     updateProfile(data: { full_name?: string }): Observable<User> {
         return this.http.put<User>(`/api/users/me`, data).pipe(
+            tap(updatedUser => {
+                this._currentUser.set(updatedUser);
+            })
+        );
+    }
+
+    completeProfile(data: { full_name: string; accept_terms: boolean }): Observable<User> {
+        return this.http.post<User>(`/api/auth/complete-profile`, data).pipe(
             tap(updatedUser => {
                 this._currentUser.set(updatedUser);
             })

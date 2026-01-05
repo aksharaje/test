@@ -73,10 +73,10 @@ def get_session_detail_endpoint(
     result = ideation_service.get_session_detail(db_session, session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
-    if result.session.user_id and result.session.user_id != current_user.id:
-          # If session has user_id and it doesn't match, 404 or 403
-          raise HTTPException(status_code=404, detail="Session not found")
-          
+    session = result["session"]
+    if session.user_id and session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
     return result
 
 

@@ -30,13 +30,14 @@ class JiraService:
         for state in expired:
             del oauth_states[state]
 
-    def get_oauth_url(self, return_url: Optional[str] = None) -> str:
+    def get_oauth_url(self, return_url: Optional[str] = None, user_id: Optional[int] = None) -> str:
         self.cleanup_expired_states()
         state = str(uuid.uuid4())
-        
+
         oauth_states[state] = {
             "created_at": datetime.utcnow().timestamp(),
-            "return_url": return_url
+            "return_url": return_url,
+            "user_id": user_id
         }
 
         params = {
@@ -57,9 +58,10 @@ class JiraService:
         state_data = oauth_states.get(state)
         if not state_data:
             raise ValueError("Invalid or expired state")
-        
+
         del oauth_states[state]
         return_url = state_data.get("return_url")
+        user_id = state_data.get("user_id")
 
         # Exchange code for tokens
         async with httpx.AsyncClient() as client:
@@ -104,10 +106,12 @@ class JiraService:
             # Create or update integration
             token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
             
-            # Check if integration exists for this cloud_id
+            # Check if integration exists for this cloud_id and user
             statement = select(Integration).where(Integration.cloud_id == resource["id"])
+            if user_id:
+                statement = statement.where(Integration.user_id == user_id)
             existing_integration = session.exec(statement).first()
-            
+
             if existing_integration:
                 existing_integration.name = resource["name"]
                 existing_integration.base_url = resource["url"]
@@ -127,6 +131,7 @@ class JiraService:
                     name=resource["name"],
                     base_url=resource["url"],
                     cloud_id=resource["id"],
+                    user_id=user_id,
                     auth_type="oauth",
                     access_token=access_token,
                     refresh_token=refresh_token,
@@ -143,9 +148,18 @@ class JiraService:
                 "return_url": return_url
             }
 
-    def list_integrations(self, session: Session) -> List[Integration]:
-        statement = select(Integration).order_by(Integration.created_at.desc())
+    def list_integrations(self, session: Session, user_id: Optional[int] = None) -> List[Integration]:
+        statement = select(Integration)
+        if user_id:
+            statement = statement.where(Integration.user_id == user_id)
+        statement = statement.order_by(Integration.created_at.desc())
         return session.exec(statement).all()
+
+    def get_integration(self, session: Session, integration_id: int, user_id: Optional[int] = None) -> Optional[Integration]:
+        integration = session.get(Integration, integration_id)
+        if integration and user_id and integration.user_id and integration.user_id != user_id:
+            return None
+        return integration
 
     async def ensure_valid_token(self, session: Session, integration: Integration) -> Integration:
         """

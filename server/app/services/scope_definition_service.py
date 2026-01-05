@@ -146,7 +146,7 @@ class ScopeDefinitionService:
 
     # ==================== SESSION MANAGEMENT ====================
 
-    def create_session(self, db: Session, data: ScopeDefinitionSessionCreate) -> ScopeDefinitionSession:
+    def create_session(self, db: Session, data: ScopeDefinitionSessionCreate, user_id: Optional[int] = None) -> ScopeDefinitionSession:
         """Create a new scope definition session."""
         session = ScopeDefinitionSession(
             project_name=data.project_name,
@@ -159,29 +159,32 @@ class ScopeDefinitionService:
             okr_session_id=data.okr_session_id,
             knowledge_base_ids=data.knowledge_base_ids,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
         db.refresh(session)
         return session
 
-    def get_session(self, db: Session, session_id: int) -> Optional[ScopeDefinitionSession]:
-        """Get a session by ID."""
-        return db.get(ScopeDefinitionSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[ScopeDefinitionSession]:
+        """Get a session by ID, optionally filtered by user."""
+        session = db.get(ScopeDefinitionSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None  # User doesn't own this session
+        return session
 
     def list_sessions(
         self,
         db: Session,
+        user_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> List[ScopeDefinitionSession]:
-        """List sessions with pagination."""
-        statement = (
-            select(ScopeDefinitionSession)
-            .order_by(desc(ScopeDefinitionSession.created_at))
-            .offset(skip)
-            .limit(limit)
-        )
+        """List sessions with pagination, filtered by user."""
+        statement = select(ScopeDefinitionSession)
+        if user_id:
+            statement = statement.where(ScopeDefinitionSession.user_id == user_id)
+        statement = statement.order_by(desc(ScopeDefinitionSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
     def delete_session(self, db: Session, session_id: int) -> bool:

@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session
 from pydantic import BaseModel, Field
 
+from app.api.deps import get_db, get_current_user
+from app.models.user import User
 from app.core.db import get_session
 from app.models.research_planner import (
     ResearchPlanSession,
@@ -110,7 +112,7 @@ class UpdateSurveyRequest(BaseModel):
 
 @router.get("/context-sources")
 def get_available_context_sources(
-    user_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get available context sources for research planning (KBs, ideation, feasibility, business case sessions)"""
@@ -122,29 +124,25 @@ def get_available_context_sources(
 
     # Get ready knowledge bases
     kb_query = select(KnowledgeBase).where(KnowledgeBase.status == "ready")
-    if user_id:
-        kb_query = kb_query.where(KnowledgeBase.userId == user_id)
+    kb_query = kb_query.where(KnowledgeBase.userId == current_user.id)
     kb_query = kb_query.order_by(desc(KnowledgeBase.updatedAt)).limit(20)
     knowledge_bases = list(db_session.exec(kb_query).all())
 
     # Get completed ideation sessions
     ideation_query = select(IdeationSession).where(IdeationSession.status == "completed")
-    if user_id:
-        ideation_query = ideation_query.where(IdeationSession.user_id == user_id)
+    ideation_query = ideation_query.where(IdeationSession.user_id == current_user.id)
     ideation_query = ideation_query.order_by(desc(IdeationSession.created_at)).limit(20)
     ideation_sessions = list(db_session.exec(ideation_query).all())
 
     # Get completed feasibility sessions
     feasibility_query = select(FeasibilitySession).where(FeasibilitySession.status == "completed")
-    if user_id:
-        feasibility_query = feasibility_query.where(FeasibilitySession.user_id == user_id)
+    feasibility_query = feasibility_query.where(FeasibilitySession.user_id == current_user.id)
     feasibility_query = feasibility_query.order_by(desc(FeasibilitySession.created_at)).limit(20)
     feasibility_sessions = list(db_session.exec(feasibility_query).all())
 
     # Get completed business case sessions
     business_case_query = select(BusinessCaseSession).where(BusinessCaseSession.status == "completed")
-    if user_id:
-        business_case_query = business_case_query.where(BusinessCaseSession.user_id == user_id)
+    business_case_query = business_case_query.where(BusinessCaseSession.user_id == current_user.id)
     business_case_query = business_case_query.order_by(desc(BusinessCaseSession.created_at)).limit(20)
     business_case_sessions = list(db_session.exec(business_case_query).all())
 
@@ -186,6 +184,7 @@ def get_available_context_sources(
 def create_session(
     request: CreateSessionRequest,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Create research planning session and start method recommendation"""
@@ -204,7 +203,7 @@ def create_session(
             objective=request.objective,
             research_context=request.research_context or "b2b",
             constraints=constraints_dict,
-            user_id=request.user_id,
+            user_id=current_user.id,
             knowledge_base_ids=request.knowledge_base_ids,
             ideation_session_id=request.ideation_session_id,
             feasibility_session_id=request.feasibility_session_id,
@@ -226,10 +225,11 @@ def create_session(
 @router.get("/sessions/{session_id}")
 def get_session_detail(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get session with all methods, guides, surveys, recruiting plans"""
-    result = research_planner_service.get_session_detail(db_session, session_id)
+    result = research_planner_service.get_session_detail(db_session, session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
     return result
@@ -238,10 +238,11 @@ def get_session_detail(
 @router.get("/sessions/{session_id}/status")
 def get_session_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Get session status for polling"""
-    session_obj = research_planner_service.get_session(db_session, session_id)
+    session_obj = research_planner_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -256,19 +257,20 @@ def get_session_status(
 
 @router.get("/sessions", response_model=List[ResearchPlanSession])
 def list_sessions(
-    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """List all sessions, optionally filtered by user"""
-    return research_planner_service.list_sessions(db_session, user_id=user_id, skip=skip, limit=limit)
+    return research_planner_service.list_sessions(db_session, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.post("/sessions/{session_id}/select-methods", response_model=ResearchPlanSession)
 def select_methods(
     session_id: int,
     request: SelectMethodsRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Select which methods to proceed with"""
@@ -276,7 +278,8 @@ def select_methods(
         session_obj = research_planner_service.select_methods(
             db=db_session,
             session_id=session_id,
-            method_names=request.method_names
+            method_names=request.method_names,
+            user_id=current_user.id
         )
         return session_obj
     except ValueError as e:
@@ -288,10 +291,11 @@ def generate_instruments(
     session_id: int,
     request: GenerateInstrumentsRequest,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Generate research instruments for selected methods"""
-    session_obj = research_planner_service.get_session(db_session, session_id)
+    session_obj = research_planner_service.get_session(db_session, session_id, user_id=current_user.id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -345,11 +349,12 @@ def generate_instruments(
 def retry_session(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Retry a failed session"""
     try:
-        session_obj = research_planner_service.retry_session(db_session, session_id)
+        session_obj = research_planner_service.retry_session(db_session, session_id, user_id=current_user.id)
 
         # Trigger background processing
         background_tasks.add_task(
@@ -367,6 +372,7 @@ def retry_session(
 def update_interview_guide(
     guide_id: int,
     request: UpdateInterviewGuideRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update interview guide content (user edits)"""
@@ -384,6 +390,7 @@ def update_interview_guide(
 def update_survey(
     survey_id: int,
     request: UpdateSurveyRequest,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Update survey questions (user edits)"""
@@ -400,10 +407,11 @@ def update_survey(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     db_session: Session = Depends(get_session)
 ) -> Any:
     """Delete a session and all related data"""
-    success = research_planner_service.delete_session(db_session, session_id)
+    success = research_planner_service.delete_session(db_session, session_id, user_id=current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True}

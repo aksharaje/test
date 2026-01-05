@@ -1,10 +1,11 @@
 from typing import Any, Dict, Optional, List
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session, select, func, col, or_, desc
+from sqlmodel import Session, select, func, col, desc
 from datetime import datetime, timedelta
 
 from app.core import db as deps
+from app.api.deps import get_current_user
 from app.models.user import User
 
 # Artifact Models
@@ -35,22 +36,23 @@ router = APIRouter()
 @router.get("/stats", response_model=Dict[str, Any])
 def get_dashboard_stats(
     timeframe: str = Query("30d", enum=["30d", "all"]),
-    user_id: int = Query(1), # Default to user 1 for prototype
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(deps.get_session),
 ) -> Any:
     """
     Get aggregated dashboard statistics for the current user.
     """
-    
+    user_id = current_user.id
+
     # Calculate start date based on timeframe
     start_date = None
     if timeframe == "30d":
         start_date = datetime.utcnow() - timedelta(days=30)
-    
+
     def count_query(model):
         query = select(func.count()).select_from(model)
         if hasattr(model, "user_id"):
-            query = query.where(or_(model.user_id == user_id, model.user_id == None))
+            query = query.where(model.user_id == user_id)
 
         if start_date:
             # Handle standard created_at or updated_at
@@ -143,7 +145,7 @@ def get_dashboard_stats(
             if hasattr(model, "created_at"):
                 query = select(func.min(model.created_at))
                 if hasattr(model, "user_id"):
-                    query = query.where(or_(model.user_id == user_id, model.user_id == None))
+                    query = query.where(model.user_id == user_id)
                 min_date = db.exec(query).one()
                 if min_date and (earliest_date is None or min_date < earliest_date):
                     earliest_date = min_date
@@ -177,7 +179,7 @@ def get_dashboard_stats(
     def count_all_time(model):
         query = select(func.count()).select_from(model)
         if hasattr(model, "user_id"):
-            query = query.where(or_(model.user_id == user_id, model.user_id == None))
+            query = query.where(model.user_id == user_id)
         return db.exec(query).one()
 
     # 1. Product Level (XP)
@@ -241,7 +243,7 @@ def get_dashboard_stats(
         if hasattr(model, "created_at"):
             query = select(model.created_at)
             if hasattr(model, "user_id"):
-                query = query.where(or_(model.user_id == user_id, model.user_id == None))
+                query = query.where(model.user_id == user_id)
             return db.exec(query).all()
         return []
 
@@ -370,12 +372,14 @@ class DashboardReport(BaseModel):
 def get_dashboard_report(
     timeframe: str = Query("30d", enum=["30d", "all"]),
     report_type: str = Query("productivity", enum=["productivity", "velocity"]),
-    user_id: int = Query(1),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(deps.get_session),
 ) -> Any:
     """
     Get detailed itemized report for dashboard drill-down.
     """
+    user_id = current_user.id
+
     start_date = None
     if timeframe == "30d":
         start_date = datetime.utcnow() - timedelta(days=30)
@@ -411,10 +415,10 @@ def get_dashboard_report(
     for model, label, hours, key in config:
         # Build query
         query = select(model)
-        
-        # Filter by User (OR NULL)
+
+        # Filter by User
         if hasattr(model, "user_id"):
-             query = query.where(or_(model.user_id == user_id, model.user_id == None))
+            query = query.where(model.user_id == user_id)
         
         # Filter by Date
         if start_date:

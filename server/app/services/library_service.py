@@ -29,10 +29,17 @@ class LibraryService:
         return self._client
 
     def list_books(self, session: Session, user_id: Optional[int] = None) -> List[LibraryBook]:
-        return session.exec(select(LibraryBook).order_by(desc(LibraryBook.created_at))).all()
+        statement = select(LibraryBook)
+        if user_id:
+            statement = statement.where(LibraryBook.user_id == user_id)
+        statement = statement.order_by(desc(LibraryBook.created_at))
+        return session.exec(statement).all()
 
-    def get_book(self, session: Session, id: int) -> Optional[LibraryBook]:
-        return session.get(LibraryBook, id)
+    def get_book(self, session: Session, id: int, user_id: Optional[int] = None) -> Optional[LibraryBook]:
+        book = session.get(LibraryBook, id)
+        if book and user_id and book.user_id and book.user_id != user_id:
+            return None
+        return book
 
     def get_book_pages(self, session: Session, book_id: int) -> List[Dict[str, Any]]:
         # Same hierarchy logic as before
@@ -56,29 +63,39 @@ class LibraryService:
                 root_pages.append(page_obj)
         return root_pages
 
-    def get_page(self, session: Session, id: int) -> Optional[LibraryPage]:
-        return session.get(LibraryPage, id)
+    def get_page(self, session: Session, id: int, user_id: Optional[int] = None) -> Optional[LibraryPage]:
+        page = session.get(LibraryPage, id)
+        if page and user_id:
+            # Verify via book ownership
+            book = session.get(LibraryBook, page.book_id)
+            if book and book.user_id and book.user_id != user_id:
+                return None
+        return page
 
     def create_book(self, session: Session, knowledge_base_id: int, user_id: Optional[int] = None) -> LibraryBook:
         kb = session.get(KnowledgeBase, knowledge_base_id)
         if not kb:
             raise ValueError("Knowledge Base not found")
-            
+
         book = LibraryBook(
             knowledge_base_id=knowledge_base_id,
             title=kb.name,
             description=f"AI-generated documentation for {kb.name}",
-            status="generating"
+            status="generating",
+            user_id=user_id,
         )
         session.add(book)
         session.commit()
         session.refresh(book)
         return book
 
-    def delete_book(self, session: Session, id: int) -> bool:
+    def delete_book(self, session: Session, id: int, user_id: Optional[int] = None) -> bool:
         book = session.get(LibraryBook, id)
-        if not book: return False
-        
+        if not book:
+            return False
+        if user_id and book.user_id and book.user_id != user_id:
+            return False
+
         # Manually cascade delete dependencies
         # Delete pages
         pages = session.exec(select(LibraryPage).where(LibraryPage.book_id == id)).all()
@@ -87,22 +104,22 @@ class LibraryService:
             p.parent_id = None
             session.add(p)
         session.flush()
-        
+
         # print(f"Deleting {len(pages)} pages")
         for p in pages: session.delete(p)
-            
+
         # Delete integrations
         integrations = session.exec(select(LibraryIntegration).where(LibraryIntegration.book_id == id)).all()
         # print(f"Deleting {len(integrations)} integrations")
         for i in integrations: session.delete(i)
-            
+
         # Delete versions
         versions = session.exec(select(LibraryBookVersion).where(LibraryBookVersion.book_id == id)).all()
         # print(f"Deleting {len(versions)} versions")
         for v in versions: session.delete(v)
-        
+
         session.flush() # Ensure dependents are deleted first
-        
+
         session.delete(book)
         session.commit()
         return True

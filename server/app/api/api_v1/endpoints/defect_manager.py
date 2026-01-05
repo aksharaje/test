@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.core.db import get_session as get_db_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.defect_manager import (
     CreateDefectSessionRequest,
     DefectSessionResponse,
@@ -31,25 +33,27 @@ router = APIRouter()
 @router.get("/integrations/check")
 async def check_integrations(
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> dict:
     """
     Check if user has valid Jira or ADO integrations.
     """
     service = get_defect_manager_service(session)
-    return service.check_integrations()
+    return service.check_integrations(user_id=current_user.id)
 
 
 @router.get("/integrations/{integration_id}/projects", response_model=List[ProjectOption])
 async def get_projects(
     integration_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> List[ProjectOption]:
     """
     Get available projects from an integration.
     """
     service = get_defect_manager_service(session)
     try:
-        return await service.get_projects(integration_id)
+        return await service.get_projects(integration_id, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -63,14 +67,15 @@ async def get_projects(
 async def create_session(
     data: CreateDefectSessionRequest,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> DefectSessionResponse:
     """
     Create a new defect analysis session.
     """
     service = get_defect_manager_service(session)
     try:
-        defect_session = service.create_session(data)
-        return service.get_session_response(defect_session.id)
+        defect_session = service.create_session(data, user_id=current_user.id)
+        return service.get_session_response(defect_session.id, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -78,24 +83,26 @@ async def create_session(
 @router.get("/sessions", response_model=List[DefectSessionResponse])
 async def list_sessions(
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> List[DefectSessionResponse]:
     """
-    List all defect analysis sessions.
+    List all defect analysis sessions for the authenticated user.
     """
     service = get_defect_manager_service(session)
-    return service.list_sessions()
+    return service.list_sessions(user_id=current_user.id)
 
 
 @router.get("/sessions/{session_id}", response_model=DefectSessionResponse)
 async def get_session(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> DefectSessionResponse:
     """
     Get a specific defect analysis session.
     """
     service = get_defect_manager_service(session)
-    result = service.get_session_response(session_id)
+    result = service.get_session_response(session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
     return result
@@ -105,12 +112,13 @@ async def get_session(
 async def delete_session(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> dict:
     """
     Delete a defect analysis session.
     """
     service = get_defect_manager_service(session)
-    if not service.delete_session(session_id):
+    if not service.delete_session(session_id, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True}
 
@@ -124,6 +132,7 @@ async def delete_session(
 async def analyze_defects(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> AnalysisStatusResponse:
     """
     Run defect analysis for a session.
@@ -133,7 +142,7 @@ async def analyze_defects(
     """
     service = get_defect_manager_service(session)
     try:
-        return await service.analyze_defects(session_id)
+        return await service.analyze_defects(session_id, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -144,12 +153,13 @@ async def analyze_defects(
 async def get_analysis_status(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> AnalysisStatusResponse:
     """
     Get the current status of defect analysis.
     """
     service = get_defect_manager_service(session)
-    defect_session = service.get_session(session_id)
+    defect_session = service.get_session(session_id, user_id=current_user.id)
     if not defect_session:
         raise HTTPException(status_code=404, detail="Session not found")
     return service._get_analysis_status(defect_session)
@@ -164,6 +174,7 @@ async def get_analysis_status(
 async def get_triage_result(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> TriageResult:
     """
     Get triage results for a session.
@@ -172,7 +183,7 @@ async def get_triage_result(
     and priority recommendations.
     """
     service = get_defect_manager_service(session)
-    result = service.get_triage_result(session_id)
+    result = service.get_triage_result(session_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found or analysis not complete")
     return result
@@ -182,6 +193,7 @@ async def get_triage_result(
 async def get_pattern_analysis(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> PatternAnalysis:
     """
     Get pattern analysis for a session.
@@ -189,7 +201,7 @@ async def get_pattern_analysis(
     Returns grouped patterns, trends, and hot spots.
     """
     service = get_defect_manager_service(session)
-    defect_session = service.get_session(session_id)
+    defect_session = service.get_session(session_id, user_id=current_user.id)
     if not defect_session or defect_session.status != "ready":
         raise HTTPException(status_code=404, detail="Session not found or analysis not complete")
 
@@ -200,6 +212,7 @@ async def get_pattern_analysis(
 async def get_prevention_recommendations(
     session_id: int,
     session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
 ) -> List[PreventionRecommendation]:
     """
     Get prevention recommendations based on defect analysis.
@@ -207,4 +220,4 @@ async def get_prevention_recommendations(
     Returns process improvements, testing focus areas, and high-risk components.
     """
     service = get_defect_manager_service(session)
-    return service.get_prevention_recommendations(session_id)
+    return service.get_prevention_recommendations(session_id, user_id=current_user.id)

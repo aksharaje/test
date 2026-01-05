@@ -243,6 +243,25 @@ import { ActivityService } from '../../core/services/activity.service';
                 </div>
             </div>
         </div>
+      } @else if (!loading()) {
+        <!-- Empty State -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-8">
+          <div class="flex flex-col items-center justify-center text-center space-y-4">
+            <div class="p-4 rounded-full bg-muted">
+              <ng-icon name="lucideLightbulb" class="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div class="space-y-2">
+              <h3 class="font-semibold text-lg">No artifacts yet</h3>
+              <p class="text-sm text-muted-foreground max-w-md">
+                Start creating PRDs, research plans, journey maps, and more to see your productivity metrics grow. Your recent work will appear here.
+              </p>
+            </div>
+            <a routerLink="/prd-generator" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+              Create your first PRD
+              <ng-icon name="lucideArrowRight" class="ml-2 h-4 w-4" />
+            </a>
+          </div>
+        </div>
       }
 
        <!-- Supporting Section -->

@@ -33,6 +33,7 @@ from app.models.release_readiness import (
 )
 from app.models.jira import Integration, FieldMapping
 from app.core.config import settings
+from app.core.token_refresh import ensure_valid_token
 
 # Default field IDs when no mapping exists
 DEFAULT_JIRA_FIELDS = {
@@ -56,16 +57,27 @@ class ReleaseReadinessService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _get_integration_with_auth(self, integration_id: int, user_id: Optional[int] = None) -> Integration:
+        """Get integration and verify ownership if user_id provided."""
+        integration = self.db.get(Integration, integration_id)
+        if not integration:
+            raise ValueError("Integration not found")
+        if user_id and integration.user_id and integration.user_id != user_id:
+            raise ValueError("Integration not found")
+        return integration
+
     # =========================================================================
     # INTEGRATION CHECK
     # =========================================================================
 
-    def check_integrations(self) -> Dict[str, Any]:
+    def check_integrations(self, user_id: Optional[int] = None) -> Dict[str, Any]:
         """Check for valid Jira/ADO integrations."""
         stmt = select(Integration).where(
             Integration.provider.in_(["jira", "ado"]),
             Integration.status == "connected"
         )
+        if user_id:
+            stmt = stmt.where(Integration.user_id == user_id)
         integrations = list(self.db.exec(stmt))
 
         valid_integrations = [
@@ -144,11 +156,12 @@ class ReleaseReadinessService:
     # INTEGRATION LOOKUPS
     # =========================================================================
 
-    async def get_projects(self, integration_id: int) -> List[ProjectOption]:
+    async def get_projects(self, integration_id: int, user_id: Optional[int] = None) -> List[ProjectOption]:
         """Get available projects from integration."""
-        integration = self.db.get(Integration, integration_id)
-        if not integration:
-            raise ValueError("Integration not found")
+        integration = self._get_integration_with_auth(integration_id, user_id)
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         if integration.provider == "jira":
             return await self._get_jira_projects(integration)
@@ -209,15 +222,16 @@ class ReleaseReadinessService:
         return projects
 
     async def get_fix_versions(
-        self, integration_id: int, project_key: str
+        self, integration_id: int, project_key: str, user_id: Optional[int] = None
     ) -> List[FixVersionOption]:
         """Get fix versions from Jira project."""
-        integration = self.db.get(Integration, integration_id)
-        if not integration:
-            raise ValueError("Integration not found")
+        integration = self._get_integration_with_auth(integration_id, user_id)
 
         if integration.provider != "jira":
             return []  # Fix versions are Jira-specific
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         versions = []
         try:
@@ -245,11 +259,12 @@ class ReleaseReadinessService:
         versions.sort(key=lambda v: (v.released, v.name))
         return versions
 
-    async def get_sprints(self, integration_id: int) -> List[SprintOption]:
+    async def get_sprints(self, integration_id: int, user_id: Optional[int] = None) -> List[SprintOption]:
         """Get available sprints/iterations from integration."""
-        integration = self.db.get(Integration, integration_id)
-        if not integration:
-            raise ValueError("Integration not found")
+        integration = self._get_integration_with_auth(integration_id, user_id)
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         if integration.provider == "jira":
             return await self._get_jira_sprints(integration)
@@ -347,12 +362,13 @@ class ReleaseReadinessService:
         return iterations
 
     async def get_labels(
-        self, integration_id: int, project_key: Optional[str] = None
+        self, integration_id: int, project_key: Optional[str] = None, user_id: Optional[int] = None
     ) -> List[LabelOption]:
         """Get available labels/tags from integration."""
-        integration = self.db.get(Integration, integration_id)
-        if not integration:
-            raise ValueError("Integration not found")
+        integration = self._get_integration_with_auth(integration_id, user_id)
+
+        # Ensure token is valid before making API calls
+        integration = await ensure_valid_token(self.db, integration)
 
         if integration.provider == "jira":
             return await self._get_jira_labels(integration, project_key)

@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlmodel import Session
 
 from app.core.db import get_session, engine
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.release_prep import (
     ReleasePrepSession,
     ReleasePrepSessionCreate,
@@ -37,27 +39,30 @@ def get_service(db: Session = Depends(get_session)) -> ReleasePrepService:
 @router.post("/sessions", response_model=ReleasePrepSession)
 def create_session(
     data: ReleasePrepSessionCreate,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Create a new release prep session"""
-    return service.create_session(data)
+    return service.create_session(data, user_id=current_user.id)
 
 
 @router.get("/sessions", response_model=List[ReleasePrepSession])
 def list_sessions(
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """List all release prep sessions"""
-    return service.get_sessions()
+    return service.get_sessions(user_id=current_user.id)
 
 
 @router.get("/sessions/{session_id}")
 def get_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Get a session with all its artifacts"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -73,9 +78,14 @@ def get_session(
 @router.delete("/sessions/{session_id}")
 def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Delete a session and all its artifacts"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     if not service.delete_session(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"status": "deleted"}
@@ -87,6 +97,7 @@ def delete_session(
 
 @router.get("/stories/available", response_model=List[AvailableStory])
 def get_available_stories(
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Get stories from Story Generator available for selection"""
@@ -112,10 +123,11 @@ def run_pipeline_task(session_id: int):
 async def run_pipeline(
     session_id: int,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Run the release prep pipeline for a session"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -131,10 +143,11 @@ async def run_pipeline(
 @router.get("/sessions/{session_id}/status")
 def get_pipeline_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Get the current pipeline status for a session"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -154,9 +167,14 @@ def get_pipeline_status(
 @router.get("/sessions/{session_id}/release-notes", response_model=List[ReleaseNote])
 def get_release_notes(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Get all release notes for a session"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_release_notes(session_id)
 
 
@@ -164,6 +182,7 @@ def get_release_notes(
 def update_release_note(
     note_id: int,
     data: ReleaseNoteUpdate,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Update a release note"""
@@ -180,9 +199,14 @@ def update_release_note(
 @router.get("/sessions/{session_id}/decisions", response_model=List[Decision])
 def get_decisions(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Get all decisions for a session"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_decisions(session_id)
 
 
@@ -190,6 +214,7 @@ def get_decisions(
 def update_decision(
     decision_id: int,
     data: DecisionUpdate,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Update a decision"""
@@ -206,9 +231,14 @@ def update_decision(
 @router.get("/sessions/{session_id}/debt-items", response_model=List[TechnicalDebtItem])
 def get_debt_items(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Get all technical debt items for a session"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     return service.get_debt_items(session_id)
 
 
@@ -216,10 +246,15 @@ def get_debt_items(
 def create_debt_item(
     session_id: int,
     data: TechnicalDebtItemCreate,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Create a new technical debt item manually"""
     try:
+        # First check access via user_id scoped get_session
+        session_check = service.get_session(session_id, user_id=current_user.id)
+        if not session_check:
+            raise HTTPException(status_code=404, detail="Session not found")
         return service.create_debt_item(session_id, data)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -229,6 +264,7 @@ def create_debt_item(
 def update_debt_item(
     item_id: int,
     data: TechnicalDebtItemUpdate,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Update a technical debt item"""
@@ -246,10 +282,11 @@ def update_debt_item(
 def export_release_notes(
     session_id: int,
     format: str = "markdown",
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Export release notes as markdown or HTML"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -274,10 +311,11 @@ def export_release_notes(
 def export_decision_log(
     session_id: int,
     format: str = "markdown",
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Export decision log as markdown"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -289,10 +327,11 @@ def export_decision_log(
 def export_debt_inventory(
     session_id: int,
     format: str = "markdown",
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Export technical debt inventory as markdown"""
-    session = service.get_session(session_id)
+    session = service.get_session(session_id, user_id=current_user.id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -307,6 +346,7 @@ def export_debt_inventory(
 @router.post("/artifacts/{artifact_id}/unrelease")
 def unrelease_artifact(
     artifact_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Remove released status from an artifact so it can be included in future releases"""
@@ -319,8 +359,13 @@ def unrelease_artifact(
 @router.post("/sessions/{session_id}/unrelease-all")
 def unrelease_session_artifacts(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     service: ReleasePrepService = Depends(get_service)
 ):
     """Remove released status from all artifacts in a session"""
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     count = service.unrelease_session_artifacts(session_id)
     return {"success": True, "count": count, "message": f"{count} artifacts unreleased"}

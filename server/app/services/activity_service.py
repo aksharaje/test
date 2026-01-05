@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Tuple
-from sqlmodel import Session, select, func, desc, or_
+from sqlmodel import Session, select, func, desc
 from app.models.user_activity import UserActivity
 # Artifact Models
 from app.models.prd import GeneratedPrd
@@ -201,7 +201,7 @@ class ActivityService:
             # We assume all identified models have updated_at
             query = select(model)
             if hasattr(model, "user_id"):
-                query = query.where(or_(model.user_id == user_id, model.user_id == None))
+                query = query.where(model.user_id == user_id)
             results = db.exec(
                 query.order_by(desc(model.updated_at))
                 .limit(limit)

@@ -84,12 +84,13 @@ def list_prds(
 @router.get("/{id}/status")
 def get_prd_status(
     id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    prd = prd_generator_service.get_prd(session, id)
+    prd = prd_generator_service.get_prd(session, id, user_id=current_user.id)
     if not prd:
         raise HTTPException(status_code=404, detail="PRD not found")
-        
+
     return {
         "id": prd.id,
         "status": prd.status,
@@ -103,41 +104,47 @@ def get_prd_status(
 def retry_prd(
     id: int,
     background_tasks: BackgroundTasks,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    prd = prd_generator_service.retry_prd(session, id)
+    prd = prd_generator_service.retry_prd(session, id, user_id=current_user.id)
     if not prd:
         raise HTTPException(status_code=404, detail="PRD not found")
-        
+
     # Schedule background generation
     background_tasks.add_task(
         prd_generator_service.run_prd_pipeline,
         session,
         prd.id
     )
-    
+
     return prd
 
 @router.get("/templates", response_model=List[PrdTemplate])
-def list_templates(session: Session = Depends(get_session)) -> Any:
+def list_templates(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> Any:
     templates = session.exec(select(PrdTemplate)).all()
     return templates
 
 @router.delete("/{id}")
 def delete_prd(
     id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    if not prd_generator_service.delete_prd(session, id):
+    if not prd_generator_service.delete_prd(session, id, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="PRD not found")
     return Response(status_code=204)
 
 @router.get("/{id}", response_model=GeneratedPrd)
 def get_prd(
     id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
-    prd = prd_generator_service.get_prd(session, id)
+    prd = prd_generator_service.get_prd(session, id, user_id=current_user.id)
     if not prd:
         raise HTTPException(status_code=404, detail="PRD not found")
     return prd

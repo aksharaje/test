@@ -7,6 +7,7 @@ class IntegrationBase(SQLModel):
     name: str
     base_url: str
     cloud_id: Optional[str] = None
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id")
     auth_type: str # 'oauth', 'pat'
     access_token: str
     refresh_token: Optional[str] = None

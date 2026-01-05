@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
 
 from app.core.db import get_session as get_db_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.progress_tracker import (
     CreateSessionRequest,
     UpdateSessionRequest,
@@ -34,6 +36,7 @@ router = APIRouter()
 
 @router.get("/integrations/check", response_model=IntegrationCheckResponse)
 async def check_integrations(
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> IntegrationCheckResponse:
     """
@@ -44,12 +47,13 @@ async def check_integrations(
     a message directing user to the integrations page.
     """
     service = get_progress_tracker_service(session)
-    return service.check_integrations()
+    return service.check_integrations(user_id=current_user.id)
 
 
 @router.get("/templates", response_model=List[TemplateInfo])
 async def list_templates(
     provider: Optional[str] = Query(None, description="Filter by provider (jira, ado)"),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[TemplateInfo]:
     """
@@ -65,6 +69,7 @@ async def list_templates(
 @router.get("/integrations/{integration_id}/sprints", response_model=List[SprintOption])
 async def get_available_sprints(
     integration_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[SprintOption]:
     """
@@ -75,7 +80,7 @@ async def get_available_sprints(
     """
     service = get_progress_tracker_service(session)
     try:
-        return await service.get_available_sprints(integration_id)
+        return await service.get_available_sprints(integration_id, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -90,6 +95,7 @@ async def get_available_sprints(
 @router.post("/sessions", response_model=SessionResponse)
 async def create_session(
     data: CreateSessionRequest,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> SessionResponse:
     """
@@ -100,7 +106,7 @@ async def create_session(
     """
     service = get_progress_tracker_service(session)
     try:
-        tracker_session = service.create_session(data)
+        tracker_session = service.create_session(data, user_id=current_user.id)
         return service.get_session_response(tracker_session.id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -108,6 +114,7 @@ async def create_session(
 
 @router.get("/sessions", response_model=List[SessionResponse])
 async def list_sessions(
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[SessionResponse]:
     """
@@ -116,12 +123,13 @@ async def list_sessions(
     Returns sessions ordered by last updated, with integration details.
     """
     service = get_progress_tracker_service(session)
-    return service.list_sessions()
+    return service.list_sessions(user_id=current_user.id)
 
 
 @router.get("/sessions/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> SessionResponse:
     """
@@ -130,6 +138,10 @@ async def get_session(
     Returns full session details including cached metrics.
     """
     service = get_progress_tracker_service(session)
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = service.get_session_response(session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -140,6 +152,7 @@ async def get_session(
 async def update_session(
     session_id: int,
     data: UpdateSessionRequest,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> SessionResponse:
     """
@@ -149,6 +162,10 @@ async def update_session(
     """
     service = get_progress_tracker_service(session)
     try:
+        # First check access via user_id scoped get_session
+        session_check = service.get_session(session_id, user_id=current_user.id)
+        if not session_check:
+            raise HTTPException(status_code=404, detail="Session not found")
         updated = service.update_session(session_id, data)
         if not updated:
             raise HTTPException(status_code=404, detail="Session not found")
@@ -160,6 +177,7 @@ async def update_session(
 @router.delete("/sessions/{session_id}")
 async def delete_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> dict:
     """
@@ -168,6 +186,10 @@ async def delete_session(
     Also deletes all tracked items associated with the session.
     """
     service = get_progress_tracker_service(session)
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     if not service.delete_session(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True}
@@ -181,6 +203,7 @@ async def delete_session(
 @router.post("/sessions/{session_id}/sync", response_model=SyncStatusResponse)
 async def sync_session(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> SyncStatusResponse:
     """
@@ -191,6 +214,10 @@ async def sync_session(
     """
     service = get_progress_tracker_service(session)
     try:
+        # First check access via user_id scoped get_session
+        session_check = service.get_session(session_id, user_id=current_user.id)
+        if not session_check:
+            raise HTTPException(status_code=404, detail="Session not found")
         return await service.sync_session(session_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -201,6 +228,7 @@ async def sync_session(
 @router.get("/sessions/{session_id}/status", response_model=SyncStatusResponse)
 async def get_sync_status(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> SyncStatusResponse:
     """
@@ -209,7 +237,7 @@ async def get_sync_status(
     Use this to poll for sync completion after triggering a sync.
     """
     service = get_progress_tracker_service(session)
-    tracker_session = service.get_session(session_id)
+    tracker_session = service.get_session(session_id, user_id=current_user.id)
     if not tracker_session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -228,6 +256,7 @@ async def get_sync_status(
 @router.get("/sessions/{session_id}/metrics", response_model=MetricsResponse)
 async def get_metrics(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> MetricsResponse:
     """
@@ -237,6 +266,10 @@ async def get_metrics(
     and breakdowns by type and assignee.
     """
     service = get_progress_tracker_service(session)
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = service.get_metrics(session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -246,6 +279,7 @@ async def get_metrics(
 @router.get("/sessions/{session_id}/blockers", response_model=BlockersResponse)
 async def get_blockers(
     session_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> BlockersResponse:
     """
@@ -255,6 +289,10 @@ async def get_blockers(
     Includes blocker reasons and contributing signals.
     """
     service = get_progress_tracker_service(session)
+    # First check access via user_id scoped get_session
+    session_check = service.get_session(session_id, user_id=current_user.id)
+    if not session_check:
+        raise HTTPException(status_code=404, detail="Session not found")
     result = service.get_blockers(session_id)
     if not result:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -266,6 +304,7 @@ async def get_items(
     session_id: int,
     status_category: Optional[str] = Query(None, description="Filter by status category (todo, in_progress, done)"),
     is_blocked: Optional[bool] = Query(None, description="Filter by blocker status"),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[TrackedWorkItem]:
     """
@@ -275,8 +314,8 @@ async def get_items(
     """
     service = get_progress_tracker_service(session)
 
-    # Verify session exists
-    tracker_session = service.get_session(session_id)
+    # Verify session exists and user has access
+    tracker_session = service.get_session(session_id, user_id=current_user.id)
     if not tracker_session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -292,6 +331,7 @@ async def get_items(
 async def update_blocker_config(
     session_id: int,
     config: dict,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> dict:
     """
@@ -301,6 +341,10 @@ async def update_blocker_config(
     """
     service = get_progress_tracker_service(session)
     try:
+        # First check access via user_id scoped get_session
+        session_check = service.get_session(session_id, user_id=current_user.id)
+        if not session_check:
+            raise HTTPException(status_code=404, detail="Session not found")
         updated = service.update_session(
             session_id,
             UpdateSessionRequest(blocker_config=config),

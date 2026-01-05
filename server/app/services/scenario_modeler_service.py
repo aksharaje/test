@@ -94,9 +94,12 @@ class ScenarioModelerService:
 
         return session
 
-    def get_session(self, session_id: int) -> Optional[ScenarioSession]:
+    def get_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[ScenarioSession]:
         """Get a session by ID"""
-        return self.db.get(ScenarioSession, session_id)
+        session = self.db.get(ScenarioSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def get_sessions(self, user_id: Optional[int] = None) -> List[ScenarioSession]:
         """Get all sessions, optionally filtered by user"""
@@ -112,9 +115,9 @@ class ScenarioModelerService:
         ).order_by(ScenarioSession.created_at.desc())
         return list(self.db.exec(query).all())
 
-    def delete_session(self, session_id: int) -> bool:
+    def delete_session(self, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete a session and all its variants"""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session:
             return False
 
@@ -131,9 +134,9 @@ class ScenarioModelerService:
         self.db.commit()
         return True
 
-    def get_full_session(self, session_id: int) -> Optional[ScenarioSessionResponse]:
+    def get_full_session(self, session_id: int, user_id: Optional[int] = None) -> Optional[ScenarioSessionResponse]:
         """Get session with all variants and comparison"""
-        session = self.get_session(session_id)
+        session = self.get_session(session_id, user_id=user_id)
         if not session:
             return None
 

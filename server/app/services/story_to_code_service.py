@@ -76,9 +76,12 @@ class StoryToCodeService:
         db.refresh(session)
         return session
 
-    def get_session(self, db: Session, session_id: int) -> Optional[StoryToCodeSession]:
-        """Get session by ID."""
-        return db.get(StoryToCodeSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[StoryToCodeSession]:
+        """Get session by ID, optionally filtered by user_id."""
+        session = db.get(StoryToCodeSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None
+        return session
 
     def list_sessions(
         self,
@@ -94,18 +97,18 @@ class StoryToCodeService:
         query = query.order_by(desc(StoryToCodeSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(query).all())
 
-    def delete_session(self, db: Session, session_id: int) -> bool:
+    def delete_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> bool:
         """Delete a session."""
-        session = self.get_session(db, session_id)
+        session = self.get_session(db, session_id, user_id=user_id)
         if not session:
             return False
         db.delete(session)
         db.commit()
         return True
 
-    def retry_session(self, db: Session, session_id: int) -> Optional[StoryToCodeSession]:
+    def retry_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[StoryToCodeSession]:
         """Reset a failed session for retry."""
-        session = self.get_session(db, session_id)
+        session = self.get_session(db, session_id, user_id=user_id)
         if not session:
             return None
 
@@ -403,9 +406,9 @@ Include proper file structure, implementation files, tests, and configuration.""
             ))
         return artifacts
 
-    def get_artifact(self, db: Session, artifact_id: int) -> Optional[GeneratedArtifact]:
+    def get_artifact(self, db: Session, artifact_id: int, user_id: Optional[int] = None) -> Optional[GeneratedArtifact]:
         """Legacy get artifact method for backwards compatibility."""
-        session = self.get_session(db, artifact_id)
+        session = self.get_session(db, artifact_id, user_id=user_id)
         if not session:
             return None
 

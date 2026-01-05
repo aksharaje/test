@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.core.db import get_session as get_db_session
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.release_readiness import (
     CreateReadinessSessionRequest,
     ReadinessSessionResponse,
@@ -33,18 +35,20 @@ router = APIRouter()
 
 @router.get("/integrations/check")
 async def check_integrations(
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> dict:
     """
     Check if user has valid Jira or ADO integrations.
     """
     service = get_release_readiness_service(session)
-    return service.check_integrations()
+    return service.check_integrations(user_id=current_user.id)
 
 
 @router.get("/integrations/{integration_id}/projects", response_model=List[ProjectOption])
 async def get_projects(
     integration_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[ProjectOption]:
     """
@@ -52,7 +56,7 @@ async def get_projects(
     """
     service = get_release_readiness_service(session)
     try:
-        return await service.get_projects(integration_id)
+        return await service.get_projects(integration_id, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -63,6 +67,7 @@ async def get_projects(
 async def get_fix_versions(
     integration_id: int,
     project_key: str,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[FixVersionOption]:
     """
@@ -71,7 +76,7 @@ async def get_fix_versions(
     """
     service = get_release_readiness_service(session)
     try:
-        return await service.get_fix_versions(integration_id, project_key)
+        return await service.get_fix_versions(integration_id, project_key, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -81,6 +86,7 @@ async def get_fix_versions(
 @router.get("/integrations/{integration_id}/sprints", response_model=List[SprintOption])
 async def get_sprints(
     integration_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[SprintOption]:
     """
@@ -88,7 +94,7 @@ async def get_sprints(
     """
     service = get_release_readiness_service(session)
     try:
-        return await service.get_sprints(integration_id)
+        return await service.get_sprints(integration_id, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -99,6 +105,7 @@ async def get_sprints(
 async def get_labels(
     integration_id: int,
     project_key: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> List[LabelOption]:
     """
@@ -106,7 +113,7 @@ async def get_labels(
     """
     service = get_release_readiness_service(session)
     try:
-        return await service.get_labels(integration_id, project_key)
+        return await service.get_labels(integration_id, project_key, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

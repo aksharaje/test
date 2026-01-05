@@ -168,11 +168,11 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
             cleaned = cleaned[:-3]
         return cleaned.strip()
 
-    def generate(self, session: Session, request: Dict[str, Any]) -> GeneratedArtifact:
+    def generate(self, session: Session, request: Dict[str, Any], user_id: Optional[int] = None) -> GeneratedArtifact:
         start_time = time.time()
         from app.core.config import settings
         model = settings.OPENROUTER_MODEL
-        
+
         # Get KB context
         kb_ids = request.get("knowledgeBaseIds", [])
         kb_context = self.get_knowledge_base_context(session, kb_ids, request.get("description", ""))
@@ -239,7 +239,7 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
         
         # Save artifact
         artifact = GeneratedArtifact(
-            user_id=request.get("userId"),
+            user_id=user_id if user_id else request.get("userId"),
             type=request["type"],
             title=title,
             content=cleaned_content,
@@ -269,27 +269,39 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
         query = query.order_by(desc(GeneratedArtifact.created_at))
         return session.exec(query).all()
 
-    def get_artifact(self, session: Session, id: int) -> Optional[GeneratedArtifact]:
-        return session.get(GeneratedArtifact, id)
+    def get_artifact(self, session: Session, id: int, user_id: Optional[int] = None) -> Optional[GeneratedArtifact]:
+        artifact = session.get(GeneratedArtifact, id)
+        if artifact and user_id and artifact.user_id and artifact.user_id != user_id:
+            return None
+        return artifact
 
-    def update_artifact(self, session: Session, id: int, data: Dict[str, Any]) -> Optional[GeneratedArtifact]:
+    def update_artifact(self, session: Session, id: int, data: Dict[str, Any], user_id: Optional[int] = None) -> Optional[GeneratedArtifact]:
         artifact = session.get(GeneratedArtifact, id)
         if not artifact:
             return None
-            
+
+        # Check user_id scoping
+        if user_id and artifact.user_id and artifact.user_id != user_id:
+            return None
+
         for key, value in data.items():
             setattr(artifact, key, value)
-            
+
         artifact.updated_at = datetime.utcnow()
         session.add(artifact)
         session.commit()
         session.refresh(artifact)
         return artifact
 
-    def delete_artifact(self, session: Session, id: int) -> bool:
+    def delete_artifact(self, session: Session, id: int, user_id: Optional[int] = None) -> bool:
         artifact = session.get(GeneratedArtifact, id)
         if not artifact:
             return False
+
+        # Check user_id scoping
+        if user_id and artifact.user_id and artifact.user_id != user_id:
+            return False
+
         session.delete(artifact)
         session.commit()
         return True

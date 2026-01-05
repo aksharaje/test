@@ -89,7 +89,7 @@ class GoalSettingService:
 
     # ==================== SESSION MANAGEMENT ====================
 
-    def create_session(self, db: Session, data: GoalSettingSessionCreate) -> GoalSettingSession:
+    def create_session(self, db: Session, data: GoalSettingSessionCreate, user_id: Optional[int] = None) -> GoalSettingSession:
         """Create a new goal setting session."""
         session = GoalSettingSession(
             domain=data.domain,
@@ -98,29 +98,32 @@ class GoalSettingService:
             problem_statements=data.problem_statements,
             baselines=data.baselines,
             status="pending",
+            user_id=user_id,
         )
         db.add(session)
         db.commit()
         db.refresh(session)
         return session
 
-    def get_session(self, db: Session, session_id: int) -> Optional[GoalSettingSession]:
-        """Get a session by ID."""
-        return db.get(GoalSettingSession, session_id)
+    def get_session(self, db: Session, session_id: int, user_id: Optional[int] = None) -> Optional[GoalSettingSession]:
+        """Get a session by ID, optionally filtered by user."""
+        session = db.get(GoalSettingSession, session_id)
+        if session and user_id and session.user_id and session.user_id != user_id:
+            return None  # User doesn't own this session
+        return session
 
     def list_sessions(
         self,
         db: Session,
+        user_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> List[GoalSettingSession]:
-        """List sessions with pagination."""
-        statement = (
-            select(GoalSettingSession)
-            .order_by(desc(GoalSettingSession.created_at))
-            .offset(skip)
-            .limit(limit)
-        )
+        """List sessions with pagination, filtered by user."""
+        statement = select(GoalSettingSession)
+        if user_id:
+            statement = statement.where(GoalSettingSession.user_id == user_id)
+        statement = statement.order_by(desc(GoalSettingSession.created_at)).offset(skip).limit(limit)
         return list(db.exec(statement).all())
 
     def delete_session(self, db: Session, session_id: int) -> bool:
