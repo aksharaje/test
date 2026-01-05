@@ -132,10 +132,6 @@
             // Flagged Sessions (5)
             { type: 'sessions', id: 'S-10234', reason: ["Repeated login attempts (x4)", "No error message shown"], device: "iOS · Safari", date: "2026-03-03" },
             { type: 'sessions', id: 'S-10235', reason: ["Rage clicks on Login button"], device: "Android · Chrome", date: "2026-03-02" },
-
-            // Jira (23) - Seeded a few
-            { type: 'jira', id: 'PROJ-123', title: "Login API returns 500 intermittently", status: "In Progress", created: "2026-02-20" },
-            { type: 'jira', id: 'PROJ-124', title: "Mobile login UI misalignment", status: "Open", created: "2026-02-22" },
         ];
 
         // --- State ---
@@ -143,8 +139,7 @@
             filters: {
                 survey: true,
                 app_reviews: true,
-                sessions: true,
-                jira: true
+                sessions: true
             },
             search: "",
             sort: "recent"
@@ -153,8 +148,7 @@
         const filterLabels = {
             survey: `Survey Mentions (12)`, // Mock counts for simplified UI
             app_reviews: `App Reviews (8)`,
-            sessions: `Flagged Sessions (5)`,
-            jira: `Jira Tickets (23)`
+            sessions: `Flagged Sessions (5)`
         };
 
         // --- Init ---
