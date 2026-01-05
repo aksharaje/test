@@ -41,14 +41,16 @@ import { SlicePipe } from '@angular/common';
               <label class="text-sm font-medium">Approved Scope (Baseline) <span class="text-destructive">*</span></label>
               <p class="text-xs text-muted-foreground mt-1">The scope that was originally approved</p>
 
-              <div class="flex rounded-lg border p-1 mt-2 mb-3">
-                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'scope-definition'" [class.text-primary-foreground]="sourceType() === 'scope-definition'" [class.hover:bg-muted]="sourceType() !== 'scope-definition'" (click)="setSourceType('scope-definition')">
-                  <ng-icon name="lucideClipboardList" class="h-4 w-4" /> From Scope Definition
-                </button>
-                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
-                  <ng-icon name="lucidePenLine" class="h-4 w-4" /> Write Custom
-                </button>
-              </div>
+              @if (hasScopeDefinitions()) {
+                <div class="flex rounded-lg border p-1 mt-2 mb-3">
+                  <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'scope-definition'" [class.text-primary-foreground]="sourceType() === 'scope-definition'" [class.hover:bg-muted]="sourceType() !== 'scope-definition'" (click)="setSourceType('scope-definition')">
+                    <ng-icon name="lucideClipboardList" class="h-4 w-4" /> From Scope Definition
+                  </button>
+                  <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors" [class.bg-primary]="sourceType() === 'custom'" [class.text-primary-foreground]="sourceType() === 'custom'" [class.hover:bg-muted]="sourceType() !== 'custom'" (click)="setSourceType('custom')">
+                    <ng-icon name="lucidePenLine" class="h-4 w-4" /> Write Custom
+                  </button>
+                </div>
+              }
 
               @if (sourceType() === 'scope-definition') {
                 <select class="w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="selectedScopeDefinitionId()" (change)="onScopeDefinitionChange($event)">
@@ -160,6 +162,10 @@ export class ScopeMonitorInputComponent implements OnInit {
 
   baselineLength = computed(() => this.baselineDescription().length);
   proposedChangeLength = computed(() => this.proposedChange().length);
+
+  // Check if there are importable scope definitions
+  hasScopeDefinitions = computed(() => this.service.scopeDefinitionSessions().length > 0);
+
   canSubmit = computed(() => {
     if (this.projectName().length === 0 || this.proposedChangeLength() < 50) return false;
     if (this.sourceType() === 'scope-definition') {

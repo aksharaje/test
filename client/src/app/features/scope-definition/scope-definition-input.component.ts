@@ -30,21 +30,27 @@ import { HlmButtonDirective } from '../../ui/button';
             </div>
           }
 
-          <!-- Source Type Tabs -->
-          <div class="mb-6">
-            <label class="text-sm font-medium mb-2 block">Context Source</label>
-            <div class="flex gap-2">
-              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'ideation'" [class.bg-primary/5]="sourceType() === 'ideation'" [class.text-primary]="sourceType() === 'ideation'" (click)="setSourceType('ideation')">
-                <ng-icon name="lucideLightbulb" class="h-4 w-4" /> From Ideation
-              </button>
-              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'okr'" [class.bg-primary/5]="sourceType() === 'okr'" [class.text-primary]="sourceType() === 'okr'" (click)="setSourceType('okr')">
-                <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
-              </button>
-              <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'custom'" [class.bg-primary/5]="sourceType() === 'custom'" [class.text-primary]="sourceType() === 'custom'" (click)="setSourceType('custom')">
-                <ng-icon name="lucidePenLine" class="h-4 w-4" /> Custom
-              </button>
+          <!-- Source Type Tabs (only show if there are importable sources) -->
+          @if (hasImportableSources()) {
+            <div class="mb-6">
+              <label class="text-sm font-medium mb-2 block">Context Source</label>
+              <div class="flex gap-2">
+                @if (hasIdeationSessions()) {
+                  <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'ideation'" [class.bg-primary/5]="sourceType() === 'ideation'" [class.text-primary]="sourceType() === 'ideation'" (click)="setSourceType('ideation')">
+                    <ng-icon name="lucideLightbulb" class="h-4 w-4" /> From Ideation
+                  </button>
+                }
+                @if (hasOkrSessions()) {
+                  <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'okr'" [class.bg-primary/5]="sourceType() === 'okr'" [class.text-primary]="sourceType() === 'okr'" (click)="setSourceType('okr')">
+                    <ng-icon name="lucideTarget" class="h-4 w-4" /> From OKRs
+                  </button>
+                }
+                <button type="button" class="flex-1 flex items-center justify-center gap-2 rounded-lg border p-3 text-sm transition-colors" [class.border-primary]="sourceType() === 'custom'" [class.bg-primary/5]="sourceType() === 'custom'" [class.text-primary]="sourceType() === 'custom'" (click)="setSourceType('custom')">
+                  <ng-icon name="lucidePenLine" class="h-4 w-4" /> Custom
+                </button>
+              </div>
             </div>
-          </div>
+          }
 
           <form class="space-y-6" (submit)="onSubmit($event)">
             <!-- Ideation Session Picker -->
@@ -256,6 +262,12 @@ export class ScopeDefinitionInputComponent implements OnInit {
   });
 
   visionLength = computed(() => this.productVision().length);
+
+  // Check which importable sources are available
+  hasIdeationSessions = computed(() => this.service.ideationSessions().length > 0);
+  hasOkrSessions = computed(() => this.service.okrSessions().length > 0);
+  hasImportableSources = computed(() => this.hasIdeationSessions() || this.hasOkrSessions());
+
   canSubmit = computed(() => {
     if (this.sourceType() === 'ideation' && !this.selectedIdeationSessionId()) return false;
     if (this.sourceType() === 'okr' && !this.selectedOkrSessionId()) return false;
@@ -269,6 +281,21 @@ export class ScopeDefinitionInputComponent implements OnInit {
       this.service.loadOkrSessions(),
       this.service.loadKnowledgeBases(),
     ]);
+
+    // Set default source type based on available import sources
+    const hasIdeation = this.service.ideationSessions().length > 0;
+    const hasOkr = this.service.okrSessions().length > 0;
+
+    if (!hasIdeation && !hasOkr) {
+      // No importable sources, default to custom
+      this.sourceType.set('custom');
+    } else if (hasIdeation) {
+      // Prefer ideation if available
+      this.sourceType.set('ideation');
+    } else if (hasOkr) {
+      // Fall back to OKR
+      this.sourceType.set('okr');
+    }
   }
 
   setSourceType(type: 'ideation' | 'okr' | 'custom') {
