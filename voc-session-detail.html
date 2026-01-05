@@ -88,82 +88,65 @@
         <h1 style="margin: 8px 0 0; font-size: 20px; font-weight: 600;">Session Detail · Session 1</h1>
     </header>
 
-    <div style="display: flex; flex: 1; overflow: hidden;">
-        <!-- Player Column -->
-        <div
-            style="flex: 2; padding: 24px; background: #1E293B; display: flex; flex-direction: column; justify-content: center;">
-            <div class="player-container">
-                <i class="ph ph-play-circle" style="font-size: 64px; opacity: 0.8;"></i>
-                <span>Replay Mockup</span>
+    <main
+        style="max-width: 900px; margin: 32px auto; padding: 0 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; width: 100%;">
+
+        <!-- Timeline Section -->
+        <div class="timeline-section" style="border: none; padding: 0;">
+            <h3
+                style="font-size: 16px; font-weight: 600; margin-bottom: 24px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                Interaction timeline</h3>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>Click "Pay Now"</div>
             </div>
-            <!-- Mock Controls -->
-            <div
-                style="margin-top: 16px; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; color: white;">
-                <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                    <span><i class="ph ph-play-pause"></i> 00:30 / 01:05</span>
-                    <span>1x <i class="ph ph-gear"></i></span>
-                </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>No visible feedback</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot" style="background: #DC2626;"></div>
+                <div style="color: #DC2626; font-weight: 500;">Click "Pay Now" x5</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>Wait 30s</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div>Exit</div>
             </div>
         </div>
 
-        <!-- Sidebar -->
-        <div
-            style="flex: 0 0 360px; background: white; border-left: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto;">
+        <!-- Form Section -->
+        <div class="form-section"
+            style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px;">
+            <label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px;">PM notes</label>
+            <textarea rows="3" id="pm-notes"
+                placeholder="Add observations...">No confirmation state shown; likely missing feedback.</textarea>
 
-            <div class="timeline-section">
-                <h3
-                    style="font-size: 14px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase; color: var(--text-secondary);">
-                    Interaction Timeline</h3>
-
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div>Click "Pay Now"</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div>No visible feedback</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot" style="background: #DC2626;"></div>
-                    <div style="color: #DC2626; font-weight: 500;">Click "Pay Now" x5</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div>Wait 30s</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div>Exit</div>
-                </div>
+            <label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 12px;">Does this confirm the
+                issue?</label>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="confirmation" value="yes" checked>
+                    <span>Yes, confirms UX friction</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="confirmation" value="inconclusive">
+                    <span>Inconclusive</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="confirmation" value="no">
+                    <span>Not related</span>
+                </label>
             </div>
 
-            <div class="form-section">
-                <label style="font-weight: 600; font-size: 14px; display: block;">PM notes</label>
-                <textarea rows="3" id="pm-notes"
-                    placeholder="Add observations...">No confirmation state shown; likely missing feedback.</textarea>
-
-                <label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 12px;">Does this confirm
-                    the issue?</label>
-                <div class="radio-group">
-                    <label class="radio-item">
-                        <input type="radio" name="confirmation" value="yes" checked>
-                        <span>Yes, confirms UX friction</span>
-                    </label>
-                    <label class="radio-item">
-                        <input type="radio" name="confirmation" value="inconclusive">
-                        <span>Inconclusive</span>
-                    </label>
-                    <label class="radio-item">
-                        <input type="radio" name="confirmation" value="no">
-                        <span>Not related</span>
-                    </label>
-                </div>
-
-                <button class="btn btn-primary full-width" onclick="saveAndReturn()">Save & Return</button>
-            </div>
-
+            <button class="btn btn-primary full-width" onclick="saveAndReturn()">Save & Return</button>
         </div>
-    </div>
+
+    </main>
 
     <script>
         function saveAndReturn() {
