@@ -96,7 +96,24 @@ interface EditFormData {
             <div class="ml-auto flex gap-2">
               <button
                 hlmBtn
+                size="sm"
+                (click)="continueToOkrGenerator()"
+              >
+                Generate OKRs
+                <ng-icon name="lucideChevronRight" class="ml-2 h-4 w-4" />
+              </button>
+              <button
+                hlmBtn
                 variant="outline"
+                size="sm"
+                (click)="continueToKpiAssignment()"
+              >
+                Assign KPIs
+                <ng-icon name="lucideChevronRight" class="ml-2 h-4 w-4" />
+              </button>
+              <button
+                hlmBtn
+                variant="ghost"
                 size="sm"
                 (click)="exportToPdf()"
                 title="Export as PDF"
