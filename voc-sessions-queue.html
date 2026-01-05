@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Sessions - VoC</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .page-header {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+        }
+
+        .sessions-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .sessions-table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: #F8FAFC;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sessions-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .friction-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .friction-high {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .friction-med {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .tag {
+            background: #F1F5F9;
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC;">
+
+    <!-- Header -->
+    <header class="page-header">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <a href="voc-theme-detail.html"
+                style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 12px;">
+                <i class="ph ph-arrow-left"></i> Back to Theme Detail
+            </a>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1 style="margin: 0; font-size: 24px;">Flagged Sessions: Login Issues</h1>
+                    <p style="margin: 8px 0 0; color: var(--text-secondary);">Review sessions with detected friction
+                        patterns related to this theme.</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main style="max-width: 1200px; margin: 32px auto; padding: 0 32px;">
+        <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px;">
+            <table class="sessions-table">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Duration</th>
+                        <th>Friction Score</th>
+                        <th>Signals</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="cursor: pointer; transition: background 0.1s;"
+                        onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='white'"
+                        onclick="window.location.href='voc-session-detail.html'">
+                        <td>#88219</td>
+                        <td>Mar 2, 2:30 PM</td>
+                        <td>user_442@gmail.com</td>
+                        <td>4m 12s</td>
+                        <td><span class="friction-badge friction-high">High (8.5)</span></td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <span class="tag">Rage Click</span>
+                                <span class="tag">Multi-retry</span>
+                            </div>
+                        </td>
+                        <td><button class="btn btn-outline-sm">Watch Replay</button></td>
+                    </tr>
+                    <tr style="cursor: pointer; transition: background 0.1s;"
+                        onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='white'"
+                        onclick="window.location.href='voc-session-detail.html'">
+                        <td>#88104</td>
+                        <td>Mar 2, 11:15 AM</td>
+                        <td>Anonymous</td>
+                        <td>1m 05s</td>
+                        <td><span class="friction-badge friction-high">High (9.0)</span></td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <span class="tag">Crash</span>
+                                <span class="tag">Dead Click</span>
+                            </div>
+                        </td>
+                        <td><button class="btn btn-outline-sm">Watch Replay</button></td>
+                    </tr>
+                    <tr style="cursor: pointer; transition: background 0.1s;"
+                        onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='white'"
+                        onclick="window.location.href='voc-session-detail.html'">
+                        <td>#87992</td>
+                        <td>Mar 1, 4:45 PM</td>
+                        <td>sub_premium_22</td>
+                        <td>2m 30s</td>
+                        <td><span class="friction-badge friction-med">Med (6.2)</span></td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <span class="tag">Rapid Scrolling</span>
+                            </div>
+                        </td>
+                        <td><button class="btn btn-outline-sm">Watch Replay</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+</body>
+
+</html>

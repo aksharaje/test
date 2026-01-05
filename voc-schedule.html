@@ -230,56 +230,48 @@
                         is requesting</strong>
                     <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Product Studio would
                         like read-only access to:</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px;">
                         <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Survey
                             questions</label>
-                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Response
-                            timestamps</label>
                         <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Open-ended
                             responses</label>
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Response
+                            timestamps</label>
                         <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Behavioral
-                            signals</label>
+                            signals (rage clicks/retries/session flags)</label>
                     </div>
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-color);">
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
                         <label style="display: flex; gap: 8px; font-size: 14px; color: var(--text-secondary);">
-                            <input type="checkbox"> Respondent PII (emails, names)
+                            <input type="checkbox"> Respondent PII (emails/names)
                         </label>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 24px;">
-                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Scope
-                        Controls</strong>
-                    <label
-                        style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Select
-                        surveys</label>
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Select
+                        surveys</strong>
                     <div
                         style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
                         <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
                                 type="checkbox" checked> NPS Q1</label>
-                        <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
-                                type="checkbox" checked> Checkout UX Survey</label>
-                        <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox"> Internal
-                            Employee Survey</label>
+                        <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox" checked>
+                            Checkout UX</label>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 24px;">
                     <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Time Range</strong>
                     <select class="select-input">
-                        <option>Last 90 days</option>
+                        <option selected>Last 90 days</option>
                         <option>Last 30 days</option>
                         <option>All time</option>
                     </select>
                 </div>
 
                 <div style="padding: 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
-                    <strong style="font-size: 13px; color: #1E40AF; display: block; margin-bottom: 8px;">Explicit
-                        authorisation (required)</strong>
                     <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #1E3A8A;">
                         <input type="checkbox" id="modal-auth-check" onchange="checkModalAuth()">
-                        <span>I authorize Product Studio to read the selected Qualtrics data for the purpose of Voice of
-                            Customer analysis.</span>
+                        <span>I authorize Product Studio to read selected Qualtrics data (read-only)</span>
                     </label>
                 </div>
             </div>

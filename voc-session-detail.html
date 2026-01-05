@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session #88219 - VoC</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .player-container {
+            background: black;
+            border-radius: 8px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .timeline-item:hover {
+            background: #F8FAFC;
+        }
+
+        .timestamp {
+            font-family: monospace;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-300);
+            margin-top: 6px;
+        }
+
+        .event-dot.critical {
+            background: #EF4444;
+        }
+
+        .event-title {
+            font-weight: 500;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC; height: 100vh; overflow: hidden; display: flex; flex-direction: column;">
+
+    <!-- Header -->
+    <header
+        style="background: white; border-bottom: 1px solid var(--border-color); padding: 12px 24px; flex-shrink: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <a href="voc-sessions-queue.html"
+                    style="text-decoration: none; color: var(--text-secondary); display: flex; align-items: center;">
+                    <i class="ph ph-arrow-left" style="font-size: 20px;"></i>
+                </a>
+                <h1 style="margin: 0; font-size: 18px; font-weight: 600;">Session #88219</h1>
+                <span
+                    style="background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">High
+                    Friction</span>
+            </div>
+            <div>
+                <span style="color: var(--text-secondary); font-size: 14px; margin-right: 16px;">User:
+                    user_442@gmail.com</span>
+                <button class="btn btn-primary">Share Clip</button>
+            </div>
+        </div>
+    </header>
+
+    <div style="display: flex; flex: 1; overflow: hidden;">
+        <!-- Player Column -->
+        <div style="flex: 2; padding: 24px; background: #1E293B; display: flex; flex-direction: column;">
+            <div class="player-container" style="flex: 1;">
+                <i class="ph ph-play-circle" style="font-size: 64px; opacity: 0.8;"></i>
+                <span>Replay Mockup</span>
+            </div>
+            <div style="margin-top: 16px; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                <!-- Fake controls -->
+                <div
+                    style="height: 4px; background: #475569; width: 100%; border-radius: 2px; margin-bottom: 12px; position: relative;">
+                    <div style="height: 4px; background: #3B82F6; width: 30%;"></div>
+                    <div
+                        style="position: absolute; left: 28%; top: -4px; width: 12px; height: 12px; background: white; border-radius: 50%;">
+                    </div>
+                    <!-- Red markers for rage clicks -->
+                    <div style="position: absolute; left: 45%; top: 0; width: 4px; height: 4px; background: #EF4444;">
+                    </div>
+                    <div style="position: absolute; left: 47%; top: 0; width: 4px; height: 4px; background: #EF4444;">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: white;">
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <i class="ph ph-play-pause" style="font-size: 20px;"></i>
+                        <span style="font-size: 13px;">01:12 / 04:12</span>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <span style="font-size: 13px;">1x</span>
+                        <i class="ph ph-speaker-high"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div
+            style="flex: 0 0 320px; background: white; border-left: 1px solid var(--border-color); display: flex; flex-direction: column;">
+            <div style="padding: 16px; border-bottom: 1px solid var(--border-color); font-weight: 600;">
+                Events Timeline
+            </div>
+            <div style="overflow-y: auto; flex: 1;">
+                <div class="timeline-item">
+                    <span class="timestamp">00:05</span>
+                    <div class="event-dot"></div>
+                    <div>
+                        <div class="event-title">App Launch</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">iPhone 13, iOS 16</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <span class="timestamp">00:22</span>
+                    <div class="event-dot"></div>
+                    <div>
+                        <div class="event-title">Navigate to Login</div>
+                    </div>
+                </div>
+                <div class="timeline-item" style="background: #FEF2F2;">
+                    <span class="timestamp">01:10</span>
+                    <div class="event-dot critical"></div>
+                    <div>
+                        <div class="event-title" style="color: #991B1B;">Rage Click Detected</div>
+                        <div style="font-size: 12px; color: #7F1D1D;">Login Button (5 clicks / 1s)</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <span class="timestamp">01:45</span>
+                    <div class="event-dot"></div>
+                    <div>
+                        <div class="event-title">Error Toaster Shown</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">"Network Error 500"</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <span class="timestamp">02:30</span>
+                    <div class="event-dot"></div>
+                    <div>
+                        <div class="event-title">Retry Login</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
