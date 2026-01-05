@@ -37,21 +37,21 @@ import { HlmButtonDirective } from '../../ui/button';
             </div>
 
             <div>
-              <label class="text-sm font-medium">Company Strategy <span class="text-destructive">*</span></label>
+              <label class="text-sm font-medium">Customer Problem Statements</label>
+              <p class="text-xs text-muted-foreground mt-1 italic">The customer issues you are trying to solve (e.g., users can't log in, onboarding takes too long).</p>
+              <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]" [value]="problemStatements()" (input)="onProblemStatementsInput($event)" placeholder="e.g., Login failures, high drop-off, support tickets"></textarea>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Company Strategy</label>
               <p class="text-xs text-muted-foreground mt-1 italic">The broader business goal this work supports (e.g., increase retention, reduce churn, drive enterprise adoption).</p>
-              <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]" [value]="strategy()" (input)="onStrategyInput($event)" placeholder="e.g., Expand into Enterprise market, Improve activation and reduce operational load" required></textarea>
+              <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]" [value]="strategy()" (input)="onStrategyInput($event)" placeholder="e.g., Expand into Enterprise market, Improve activation and reduce operational load"></textarea>
             </div>
 
             <div>
               <label class="text-sm font-medium">Team Charter</label>
               <p class="text-xs text-muted-foreground mt-1 italic">What this team is expected to own and deliver (e.g., faster checkout, smoother onboarding, reliable login).</p>
               <input type="text" class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="teamCharter()" (input)="onTeamCharterInput($event)" placeholder="e.g., Growth & Onboarding Experience" />
-            </div>
-
-            <div>
-              <label class="text-sm font-medium">Customer Problem Statements</label>
-              <p class="text-xs text-muted-foreground mt-1 italic">The customer issues you are trying to solve (e.g., users can't log in, onboarding takes too long).</p>
-              <textarea class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]" [value]="problemStatements()" (input)="onProblemStatementsInput($event)" placeholder="e.g., Login failures, high drop-off, support tickets"></textarea>
             </div>
 
             <div>
@@ -113,7 +113,7 @@ export class GoalSettingInputComponent implements OnInit {
   problemStatements = signal('');
   baselines = signal('');
 
-  canSubmit = computed(() => this.domain().length > 0 && this.strategy().length > 0);
+  canSubmit = computed(() => this.domain().length > 0);
 
   async ngOnInit() { await this.service.loadSessions(); }
 

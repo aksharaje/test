@@ -5,7 +5,7 @@
 export interface GoalSettingSession {
   id: number;
   domain: string;  // PM Role / Domain
-  strategy: string;  // Company Strategy
+  strategy?: string;  // Company Strategy (optional)
   teamCharter?: string;  // Team Charter
   problemStatements?: string;  // Customer Problem Statements
   baselines?: string;  // Product-Specific Responsibilities (Baselines)
@@ -34,13 +34,12 @@ export interface Goal {
   dependencies?: string[];
   risks?: string[];
   priority: 'high' | 'medium' | 'low';
-  estimatedEffort?: string;
   displayOrder: number;
 }
 
 export interface GoalSettingSessionCreate {
   domain: string;  // PM Role / Domain
-  strategy: string;  // Company Strategy
+  strategy?: string;  // Company Strategy (optional)
   teamCharter?: string;
   problemStatements?: string;
   baselines?: string;

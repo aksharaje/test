@@ -207,21 +207,21 @@ Always respond with valid JSON only, no additional text or markdown."""
 ## PM Role / Domain
 {session.domain}
 
+## Customer Problem Statements
+{session.problem_statements or "Not specified"}
+
 ## Company Strategy
-{session.strategy}
+{session.strategy or "Not specified"}
 
 ## Team Charter
 {session.team_charter or "Not specified"}
-
-## Customer Problem Statements
-{session.problem_statements or "Not specified"}
 
 ## Current Baselines / Metrics
 {session.baselines or "Not specified"}
 
 ## Instructions
 Generate goals that are:
-1. Strategic and aligned with the company strategy and team charter
+1. Strategic and aligned with the company strategy and team charter (if provided)
 2. Address the customer problem statements
 3. Include measurable improvements from current baselines
 4. Follow SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)
@@ -245,8 +245,7 @@ Respond with JSON in this exact format:
             "success_criteria": ["Criterion 1", "Criterion 2"],
             "dependencies": ["Dependency 1", "Dependency 2"],
             "risks": ["Risk 1", "Risk 2"],
-            "priority": "high|medium|low",
-            "estimated_effort": "Effort estimate (e.g., '2 sprints')"
+            "priority": "high|medium|low"
         }}
     ]
 }}"""
@@ -272,7 +271,7 @@ Respond with JSON in this exact format:
                 dependencies=goal_data.get("dependencies", []),
                 risks=goal_data.get("risks", []),
                 priority=goal_data.get("priority", "medium"),
-                estimated_effort=goal_data.get("estimated_effort"),
+                estimated_effort=None,  # Not generated anymore
                 display_order=i,
             )
             db.add(goal)

@@ -65,7 +65,7 @@ type SourceType = 'goal-session' | 'okr-session' | 'custom';
                 <select class="mt-2 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" [value]="selectedGoalSessionId()" (change)="onGoalSessionChange($event)">
                   <option value="">-- Select a Goal Session --</option>
                   @for (goalSession of service.goalSettingSessions(); track goalSession.id) {
-                    <option [value]="goalSession.id">{{ goalSession.domain }} - {{ goalSession.strategy | slice:0:50 }}{{ goalSession.strategy.length > 50 ? '...' : '' }}</option>
+                    <option [value]="goalSession.id">{{ goalSession.domain }}{{ goalSession.strategy ? ' - ' + (goalSession.strategy | slice:0:50) + (goalSession.strategy.length > 50 ? '...' : '') : '' }}</option>
                   }
                 </select>
               </div>

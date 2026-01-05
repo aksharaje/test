@@ -109,7 +109,7 @@ type SourceType = 'goal-session' | 'custom';
                 <option value="">-- Select a session --</option>
                 @for (session of service.goalSettingSessions(); track session.id) {
                   <option [value]="session.id">
-                    {{ session.domain }} - {{ session.strategy | slice:0:50 }}{{ session.strategy.length > 50 ? '...' : '' }}
+                    {{ session.domain }}{{ session.strategy ? ' - ' + (session.strategy | slice:0:50) + (session.strategy.length > 50 ? '...' : '') : '' }}
                   </option>
                 }
               </select>

@@ -16,6 +16,8 @@ import {
   lucidePencil,
   lucideX,
   lucideSave,
+  lucideDownload,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { GoalSettingService } from './goal-setting.service';
 import type { GoalSettingSession, Goal } from './goal-setting.types';
@@ -60,6 +62,8 @@ interface EditFormData {
       lucidePencil,
       lucideX,
       lucideSave,
+      lucideDownload,
+      lucideFileText,
     }),
   ],
   template: `
@@ -88,6 +92,20 @@ interface EditFormData {
               </p>
             </div>
           </div>
+          @if (session()?.status === 'completed') {
+            <div class="ml-auto flex gap-2">
+              <button
+                hlmBtn
+                variant="outline"
+                size="sm"
+                (click)="exportToPdf()"
+                title="Export as PDF"
+              >
+                <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+                Export PDF
+              </button>
+            </div>
+          }
         </div>
 
         <!-- Loading State -->
@@ -223,12 +241,6 @@ interface EditFormData {
                           <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Time-Bound</h4>
                           <p class="text-sm mt-1">{{ goal.timeBound }}</p>
                         </div>
-                        @if (goal.estimatedEffort) {
-                          <div>
-                            <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estimated Effort</h4>
-                            <p class="text-sm mt-1">{{ goal.estimatedEffort }}</p>
-                          </div>
-                        }
                       </div>
                     </div>
 
@@ -540,16 +552,305 @@ export class GoalSettingResultsComponent implements OnInit {
       goals.map((goal) =>
         goal.id === form.id
           ? {
-              ...goal,
-              title: form.title,
-              description: form.description,
-              priority: form.priority,
-              category: form.category,
-              timeframe: form.timeframe || undefined,
-            }
+            ...goal,
+            title: form.title,
+            description: form.description,
+            priority: form.priority,
+            category: form.category,
+            timeframe: form.timeframe || undefined,
+          }
           : goal
       )
     );
     this.closeEditModal();
+  }
+
+  exportToPdf() {
+    const session = this.session();
+    const goals = this.goals();
+    if (!session || goals.length === 0) return;
+
+    // Build styled HTML document for PDF
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Goals - ${session.domain || 'Goal Setting Results'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    .header .date {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    
+    .summary {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      border-left: 4px solid #0ea5e9;
+    }
+    
+    .summary h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0369a1;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .summary p {
+      font-size: 14px;
+      color: #334155;
+    }
+    
+    .goal {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      page-break-inside: avoid;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .goal-header {
+      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .goal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: capitalize;
+    }
+    
+    .tag-high { background: #fee2e2; color: #b91c1c; }
+    .tag-medium { background: #fef3c7; color: #b45309; }
+    .tag-low { background: #dcfce7; color: #15803d; }
+    .tag-category { background: #f1f5f9; color: #475569; }
+    .tag-timeframe { background: #dbeafe; color: #1d4ed8; }
+    
+    .goal-body {
+      padding: 20px;
+    }
+    
+    .description {
+      font-size: 14px;
+      color: #475569;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    
+    .smart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .smart-item h4 {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6366f1;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .smart-item p {
+      font-size: 13px;
+      color: #334155;
+    }
+    
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      margin-top: 16px;
+    }
+    
+    .list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .list li {
+      font-size: 13px;
+      color: #475569;
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    
+    .list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #6366f1;
+      font-weight: bold;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    
+    @media print {
+      body { padding: 24px; }
+      .goal { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${session.domain || 'Strategic Goals'}</h1>
+    <div class="subtitle">${goals.length} Goals Generated</div>
+    <div class="date">Generated on ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+  </div>
+  
+  ${session.executiveSummary ? `
+  <div class="summary">
+    <h2>Executive Summary</h2>
+    <p>${session.executiveSummary}</p>
+  </div>
+  ` : ''}
+  
+  ${goals.map((goal, index) => `
+  <div class="goal">
+    <div class="goal-header">
+      <h3>${index + 1}. ${goal.title}</h3>
+      <div class="tags">
+        <span class="tag tag-${goal.priority}">${goal.priority} Priority</span>
+        <span class="tag tag-category">${goal.category}</span>
+        ${goal.timeframe ? `<span class="tag tag-timeframe">${goal.timeframe}</span>` : ''}
+      </div>
+    </div>
+    <div class="goal-body">
+      <p class="description">${goal.description}</p>
+      
+      <div class="smart-grid">
+        <div class="smart-item">
+          <h4>Specific</h4>
+          <p>${goal.specific || 'Not specified'}</p>
+        </div>
+        <div class="smart-item">
+          <h4>Measurable</h4>
+          <p>${goal.measurable || 'Not specified'}</p>
+        </div>
+        <div class="smart-item">
+          <h4>Achievable</h4>
+          <p>${goal.achievable || 'Not specified'}</p>
+        </div>
+        <div class="smart-item">
+          <h4>Relevant</h4>
+          <p>${goal.relevant || 'Not specified'}</p>
+        </div>
+        <div class="smart-item">
+          <h4>Time-Bound</h4>
+          <p>\${goal.timeBound || 'Not specified'}</p>
+        </div>
+      </div>
+      
+      ${goal.successCriteria && goal.successCriteria.length > 0 ? `
+      <div class="section-title">Success Criteria</div>
+      <ul class="list">
+        ${goal.successCriteria.map(c => `<li>${c}</li>`).join('')}
+      </ul>
+      ` : ''}
+      
+      ${goal.dependencies && goal.dependencies.length > 0 ? `
+      <div class="section-title">Dependencies</div>
+      <ul class="list">
+        ${goal.dependencies.map(d => `<li>${d}</li>`).join('')}
+      </ul>
+      ` : ''}
+      
+      ${goal.risks && goal.risks.length > 0 ? `
+      <div class="section-title">Risks</div>
+      <ul class="list">
+        ${goal.risks.map(r => `<li>${r}</li>`).join('')}
+      </ul>
+      ` : ''}
+    </div>
+  </div>
+  `).join('')}
+  
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    // Open in new window and trigger print dialog (Save as PDF)
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      // Delay to let fonts load
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
   }
 }

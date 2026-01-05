@@ -26,7 +26,7 @@ class GoalSettingSession(SQLModel, table=True):
 
     # Input fields (matching original prototype)
     domain: str  # PM Role / Domain (e.g., "Onboarding + Authentication")
-    strategy: str  # Company Strategy
+    strategy: Optional[str] = None  # Company Strategy (optional)
     team_charter: Optional[str] = None  # Team Charter
     problem_statements: Optional[str] = None  # Customer Problem Statements
     baselines: Optional[str] = None  # Product-Specific Responsibilities (Baselines)
@@ -89,7 +89,7 @@ class Goal(SQLModel, table=True):
 class GoalSettingSessionCreate(SQLModel):
     """Request model for creating a new session"""
     domain: str  # PM Role / Domain
-    strategy: str  # Company Strategy
+    strategy: Optional[str] = None  # Company Strategy (optional)
     team_charter: Optional[str] = None
     problem_statements: Optional[str] = None
     baselines: Optional[str] = None
