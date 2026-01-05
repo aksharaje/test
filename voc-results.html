@@ -72,6 +72,24 @@
             background: #FEF3C7;
             color: #92400E;
         }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-red {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .badge-yellow {
+            background: #FEF3C7;
+            color: #92400E;
+        }
     </style>
 </head>
 
@@ -89,9 +107,14 @@
                     <div>
                         <h1 style="margin: 0; font-size: 24px;">VoC Analysis — Weekly · Defect-Focused (Mar 4)</h1>
                         <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
-                            <div><strong style="color: var(--text-primary);">Sources analyzed:</strong> Jira, Qualtrics
-                            </div>
+                            <div><strong style="color: var(--text-primary);">Sources analyzed:</strong> Qualtrics</div>
                             <div><strong style="color: var(--text-primary);">Sources not included:</strong> App Reviews
+                            </div>
+                            <div style="margin-top: 4px; display: flex; gap: 4px;">
+                                <strong style="color: var(--text-primary);">Coverage:</strong>
+                                <span style="display: flex; flex-direction: column;">
+                                    <span>• Qualtrics: Since Mar 3 (14 responses)</span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -110,41 +133,45 @@
             <!-- Overview View -->
             <div id="overview-content">
                 <div class="insight-card">
-                    <h2 style="font-size: 18px; margin-bottom: 16px;">Top Hotspots</h2>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <!-- Item 1 -->
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
-                            <span style="font-weight: 600; font-size: 15px;">Login</span>
-                            <div style="display: flex; gap: 24px; align-items: center; font-size: 14px;">
-                                <span style="color: var(--text-secondary);">23 defects</span>
-                                <span
-                                    style="color: #EF4444; font-weight: 500; display: flex; align-items: center; gap: 4px;">↑
-                                    Rising</span>
-                            </div>
-                        </div>
-                        <!-- Item 2 -->
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
-                            <span style="font-weight: 600; font-size: 15px;">Payments</span>
-                            <div style="display: flex; gap: 24px; align-items: center; font-size: 14px;">
-                                <span style="color: var(--text-secondary);">17 defects</span>
-                                <span
-                                    style="color: #EF4444; font-weight: 500; display: flex; align-items: center; gap: 4px;">↑
-                                    Rising</span>
-                            </div>
-                        </div>
-                        <!-- Item 3 -->
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 600; font-size: 15px;">Checkout</span>
-                            <div style="display: flex; gap: 24px; align-items: center; font-size: 14px;">
-                                <span style="color: var(--text-secondary);">11 defects</span>
-                                <span
-                                    style="color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 4px;">→
-                                    Stable</span>
-                            </div>
-                        </div>
-                    </div>
+                    <h2 style="font-size: 18px; margin-bottom: 16px;">Top Customer Problems</h2>
+                    <table class="theme-table">
+                        <thead>
+                            <tr>
+                                <th>Theme</th>
+                                <th>Sentiment</th>
+                                <th>Mentions</th>
+                                <th>Trend</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Theme 1 -->
+                            <tr style="cursor: pointer;" onclick="window.location.href='voc-theme-detail.html'">
+                                <td style="font-weight: 600; color: #1E293B;">Checkout feels slow & confusing</td>
+                                <td><span class="badge badge-red">Negative</span></td>
+                                <!-- badge-red assumed/inline style if needed -->
+                                <td>42</td>
+                                <td style="color: #DC2626;">↑ Rising</td>
+                                <td><span class="confidence-badge conf-med">Medium</span></td>
+                            </tr>
+                            <!-- Theme 2 -->
+                            <tr style="cursor: pointer;" onclick="window.location.href='voc-theme-detail.html'">
+                                <td style="font-weight: 600; color: #1E293B;">Login fails intermittently</td>
+                                <td><span class="badge badge-red">Negative</span></td>
+                                <td>21</td>
+                                <td style="color: #64748B;">→ Stable</td>
+                                <td><span class="confidence-badge conf-high">High</span></td>
+                            </tr>
+                            <!-- Theme 3 -->
+                            <tr style="cursor: pointer;" onclick="window.location.href='voc-theme-detail.html'">
+                                <td style="font-weight: 600; color: #1E293B;">Payment confirmation unclear</td>
+                                <td><span class="badge badge-yellow">Mixed</span></td> <!-- badge-yellow assumed -->
+                                <td>18</td>
+                                <td style="color: #DC2626;">↑ Rising</td>
+                                <td><span class="confidence-badge conf-med">Medium</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <!-- Suggested Next Steps Card -->

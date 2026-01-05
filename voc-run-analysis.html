@@ -319,11 +319,13 @@
                     </div>
                 </div>
                 <div style="margin-top: 16px;">
-                    <label class="form-label">Time Range</label>
-                    <select class="select-input" style="max-width: 200px;">
-                        <option>Last 30 days</option>
-                        <option>Last 7 days</option>
-                        <option>Last Quarter</option>
+                    <label class="form-label">Feedback Coverage</label>
+                    <select id="feedback-coverage" class="select-input" style="max-width: 240px;">
+                        <option value="all">All available feedback</option>
+                        <option value="since_last">Since last analysis</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                        <option value="custom">Custom range</option>
                     </select>
                 </div>
             </div>
@@ -763,9 +765,34 @@
 
             // Initial check
             window.addEventListener('DOMContentLoaded', () => {
+                // Uncheck Jira by default
                 document.getElementById('jira-check').checked = false;
-                // Ensure Qualtrics is checked by default and logic runs
+
+                // Updates
                 updateQualtricsState();
+                updateAppReviewsState();
+
+                // Feedback Coverage Default Logic
+                const coverageSelect = document.getElementById('feedback-coverage');
+                const hasRunBefore = localStorage.getItem('voc_has_run_before');
+
+                if (hasRunBefore) {
+                    // Subsequent run -> Default: Since last analysis
+                    // Find option with value 'since_last' and set selected
+                    for (let i = 0; i < coverageSelect.options.length; i++) {
+                        if (coverageSelect.options[i].value === 'since_last') {
+                            coverageSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                } else {
+                    // First run -> Default: All available feedback
+                    // (Already first option, but explicit is good)
+                    coverageSelect.value = 'all';
+                }
+
+                // Mock setting 'has_run_before' on click of Run
+                // (handled in startAnalysis mainly, but here we just read it)
             });
         </script>
 </body>

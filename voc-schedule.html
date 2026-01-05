@@ -198,6 +198,20 @@
                 </div>
             </div>
 
+            <div class="form-section">
+                <label class="form-label">Feedback Coverage</label>
+                <select class="select-input" style="max-width: 240px;">
+                    <option value="since_last" selected>Since last analysis</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="all">All available feedback</option>
+                    <option value="custom">Custom range</option>
+                </select>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;">
+                    For scheduled runs, "Since last analysis" ensures no data overlap.
+                </div>
+            </div>
+
             <!-- Analysis Focus -->
             <div class="form-section">
                 <label class="form-label">Analysis Focus</label>

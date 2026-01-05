@@ -108,33 +108,43 @@
                     </div>
 
                     <div class="detail-card">
-                        <h2 style="font-size: 18px; margin-bottom: 16px;">Sample Evidence</h2>
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">Representative Evidence</h2>
                         <div class="evidence-list">
                             <div class="evidence-item">
-                                "Login fails randomly on mobile, just spins forever."
+                                "Not sure if payment went through"
                                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Source:
-                                    Jira Ticket #MOBILE-442</div>
+                                    Qualtrics</div>
                             </div>
                             <div class="evidence-item">
-                                "Error message doesn't explain what went wrong"
-                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Source: App
-                                    Store Review</div>
-                            </div>
-                            <div class="evidence-item">
-                                "Had to retry login multiple times before it worked."
+                                "Checkout takes forever"
                                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Source:
-                                    Support Ticket</div>
+                                    Qualtrics</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="detail-card">
-                        <h2 style="font-size: 18px; margin-bottom: 16px;">Insight</h2>
-                        <p style="color: var(--text-primary); line-height: 1.6;">
-                            Login functionality exists, but feedback and ticket volume suggest usability and error
-                            messaging issues rather than core system failure. Mobile flow seems to be the primary pain
-                            point.
-                        </p>
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">Sentiment Breakdown</h2>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <div style="height: 8px; flex: 78; background: #DC2626; border-radius: 4px;"></div>
+                            <div style="height: 8px; flex: 18; background: #94A3B8; border-radius: 4px;"></div>
+                            <div style="height: 8px; flex: 4; background: #16A34A; border-radius: 4px;"></div>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 14px;">
+                            <span style="color: #991B1B;"><strong>Negative</strong> 78%</span>
+                            <span style="color: #475569;"><strong>Neutral</strong> 18%</span>
+                            <span style="color: #166534;"><strong>Positive</strong> 4%</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-card">
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">LLM Hypothesis</h2>
+                        <div style="background: #F0F9FF; padding: 16px; border-radius: 8px; border: 1px solid #BAE6FD;">
+                            <strong style="color: #0369A1;">Primary hypothesis: UX / Design Friction</strong>
+                            <p style="margin: 4px 0 0 0; color: #0C4A6E; font-size: 14px;">
+                                Reason: repeated mentions of confusion and uncertainty.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -180,37 +190,51 @@
                     </div>
 
                     <div class="detail-card">
-                        <h3 style="font-size: 16px; margin-bottom: 16px;">What would you like to do next?</h3>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <label style="display: flex; gap: 8px; font-size: 14px; cursor: pointer;">
-                                <input type="checkbox" checked onchange="saveActionState(this, 'ideation')"> Send this
-                                problem to Ideation
-                            </label>
+                        <h3 style="font-size: 16px; margin-bottom: 16px;">Suggested Next Steps</h3>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
 
-                            <div>
-                                <div style="font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">Request
-                                    additional data from:</div>
-                                <div
-                                    style="margin-left: 8px; padding-left: 12px; border-left: 2px solid #E2E8F0; display: flex; flex-direction: column; gap: 8px;">
-                                    <label style="display: flex; gap: 8px; font-size: 14px; cursor: pointer;">
-                                        <input type="checkbox" onchange="saveActionState(this, 'app_reviews')"> App
-                                        reviews
-                                    </label>
-                                    <label style="display: flex; gap: 8px; font-size: 14px; cursor: pointer;">
-                                        <input type="checkbox" onchange="saveActionState(this, 'interviews')"> Customer
-                                        interviews
-                                    </label>
-                                    <label style="display: flex; gap: 8px; font-size: 14px; cursor: pointer;">
-                                        <input type="checkbox" onchange="saveActionState(this, 'analytics')"> Analytics
-                                        / funnels
-                                    </label>
+                            <!-- Ideation Step -->
+                            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                                    <i class="ph ph-check-circle" style="color: #16A34A;"></i>
+                                    <strong style="color: #1E293B;">Proceed to Ideation</strong>
                                 </div>
+                                <p
+                                    style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; margin-left: 24px;">
+                                    Evidence is consistent, but confidence is not yet high.
+                                </p>
+                                <button class="btn btn-outline full-width" style="margin-left: 0;">Proceed to
+                                    Ideation</button>
                             </div>
 
-                            <label style="display: flex; gap: 8px; font-size: 14px; cursor: pointer;">
-                                <input type="checkbox" onchange="saveActionState(this, 'follow_up')"> Schedule follow-up
-                                VoC run
-                            </label>
+                            <!-- Add App Reviews Step (Conditional) -->
+                            <div id="next-step-app-reviews"
+                                style="display: none; padding: 12px; border: 1px solid #BFDBFE; background: #EFF6FF; border-radius: 8px;">
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                                    <i class="ph ph-plus-circle" style="color: #2563EB;"></i>
+                                    <strong style="color: #1E3A8A;">Add App Reviews</strong>
+                                </div>
+                                <p style="font-size: 13px; color: #1E40AF; margin-bottom: 12px; margin-left: 24px;">
+                                    Validate if this issue is also raised organically in public reviews.
+                                </p>
+                                <button class="btn btn-primary full-width" style="margin-left: 0;"
+                                    onclick="setupAppReviews()">Add App Reviews</button>
+                            </div>
+
+                            <!-- Review Sessions Step -->
+                            <div style="padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                                    <i class="ph ph-eye" style="color: #4F46E5;"></i>
+                                    <strong style="color: #1E293B;">Review Sessions</strong>
+                                </div>
+                                <p
+                                    style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; margin-left: 24px;">
+                                    See real user behavior signals tied to this theme.
+                                </p>
+                                <button class="btn btn-outline full-width" style="margin-left: 0;"
+                                    onclick="window.location.href='voc-sessions-queue.html'">Review Sessions</button>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -219,6 +243,33 @@
     </div>
 
     <script>
+        // Mock Data for Logic
+        const themeData = {
+            title: "Checkout feels slow & confusing",
+            confidence: "Medium", // Low, Medium, High
+            sourcesIncluded: ["Qualtrics", "Jira"], // App Reviews missing
+            appReviewsIncluded: false
+        };
+
+        function checkNextSteps() {
+            const btnContainer = document.getElementById('next-step-app-reviews');
+
+            // Logic: Show if App Reviews NOT included AND Confidence <= Medium
+            const isAppReviewsMissing = !themeData.appReviewsIncluded;
+            const isConfidenceLowOrMed = (themeData.confidence === "Low" || themeData.confidence === "Medium");
+
+            if (isAppReviewsMissing && isConfidenceLowOrMed) {
+                btnContainer.style.display = 'block';
+            } else {
+                btnContainer.style.display = 'none';
+            }
+        }
+
+        function setupAppReviews() {
+            alert("This would trigger the 'Add App Reviews' flow to fetch public data.");
+            // In a real app, this might open a modal or redirect to run analysis with App Reviews pre-selected
+        }
+
         function saveActionState(checkbox, key) {
             console.log(`Action Saved: ${key} = ${checkbox.checked}`);
             // Mock local state persistence
@@ -227,11 +278,12 @@
 
         // Restore state on load
         window.addEventListener('DOMContentLoaded', () => {
+            checkNextSteps();
             const keys = ['ideation', 'app_reviews', 'interviews', 'analytics', 'follow_up'];
             keys.forEach(key => {
                 const saved = localStorage.getItem(`voc_action_${key}`);
                 if (saved !== null) {
-                    // Checkbox finding logic would be more complex in real app (by ID), 
+                    // Checkbox finding logic would be more complex in real app (by ID),
                     // but for this mock, we rely on the user interacting or default state.
                     // To make it fully functional we'd add IDs to inputs.
                     // For now, the console log confirms the "save" action.
