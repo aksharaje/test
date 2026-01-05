@@ -10,6 +10,7 @@ import {
   lucideRotateCw,
   lucideAlertCircle,
   lucidePencil,
+  lucideFileText,
 } from '@ng-icons/lucide';
 import { KpiAssignmentService } from './kpi-assignment.service';
 import type { KpiAssignmentSession, KpiAssignmentFullItem } from './kpi-assignment.types';
@@ -29,28 +30,39 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideRotateCw,
       lucideAlertCircle,
       lucidePencil,
+      lucideFileText,
     }),
   ],
   template: `
-    <div class="flex h-full">
-      <!-- Main Content -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-4xl mx-auto">
-          <!-- Header -->
-          <div class="flex items-center gap-4 mb-6">
-            <button hlmBtn variant="ghost" size="icon" (click)="goBack()">
-              <ng-icon name="lucideArrowLeft" class="h-5 w-5" />
-            </button>
-            <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <ng-icon name="lucideTarget" class="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 class="text-2xl font-bold">KPI Assignment</h1>
-                <p class="text-sm text-muted-foreground">AI-generated KPIs for your goals.</p>
-              </div>
+    <div class="h-full overflow-y-auto">
+      <div class="max-w-4xl mx-auto p-6">
+        <!-- Header -->
+        <div class="flex items-center gap-4 mb-6">
+          <button hlmBtn variant="ghost" size="icon" (click)="goBack()">
+            <ng-icon name="lucideArrowLeft" class="h-5 w-5" />
+          </button>
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ng-icon name="lucideTarget" class="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold">KPI Assignment</h1>
+              <p class="text-sm text-muted-foreground">AI-generated KPIs for your goals.</p>
             </div>
           </div>
+          @if (session()?.status === 'completed') {
+            <div class="ml-auto flex gap-2">
+              <button hlmBtn size="sm" (click)="continueToMeasurementFramework()">
+                Define Measurement Framework
+                <ng-icon name="lucideChevronRight" class="ml-2 h-4 w-4" />
+              </button>
+              <button hlmBtn variant="ghost" size="sm" (click)="exportToPdf()">
+                <ng-icon name="lucideFileText" class="mr-2 h-4 w-4" />
+                Export PDF
+              </button>
+            </div>
+          }
+        </div>
 
           @if (isLoading()) {
             <div class="flex flex-col items-center justify-center py-16">
@@ -155,53 +167,9 @@ import { HlmButtonDirective } from '../../ui/button';
               }
             </div>
 
-            <!-- Actions -->
-            <div class="flex justify-between mt-8 pt-6 border-t">
-              <button hlmBtn variant="outline" (click)="goBack()">
-                <ng-icon name="lucideArrowLeft" class="mr-2 h-4 w-4" />
-                Back
-              </button>
-              <button hlmBtn (click)="continueToMeasurementFramework()">
-                Continue to Measurement Framework
-                <ng-icon name="lucideChevronRight" class="ml-2 h-4 w-4" />
-              </button>
-            </div>
           }
         </div>
       </div>
-
-      <!-- Sidebar -->
-      <div class="w-72 border-l bg-muted/30 p-4">
-        <div class="rounded-lg border bg-background p-4 mb-4">
-          <h3 class="font-semibold flex items-center gap-2 mb-3">
-            <ng-icon name="lucideCheck" class="h-4 w-4 text-primary" />
-            Progress
-          </h3>
-          <ul class="text-sm space-y-2">
-            <li class="text-muted-foreground line-through">Define Goals</li>
-            <li class="font-semibold text-primary">Assign KPIs</li>
-            <li class="text-muted-foreground">Build Measurement Framework</li>
-          </ul>
-        </div>
-
-        <div class="rounded-lg border bg-background p-4">
-          <h3 class="font-semibold flex items-center gap-2 mb-3">
-            <ng-icon name="lucideChevronRight" class="h-4 w-4" />
-            Next Steps
-          </h3>
-          <div class="space-y-2">
-            <button hlmBtn class="w-full" (click)="continueToMeasurementFramework()">
-              Measurement Framework
-              <ng-icon name="lucideChevronRight" class="ml-2 h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <button hlmBtn variant="ghost" class="w-full mt-3" (click)="goBack()">
-          Back to KPI Assignment
-        </button>
-      </div>
-    </div>
   `,
   styles: `:host { display: block; height: 100%; }`,
 })
@@ -266,6 +234,268 @@ export class KpiAssignmentResultsComponent implements OnInit {
       this.router.navigate(['/measurements/framework'], { queryParams: { goalSessionId: sessionId } });
     } else {
       this.router.navigate(['/measurements/framework']);
+    }
+  }
+
+  exportToPdf() {
+    const session = this.session();
+    const assignments = this.assignments();
+    if (!session || assignments.length === 0) return;
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>KPI Assignments</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      padding: 48px;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #6366f1;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .summary {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      border-left: 4px solid #0ea5e9;
+    }
+
+    .summary h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0369a1;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .summary p {
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .assignment {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+
+    .assignment-header {
+      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .assignment-header .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 8px;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .assignment-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .assignment-body {
+      padding: 20px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .kpi-item label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-item p {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a2e;
+      margin-top: 4px;
+    }
+
+    .alternatives {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed #e2e8f0;
+    }
+
+    .alternatives label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .alt-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .alt-tag {
+      font-size: 12px;
+      padding: 4px 12px;
+      background: #f1f5f9;
+      border-radius: 20px;
+      color: #475569;
+    }
+
+    .rationale {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed #e2e8f0;
+    }
+
+    .rationale label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .rationale p {
+      font-size: 13px;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body { padding: 24px; }
+      .assignment { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>KPI Assignments</h1>
+    <div class="subtitle">${assignments.length} Goal${assignments.length !== 1 ? 's' : ''} with KPIs Assigned</div>
+  </div>
+
+  ${session.executiveSummary ? `
+  <div class="summary">
+    <h2>Executive Summary</h2>
+    <p>${session.executiveSummary}</p>
+  </div>
+  ` : ''}
+
+  ${assignments.map((a, idx) => `
+  <div class="assignment">
+    <div class="assignment-header">
+      <span class="tag">${a.goalCategory || 'Goal'}</span>
+      <h3>${idx + 1}. ${a.goalTitle}</h3>
+    </div>
+    <div class="assignment-body">
+      <div class="kpi-grid">
+        <div class="kpi-item">
+          <label>Primary KPI</label>
+          <p>${a.primaryKpi}</p>
+        </div>
+        <div class="kpi-item">
+          <label>Measurement Unit</label>
+          <p>${a.measurementUnit}</p>
+        </div>
+        ${a.secondaryKpi ? `
+        <div class="kpi-item">
+          <label>Secondary KPI (Health Metric)</label>
+          <p>${a.secondaryKpi}</p>
+        </div>
+        ` : ''}
+        <div class="kpi-item">
+          <label>Check Frequency</label>
+          <p style="text-transform: capitalize;">${a.checkFrequency}</p>
+        </div>
+      </div>
+
+      ${a.alternativeKpis && a.alternativeKpis.length > 0 ? `
+      <div class="alternatives">
+        <label>Alternative KPIs</label>
+        <div class="alt-tags">
+          ${a.alternativeKpis.map(alt => `<span class="alt-tag">${alt}</span>`).join('')}
+        </div>
+      </div>
+      ` : ''}
+
+      ${a.rationale ? `
+      <div class="rationale">
+        <label>Rationale</label>
+        <p>${a.rationale}</p>
+      </div>
+      ` : ''}
+    </div>
+  </div>
+  `).join('')}
+
+  <div class="footer">
+    Generated by Product Studio • ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
     }
   }
 }
