@@ -21,20 +21,20 @@ def _get_resend_client():
 
 async def send_magic_link(email: str, token: str):
     """Send magic link email for passwordless authentication."""
-    # Debug: Show what env vars are set
-    print(f"[EMAIL DEBUG] send_magic_link called for {email}")
-    print(f"[EMAIL DEBUG] RESEND_API_KEY set: {bool(os.getenv('RESEND_API_KEY'))}")
-    print(f"[EMAIL DEBUG] SMTP_HOST: {os.getenv('SMTP_HOST')}")
-    print(f"[EMAIL DEBUG] SMTP_USER: {os.getenv('SMTP_USER')}")
+    # Debug: Show what env vars are set (flush=True ensures logs appear on Render)
+    print(f"[EMAIL DEBUG] send_magic_link called for {email}", flush=True)
+    print(f"[EMAIL DEBUG] RESEND_API_KEY set: {bool(os.getenv('RESEND_API_KEY'))}", flush=True)
+    print(f"[EMAIL DEBUG] SMTP_HOST: {os.getenv('SMTP_HOST')}", flush=True)
+    print(f"[EMAIL DEBUG] SMTP_USER: {os.getenv('SMTP_USER')}", flush=True)
 
     base_url = os.getenv("FRONTEND_URL", "http://localhost:4200")
     link = f"{base_url}/auth/verify?token={token}"
 
     # Dev mode: print to console if no email provider configured
     if not os.getenv("RESEND_API_KEY") and not os.getenv("SMTP_HOST"):
-        print(f"==================================================")
-        print(f"[DEV] Magic Link for {email}: {link}")
-        print(f"==================================================")
+        print(f"==================================================", flush=True)
+        print(f"[DEV] Magic Link for {email}: {link}", flush=True)
+        print(f"==================================================", flush=True)
         return
 
     # Try Resend first
@@ -58,8 +58,8 @@ async def send_magic_link(email: str, token: str):
 
     # Fallback to SMTP (fastapi-mail)
     if os.getenv("SMTP_HOST"):
-        print(f"[EMAIL] Using SMTP: {os.getenv('SMTP_HOST')}:{os.getenv('SMTP_PORT')}")
-        print(f"[EMAIL] From: {os.getenv('SMTP_FROM')}, To: {email}")
+        print(f"[EMAIL] Using SMTP: {os.getenv('SMTP_HOST')}:{os.getenv('SMTP_PORT')}", flush=True)
+        print(f"[EMAIL] From: {os.getenv('SMTP_FROM')}, To: {email}", flush=True)
         try:
             from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 
@@ -88,15 +88,15 @@ async def send_magic_link(email: str, token: str):
 
             fm = FastMail(conf)
             await fm.send_message(message)
-            print(f"[EMAIL] SMTP send successful to {email}")
+            print(f"[EMAIL] SMTP send successful to {email}", flush=True)
             return
         except Exception as e:
-            print(f"[EMAIL ERROR] SMTP failed: {e}")
+            print(f"[EMAIL ERROR] SMTP failed: {e}", flush=True)
             import traceback
             traceback.print_exc()
 
     # No email provider configured
-    print(f"[WARN] No email provider configured. Magic link: {link}")
+    print(f"[WARN] No email provider configured. Magic link: {link}", flush=True)
 
 
 async def send_invite_email(email: str, token: str, sender_name: str = "Admin"):
