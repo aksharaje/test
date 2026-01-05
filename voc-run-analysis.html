@@ -39,15 +39,79 @@
         }
 
         .step-number {
-            background: var(--primary-color);
-            color: white;
             width: 24px;
             height: 24px;
+            background: #E0E7FF;
+            color: #4F46E5;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* Tooltip Styles */
+        .tooltip-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .tooltip-icon {
+            color: #94A3B8;
+            cursor: help;
+            margin-left: 6px;
+            font-size: 16px;
+        }
+
+        .tooltip-icon:hover {
+            color: #4F46E5;
+        }
+
+        .tooltip-box {
+            display: none;
+            position: absolute;
+            left: 24px;
+            /* Offset from icon */
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1E293B;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            width: 280px;
+            z-index: 1000;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-size: 13px;
+            line-height: 1.4;
+            pointer-events: none;
+            /* Prevent flickering */
+        }
+
+        .tooltip-box h4 {
+            margin: 0 0 4px 0;
+            font-size: 13px;
+            color: #E2E8F0;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 4px;
+        }
+
+        .tooltip-container:hover .tooltip-box {
+            display: block;
+        }
+
+        .tooltip-signals {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #334155;
+            font-size: 12px;
+            color: #CBD5E1;
+        }
+
+        .tooltip-signals div {
+            margin-bottom: 2px;
         }
 
         .checkbox-group {
@@ -288,21 +352,104 @@
                     <span class="step-number">4</span>
                     Classification Goals
                 </div>
-                <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Help VoC classify issues
-                    as:
+                <p
+                    style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center;">
+                    Help VoC evaluate issues as:
+                    <span class="tooltip-container">
+                        <i class="ph ph-info tooltip-icon"></i>
+                        <div class="tooltip-box" style="top: 100%; transform: translateY(4px); left: 0;">
+                            Select the categories that best fit your analysis goals. VoC will tag sessions based on
+                            these patterns.
+                        </div>
+                    </span>
                 </p>
                 <div class="checkbox-group">
+                    <!-- UX / Design Friction (Checked) -->
                     <label style="display: flex; gap: 8px; align-items: center;">
-                        <input type="checkbox" checked> Likely System Failure
+                        <input type="checkbox" checked>
+                        <span>Likely UX / Design Friction</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>UX / Design Friction</h4>
+                                Select this if users might be struggling due to unclear flows, missing feedback, or
+                                confusing interactions — even if the feature technically works.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• "Nothing happens when I click"</div>
+                                    <div>• Repeated retries or rage clicks</div>
+                                    <div>• Confusion about whether an action succeeded</div>
+                                    <div>• Long hesitation or drop-offs</div>
+                                </div>
+                            </div>
+                        </span>
                     </label>
+
+                    <!-- User Misunderstanding (Checked) -->
                     <label style="display: flex; gap: 8px; align-items: center;">
-                        <input type="checkbox" checked> Likely UX / Design Friction
+                        <input type="checkbox" checked>
+                        <span>Likely User Misunderstanding</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>User Misunderstanding</h4>
+                                Select this if users may not understand how the feature is supposed to work or what is
+                                expected of them.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• Users skip required steps</div>
+                                    <div>• Confusion about next steps</div>
+                                    <div>• Feedback like "I thought it would…"</div>
+                                    <div>• Questions rather than complaints</div>
+                                </div>
+                            </div>
+                        </span>
                     </label>
+
+                    <!-- System / Technical Failure (Unchecked) -->
                     <label style="display: flex; gap: 8px; align-items: center;">
-                        <input type="checkbox" checked> Likely User Misunderstanding
+                        <input type="checkbox">
+                        <span>Likely System Failure</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>System / Technical Failure</h4>
+                                Select this if users may be encountering real errors, crashes, timeouts, or broken
+                                functionality.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• App crashes or freezes</div>
+                                    <div>• Explicit error messages</div>
+                                    <div>• "It doesn’t work" or "fails every time"</div>
+                                    <div>• Failed submissions or loading issues</div>
+                                </div>
+                            </div>
+                        </span>
                     </label>
+
+                    <!-- Configuration / Edge Case (Unchecked) -->
                     <label style="display: flex; gap: 8px; align-items: center;">
-                        <input type="checkbox" checked> Likely Configuration / Edge Case
+                        <input type="checkbox">
+                        <span>Likely Configuration / Edge Case</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>Configuration / Edge Case</h4>
+                                Select this if issues may only happen under specific conditions, devices, accounts, or
+                                environments.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• Only on certain devices or OS versions</div>
+                                    <div>• Happens inconsistently</div>
+                                    <div>• Affects specific users or regions</div>
+                                    <div>• Hard to reproduce issues</div>
+                                </div>
+                            </div>
+                        </span>
                     </label>
                 </div>
             </div>
