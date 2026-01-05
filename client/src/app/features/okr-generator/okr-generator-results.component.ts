@@ -197,8 +197,12 @@ export class OkrGeneratorResultsComponent implements OnInit {
 
   continueToKpiAssignment() {
     const sessionId = this.session()?.id;
-    if (sessionId) {
-      this.router.navigate(['/measurements/kpi-assignment'], { queryParams: { okrSessionId: sessionId } });
+    const goalSessionId = this.session()?.goalSessionId;
+    if (goalSessionId) {
+      // If OKRs were generated from a goal session, use that for KPI assignment
+      this.router.navigate(['/measurements/kpi-assignment'], { queryParams: { goalSessionId, autoRun: 'true' } });
+    } else if (sessionId) {
+      this.router.navigate(['/measurements/kpi-assignment'], { queryParams: { okrSessionId: sessionId, autoRun: 'true' } });
     }
   }
 

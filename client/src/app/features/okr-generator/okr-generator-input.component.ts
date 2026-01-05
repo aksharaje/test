@@ -380,14 +380,41 @@ export class OkrGeneratorInputComponent implements OnInit {
 
     // Check for goalSessionId query param (from Goal Setting CTA)
     const goalSessionId = this.route.snapshot.queryParams['goalSessionId'];
+    const autoRun = this.route.snapshot.queryParams['autoRun'] === 'true';
+
     if (goalSessionId) {
       this.sourceType.set('goal-session');
       this.selectedGoalSessionId.set(goalSessionId);
       await this.service.loadGoalsForSession(Number(goalSessionId));
+
+      // Auto-run generation if coming from goal setting CTA
+      if (autoRun && this.service.goalsForSelection().length > 0) {
+        // Select all goals by default for auto-run
+        this.service.goalsForSelection().forEach(g => g.selected = true);
+        // Set a default timeframe if not already set
+        if (!this.timeframe()) {
+          this.timeframe.set(this.timeframeOptions[0]?.value || 'Q1 2026');
+        }
+        // Wait for goal description to be built by effect, then submit
+        setTimeout(() => {
+          if (this.canSubmit()) {
+            this.autoSubmit();
+          }
+        }, 100);
+      }
     } else if (this.service.goalSettingSessions().length === 0) {
       // No importable sources available, default to custom input
       this.sourceType.set('custom');
     }
+  }
+
+  private async autoSubmit() {
+    const session = await this.service.createSession({
+      goalDescription: this.goalDescription(),
+      goalSessionId: this.selectedGoalSessionId() ? Number(this.selectedGoalSessionId()) : undefined,
+      timeframe: this.timeframe(),
+    });
+    if (session) this.router.navigate(['/measurements/okr-generator/results', session.id]);
   }
 
   setSourceType(type: SourceType) {

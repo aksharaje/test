@@ -505,7 +505,7 @@ export class GoalSettingResultsComponent implements OnInit {
   continueToOkrGenerator() {
     const sessionId = this.session()?.id;
     if (sessionId) {
-      this.router.navigate(['/measurements/okr-generator'], { queryParams: { goalSessionId: sessionId } });
+      this.router.navigate(['/measurements/okr-generator'], { queryParams: { goalSessionId: sessionId, autoRun: 'true' } });
     }
   }
 
