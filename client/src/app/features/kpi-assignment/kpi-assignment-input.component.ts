@@ -323,10 +323,17 @@ export class KpiAssignmentInputComponent implements OnInit {
 
     // Check for goalSessionId query param (from Goal Setting CTA)
     const goalSessionId = this.route.snapshot.queryParams['goalSessionId'];
+    const autoRun = this.route.snapshot.queryParams['autoRun'] === 'true';
+
     if (goalSessionId) {
       this.sourceType.set('goal-session');
       this.selectedGoalSessionId.set(goalSessionId);
       await this.service.loadGoalsForSession(Number(goalSessionId));
+
+      // Auto-run generation if coming from goal setting CTA
+      if (autoRun && this.service.selectedGoals().length > 0) {
+        this.generateKpis();
+      }
     } else if (this.service.goalSettingSessions().length === 0) {
       // No importable sources available, default to custom input
       this.sourceType.set('custom');

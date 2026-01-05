@@ -512,7 +512,7 @@ export class GoalSettingResultsComponent implements OnInit {
   continueToKpiAssignment() {
     const sessionId = this.session()?.id;
     if (sessionId) {
-      this.router.navigate(['/measurements/kpi-assignment'], { queryParams: { goalSessionId: sessionId } });
+      this.router.navigate(['/measurements/kpi-assignment'], { queryParams: { goalSessionId: sessionId, autoRun: 'true' } });
     }
   }
 
