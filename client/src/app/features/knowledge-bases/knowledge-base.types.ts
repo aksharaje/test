@@ -15,10 +15,20 @@ export interface KnowledgeBase {
   totalChunks: number;
   createdAt: string;
   updatedAt: string;
+  isShared: boolean;
   sourceMetadata?: {
     repoUrl?: string;
     accessToken?: string;
   };
+}
+
+// Lightweight type for select dropdowns (only ready KBs)
+export interface SelectableKnowledgeBase {
+  id: number;
+  name: string;
+  documentCount: number;
+  isShared: boolean;
+  isOwned: boolean;
 }
 
 export interface DocumentSourceMetadata {

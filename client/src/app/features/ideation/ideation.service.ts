@@ -185,11 +185,11 @@ export class IdeationService {
     }
   }
 
-  // Load knowledge bases
+  // Load knowledge bases (only ready ones for select dropdown)
   async loadKnowledgeBases(): Promise<void> {
     try {
       const kbs = await firstValueFrom(
-        this.http.get<KnowledgeBase[]>('/api/knowledge-bases')
+        this.http.get<KnowledgeBase[]>('/api/knowledge-bases/selectable')
       );
       this._knowledgeBases.set(kbs);
     } catch (err) {

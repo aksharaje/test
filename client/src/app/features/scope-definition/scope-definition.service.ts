@@ -185,11 +185,11 @@ export class ScopeDefinitionService {
     this.okrObjectives.set([]);
   }
 
-  // Knowledge base methods
+  // Knowledge base methods (only ready KBs for select dropdown)
   async loadKnowledgeBases(): Promise<void> {
     try {
-      const kbs = await this.http.get<KnowledgeBase[]>('/api/knowledge-bases').toPromise();
-      this.knowledgeBases.set((kbs || []).filter((kb) => kb.status === 'ready'));
+      const kbs = await this.http.get<KnowledgeBase[]>('/api/knowledge-bases/selectable').toPromise();
+      this.knowledgeBases.set(kbs || []);
     } catch (err: any) {
       console.error('Failed to load knowledge bases:', err);
     }

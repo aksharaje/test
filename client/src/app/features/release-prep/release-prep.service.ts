@@ -135,11 +135,11 @@ export class ReleasePrepService {
       .pipe(tap((stories) => this.availableStories.set(stories)));
   }
 
-  // --- Knowledge Bases ---
+  // --- Knowledge Bases (only ready KBs for select dropdown) ---
 
   loadKnowledgeBases(): Observable<KnowledgeBase[]> {
     return this.http
-      .get<KnowledgeBase[]>('/api/knowledge-bases')
+      .get<KnowledgeBase[]>('/api/knowledge-bases/selectable')
       .pipe(tap((kbs) => this.knowledgeBases.set(kbs)));
   }
 

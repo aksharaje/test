@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 import requests
 from datetime import datetime
-from sqlmodel import Session, select, desc, func, col, delete
+from sqlmodel import Session, select, desc, func, col, delete, or_
 from sqlalchemy.orm import selectinload
 from app.models.knowledge_base import KnowledgeBase, Document, DocumentChunk
 from app.services.embedding_service import embedding_service
@@ -10,16 +10,32 @@ class KnowledgeBaseService:
     def __init__(self):
         pass
 
-    def list_knowledge_bases(self, session: Session, user_id: Optional[int] = None) -> List[KnowledgeBase]:
+    def list_knowledge_bases(self, session: Session, user_id: Optional[int] = None, include_shared: bool = True) -> List[KnowledgeBase]:
+        """List knowledge bases for the list page (all statuses, user's own + shared)."""
         query = select(KnowledgeBase)
         if user_id:
-            query = query.where(KnowledgeBase.userId == user_id)
+            if include_shared:
+                query = query.where(or_(KnowledgeBase.userId == user_id, KnowledgeBase.isShared == True))
+            else:
+                query = query.where(KnowledgeBase.userId == user_id)
         query = query.order_by(desc(KnowledgeBase.createdAt))
         return session.exec(query).all()
 
+    def list_selectable_knowledge_bases(self, session: Session, user_id: int, limit: int = 50) -> List[KnowledgeBase]:
+        """List knowledge bases for select dropdowns (ready only, user's own + shared)."""
+        query = select(KnowledgeBase).where(
+            KnowledgeBase.status == "ready"
+        ).where(
+            or_(KnowledgeBase.userId == user_id, KnowledgeBase.isShared == True)
+        ).order_by(desc(KnowledgeBase.updatedAt)).limit(limit)
+        return session.exec(query).all()
+
     def get_knowledge_base(self, session: Session, kb_id: int, user_id: Optional[int] = None) -> Optional[KnowledgeBase]:
+        """Get a knowledge base by ID. Allows access if user owns it or it's shared."""
         kb = session.get(KnowledgeBase, kb_id)
-        if kb and user_id and kb.userId and kb.userId != user_id:
+        if not kb:
+            return None
+        if user_id and kb.userId and kb.userId != user_id and not kb.isShared:
             return None
         return kb
 

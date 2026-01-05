@@ -14,7 +14,28 @@ def list_knowledge_bases(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ) -> Any:
+    """List all knowledge bases (all statuses) for the list page."""
     return knowledge_base_service.list_knowledge_bases(session, user_id=current_user.id)
+
+
+@router.get("/selectable")
+def list_selectable_knowledge_bases(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """List knowledge bases for select dropdowns (ready only, user's own + shared)."""
+    kbs = knowledge_base_service.list_selectable_knowledge_bases(session, user_id=current_user.id)
+    return [
+        {
+            "id": kb.id,
+            "name": kb.name,
+            "documentCount": kb.documentCount,
+            "isShared": kb.isShared,
+            "isOwned": kb.userId == current_user.id
+        }
+        for kb in kbs
+    ]
+
 
 @router.post("", response_model=KnowledgeBase, response_model_by_alias=True)
 def create_knowledge_base(

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type {
   KnowledgeBase,
+  SelectableKnowledgeBase,
   Document,
   CreateKnowledgeBaseRequest,
   GitHubImportRequest,
@@ -47,6 +48,18 @@ export class KnowledgeBaseService {
       console.error(err);
     } finally {
       this._loading.set(false);
+    }
+  }
+
+  // Load only ready KBs for select dropdowns (includes shared)
+  async loadSelectableKnowledgeBases(): Promise<SelectableKnowledgeBase[]> {
+    try {
+      return await firstValueFrom(
+        this.http.get<SelectableKnowledgeBase[]>(`${this.baseUrl}/selectable`)
+      );
+    } catch (err) {
+      console.error('Failed to load selectable knowledge bases:', err);
+      return [];
     }
   }
 
@@ -304,6 +317,14 @@ export class KnowledgeBaseService {
 
   selectKnowledgeBase(kb: KnowledgeBase | null): void {
     this._selectedKnowledgeBase.set(kb);
+  }
+
+  async toggleShared(id: number): Promise<boolean> {
+    const kb = this._knowledgeBases().find(k => k.id === id);
+    if (!kb) return false;
+
+    const updated = await this.updateKnowledgeBase(id, { isShared: !kb.isShared } as any);
+    return !!updated;
   }
 
   clearError(): void {

@@ -133,15 +133,12 @@ def get_available_context_sources(
     from app.models.ideation import IdeationSession
     from app.models.feasibility import FeasibilitySession
     from app.models.business_case import BusinessCaseSession
+    from app.services.knowledge_base_service import knowledge_base_service
 
     user_id = current_user.id
 
-    # Get ready knowledge bases
-    kb_query = select(KnowledgeBase).where(KnowledgeBase.status == "ready")
-    if user_id:
-        kb_query = kb_query.where(KnowledgeBase.userId == user_id)
-    kb_query = kb_query.order_by(desc(KnowledgeBase.updatedAt)).limit(20)
-    knowledge_bases = list(db_session.exec(kb_query).all())
+    # Get ready knowledge bases (user's own + shared)
+    knowledge_bases = knowledge_base_service.list_selectable_knowledge_bases(db_session, user_id=user_id)
 
     # Get completed ideation sessions
     ideation_query = select(IdeationSession).where(IdeationSession.status == "completed")
@@ -166,7 +163,7 @@ def get_available_context_sources(
 
     return {
         "knowledgeBases": [
-            {"id": kb.id, "name": kb.name, "documentCount": kb.documentCount}
+            {"id": kb.id, "name": kb.name, "documentCount": kb.documentCount, "isShared": kb.isShared, "isOwned": kb.userId == user_id}
             for kb in knowledge_bases
         ],
         "ideationSessions": [

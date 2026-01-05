@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from sqlmodel import SQLModel, Field, Column, JSON, Relationship
-from sqlalchemy import Integer, DateTime, ForeignKey
+from sqlalchemy import Integer, DateTime, ForeignKey, Boolean
 from pgvector.sqlalchemy import Vector
 
 class KnowledgeBaseBase(SQLModel):
@@ -17,6 +17,7 @@ class KnowledgeBaseBase(SQLModel):
     status: str = "pending"
     documentCount: int = Field(default=0, sa_column=Column("document_count", Integer))
     totalChunks: int = Field(default=0, sa_column=Column("total_chunks", Integer))
+    isShared: bool = Field(default=False, sa_column=Column("is_shared", Boolean, default=False))
 
     model_config = {
         "populate_by_name": True

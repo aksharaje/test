@@ -10,6 +10,8 @@ import {
   lucideTrash2,
   lucideSettings,
   lucideSearch,
+  lucideShare2,
+  lucideUsers,
 } from '@ng-icons/lucide';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import type { KnowledgeBase } from './knowledge-base.types';
@@ -29,6 +31,8 @@ import { HlmButtonDirective } from '../../ui/button';
       lucideTrash2,
       lucideSettings,
       lucideSearch,
+      lucideShare2,
+      lucideUsers,
     }),
   ],
   template: `
@@ -81,9 +85,17 @@ import { HlmButtonDirective } from '../../ui/button';
                     </p>
                   </div>
                 </div>
-                <span [class]="getStatusClasses(kb.status)">
-                  {{ kb.status }}
-                </span>
+                <div class="flex items-center gap-2">
+                  @if (kb.isShared) {
+                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
+                      <ng-icon name="lucideUsers" class="h-3 w-3" />
+                      Shared
+                    </span>
+                  }
+                  <span [class]="getStatusClasses(kb.status)">
+                    {{ kb.status }}
+                  </span>
+                </div>
               </div>
 
               @if (kb.description) {
@@ -109,6 +121,15 @@ import { HlmButtonDirective } from '../../ui/button';
                   title="Search"
                 >
                   <ng-icon name="lucideSearch" class="h-4 w-4" />
+                </button>
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="icon"
+                  (click)="toggleShared(kb, $event)"
+                  [title]="kb.isShared ? 'Make Private' : 'Share with Team'"
+                >
+                  <ng-icon name="lucideShare2" class="h-4 w-4" [class.text-blue-600]="kb.isShared" />
                 </button>
                 <button
                   hlmBtn
@@ -230,6 +251,14 @@ export class KnowledgeBasesListComponent implements OnInit {
     event.stopPropagation();
     if (confirm(`Are you sure you want to delete "${kb.name}"? This action cannot be undone.`)) {
       await this.service.deleteKnowledgeBase(kb.id);
+    }
+  }
+
+  protected async toggleShared(kb: KnowledgeBase, event: Event): Promise<void> {
+    event.stopPropagation();
+    const action = kb.isShared ? 'make private' : 'share with all users';
+    if (confirm(`Are you sure you want to ${action} "${kb.name}"?`)) {
+      await this.service.toggleShared(kb.id);
     }
   }
 

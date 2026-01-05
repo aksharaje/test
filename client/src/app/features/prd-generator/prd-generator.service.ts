@@ -61,11 +61,11 @@ export class PrdGeneratorService {
     }
   }
 
-  // Load knowledge bases for selection
+  // Load knowledge bases for selection (only ready KBs)
   async loadKnowledgeBases(): Promise<void> {
     try {
       const kbs = await firstValueFrom(
-        this.http.get<KnowledgeBase[]>(this.kbUrl)
+        this.http.get<KnowledgeBase[]>(`${this.kbUrl}/selectable`)
       );
       this._knowledgeBases.set(kbs);
     } catch (err) {
