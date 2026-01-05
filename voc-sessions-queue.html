@@ -61,36 +61,83 @@
                 style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 16px;">
                 <i class="ph ph-arrow-left"></i> Back to Theme
             </a>
-            <td>Anonymous</td>
-            <td>1m 05s</td>
-            <td><span class="friction-badge friction-high">High (9.0)</span></td>
-            <td>
-                <div style="display: flex; gap: 4px;">
-                    <span class="tag">Crash</span>
-                    <span class="tag">Dead Click</span>
-                </div>
-            </td>
-            <td><button class="btn btn-outline-sm">Watch Replay</button></td>
-            </tr>
-            <tr style="cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F8FAFC'"
-                onmouseout="this.style.background='white'" onclick="window.location.href='voc-session-detail.html'">
-                <td>#87992</td>
-                <td>Mar 1, 4:45 PM</td>
-                <td>sub_premium_22</td>
-                <td>2m 30s</td>
-                <td><span class="friction-badge friction-med">Med (6.2)</span></td>
-                <td>
-                    <div style="display: flex; gap: 4px;">
-                        <span class="tag">Rapid Scrolling</span>
-                    </div>
-                </td>
-                <td><button class="btn btn-outline-sm">Watch Replay</button></td>
-            </tr>
-            </tbody>
-            </table>
+            <h1 style="margin: 0; font-size: 24px;">Review Sessions · Checkout Theme</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px; font-size: 14px;">
+                Showing sessions flagged for abnormal behavior (Qualtrics)
+            </p>
         </div>
-        </main>
 
+        <hr style="border: none; border-bottom: 1px solid var(--border-color); margin-bottom: 32px;">
+
+        <!-- List -->
+        <div class="session-list">
+
+            <!-- Session 1 -->
+            <div class="session-card">
+                <div>
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Session 1</div>
+                    <div class="flag-reason">
+                        <i class="ph ph-warning-circle"></i>
+                        Reason flagged: Rage clicks on “Pay Now” (x6), no confirmation shown
+                    </div>
+                    <div class="meta-info">
+                        <span><i class="ph ph-device-mobile"></i> iOS Safari</span>
+                        <span><span style="color: #CBD5E1;">|</span></span>
+                        <span><i class="ph ph-clock"></i> Duration: 2m 14s</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-outline" onclick="window.location.href='voc-session-detail.html'">View
+                        Details</button>
+                    <button class="btn btn-reviewed" onclick="toggleReviewed(this)">
+                        <i class="ph ph-check"></i> Mark Reviewed
+                    </button>
+                </div>
+            </div>
+
+            <!-- Session 2 -->
+            <div class="session-card">
+                <div>
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Session 2</div>
+                    <div class="flag-reason">
+                        <i class="ph ph-warning-circle"></i>
+                        Reason flagged: Long pause after payment, user exits
+                    </div>
+                    <div class="meta-info">
+                        <span><i class="ph ph-device-mobile"></i> Android Chrome</span>
+                        <span><span style="color: #CBD5E1;">|</span></span>
+                        <span><i class="ph ph-clock"></i> Duration: 1m 32s</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-outline" onclick="window.location.href='voc-session-detail.html'">View
+                        Details</button>
+                    <button class="btn btn-reviewed" onclick="toggleReviewed(this)">
+                        <i class="ph ph-check"></i> Mark Reviewed
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        function toggleReviewed(btn) {
+            btn.classList.toggle('active');
+            if (btn.classList.contains('active')) {
+                btn.innerHTML = '<i class="ph ph-check-circle-fill"></i> Reviewed';
+                btn.style.borderColor = '#16A34A';
+                btn.style.color = '#16A34A';
+                btn.style.background = '#F0FDF4';
+            } else {
+                btn.innerHTML = '<i class="ph ph-check"></i> Mark Reviewed';
+                btn.style.borderColor = 'var(--border-color)';
+                btn.style.color = 'var(--text-secondary)';
+                btn.style.background = 'white';
+            }
+        }
+    </script>
 </body>
 
 </html>
