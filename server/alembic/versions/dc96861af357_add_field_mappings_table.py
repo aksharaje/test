@@ -20,7 +20,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.create_table(
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
+    if 'field_mappings' not in existing_tables:
+        op.create_table(
         'field_mappings',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('integration_id', sa.Integer(), nullable=False),
@@ -34,9 +40,9 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_field_mappings_integration_id', 'field_mappings', ['integration_id'])
-    op.create_index('ix_field_mappings_our_field', 'field_mappings', ['our_field'])
+        )
+        op.create_index('ix_field_mappings_integration_id', 'field_mappings', ['integration_id'])
+        op.create_index('ix_field_mappings_our_field', 'field_mappings', ['our_field'])
 
 
 def downgrade() -> None:

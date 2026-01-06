@@ -20,7 +20,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column('users', sa.Column('hashed_password', sa.String(), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+    if 'hashed_password' not in columns:
+        op.add_column('users', sa.Column('hashed_password', sa.String(), nullable=True))
 
 
 def downgrade() -> None:

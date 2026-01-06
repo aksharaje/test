@@ -20,7 +20,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.create_table(
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
+    if 'roadmap_item_segments' not in existing_tables:
+        op.create_table(
         'roadmap_item_segments',
         sa.Column('id', sa.Integer(), primary_key=True, nullable=False),
         sa.Column('item_id', sa.Integer(), sa.ForeignKey('roadmap_items.id', ondelete='CASCADE'), nullable=False),
@@ -36,11 +42,11 @@ def upgrade() -> None:
         sa.Column('color_override', sa.String(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
-    )
-    # Index for efficient querying by item
-    op.create_index('ix_roadmap_item_segments_item_id', 'roadmap_item_segments', ['item_id'])
-    # Index for efficient querying by session (via item join) and team
-    op.create_index('ix_roadmap_item_segments_team_sprint', 'roadmap_item_segments', ['assigned_team', 'start_sprint'])
+        )
+        # Index for efficient querying by item
+        op.create_index('ix_roadmap_item_segments_item_id', 'roadmap_item_segments', ['item_id'])
+        # Index for efficient querying by session (via item join) and team
+        op.create_index('ix_roadmap_item_segments_team_sprint', 'roadmap_item_segments', ['assigned_team', 'start_sprint'])
 
 
 def downgrade() -> None:

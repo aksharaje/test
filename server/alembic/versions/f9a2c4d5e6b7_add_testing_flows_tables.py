@@ -20,8 +20,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
     # Defect Manager Sessions
-    op.create_table(
+    if 'defect_manager_sessions' not in existing_tables:
+        op.create_table(
         'defect_manager_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
@@ -44,12 +50,13 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index('ix_defect_manager_sessions_user_id', 'defect_manager_sessions', ['user_id'])
-    op.create_index('ix_defect_manager_sessions_integration_id', 'defect_manager_sessions', ['integration_id'])
+        )
+        op.create_index('ix_defect_manager_sessions_user_id', 'defect_manager_sessions', ['user_id'])
+        op.create_index('ix_defect_manager_sessions_integration_id', 'defect_manager_sessions', ['integration_id'])
 
     # Analyzed Defects
-    op.create_table(
+    if 'analyzed_defects' not in existing_tables:
+        op.create_table(
         'analyzed_defects',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
@@ -85,12 +92,13 @@ def upgrade() -> None:
         sa.Column('days_open', sa.Integer(), nullable=True),
         sa.Column('synced_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index('ix_analyzed_defects_session_id', 'analyzed_defects', ['session_id'])
-    op.create_index('ix_analyzed_defects_external_id', 'analyzed_defects', ['external_id'])
+        )
+        op.create_index('ix_analyzed_defects_session_id', 'analyzed_defects', ['session_id'])
+        op.create_index('ix_analyzed_defects_external_id', 'analyzed_defects', ['external_id'])
 
     # Release Readiness Sessions
-    op.create_table(
+    if 'release_readiness_sessions' not in existing_tables:
+        op.create_table(
         'release_readiness_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
@@ -118,12 +126,13 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index('ix_release_readiness_sessions_user_id', 'release_readiness_sessions', ['user_id'])
-    op.create_index('ix_release_readiness_sessions_integration_id', 'release_readiness_sessions', ['integration_id'])
+        )
+        op.create_index('ix_release_readiness_sessions_user_id', 'release_readiness_sessions', ['user_id'])
+        op.create_index('ix_release_readiness_sessions_integration_id', 'release_readiness_sessions', ['integration_id'])
 
     # Release Work Items
-    op.create_table(
+    if 'release_work_items' not in existing_tables:
+        op.create_table(
         'release_work_items',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
@@ -150,9 +159,9 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('synced_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index('ix_release_work_items_session_id', 'release_work_items', ['session_id'])
-    op.create_index('ix_release_work_items_external_id', 'release_work_items', ['external_id'])
+        )
+        op.create_index('ix_release_work_items_session_id', 'release_work_items', ['session_id'])
+        op.create_index('ix_release_work_items_external_id', 'release_work_items', ['external_id'])
 
 
 def downgrade() -> None:

@@ -20,13 +20,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Add focus area source fields to competitive_analysis_sessions
-    op.add_column('competitive_analysis_sessions',
-        sa.Column('focus_area_source_type', sa.String(), nullable=True))
-    op.add_column('competitive_analysis_sessions',
-        sa.Column('focus_area_source_id', sa.Integer(), nullable=True))
-    op.add_column('competitive_analysis_sessions',
-        sa.Column('focus_area_context', sa.Text(), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('competitive_analysis_sessions')]
+
+    if 'focus_area_source_type' not in columns:
+        op.add_column('competitive_analysis_sessions',
+            sa.Column('focus_area_source_type', sa.String(), nullable=True))
+    if 'focus_area_source_id' not in columns:
+        op.add_column('competitive_analysis_sessions',
+            sa.Column('focus_area_source_id', sa.Integer(), nullable=True))
+    if 'focus_area_context' not in columns:
+        op.add_column('competitive_analysis_sessions',
+            sa.Column('focus_area_context', sa.Text(), nullable=True))
 
 
 def downgrade() -> None:

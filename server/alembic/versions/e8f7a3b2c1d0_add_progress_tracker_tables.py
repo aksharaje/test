@@ -19,8 +19,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
     # Create progress_tracker_sessions table
-    op.create_table(
+    if 'progress_tracker_sessions' not in existing_tables:
+        op.create_table(
         'progress_tracker_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
@@ -44,12 +50,13 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['integration_id'], ['integrations.id'], ),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_progress_tracker_sessions_integration_id', 'progress_tracker_sessions', ['integration_id'])
-    op.create_index('ix_progress_tracker_sessions_user_id', 'progress_tracker_sessions', ['user_id'])
+        )
+        op.create_index('ix_progress_tracker_sessions_integration_id', 'progress_tracker_sessions', ['integration_id'])
+        op.create_index('ix_progress_tracker_sessions_user_id', 'progress_tracker_sessions', ['user_id'])
 
     # Create tracked_work_items table
-    op.create_table(
+    if 'tracked_work_items' not in existing_tables:
+        op.create_table(
         'tracked_work_items',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
@@ -84,10 +91,10 @@ def upgrade() -> None:
         sa.Column('synced_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.ForeignKeyConstraint(['session_id'], ['progress_tracker_sessions.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_tracked_work_items_session_id', 'tracked_work_items', ['session_id'])
-    op.create_index('ix_tracked_work_items_external_id', 'tracked_work_items', ['external_id'])
-    op.create_index('ix_tracked_work_items_is_blocked', 'tracked_work_items', ['is_blocked'])
+        )
+        op.create_index('ix_tracked_work_items_session_id', 'tracked_work_items', ['session_id'])
+        op.create_index('ix_tracked_work_items_external_id', 'tracked_work_items', ['external_id'])
+        op.create_index('ix_tracked_work_items_is_blocked', 'tracked_work_items', ['is_blocked'])
 
 
 def downgrade() -> None:
