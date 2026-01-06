@@ -19,8 +19,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create feasibility analyzer tables."""
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
     # Create feasibility_sessions table
-    op.create_table('feasibility_sessions',
+    if 'feasibility_sessions' not in existing_tables:
+        op.create_table('feasibility_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('feature_description', sa.String(length=2000), nullable=False),
@@ -40,10 +46,11 @@ def upgrade() -> None:
         sa.Column('completed_at', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # Create technical_components table
-    op.create_table('technical_components',
+    if 'technical_components' not in existing_tables:
+        op.create_table('technical_components',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('component_name', sa.String(), nullable=False),
@@ -62,10 +69,11 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['feasibility_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # Create timeline_scenarios table
-    op.create_table('timeline_scenarios',
+    if 'timeline_scenarios' not in existing_tables:
+        op.create_table('timeline_scenarios',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('scenario_type', sa.String(), nullable=False),
@@ -79,10 +87,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['feasibility_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # Create risk_assessments table
-    op.create_table('risk_assessments',
+    if 'risk_assessments' not in existing_tables:
+        op.create_table('risk_assessments',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('risk_category', sa.String(), nullable=False),
@@ -95,10 +104,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['feasibility_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # Create skill_requirements table
-    op.create_table('skill_requirements',
+    if 'skill_requirements' not in existing_tables:
+        op.create_table('skill_requirements',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('skill_name', sa.String(), nullable=False),
@@ -110,10 +120,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['feasibility_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # Create actual_results table
-    op.create_table('actual_results',
+    if 'actual_results' not in existing_tables:
+        op.create_table('actual_results',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('component_id', sa.Integer(), nullable=True),
