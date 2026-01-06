@@ -19,11 +19,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add is_hypothetical column to journey_pain_points."""
-    # Add is_hypothetical column with default False for existing rows
-    op.add_column(
-        'journey_pain_points',
-        sa.Column('is_hypothetical', sa.Boolean(), nullable=False, server_default='false')
-    )
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('journey_pain_points')]
+    if 'is_hypothetical' not in columns:
+        op.add_column(
+            'journey_pain_points',
+            sa.Column('is_hypothetical', sa.Boolean(), nullable=False, server_default='false')
+        )
 
 
 def downgrade() -> None:

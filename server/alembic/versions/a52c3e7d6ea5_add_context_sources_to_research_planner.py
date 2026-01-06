@@ -19,35 +19,54 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Add context source columns to research_plan_sessions
-    op.add_column('research_plan_sessions', sa.Column('knowledge_base_ids', sa.JSON(), nullable=True))
-    op.add_column('research_plan_sessions', sa.Column('ideation_session_id', sa.Integer(), nullable=True))
-    op.add_column('research_plan_sessions', sa.Column('feasibility_session_id', sa.Integer(), nullable=True))
-    op.add_column('research_plan_sessions', sa.Column('business_case_session_id', sa.Integer(), nullable=True))
-    op.add_column('research_plan_sessions', sa.Column('context_summary', sa.JSON(), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('research_plan_sessions')]
 
-    # Add foreign key constraints
-    op.create_foreign_key(
-        'fk_research_plan_sessions_business_case',
-        'research_plan_sessions',
-        'business_case_sessions',
-        ['business_case_session_id'],
-        ['id']
-    )
-    op.create_foreign_key(
-        'fk_research_plan_sessions_ideation',
-        'research_plan_sessions',
-        'ideation_sessions',
-        ['ideation_session_id'],
-        ['id']
-    )
-    op.create_foreign_key(
-        'fk_research_plan_sessions_feasibility',
-        'research_plan_sessions',
-        'feasibility_sessions',
-        ['feasibility_session_id'],
-        ['id']
-    )
+    # Add context source columns to research_plan_sessions
+    if 'knowledge_base_ids' not in columns:
+        op.add_column('research_plan_sessions', sa.Column('knowledge_base_ids', sa.JSON(), nullable=True))
+    if 'ideation_session_id' not in columns:
+        op.add_column('research_plan_sessions', sa.Column('ideation_session_id', sa.Integer(), nullable=True))
+    if 'feasibility_session_id' not in columns:
+        op.add_column('research_plan_sessions', sa.Column('feasibility_session_id', sa.Integer(), nullable=True))
+    if 'business_case_session_id' not in columns:
+        op.add_column('research_plan_sessions', sa.Column('business_case_session_id', sa.Integer(), nullable=True))
+    if 'context_summary' not in columns:
+        op.add_column('research_plan_sessions', sa.Column('context_summary', sa.JSON(), nullable=True))
+
+    # Add foreign key constraints (wrap in try/except for idempotency)
+    try:
+        op.create_foreign_key(
+            'fk_research_plan_sessions_business_case',
+            'research_plan_sessions',
+            'business_case_sessions',
+            ['business_case_session_id'],
+            ['id']
+        )
+    except Exception:
+        pass
+    try:
+        op.create_foreign_key(
+            'fk_research_plan_sessions_ideation',
+            'research_plan_sessions',
+            'ideation_sessions',
+            ['ideation_session_id'],
+            ['id']
+        )
+    except Exception:
+        pass
+    try:
+        op.create_foreign_key(
+            'fk_research_plan_sessions_feasibility',
+            'research_plan_sessions',
+            'feasibility_sessions',
+            ['feasibility_session_id'],
+            ['id']
+        )
+    except Exception:
+        pass
 
 
 def downgrade() -> None:

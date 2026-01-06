@@ -19,7 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column('research_plan_sessions', sa.Column('research_context', sa.String(), nullable=True, server_default='b2b'))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('research_plan_sessions')]
+    if 'research_context' not in columns:
+        op.add_column('research_plan_sessions', sa.Column('research_context', sa.String(), nullable=True, server_default='b2b'))
 
 
 def downgrade() -> None:

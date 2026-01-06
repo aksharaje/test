@@ -20,13 +20,27 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+
     # Add user_id to integrations table
-    op.add_column('integrations', sa.Column('user_id', sa.Integer(), nullable=True))
-    op.create_foreign_key('fk_integrations_user_id', 'integrations', 'users', ['user_id'], ['id'])
+    int_cols = [col['name'] for col in inspector.get_columns('integrations')]
+    if 'user_id' not in int_cols:
+        op.add_column('integrations', sa.Column('user_id', sa.Integer(), nullable=True))
+        try:
+            op.create_foreign_key('fk_integrations_user_id', 'integrations', 'users', ['user_id'], ['id'])
+        except Exception:
+            pass
 
     # Add user_id to library_books table
-    op.add_column('library_books', sa.Column('user_id', sa.Integer(), nullable=True))
-    op.create_foreign_key('fk_library_books_user_id', 'library_books', 'users', ['user_id'], ['id'])
+    lib_cols = [col['name'] for col in inspector.get_columns('library_books')]
+    if 'user_id' not in lib_cols:
+        op.add_column('library_books', sa.Column('user_id', sa.Integer(), nullable=True))
+        try:
+            op.create_foreign_key('fk_library_books_user_id', 'library_books', 'users', ['user_id'], ['id'])
+        except Exception:
+            pass
 
 
 def downgrade() -> None:

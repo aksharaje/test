@@ -19,8 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add sprint_span column to roadmap_items with default value of 1
-    op.add_column('roadmap_items', sa.Column('sprint_span', sa.Integer(), nullable=False, server_default='1'))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('roadmap_items')]
+    if 'sprint_span' not in columns:
+        op.add_column('roadmap_items', sa.Column('sprint_span', sa.Integer(), nullable=False, server_default='1'))
 
 
 def downgrade() -> None:

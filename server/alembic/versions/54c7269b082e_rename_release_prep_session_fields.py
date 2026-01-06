@@ -19,13 +19,21 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Rename session_name to release_name and drop unused columns."""
-    # Rename session_name to release_name
-    op.alter_column('release_prep_sessions', 'session_name',
-                    new_column_name='release_name')
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('release_prep_sessions')]
 
-    # Drop release_version and release_date columns
-    op.drop_column('release_prep_sessions', 'release_version')
-    op.drop_column('release_prep_sessions', 'release_date')
+    # Rename session_name to release_name (only if session_name exists and release_name doesn't)
+    if 'session_name' in columns and 'release_name' not in columns:
+        op.alter_column('release_prep_sessions', 'session_name',
+                        new_column_name='release_name')
+
+    # Drop release_version and release_date columns if they exist
+    if 'release_version' in columns:
+        op.drop_column('release_prep_sessions', 'release_version')
+    if 'release_date' in columns:
+        op.drop_column('release_prep_sessions', 'release_date')
 
 
 def downgrade() -> None:

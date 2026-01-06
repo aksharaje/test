@@ -19,11 +19,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add team_count column with default value of 1
-    op.add_column('roadmap_sessions', sa.Column('team_count', sa.Integer(), nullable=False, server_default='1'))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('roadmap_sessions')]
 
-    # Rename story_artifact_ids to artifact_ids
-    op.alter_column('roadmap_sessions', 'story_artifact_ids', new_column_name='artifact_ids')
+    if 'team_count' not in columns:
+        op.add_column('roadmap_sessions', sa.Column('team_count', sa.Integer(), nullable=False, server_default='1'))
+
+    # Rename story_artifact_ids to artifact_ids (only if story_artifact_ids exists)
+    if 'story_artifact_ids' in columns and 'artifact_ids' not in columns:
+        op.alter_column('roadmap_sessions', 'story_artifact_ids', new_column_name='artifact_ids')
 
 
 def downgrade() -> None:

@@ -20,9 +20,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Add owner and kpi_name columns to okr_key_results table
-    op.add_column('okr_key_results', sa.Column('owner', sa.String(), nullable=True))
-    op.add_column('okr_key_results', sa.Column('kpi_name', sa.String(), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('okr_key_results')]
+    if 'owner' not in columns:
+        op.add_column('okr_key_results', sa.Column('owner', sa.String(), nullable=True))
+    if 'kpi_name' not in columns:
+        op.add_column('okr_key_results', sa.Column('kpi_name', sa.String(), nullable=True))
 
 
 def downgrade() -> None:

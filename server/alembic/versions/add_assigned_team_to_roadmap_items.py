@@ -19,8 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add assigned_team column to roadmap_items
-    op.add_column('roadmap_items', sa.Column('assigned_team', sa.Integer(), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('roadmap_items')]
+    if 'assigned_team' not in columns:
+        op.add_column('roadmap_items', sa.Column('assigned_team', sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:

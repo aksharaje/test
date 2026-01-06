@@ -18,12 +18,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('scope_definition_sessions',
-                  sa.Column('ideation_session_id', sa.Integer(), sa.ForeignKey('ideation_sessions.id'), nullable=True))
-    op.add_column('scope_definition_sessions',
-                  sa.Column('okr_session_id', sa.Integer(), sa.ForeignKey('okr_sessions.id'), nullable=True))
-    op.add_column('scope_definition_sessions',
-                  sa.Column('knowledge_base_ids', postgresql.JSON(astext_type=sa.Text()), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('scope_definition_sessions')]
+
+    if 'ideation_session_id' not in columns:
+        op.add_column('scope_definition_sessions',
+                      sa.Column('ideation_session_id', sa.Integer(), sa.ForeignKey('ideation_sessions.id'), nullable=True))
+    if 'okr_session_id' not in columns:
+        op.add_column('scope_definition_sessions',
+                      sa.Column('okr_session_id', sa.Integer(), sa.ForeignKey('okr_sessions.id'), nullable=True))
+    if 'knowledge_base_ids' not in columns:
+        op.add_column('scope_definition_sessions',
+                      sa.Column('knowledge_base_ids', postgresql.JSON(astext_type=sa.Text()), nullable=True))
 
 
 def downgrade() -> None:

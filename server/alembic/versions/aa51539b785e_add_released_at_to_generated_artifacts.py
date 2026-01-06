@@ -19,15 +19,25 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add released_at and released_in_session_id to generated_artifacts"""
-    op.add_column('generated_artifacts', sa.Column('released_at', sa.DateTime(), nullable=True))
-    op.add_column('generated_artifacts', sa.Column('released_in_session_id', sa.Integer(), nullable=True))
-    op.create_foreign_key(
-        'fk_generated_artifacts_released_in_session',
-        'generated_artifacts',
-        'release_prep_sessions',
-        ['released_in_session_id'],
-        ['id']
-    )
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('generated_artifacts')]
+
+    if 'released_at' not in columns:
+        op.add_column('generated_artifacts', sa.Column('released_at', sa.DateTime(), nullable=True))
+    if 'released_in_session_id' not in columns:
+        op.add_column('generated_artifacts', sa.Column('released_in_session_id', sa.Integer(), nullable=True))
+        try:
+            op.create_foreign_key(
+                'fk_generated_artifacts_released_in_session',
+                'generated_artifacts',
+                'release_prep_sessions',
+                ['released_in_session_id'],
+                ['id']
+            )
+        except Exception:
+            pass
 
 
 def downgrade() -> None:

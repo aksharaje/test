@@ -20,31 +20,45 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+
     # Add user_id to market_research_sessions
-    op.add_column(
-        'market_research_sessions',
-        sa.Column('user_id', sa.Integer(), nullable=True)
-    )
-    op.create_foreign_key(
-        'fk_market_research_sessions_user_id',
-        'market_research_sessions',
-        'users',
-        ['user_id'],
-        ['id']
-    )
+    mr_columns = [col['name'] for col in inspector.get_columns('market_research_sessions')]
+    if 'user_id' not in mr_columns:
+        op.add_column(
+            'market_research_sessions',
+            sa.Column('user_id', sa.Integer(), nullable=True)
+        )
+        try:
+            op.create_foreign_key(
+                'fk_market_research_sessions_user_id',
+                'market_research_sessions',
+                'users',
+                ['user_id'],
+                ['id']
+            )
+        except Exception:
+            pass
 
     # Add user_id to competitive_analysis_sessions
-    op.add_column(
-        'competitive_analysis_sessions',
-        sa.Column('user_id', sa.Integer(), nullable=True)
-    )
-    op.create_foreign_key(
-        'fk_competitive_analysis_sessions_user_id',
-        'competitive_analysis_sessions',
-        'users',
-        ['user_id'],
-        ['id']
-    )
+    ca_columns = [col['name'] for col in inspector.get_columns('competitive_analysis_sessions')]
+    if 'user_id' not in ca_columns:
+        op.add_column(
+            'competitive_analysis_sessions',
+            sa.Column('user_id', sa.Integer(), nullable=True)
+        )
+        try:
+            op.create_foreign_key(
+                'fk_competitive_analysis_sessions_user_id',
+                'competitive_analysis_sessions',
+                'users',
+                ['user_id'],
+                ['id']
+            )
+        except Exception:
+            pass
 
 
 def downgrade() -> None:

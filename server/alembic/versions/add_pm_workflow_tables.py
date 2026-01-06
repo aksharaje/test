@@ -26,9 +26,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create all PM workflow tables."""
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
 
     # ==================== GOAL SETTING ====================
-    op.create_table('goal_setting_sessions',
+    if 'goal_setting_sessions' not in existing_tables:
+        op.create_table('goal_setting_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('context', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -45,9 +50,10 @@ def upgrade() -> None:
         sa.Column('completed_at', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('goals',
+    if 'goals' not in existing_tables:
+        op.create_table('goals',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -68,10 +74,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['goal_setting_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # ==================== OKR GENERATOR ====================
-    op.create_table('okr_sessions',
+    if 'okr_sessions' not in existing_tables:
+        op.create_table('okr_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('goal_description', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -90,9 +97,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.ForeignKeyConstraint(['goal_session_id'], ['goal_setting_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('okr_objectives',
+    if 'okr_objectives' not in existing_tables:
+        op.create_table('okr_objectives',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -105,9 +113,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['okr_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('okr_key_results',
+    if 'okr_key_results' not in existing_tables:
+        op.create_table('okr_key_results',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('objective_id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
@@ -125,9 +134,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['objective_id'], ['okr_objectives.id'], ),
         sa.ForeignKeyConstraint(['session_id'], ['okr_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('okr_kpis',
+    if 'okr_kpis' not in existing_tables:
+        op.create_table('okr_kpis',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('key_result_id', sa.Integer(), nullable=True),
         sa.Column('session_id', sa.Integer(), nullable=False),
@@ -147,10 +157,11 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['key_result_id'], ['okr_key_results.id'], ),
         sa.ForeignKeyConstraint(['session_id'], ['okr_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # ==================== MEASUREMENT FRAMEWORK ====================
-    op.create_table('measurement_framework_sessions',
+    if 'measurement_framework_sessions' not in existing_tables:
+        op.create_table('measurement_framework_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -171,9 +182,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.ForeignKeyConstraint(['okr_session_id'], ['okr_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('framework_metrics',
+    if 'framework_metrics' not in existing_tables:
+        op.create_table('framework_metrics',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -198,9 +210,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['measurement_framework_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('framework_data_sources',
+    if 'framework_data_sources' not in existing_tables:
+        op.create_table('framework_data_sources',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -215,9 +228,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['measurement_framework_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('framework_dashboards',
+    if 'framework_dashboards' not in existing_tables:
+        op.create_table('framework_dashboards',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -233,10 +247,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['measurement_framework_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # ==================== SCOPE DEFINITION ====================
-    op.create_table('scope_definition_sessions',
+    if 'scope_definition_sessions' not in existing_tables:
+        op.create_table('scope_definition_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('project_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -256,9 +271,10 @@ def upgrade() -> None:
         sa.Column('completed_at', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_items',
+    if 'scope_items' not in existing_tables:
+        op.create_table('scope_items',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -273,9 +289,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['scope_definition_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_assumptions',
+    if 'scope_assumptions' not in existing_tables:
+        op.create_table('scope_assumptions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('assumption', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -288,9 +305,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['scope_definition_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_constraints',
+    if 'scope_constraints' not in existing_tables:
+        op.create_table('scope_constraints',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('constraint', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -302,9 +320,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['scope_definition_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_deliverables',
+    if 'scope_deliverables' not in existing_tables:
+        op.create_table('scope_deliverables',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -318,10 +337,11 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['scope_definition_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
     # ==================== SCOPE MONITOR ====================
-    op.create_table('scope_monitor_sessions',
+    if 'scope_monitor_sessions' not in existing_tables:
+        op.create_table('scope_monitor_sessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('project_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -343,9 +363,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.ForeignKeyConstraint(['baseline_scope_id'], ['scope_definition_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_changes',
+    if 'scope_changes' not in existing_tables:
+        op.create_table('scope_changes',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -365,9 +386,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['scope_monitor_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_impact_assessments',
+    if 'scope_impact_assessments' not in existing_tables:
+        op.create_table('scope_impact_assessments',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('area', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -382,9 +404,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['session_id'], ['scope_monitor_sessions.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
+        )
 
-    op.create_table('scope_alerts',
+    if 'scope_alerts' not in existing_tables:
+        op.create_table('scope_alerts',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('session_id', sa.Integer(), nullable=False),
         sa.Column('alert_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),

@@ -187,7 +187,8 @@ async def get_auth_mode():
     """
     return {
         "dev_mode": is_dev_mode(),
-        "allowed_domains": ALLOWED_DOMAINS if not is_dev_mode() else []
+        "allowed_domains": ALLOWED_DOMAINS if not is_dev_mode() else [],
+        "auth_enabled_value": settings.AUTH_ENABLED  # Debug: show actual env var value
     }
 
 

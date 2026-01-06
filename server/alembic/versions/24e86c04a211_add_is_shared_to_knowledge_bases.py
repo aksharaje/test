@@ -20,7 +20,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column('knowledge_bases', sa.Column('is_shared', sa.Boolean(), nullable=False, server_default='false'))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('knowledge_bases')]
+    if 'is_shared' not in columns:
+        op.add_column('knowledge_bases', sa.Column('is_shared', sa.Boolean(), nullable=False, server_default='false'))
 
 
 def downgrade() -> None:

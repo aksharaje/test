@@ -19,13 +19,23 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+
     # Add new source columns to roadmap_sessions
-    op.add_column('roadmap_sessions', sa.Column('feasibility_ids', sa.JSON(), nullable=True, server_default='[]'))
-    op.add_column('roadmap_sessions', sa.Column('ideation_ids', sa.JSON(), nullable=True, server_default='[]'))
-    op.add_column('roadmap_sessions', sa.Column('custom_items', sa.JSON(), nullable=True, server_default='[]'))
+    session_cols = [col['name'] for col in inspector.get_columns('roadmap_sessions')]
+    if 'feasibility_ids' not in session_cols:
+        op.add_column('roadmap_sessions', sa.Column('feasibility_ids', sa.JSON(), nullable=True, server_default='[]'))
+    if 'ideation_ids' not in session_cols:
+        op.add_column('roadmap_sessions', sa.Column('ideation_ids', sa.JSON(), nullable=True, server_default='[]'))
+    if 'custom_items' not in session_cols:
+        op.add_column('roadmap_sessions', sa.Column('custom_items', sa.JSON(), nullable=True, server_default='[]'))
 
     # Add source_type to roadmap_items
-    op.add_column('roadmap_items', sa.Column('source_type', sa.String(), nullable=False, server_default='artifact'))
+    item_cols = [col['name'] for col in inspector.get_columns('roadmap_items')]
+    if 'source_type' not in item_cols:
+        op.add_column('roadmap_items', sa.Column('source_type', sa.String(), nullable=False, server_default='artifact'))
 
 
 def downgrade() -> None:

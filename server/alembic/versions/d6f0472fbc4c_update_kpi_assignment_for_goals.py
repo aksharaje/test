@@ -20,30 +20,53 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Update kpi_assignment_sessions table
-    op.add_column('kpi_assignment_sessions', sa.Column('goal_session_id', sa.Integer(), nullable=True))
-    op.add_column('kpi_assignment_sessions', sa.Column('progress_message', sa.String(), nullable=True))
-    op.add_column('kpi_assignment_sessions', sa.Column('error_message', sa.String(), nullable=True))
-    op.add_column('kpi_assignment_sessions', sa.Column('executive_summary', sa.String(), nullable=True))
-    op.add_column('kpi_assignment_sessions', sa.Column('generation_metadata', sa.JSON(), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
 
-    # Make okr_session_id nullable
-    op.alter_column('kpi_assignment_sessions', 'okr_session_id',
-                    existing_type=sa.Integer(),
-                    nullable=True)
+    # Update kpi_assignment_sessions table
+    session_cols = [col['name'] for col in inspector.get_columns('kpi_assignment_sessions')]
+    if 'goal_session_id' not in session_cols:
+        op.add_column('kpi_assignment_sessions', sa.Column('goal_session_id', sa.Integer(), nullable=True))
+    if 'progress_message' not in session_cols:
+        op.add_column('kpi_assignment_sessions', sa.Column('progress_message', sa.String(), nullable=True))
+    if 'error_message' not in session_cols:
+        op.add_column('kpi_assignment_sessions', sa.Column('error_message', sa.String(), nullable=True))
+    if 'executive_summary' not in session_cols:
+        op.add_column('kpi_assignment_sessions', sa.Column('executive_summary', sa.String(), nullable=True))
+    if 'generation_metadata' not in session_cols:
+        op.add_column('kpi_assignment_sessions', sa.Column('generation_metadata', sa.JSON(), nullable=True))
+
+    # Make okr_session_id nullable (safe to run multiple times)
+    try:
+        op.alter_column('kpi_assignment_sessions', 'okr_session_id',
+                        existing_type=sa.Integer(),
+                        nullable=True)
+    except Exception:
+        pass
 
     # Update kpi_assignments table
-    op.add_column('kpi_assignments', sa.Column('goal_id', sa.Integer(), nullable=True))
-    op.add_column('kpi_assignments', sa.Column('goal_title', sa.String(), nullable=True))
-    op.add_column('kpi_assignments', sa.Column('goal_category', sa.String(), nullable=True))
-    op.add_column('kpi_assignments', sa.Column('alternative_kpis', sa.JSON(), nullable=True))
-    op.add_column('kpi_assignments', sa.Column('rationale', sa.String(), nullable=True))
-    op.add_column('kpi_assignments', sa.Column('display_order', sa.Integer(), nullable=True, server_default='0'))
+    assign_cols = [col['name'] for col in inspector.get_columns('kpi_assignments')]
+    if 'goal_id' not in assign_cols:
+        op.add_column('kpi_assignments', sa.Column('goal_id', sa.Integer(), nullable=True))
+    if 'goal_title' not in assign_cols:
+        op.add_column('kpi_assignments', sa.Column('goal_title', sa.String(), nullable=True))
+    if 'goal_category' not in assign_cols:
+        op.add_column('kpi_assignments', sa.Column('goal_category', sa.String(), nullable=True))
+    if 'alternative_kpis' not in assign_cols:
+        op.add_column('kpi_assignments', sa.Column('alternative_kpis', sa.JSON(), nullable=True))
+    if 'rationale' not in assign_cols:
+        op.add_column('kpi_assignments', sa.Column('rationale', sa.String(), nullable=True))
+    if 'display_order' not in assign_cols:
+        op.add_column('kpi_assignments', sa.Column('display_order', sa.Integer(), nullable=True, server_default='0'))
 
-    # Make key_result_id nullable
-    op.alter_column('kpi_assignments', 'key_result_id',
-                    existing_type=sa.Integer(),
-                    nullable=True)
+    # Make key_result_id nullable (safe to run multiple times)
+    try:
+        op.alter_column('kpi_assignments', 'key_result_id',
+                        existing_type=sa.Integer(),
+                        nullable=True)
+    except Exception:
+        pass
 
 
 def downgrade() -> None:
