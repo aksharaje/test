@@ -328,6 +328,19 @@ export class AuthenticatedLayoutComponent {
     },
     { label: 'Code Chat', path: '/code-chat', icon: 'lucideMessageSquareCode' },
     { label: 'Knowledge Bases', path: '/knowledge-bases', icon: 'lucideBookOpen' },
+    {
+      label: 'Voice of Customer',
+      path: '/discovery-hub.html',
+      icon: 'lucideSearch',
+      external: true,
+      children: [
+        { label: 'Run Analysis', path: '/voc-run-analysis.html', external: true },
+        { label: 'Schedule Analysis', path: '/voc-schedule.html', external: true },
+        { label: 'Saved Insights', path: '/voc-saved-insights.html', external: true },
+        { label: 'Manage Sources', path: '/voc-manage-sources.html', external: true },
+        { label: 'Log Feedback', path: '/voc-log-feedback.html', external: true },
+      ],
+    },
   ]);
 
   bottomNavItems = input<NavItem[]>([]);
