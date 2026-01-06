@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: pgvector/pgvector:pg15
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
@@ -32,6 +32,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Enable pgvector extension
+        run: |
+          PGPASSWORD=test psql -h localhost -U test -d test -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
