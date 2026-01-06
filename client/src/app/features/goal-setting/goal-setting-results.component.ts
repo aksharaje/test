@@ -173,6 +173,36 @@ interface EditFormData {
             </div>
           }
 
+          <!-- Context Used -->
+          @if (session()?.problemStatements || session()?.strategy || session()?.teamCharter) {
+            <div class="rounded-lg border bg-muted/30 p-4 mb-6 text-sm">
+              <h3 class="font-semibold text-foreground mb-3 flex items-center gap-2">
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Context & Inputs
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @if (session()?.problemStatements) {
+                  <div>
+                    <h4 class="text-xs font-medium text-muted-foreground uppercase mb-1">Problem Statements</h4>
+                    <p class="text-muted-foreground">{{ session()?.problemStatements }}</p>
+                  </div>
+                }
+                @if (session()?.strategy) {
+                  <div>
+                    <h4 class="text-xs font-medium text-muted-foreground uppercase mb-1">Strategy</h4>
+                    <p class="text-muted-foreground">{{ session()?.strategy }}</p>
+                  </div>
+                }
+                @if (session()?.teamCharter) {
+                  <div class="md:col-span-2">
+                    <h4 class="text-xs font-medium text-muted-foreground uppercase mb-1">Team Charter</h4>
+                    <p class="text-muted-foreground">{{ session()?.teamCharter }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
           <!-- Goals -->
           <div class="space-y-4">
             <h2 class="text-lg font-semibold">Generated Goals ({{ goals().length }})</h2>

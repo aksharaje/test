@@ -70,7 +70,11 @@ import { HlmButtonDirective } from '../../ui/button';
 
       <div class="w-1/2 flex flex-col bg-muted/30">
         <div class="border-b bg-background p-4">
-          <div class="flex items-center gap-2"><ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" /><h2 class="font-semibold">Session History</h2></div>
+          <div class="flex items-center gap-2">
+            <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
+            <h2 class="font-semibold">Goal Setting History</h2>
+          </div>
+          <p class="text-xs text-muted-foreground mt-1 ml-7">View and manage your past sessions</p>
         </div>
         <div class="flex-1 overflow-y-auto">
           @if (service.sessions().length === 0) {
@@ -85,7 +89,9 @@ import { HlmButtonDirective } from '../../ui/button';
                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" [class.bg-green-100]="session.status === 'completed'" [class.text-green-700]="session.status === 'completed'" [class.bg-yellow-100]="session.status === 'generating'" [class.text-yellow-700]="session.status === 'generating'" [class.bg-red-100]="session.status === 'failed'" [class.text-red-700]="session.status === 'failed'">{{ session.status }}</span>
                       </div>
                       <p class="mt-1 text-sm font-medium">{{ session.domain }}</p>
-                      <p class="text-xs text-muted-foreground line-clamp-1">{{ session.strategy }}</p>
+                      <p class="text-xs text-muted-foreground line-clamp-1">
+                        {{ session.strategy || session.problemStatements || 'No details provided' }}
+                      </p>
                     </div>
                     <div class="flex items-center gap-1 ml-2">
                       @if (session.status === 'failed') { <button type="button" class="p-1 hover:text-primary" (click)="retrySession($event, session)"><ng-icon name="lucideRotateCw" class="h-4 w-4" /></button> }
