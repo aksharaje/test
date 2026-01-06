@@ -22,3 +22,21 @@ export const authGuard: CanActivateFn = (route, state) => {
         })
     );
 };
+
+export const adminGuard: CanActivateFn = (route, state) => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
+
+    return toObservable(authService.isLoading).pipe(
+        filter(isLoading => !isLoading),
+        take(1),
+        map(() => {
+            const user = authService.currentUser();
+            if (user?.role === 'admin') {
+                return true;
+            }
+            // Redirect non-admins to dashboard
+            return router.createUrlTree(['/dashboard']);
+        })
+    );
+};

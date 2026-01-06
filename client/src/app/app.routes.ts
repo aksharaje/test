@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth.guard';
+import { authGuard, adminGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -43,6 +43,7 @@ export const routes: Routes = [
       {
         path: 'settings/team',
         title: 'Team Management | Product Studio',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/settings/team-management.component').then(m => m.TeamManagementComponent)
       },
       {
@@ -53,6 +54,7 @@ export const routes: Routes = [
       {
         path: 'settings/ai',
         title: 'AI Model Settings | Product Studio',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/settings/ai-model-settings.component').then(m => m.AiModelSettingsComponent)
       },
       {
