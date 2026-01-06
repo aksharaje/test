@@ -7,6 +7,7 @@ Tracks sprint/iteration progress and detects blockers using multi-signal approac
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from sqlmodel import SQLModel, Field, Column, JSON
+from pydantic.alias_generators import to_camel
 
 
 # =============================================================================
@@ -245,6 +246,10 @@ class CreateSessionRequest(SQLModel):
     sprint_filter: Dict[str, Any] = Field(default={})
     blocker_config: Optional[Dict[str, Any]] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class UpdateSessionRequest(SQLModel):
     """Request to update a tracker session."""
@@ -253,6 +258,10 @@ class UpdateSessionRequest(SQLModel):
     sprint_filter: Optional[Dict[str, Any]] = None
     blocker_config: Optional[Dict[str, Any]] = None
     sync_config: Optional[Dict[str, Any]] = None
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class SessionResponse(SQLModel):
@@ -277,6 +286,10 @@ class SessionResponse(SQLModel):
     blockers_detected: int
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class MetricsResponse(SQLModel):
@@ -318,6 +331,10 @@ class MetricsResponse(SQLModel):
     last_sync_at: Optional[datetime] = None
     data_freshness: str = "unknown"  # fresh, stale, very_stale
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class BlockerSummary(SQLModel):
     """Summary of a blocked item."""
@@ -335,6 +352,10 @@ class BlockerSummary(SQLModel):
     days_in_status: Optional[int]
     sprint_name: Optional[str]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class BlockersResponse(SQLModel):
     """Response containing blocker analysis."""
@@ -345,6 +366,10 @@ class BlockersResponse(SQLModel):
     low_confidence_blockers: int  # confidence < 50
     blocked_points: Optional[float]
     blockers: List[BlockerSummary]
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class SyncStatusResponse(SQLModel):
@@ -358,12 +383,20 @@ class SyncStatusResponse(SQLModel):
     items_synced: int
     last_sync_at: Optional[datetime]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class IntegrationCheckResponse(SQLModel):
     """Response for integration availability check."""
     has_valid_integration: bool
     integrations: List[Dict[str, Any]] = []
     message: str
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class SprintOption(SQLModel):
@@ -374,6 +407,10 @@ class SprintOption(SQLModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class TemplateInfo(SQLModel):
     """Template information for selection."""
@@ -383,3 +420,7 @@ class TemplateInfo(SQLModel):
     provider: str
     estimation_field: Optional[str]
     blocker_signals: List[str]
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True

@@ -23,24 +23,25 @@ def upgrade() -> None:
     from sqlalchemy import inspect
     conn = op.get_bind()
     inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
 
     # Add user_id to integrations table
-    int_cols = [col['name'] for col in inspector.get_columns('integrations')]
-    if 'user_id' not in int_cols:
-        op.add_column('integrations', sa.Column('user_id', sa.Integer(), nullable=True))
-        try:
+    if 'integrations' in existing_tables:
+        int_cols = [col['name'] for col in inspector.get_columns('integrations')]
+        int_fks = [fk['name'] for fk in inspector.get_foreign_keys('integrations')]
+        if 'user_id' not in int_cols:
+            op.add_column('integrations', sa.Column('user_id', sa.Integer(), nullable=True))
+        if 'fk_integrations_user_id' not in int_fks and 'users' in existing_tables:
             op.create_foreign_key('fk_integrations_user_id', 'integrations', 'users', ['user_id'], ['id'])
-        except Exception:
-            pass
 
     # Add user_id to library_books table
-    lib_cols = [col['name'] for col in inspector.get_columns('library_books')]
-    if 'user_id' not in lib_cols:
-        op.add_column('library_books', sa.Column('user_id', sa.Integer(), nullable=True))
-        try:
+    if 'library_books' in existing_tables:
+        lib_cols = [col['name'] for col in inspector.get_columns('library_books')]
+        lib_fks = [fk['name'] for fk in inspector.get_foreign_keys('library_books')]
+        if 'user_id' not in lib_cols:
+            op.add_column('library_books', sa.Column('user_id', sa.Integer(), nullable=True))
+        if 'fk_library_books_user_id' not in lib_fks and 'users' in existing_tables:
             op.create_foreign_key('fk_library_books_user_id', 'library_books', 'users', ['user_id'], ['id'])
-        except Exception:
-            pass
 
 
 def downgrade() -> None:

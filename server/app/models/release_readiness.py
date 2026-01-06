@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from sqlmodel import SQLModel, Field, Column, JSON
 from enum import Enum
+from pydantic.alias_generators import to_camel
 
 
 # =============================================================================
@@ -204,6 +205,10 @@ class CreateReadinessSessionRequest(SQLModel):
     target_release_date: Optional[datetime] = None
     scoring_weights: Optional[Dict[str, Any]] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class ReadinessSessionResponse(SQLModel):
     """Response containing session details."""
@@ -229,6 +234,10 @@ class ReadinessSessionResponse(SQLModel):
     target_release_date: Optional[datetime]
     created_at: datetime
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class ComponentScore(SQLModel):
     """Score for a single readiness component."""
@@ -239,6 +248,10 @@ class ComponentScore(SQLModel):
     status: str  # pass, warn, fail, not_assessed
     details: Dict[str, Any]
     data_available: bool
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class ReadinessAssessment(SQLModel):
@@ -254,6 +267,10 @@ class ReadinessAssessment(SQLModel):
     mitigations: List[str]
     release_notes_draft: Optional[str]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class DefectStatusReport(SQLModel):
     """Defect status for release."""
@@ -266,6 +283,10 @@ class DefectStatusReport(SQLModel):
     defect_trend: str  # increasing, stable, decreasing
     blocking_defects: List[Dict[str, Any]]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class WorkCompletionReport(SQLModel):
     """Work completion status."""
@@ -276,6 +297,10 @@ class WorkCompletionReport(SQLModel):
     completion_percent: float
     scope_changes: int  # Items added/removed recently
     scope_stable: bool
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class TestCoverageReport(SQLModel):
@@ -289,6 +314,10 @@ class TestCoverageReport(SQLModel):
     pass_rate: float
     coverage_by_story: Dict[str, float]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class AcceptanceCriteriaReport(SQLModel):
     """Acceptance criteria coverage."""
@@ -299,6 +328,10 @@ class AcceptanceCriteriaReport(SQLModel):
     ac_verified_count: int
     gaps: List[Dict[str, Any]]  # Stories missing AC
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class BetaFeedbackReport(SQLModel):
     """Beta/user feedback summary."""
@@ -308,6 +341,10 @@ class BetaFeedbackReport(SQLModel):
     addressed: int
     deferred: int
     sentiment: str  # positive, neutral, negative
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 # =============================================================================
@@ -326,6 +363,10 @@ class AssessmentStatusResponse(SQLModel):
     items_analyzed: int
     last_assessment_at: Optional[datetime]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 # =============================================================================
 # INTEGRATION LOOKUP MODELS
@@ -338,6 +379,10 @@ class ProjectOption(SQLModel):
     name: str
     description: Optional[str] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class FixVersionOption(SQLModel):
     """Fix version available from Jira project."""
@@ -346,6 +391,10 @@ class FixVersionOption(SQLModel):
     released: bool = False
     release_date: Optional[str] = None
     description: Optional[str] = None
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class SprintOption(SQLModel):
@@ -356,10 +405,18 @@ class SprintOption(SQLModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class LabelOption(SQLModel):
     """Label/Tag available from integration."""
     name: str
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 # =============================================================================
@@ -378,6 +435,10 @@ class DataSourceConfig(SQLModel):
     beta_feedback: bool = False
     beta_feedback_source: Optional[str] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class ConfigDiscoveryResult(SQLModel):
     """Result of auto-detecting available data sources."""
@@ -387,3 +448,7 @@ class ConfigDiscoveryResult(SQLModel):
     confidence_level: str
     limitations: List[str]
     suggestions: List[str]
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True

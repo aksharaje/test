@@ -22,7 +22,6 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     from sqlalchemy import inspect
-    from sqlalchemy.exc import ProgrammingError
     
     # Get connection and inspector
     conn = op.get_bind()
@@ -92,11 +91,10 @@ def upgrade() -> None:
         conn.execute(sa.text("UPDATE users SET has_accepted_terms = false WHERE has_accepted_terms IS NULL"))
         op.alter_column('users', 'has_accepted_terms', nullable=False)
     
-    # Add foreign key if not exists (check by trying, ignore error)
-    try:
+    # Add foreign key if not exists
+    user_fks = [fk['name'] for fk in inspector.get_foreign_keys('users')]
+    if 'fk_users_account_id' not in user_fks and 'accounts' in existing_tables:
         op.create_foreign_key('fk_users_account_id', 'users', 'accounts', ['account_id'], ['id'])
-    except ProgrammingError:
-        pass  # FK already exists
     # ### end Alembic commands ###
 
 

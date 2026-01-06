@@ -22,6 +22,12 @@ def upgrade() -> None:
     from sqlalchemy import inspect
     conn = op.get_bind()
     inspector = inspect(conn)
+
+    # Check if table exists first
+    existing_tables = inspector.get_table_names()
+    if 'research_plan_sessions' not in existing_tables:
+        return
+
     columns = [col['name'] for col in inspector.get_columns('research_plan_sessions')]
 
     # Add context source columns to research_plan_sessions
@@ -36,8 +42,11 @@ def upgrade() -> None:
     if 'context_summary' not in columns:
         op.add_column('research_plan_sessions', sa.Column('context_summary', sa.JSON(), nullable=True))
 
-    # Add foreign key constraints (wrap in try/except for idempotency)
-    try:
+    # Get existing foreign keys to check before creating
+    existing_fks = [fk['name'] for fk in inspector.get_foreign_keys('research_plan_sessions')]
+
+    # Add foreign key constraints only if they don't exist
+    if 'fk_research_plan_sessions_business_case' not in existing_fks and 'business_case_sessions' in existing_tables:
         op.create_foreign_key(
             'fk_research_plan_sessions_business_case',
             'research_plan_sessions',
@@ -45,9 +54,7 @@ def upgrade() -> None:
             ['business_case_session_id'],
             ['id']
         )
-    except Exception:
-        pass
-    try:
+    if 'fk_research_plan_sessions_ideation' not in existing_fks and 'ideation_sessions' in existing_tables:
         op.create_foreign_key(
             'fk_research_plan_sessions_ideation',
             'research_plan_sessions',
@@ -55,9 +62,7 @@ def upgrade() -> None:
             ['ideation_session_id'],
             ['id']
         )
-    except Exception:
-        pass
-    try:
+    if 'fk_research_plan_sessions_feasibility' not in existing_fks and 'feasibility_sessions' in existing_tables:
         op.create_foreign_key(
             'fk_research_plan_sessions_feasibility',
             'research_plan_sessions',
@@ -65,8 +70,6 @@ def upgrade() -> None:
             ['feasibility_session_id'],
             ['id']
         )
-    except Exception:
-        pass
 
 
 def downgrade() -> None:

@@ -23,15 +23,18 @@ def upgrade() -> None:
     from sqlalchemy import inspect
     conn = op.get_bind()
     inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
 
     # Add user_id to market_research_sessions
-    mr_columns = [col['name'] for col in inspector.get_columns('market_research_sessions')]
-    if 'user_id' not in mr_columns:
-        op.add_column(
-            'market_research_sessions',
-            sa.Column('user_id', sa.Integer(), nullable=True)
-        )
-        try:
+    if 'market_research_sessions' in existing_tables:
+        mr_columns = [col['name'] for col in inspector.get_columns('market_research_sessions')]
+        mr_fks = [fk['name'] for fk in inspector.get_foreign_keys('market_research_sessions')]
+        if 'user_id' not in mr_columns:
+            op.add_column(
+                'market_research_sessions',
+                sa.Column('user_id', sa.Integer(), nullable=True)
+            )
+        if 'fk_market_research_sessions_user_id' not in mr_fks and 'users' in existing_tables:
             op.create_foreign_key(
                 'fk_market_research_sessions_user_id',
                 'market_research_sessions',
@@ -39,17 +42,17 @@ def upgrade() -> None:
                 ['user_id'],
                 ['id']
             )
-        except Exception:
-            pass
 
     # Add user_id to competitive_analysis_sessions
-    ca_columns = [col['name'] for col in inspector.get_columns('competitive_analysis_sessions')]
-    if 'user_id' not in ca_columns:
-        op.add_column(
-            'competitive_analysis_sessions',
-            sa.Column('user_id', sa.Integer(), nullable=True)
-        )
-        try:
+    if 'competitive_analysis_sessions' in existing_tables:
+        ca_columns = [col['name'] for col in inspector.get_columns('competitive_analysis_sessions')]
+        ca_fks = [fk['name'] for fk in inspector.get_foreign_keys('competitive_analysis_sessions')]
+        if 'user_id' not in ca_columns:
+            op.add_column(
+                'competitive_analysis_sessions',
+                sa.Column('user_id', sa.Integer(), nullable=True)
+            )
+        if 'fk_competitive_analysis_sessions_user_id' not in ca_fks and 'users' in existing_tables:
             op.create_foreign_key(
                 'fk_competitive_analysis_sessions_user_id',
                 'competitive_analysis_sessions',
@@ -57,8 +60,6 @@ def upgrade() -> None:
                 ['user_id'],
                 ['id']
             )
-        except Exception:
-            pass
 
 
 def downgrade() -> None:

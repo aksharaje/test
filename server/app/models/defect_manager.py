@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from sqlmodel import SQLModel, Field, Column, JSON
 from enum import Enum
+from pydantic.alias_generators import to_camel
 
 
 # =============================================================================
@@ -170,6 +171,10 @@ class CreateDefectSessionRequest(SQLModel):
     detection_config: Optional[Dict[str, Any]] = None
     severity_config: Optional[Dict[str, Any]] = None
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class DefectSessionResponse(SQLModel):
     """Response containing session details."""
@@ -188,6 +193,10 @@ class DefectSessionResponse(SQLModel):
     analysis_snapshot: Dict[str, Any]
     last_analysis_at: Optional[datetime]
     created_at: datetime
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class DefectSummary(SQLModel):
@@ -208,6 +217,10 @@ class DefectSummary(SQLModel):
     pattern_group: Optional[str]
     suggested_priority: Optional[int]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class TriageResult(SQLModel):
     """Result of defect triage analysis."""
@@ -221,6 +234,10 @@ class TriageResult(SQLModel):
     critical_open: int
     defects: List[DefectSummary]
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class PatternAnalysis(SQLModel):
     """Pattern analysis results."""
@@ -229,6 +246,10 @@ class PatternAnalysis(SQLModel):
     trends: Dict[str, Any]  # Volume trends over time
     hot_spots: List[Dict[str, Any]]  # High-defect areas
     recommendations: List[str]
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 class DuplicateGroup(SQLModel):
@@ -239,6 +260,10 @@ class DuplicateGroup(SQLModel):
     confidence: float
     reason: str
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
 
 class PreventionRecommendation(SQLModel):
     """Prevention recommendation based on analysis."""
@@ -247,6 +272,10 @@ class PreventionRecommendation(SQLModel):
     supporting_data: Dict[str, Any]
     priority: str  # high, medium, low
     affected_area: Optional[str]
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 
 # =============================================================================
@@ -264,3 +293,7 @@ class AnalysisStatusResponse(SQLModel):
     error_message: Optional[str]
     defects_analyzed: int
     last_analysis_at: Optional[datetime]
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True

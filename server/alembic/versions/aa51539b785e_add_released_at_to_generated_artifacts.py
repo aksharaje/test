@@ -22,22 +22,26 @@ def upgrade() -> None:
     from sqlalchemy import inspect
     conn = op.get_bind()
     inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
+    if 'generated_artifacts' not in existing_tables:
+        return
+
     columns = [col['name'] for col in inspector.get_columns('generated_artifacts')]
+    fks = [fk['name'] for fk in inspector.get_foreign_keys('generated_artifacts')]
 
     if 'released_at' not in columns:
         op.add_column('generated_artifacts', sa.Column('released_at', sa.DateTime(), nullable=True))
     if 'released_in_session_id' not in columns:
         op.add_column('generated_artifacts', sa.Column('released_in_session_id', sa.Integer(), nullable=True))
-        try:
-            op.create_foreign_key(
-                'fk_generated_artifacts_released_in_session',
-                'generated_artifacts',
-                'release_prep_sessions',
-                ['released_in_session_id'],
-                ['id']
-            )
-        except Exception:
-            pass
+    if 'fk_generated_artifacts_released_in_session' not in fks and 'release_prep_sessions' in existing_tables:
+        op.create_foreign_key(
+            'fk_generated_artifacts_released_in_session',
+            'generated_artifacts',
+            'release_prep_sessions',
+            ['released_in_session_id'],
+            ['id']
+        )
 
 
 def downgrade() -> None:

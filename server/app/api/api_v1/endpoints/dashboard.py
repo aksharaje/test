@@ -493,25 +493,60 @@ def get_dashboard_report(
 
 def _get_artifact_title(r: Any) -> str:
     """Helper to resolve a display title for any artifact model"""
-    # 1. Explicit Name/Title fields
-    if hasattr(r, "title") and r.title: return r.title
-    if hasattr(r, "name") and r.name: return r.name
-    if hasattr(r, "project_name") and r.project_name: return r.project_name
-    if hasattr(r, "session_name") and r.session_name: return r.session_name
-    if hasattr(r, "analysis_name") and r.analysis_name: return r.analysis_name
+    
+    # 1. Type-specific overrides for better descriptive titles
+    # Measurement Framework -> objectives_description
+    if type(r).__name__ == "MeasurementFrameworkSession":
+        if hasattr(r, "objectives_description") and r.objectives_description:
+            return _truncate(r.objectives_description)
+    
+    # Scope Monitor -> current_requirements or baseline
+    if type(r).__name__ == "ScopeMonitorSession":
+        if hasattr(r, "current_requirements") and r.current_requirements:
+            return _truncate(r.current_requirements)
+        if hasattr(r, "baseline_description") and r.baseline_description:
+            return _truncate(r.baseline_description)
 
-    # 2. Semantic fields (Feature, Problem, Domain)
+    # Goal Setting -> problem_statements or strategy
+    if type(r).__name__ == "GoalSettingSession":
+        if hasattr(r, "problem_statements") and r.problem_statements:
+            return _truncate(r.problem_statements)
+        if hasattr(r, "strategy") and r.strategy:
+            return _truncate(r.strategy)
+
+    # Scope Definition -> product_vision (often better than project_name)
+    if type(r).__name__ == "ScopeDefinitionSession":
+        if hasattr(r, "product_vision") and r.product_vision:
+            return _truncate(r.product_vision)
+
+    # 2. Explicit Name/Title fields
+    if hasattr(r, "title") and r.title and not r.title.startswith("Untitled"): return r.title
+    if hasattr(r, "name") and r.name and not r.name.startswith("Untitled"): return r.name
+    if hasattr(r, "project_name") and r.project_name and not r.project_name.startswith("Untitled"): return r.project_name
+    
+    # 3. Semantic fields (Feature, Problem, Domain)
     if hasattr(r, "feature_title") and r.feature_title: return r.feature_title
-    if hasattr(r, "problem_statement") and r.problem_statement: return r.problem_statement[:60] + "..." if len(r.problem_statement) > 60 else r.problem_statement
+    if hasattr(r, "problem_statement") and r.problem_statement: return _truncate(r.problem_statement)
     if hasattr(r, "focus_area") and r.focus_area: return r.focus_area
     if hasattr(r, "domain") and r.domain: return r.domain
     
-    # 3. Long-form fields (truncating)
-    if hasattr(r, "goal_description") and r.goal_description: 
-        return r.goal_description[:60] + "..." if len(r.goal_description) > 60 else r.goal_description
-    if hasattr(r, "objectives_description") and r.objectives_description:
-        return r.objectives_description[:60] + "..." if len(r.objectives_description) > 60 else r.objectives_description
+    # 4. Long-form fields (truncating)
+    if hasattr(r, "goal_description") and r.goal_description: return _truncate(r.goal_description)
+    if hasattr(r, "objectives_description") and r.objectives_description: return _truncate(r.objectives_description)
     
-    # 4. Fallback for specific types based on class name or ID
+    # 5. Last resort: Allow "Untitled" names if nothing else exists
+    if hasattr(r, "title") and r.title: return r.title
+    if hasattr(r, "name") and r.name: return r.name
+    if hasattr(r, "project_name") and r.project_name: return r.project_name
+
+    # 6. Fallback for specific types based on class name or ID
     model_name = type(r).__name__
     return f"{model_name} #{r.id}"
+
+def _truncate(text: str, length: int = 75) -> str:
+    """Helper to truncate text"""
+    if not text:
+        return ""
+    if len(text) <= length:
+        return text
+    return text[:length] + "..."
