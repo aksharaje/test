@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Detail - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .split-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+            margin-top: 24px;
+        }
+
+        .detail-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .summary-box {
+            background: #F8FAFC;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .evidence-counter {
+            text-align: center;
+            padding: 16px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .evidence-list {
+            margin-top: 16px;
+        }
+
+        .evidence-item {
+            padding: 12px;
+            background: #F8FAFC;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .context-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC;">
+
+    <div class="app-container" style="display: block;">
+        <!-- Header -->
+        <header style="background: white; border-bottom: 1px solid var(--border-color); padding: 16px 32px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <a href="voc-saved-insights.html"
+                    style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 12px;">
+                    <i class="ph ph-arrow-left"></i> Back to Problem Repository
+                </a>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">Theme: Login Issues</h1>
+                        <div style="display: flex; gap: 12px; margin-top: 8px; font-size: 14px;">
+                            <span
+                                style="background: #DCFCE7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: 600;">High
+                                Confidence</span>
+                            <span
+                                style="background: #FECACA; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Trend:
+                                Increasing</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-outline" onclick="window.location.href='voc-saved-insights.html'">Save as
+                            Problem Thread</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main style="max-width: 1200px; margin: 0 auto; padding: 0 32px;">
+            <div class="split-layout">
+                <!-- Main Column -->
+                <div>
+                    <div class="detail-card">
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">Problem Summary</h2>
+                        <div class="summary-box" contenteditable="true">
+                            Users experience login failures or confusion, leading to retries or abandonment, especially
+                            on mobile devices.
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; text-align: right;">
+                            Click text to edit</p>
+                    </div>
+
+                    <div class="detail-card">
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">Representative Evidence</h2>
+                        <div class="evidence-list">
+                            <div class="evidence-item">
+                                "Not sure if payment went through"
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Source:
+                                    Qualtrics</div>
+                            </div>
+                            <div class="evidence-item">
+                                "Checkout takes forever"
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Source:
+                                    Qualtrics</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-card">
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">Sentiment Breakdown</h2>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <div style="height: 8px; flex: 78; background: #DC2626; border-radius: 4px;"></div>
+                            <div style="height: 8px; flex: 18; background: #94A3B8; border-radius: 4px;"></div>
+                            <div style="height: 8px; flex: 4; background: #16A34A; border-radius: 4px;"></div>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 14px;">
+                            <span style="color: #991B1B;"><strong>Negative</strong> 78%</span>
+                            <span style="color: #475569;"><strong>Neutral</strong> 18%</span>
+                            <span style="color: #166534;"><strong>Positive</strong> 4%</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-card">
+                        <h2 style="font-size: 18px; margin-bottom: 16px;">LLM Hypothesis</h2>
+                        <div style="background: #F0F9FF; padding: 16px; border-radius: 8px; border: 1px solid #BAE6FD;">
+                            <strong style="color: #0369A1;">Primary hypothesis: UX / Design Friction</strong>
+                            <p style="margin: 4px 0 0 0; color: #0C4A6E; font-size: 14px;">
+                                Reason: repeated mentions of confusion and uncertainty.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Column -->
+                <div>
+                    <div class="detail-card">
+                        <h3 style="font-size: 16px; margin-bottom: 16px;">Evidence Breakdown</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+                            <div class="evidence-counter" style="cursor: pointer;"
+                                onclick="window.location.href='voc-evidence-explorer.html?type=survey'">
+                                <div style="font-size: 24px; font-weight: 700; color: #00B4EF;">12</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Survey Mentions</div>
+                            </div>
+                            <div class="evidence-counter" style="cursor: pointer;"
+                                onclick="window.location.href='voc-evidence-explorer.html?type=app_reviews'">
+                                <div style="font-size: 24px; font-weight: 700; color: #F59E0B;">8</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">App Reviews</div>
+                            </div>
+                            <div class="evidence-counter"
+                                style="cursor: pointer; border-color: #FECACA; background: #FEF2F2;"
+                                onclick="window.location.href='voc-evidence-explorer.html?type=sessions'">
+                                <div style="font-size: 24px; font-weight: 700; color: #DC2626;">5</div>
+                                <div style="font-size: 12px; color: #991B1B; text-decoration: underline;">Flagged
+                                    Sessions</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-card">
+                        <h3 style="font-size: 16px; margin-bottom: 16px;">Product Context</h3>
+                        <div class="context-check">
+                            <i class="ph ph-check-circle" style="color: #166534;"></i> Login feature exists
+                        </div>
+                        <div class="context-check">
+                            <i class="ph ph-warning-circle" style="color: #D97706;"></i> Error messaging unclear
+                        </div>
+                        <div class="context-check">
+                            <i class="ph ph-warning-circle" style="color: #D97706;"></i> Mobile flow differs from
+                            desktop
+                        </div>
+                    </div>
+
+                    <div class="detail-card">
+                        <h3 style="font-size: 16px; margin-bottom: 16px;">What would you like to do next?</h3>
+
+                        <div class="checklist-group"
+                            style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+
+                            <!-- Send to Ideation -->
+                            <label class="checklist-item"
+                                style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="check-ideation" style="margin-top: 4px;">
+                                <div>
+                                    <span style="display: block; font-weight: 500;">Send this problem to Ideation</span>
+                                </div>
+                            </label>
+
+                            <!-- Request Additional Info -->
+                            <label class="checklist-item"
+                                style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="check-request-info" style="margin-top: 4px;"
+                                    onchange="toggleSubOptions(this)">
+                                <div>
+                                    <span style="display: block; font-weight: 500;">Request additional info from:</span>
+                                </div>
+                            </label>
+
+                            <!-- Sub-options for Request Info -->
+                            <div id="sub-options-request-info"
+                                style="margin-left: 28px; display: none; flex-direction: column; gap: 8px;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                                    <input type="checkbox" id="check-interviews"> Customer interviews
+                                </label>
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                                    <input type="checkbox" id="check-analytics"> Analytics / funnels
+                                </label>
+                            </div>
+
+                            <!-- Review Sessions -->
+                            <label class="checklist-item"
+                                style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="check-review-sessions" style="margin-top: 4px;">
+                                <div>
+                                    <span style="display: block; font-weight: 500;">Review sessions</span>
+                                </div>
+                            </label>
+
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <button class="btn btn-primary" onclick="handleSubmit()">Submit</button>
+
+                            <!-- Inline Confirmation (Hidden by default) -->
+                            <span id="ideation-confirmation"
+                                style="display: none; color: #166534; font-size: 14px; align-items: center; gap: 6px;">
+                                <i class="ph ph-check-circle-fill"></i> Sent to Ideation
+                                <a href="#" style="color: #166534; text-decoration: underline; margin-left: 4px;">Go to
+                                    Ideation</a>
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Sessions Modal (Existing) -->
+    <div id="sessions-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div
+            style="background: white; width: 800px; max-width: 90%; max-height: 85vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+
+            <!-- Modal Header -->
+            <div
+                style="padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px;">Review Sessions · Checkout Theme</h2>
+                    <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                        Showing sessions flagged for abnormal behavior (Qualtrics)
+                    </p>
+                </div>
+                <button onclick="closeSessionsModal()"
+                    style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 24px;">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div style="padding: 24px; overflow-y: auto; background: #F8FAFC;">
+
+                <!-- Session 1 -->
+                <div
+                    style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Session 1</div>
+                        <div
+                            style="color: #DC2626; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-warning-circle"></i>
+                            Reason flagged: Rage clicks on “Pay Now” (x6), no confirmation shown
+                        </div>
+                        <div
+                            style="font-size: 13px; color: var(--text-secondary); display: flex; gap: 16px; align-items: center;">
+                            <span><i class="ph ph-device-mobile"></i> iOS Safari</span>
+                            <span><span style="color: #CBD5E1;">|</span></span>
+                            <span><i class="ph ph-clock"></i> Duration: 2m 14s</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-outline" onclick="window.location.href='voc-session-detail.html'">View
+                            Details</button>
+                        <button class="btn btn-outline"
+                            style="border-color: var(--border-color); color: var(--text-secondary);"
+                            onclick="toggleReviewed(this)">
+                            <i class="ph ph-check"></i> Mark Reviewed
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Session 2 -->
+                <div
+                    style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Session 2</div>
+                        <div
+                            style="color: #DC2626; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-warning-circle"></i>
+                            Reason flagged: Long pause after payment, user exits
+                        </div>
+                        <div
+                            style="font-size: 13px; color: var(--text-secondary); display: flex; gap: 16px; align-items: center;">
+                            <span><i class="ph ph-device-mobile"></i> Android Chrome</span>
+                            <span><span style="color: #CBD5E1;">|</span></span>
+                            <span><i class="ph ph-clock"></i> Duration: 1m 32s</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">View
+                            Details</button>
+                        <button class="btn btn-outline"
+                            style="border-color: var(--border-color); color: var(--text-secondary);"
+                            onclick="toggleReviewed(this)">
+                            <i class="ph ph-check"></i> Mark Reviewed
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Additional Info Modal -->
+    <div id="request-info-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div
+            style="background: white; width: 500px; max-width: 90%; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Request Additional Info</h3>
+                <button onclick="document.getElementById('request-info-modal').style.display='none'"
+                    style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-secondary);"><i
+                        class="ph ph-x"></i></button>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Clarification
+                    Note</label>
+                <textarea rows="3" placeholder="What specific information do you need?"
+                    style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit;"></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Owner</label>
+                    <select
+                        style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                        <option>Me</option>
+                        <option>Product Team</option>
+                        <option>Research Team</option>
+                    </select>
+                </div>
+                <div>
+                    <label
+                        style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Priority</label>
+                    <select
+                        style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                        <option>High</option>
+                        <option>Medium</option>
+                        <option>Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn btn-outline"
+                    onclick="document.getElementById('request-info-modal').style.display='none'">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRequestInfo()">Save Request</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Modal Logic ---
+        function openSessionsModal() {
+            document.getElementById('sessions-modal').style.display = 'flex';
+        }
+
+        function closeSessionsModal() {
+            document.getElementById('sessions-modal').style.display = 'none';
+        }
+
+        function saveRequestInfo() {
+            // Mock Save
+            document.getElementById('request-info-modal').style.display = 'none';
+            alert("Request saved! (Status would update on dashboard)");
+        }
+
+        // --- Checklist Logic ---
+        function toggleSubOptions(checkbox) {
+            const subOptions = document.getElementById('sub-options-request-info');
+            subOptions.style.display = checkbox.checked ? 'flex' : 'none';
+        }
+
+        function handleSubmit() {
+            const ideationSelected = document.getElementById('check-ideation').checked;
+            const requestInfoSelected = document.getElementById('check-request-info').checked;
+            const reviewSessionsSelected = document.getElementById('check-review-sessions').checked;
+
+            // Case 2: Review Sessions checked (Highest Priority for Navigation)
+            if (reviewSessionsSelected) {
+                // Navigate immediately
+                window.location.href = 'voc-sessions-queue.html';
+                // Note: If Request Info was also checked, we might need to persist that intention 
+                // to open it after return, but for now we follow the "navigate immediately" rule.
+                // The prompt says: "then returns and opens Request Additional Info (if selected)".
+                // This implies complex state management across pages. 
+                // For this mock, let's assume we just navigate. 
+                // To support "returns and opens", we'd need to set a local storage flag.
+                if (requestInfoSelected) {
+                    localStorage.setItem('voc_open_request_modal', 'true');
+                }
+                return;
+            }
+
+            // Case 3: Request additional info checked
+            if (requestInfoSelected) {
+                document.getElementById('request-info-modal').style.display = 'flex';
+                // If Ideation is ALSO checked, we should probably show that confirmation *after* the modal closes?
+                // Or show it in the background. The prompt says "Send to Ideation last".
+                // We'll handle Ideation confirmation when the modal is saved/closed if needed, 
+                // or just show it inline now if the modal is non-blocking (it is an overlay).
+                if (ideationSelected) {
+                    document.getElementById('ideation-confirmation').style.display = 'inline-flex';
+                }
+                return;
+            }
+
+            // Case 1: Send to Ideation checked (only)
+            if (ideationSelected) {
+                document.getElementById('ideation-confirmation').style.display = 'inline-flex';
+            }
+        }
+
+
+        // Close on outside click
+        window.onclick = function (event) {
+            const sessionsModal = document.getElementById('sessions-modal');
+            const requestModal = document.getElementById('request-info-modal');
+            if (event.target == sessionsModal) {
+                closeSessionsModal();
+            }
+            if (event.target == requestModal) {
+                requestModal.style.display = 'none';
+            }
+        }
+
+        function toggleReviewed(btn) {
+            const isReviewed = btn.classList.contains('reviewed');
+            if (isReviewed) {
+                btn.classList.remove('reviewed');
+                btn.innerHTML = '<i class="ph ph-check"></i> Mark Reviewed';
+                btn.style.borderColor = 'var(--border-color)';
+                btn.style.color = 'var(--text-secondary)';
+                btn.style.background = 'white';
+            } else {
+                btn.classList.add('reviewed');
+                btn.innerHTML = '<i class="ph ph-check-circle-fill"></i> Reviewed';
+                btn.style.borderColor = '#16A34A';
+                btn.style.color = '#16A34A';
+                btn.style.background = '#F0FDF4';
+            }
+        }
+
+        // Check for return triggers
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('voc_open_request_modal') === 'true') {
+                localStorage.removeItem('voc_open_request_modal');
+                document.getElementById('request-info-modal').style.display = 'flex';
+            }
+        });
+
+    </script>
+</body>
+
+</html>

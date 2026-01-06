@@ -102,20 +102,21 @@
 </head>
 
 <body>
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="workflow-index.html" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="landing.html" class="back-to-home-btn" title="Back to Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
+
     <div class="app-container container-centered">
         <!-- Header -->
         <header class="app-header">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-                <button class="btn btn-outline-sm" onclick="window.location.href='discovery-hub.html'"><i
-                        class="ph ph-arrow-left"></i> Back to Discovery</button>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-outline-sm" style="color: #ef4444; border-color: #ef4444;"
-                        onclick="deleteThread()">
-                        <i class="ph ph-trash"></i> Delete
-                    </button>
-                    <button class="btn btn-outline-sm" onclick="alert('Skipping...')">Skip to Solution Design</button>
-                </div>
-            </div>
 
             <div class="thread-header-card">
                 <div style="display: flex; justify-content: space-between; align-items: start;">

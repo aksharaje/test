@@ -68,17 +68,23 @@
 </head>
 
 <body>
-    <!-- Back to Home Button -->
-    <a href="landing.html" class="back-to-home-btn" title="Back to Home">
-        <i class="ph ph-house"></i>
-        <span>Back to Home</span>
-    </a>
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="workflow-index.html" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="landing.html" class="back-to-home-btn" title="Back to Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
 
     <div class="app-container">
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb">
+            <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+            <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
                 <a href="index.html" style="text-decoration: none; color: inherit;">Goal Setting</a>
                 <i class="ph ph-caret-right"></i>
                 <a href="okr-generator.html" style="text-decoration: none; color: inherit;">OKR Generator</a>
@@ -96,11 +102,78 @@
 
             <header class="app-header">
                 <h1>KPI Assignment</h1>
-                <p class="subtitle">Define the primary and secondary Key Performance Indicators (KPIs) used to measure
+                <p class="subtitle" id="kpi-subtitle-complete">Define the primary and secondary Key Performance Indicators (KPIs) used to measure
                     the success of your goals.</p>
+                <p class="subtitle" id="kpi-subtitle-standalone" style="display: none;">Decide what metrics indicate success</p>
             </header>
 
-            <section class="goals-section">
+            <!-- Standalone Input Form -->
+            <section id="kpi-input-section" class="summary-card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="ph ph-chart-bar"></i> Input Details</h2>
+                    <p style="color: var(--text-secondary); font-size: 14px; font-weight: 400;">Define the objective and context to generate relevant KPIs.</p>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div class="form-group">
+                        <label>Objective or Problem</label>
+                        <p style="font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; margin-top: 2px;">
+                            What you're trying to achieve or solve (e.g., Improve login experience).</p>
+                        <textarea id="kpi-input-objective" rows="2" placeholder="e.g., Improve login experience"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Primary Area</label>
+                        <select id="kpi-input-area" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="Login">Login</option>
+                            <option value="Onboarding">Onboarding</option>
+                            <option value="Checkout">Checkout</option>
+                            <option value="Performance">Performance</option>
+                            <option value="Support">Support</option>
+                            <option value="Engagement">Engagement</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Business Context</label>
+                        <select id="kpi-input-business" style="width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-family: 'Inter', sans-serif;">
+                            <option value="B2B">B2B</option>
+                            <option value="B2C">B2C</option>
+                            <option value="Marketplace">Marketplace</option>
+                            <option value="SaaS">SaaS</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Data Availability</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="kpi-data-analytics" checked>
+                                <span>Analytics available</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="kpi-data-support" checked>
+                                <span>Support tickets available</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="kpi-data-surveys">
+                                <span>Surveys available</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary full-width" onclick="generateKPIs()" id="generate-kpi-btn">
+                        <i class="ph ph-magic-wand"></i> Generate KPIs
+                    </button>
+
+                    <!-- Loading State -->
+                    <div id="kpi-loading-state" style="display: none; text-align: center; padding: 20px;">
+                        <i class="ph ph-spinner ph-spin" style="font-size: 24px; color: var(--primary-color);"></i>
+                        <p style="margin-top: 8px; color: var(--text-secondary);">Generating KPIs...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="kpi-results-section" class="goals-section">
                 <!-- Goal 1 -->
                 <div class="kpi-card">
                     <div style="margin-bottom: 16px;">
@@ -192,7 +265,8 @@
                 </ul>
             </div>
 
-            <div class="sidebar-card next-step-card">
+            <!-- Next Step Card (only show in complete workflow mode) -->
+            <div id="workflow-next-step" class="sidebar-card next-step-card" style="display: none;">
                 <div class="card-header">
                     <h2><i class="ph ph-link"></i> Next Step</h2>
                 </div>
@@ -205,11 +279,62 @@
         </aside>
     </div>
 
+    <script src="workflow-data.js"></script>
     <script>
         function selectMetric(pill) {
             // Simple interaction demo
             const input = pill.parentElement.parentElement.querySelector('input');
             input.value = pill.innerText;
+        }
+
+        // Handle workflow mode
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                // Complete workflow mode
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
+                document.getElementById('workflow-next-step').style.display = 'block';
+                document.getElementById('kpi-subtitle-complete').style.display = 'block';
+                document.getElementById('kpi-subtitle-standalone').style.display = 'none';
+                document.getElementById('kpi-input-section').style.display = 'none';
+                document.getElementById('kpi-results-section').style.display = 'block';
+            } else {
+                // Standalone mode
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
+                document.getElementById('workflow-next-step').style.display = 'none';
+                document.getElementById('kpi-subtitle-complete').style.display = 'none';
+                document.getElementById('kpi-subtitle-standalone').style.display = 'block';
+                document.getElementById('kpi-input-section').style.display = 'block';
+                document.getElementById('kpi-results-section').style.display = 'none';
+            }
+        });
+
+        // Generate KPIs function for standalone mode
+        function generateKPIs() {
+            const objective = document.getElementById('kpi-input-objective').value;
+            const area = document.getElementById('kpi-input-area').value;
+            const business = document.getElementById('kpi-input-business').value;
+
+            if (!objective.trim()) {
+                alert('Please enter an objective or problem');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('generate-kpi-btn').style.display = 'none';
+            document.getElementById('kpi-loading-state').style.display = 'block';
+
+            // Simulate generation
+            setTimeout(() => {
+                document.getElementById('kpi-input-section').style.display = 'none';
+                document.getElementById('kpi-results-section').style.display = 'block';
+                document.getElementById('kpi-subtitle-standalone').innerHTML = 'Generated KPIs based on your inputs. You can edit anything.';
+
+                // Reset
+                document.getElementById('generate-kpi-btn').style.display = 'block';
+                document.getElementById('kpi-loading-state').style.display = 'none';
+            }, 1500);
         }
     </script>
 </body>
