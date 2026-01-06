@@ -419,7 +419,7 @@
         <div class="quick-actions">
             <h3>🚀 Quick Start</h3>
             <div class="action-grid">
-                <a href="index.html" class="action-button">
+                <a href="index.html" class="action-button" onclick="startCompleteWorkflow(event)">
                     <i class="ph ph-play-circle"></i>
                     <div>
                         <strong>Start Complete Workflow</strong>
@@ -678,5 +678,30 @@
         </div>
 
     </div>
+
+    <script src="workflow-data.js"></script>
+    <script>
+        // Start complete workflow mode
+        function startCompleteWorkflow(event) {
+            event.preventDefault();
+            // Set workflow mode to complete
+            WorkflowData.setWorkflowMode('complete');
+            // Clear any previous workflow data to start fresh
+            WorkflowData.clearAll();
+            WorkflowData.setWorkflowMode('complete'); // Re-set after clear
+            // Navigate to goal setting
+            window.location.href = 'index.html';
+        }
+
+        // For all other feature links, set standalone mode
+        document.querySelectorAll('.feature-card, .action-button').forEach(link => {
+            if (!link.onclick && link.href && !link.href.includes('landing.html')) {
+                link.addEventListener('click', function(e) {
+                    // Set standalone mode for individual features
+                    WorkflowData.setWorkflowMode('standalone');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

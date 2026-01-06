@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Sessions - VoC Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .session-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .flag-reason {
+            color: #DC2626;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meta-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-reviewed {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-reviewed.active {
+            background: #F0FDF4;
+            border-color: #16A34A;
+            color: #16A34A;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC;">
+
+    <div class="app-container" style="max-width: 1000px; margin: 0 auto; padding: 32px;">
+
+        <!-- Header -->
+        <div style="margin-bottom: 32px;">
+            <a href="voc-theme-detail.html"
+                style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 16px;">
+                <i class="ph ph-arrow-left"></i> Back to Theme
+            </a>
+            <h1 style="margin: 0; font-size: 24px;">Review Sessions · Checkout Theme</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px; font-size: 14px;">
+                Showing sessions flagged for abnormal behavior (Qualtrics)
+            </p>
+        </div>
+
+        <hr style="border: none; border-bottom: 1px solid var(--border-color); margin-bottom: 32px;">
+
+        <!-- List -->
+        <div class="session-list">
+
+            <!-- Session 1 -->
+            <div class="session-card">
+                <div>
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Session 1</div>
+                    <div class="flag-reason">
+                        <i class="ph ph-warning-circle"></i>
+                        Reason flagged: Rage clicks on “Pay Now” (x6), no confirmation shown
+                    </div>
+                    <div class="meta-info">
+                        <span><i class="ph ph-device-mobile"></i> iOS Safari</span>
+                        <span><span style="color: #CBD5E1;">|</span></span>
+                        <span><i class="ph ph-clock"></i> Duration: 2m 14s</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">View
+                        Details</button>
+                    <button class="btn btn-reviewed" onclick="toggleReviewed(this)">
+                        <i class="ph ph-check"></i> Mark Reviewed
+                    </button>
+                </div>
+            </div>
+
+            <!-- Session 2 -->
+            <div class="session-card">
+                <div>
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Session 2</div>
+                    <div class="flag-reason">
+                        <i class="ph ph-warning-circle"></i>
+                        Reason flagged: Long pause after payment, user exits
+                    </div>
+                    <div class="meta-info">
+                        <span><i class="ph ph-device-mobile"></i> Android Chrome</span>
+                        <span><span style="color: #CBD5E1;">|</span></span>
+                        <span><i class="ph ph-clock"></i> Duration: 1m 32s</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-outline" disabled style="opacity: 0.5; cursor: not-allowed;">View
+                        Details</button>
+                    <button class="btn btn-reviewed" onclick="toggleReviewed(this)">
+                        <i class="ph ph-check"></i> Mark Reviewed
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        function toggleReviewed(btn) {
+            btn.classList.toggle('active');
+            if (btn.classList.contains('active')) {
+                btn.innerHTML = '<i class="ph ph-check-circle-fill"></i> Reviewed';
+                btn.style.borderColor = '#16A34A';
+                btn.style.color = '#16A34A';
+                btn.style.background = '#F0FDF4';
+            } else {
+                btn.innerHTML = '<i class="ph ph-check"></i> Mark Reviewed';
+                btn.style.borderColor = 'var(--border-color)';
+                btn.style.color = 'var(--text-secondary)';
+                btn.style.background = 'white';
+            }
+        }
+    </script>
+</body>
+
+</html>

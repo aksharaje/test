@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Analysis - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .schedule-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .radio-pills {
+            display: flex;
+            gap: 12px;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 8px;
+            display: inline-flex;
+        }
+
+        .radio-pill-label {
+            padding: 8px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .radio-pill-input {
+            display: none;
+        }
+
+        .radio-pill-input:checked+.radio-pill-label {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+
+    <div style="max-width: 600px; margin: 40px auto 0; padding: 0 40px;">
+        <a href="discovery-hub.html" class="btn btn-outline"
+            style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border: none; padding-left: 0; background: transparent;">
+            <i class="ph ph-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="schedule-container" style="margin-top: 16px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <div
+                style="width: 48px; height: 48px; background: #EFF6FF; color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px;">
+                <i class="ph ph-calendar-check"></i>
+            </div>
+            <h1 style="margin: 0;">Schedule Analysis</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Automate your Voice of Customer monitoring.</p>
+        </div>
+
+        <form onsubmit="saveSchedule(event)">
+
+            <!-- Source Selection -->
+            <div class="form-section">
+                <label class="form-label">Data Sources</label>
+                <div class="checkbox-group">
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Jira tickets & defects
+                    </label>
+
+                    <!-- Qualtrics Checkbox -->
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" id="qualtrics-check" checked onchange="updateQualtricsState()">
+                        Qualtrics surveys & behavioral signals
+                    </label>
+
+                    <!-- Qualtrics: Unauthorized State (Visible if Checked + !Auth) -->
+                    <div id="qualtrics-unauth"
+                        style="display: block; margin-left: 24px; margin-top: 4px; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-warning"
+                                style="color: #F59E0B; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #DC2626; font-weight: 500;">Access not authorized
+                                </div>
+                                <div style="font-size: 13px; color: #9A3412; margin-top: 2px;">You must authorize access
+                                    to include this source.</div>
+                                <button type="button" class="btn btn-outline-sm"
+                                    style="margin-top: 8px; background: white; border-color: #FDBA74; color: #C2410C;"
+                                    onclick="openAuthModal()">Manage Qualtrics Access</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Qualtrics: Authorized State (Visible if Checked + Auth) -->
+                    <div id="qualtrics-auth"
+                        style="display: none; margin-left: 24px; margin-top: 4px; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-check-circle"
+                                style="color: #16A34A; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <span style="font-weight: 600; color: #166534;">Connected</span>
+                                </div>
+                                <div style="font-size: 13px; color: #15803D; margin-top: 4px;">
+                                    Access: Read-only | Surveys: 2 selected | Range: 90 days
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-outline-sm"
+                                        style="background: white; border-color: #86EFAC; color: #15803D;"
+                                        onclick="openAuthModal()">Change Access</button>
+                                    <button type="button" class="btn btn-outline-sm"
+                                        style="background: white; border-color: #FCA5A5; color: #DC2626;"
+                                        onclick="disconnectQualtrics()">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Reviews Source -->
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" id="app-reviews-check" onchange="updateAppReviewsState()"> App store
+                        reviews
+                    </label>
+
+                    <!-- App Reviews: Unauthorized State -->
+                    <div id="app-reviews-unauth"
+                        style="display: none; margin-left: 24px; margin-top: 4px; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-warning"
+                                style="color: #F59E0B; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #DC2626; font-weight: 500;">Access not authorized
+                                </div>
+                                <div style="font-size: 13px; color: #9A3412; margin-top: 2px;">Product Studio needs
+                                    permission to fetch public reviews.</div>
+                                <button type="button" class="btn btn-outline-sm"
+                                    style="margin-top: 8px; background: white; border-color: #FDBA74; color: #C2410C;"
+                                    onclick="openAppAuthModal()">Manage Access</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Reviews: Authorized State -->
+                    <div id="app-reviews-auth"
+                        style="display: none; margin-left: 24px; margin-top: 4px; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-check-circle"
+                                style="color: #16A34A; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <span style="font-weight: 600; color: #166534;">Connected</span>
+                                </div>
+                                <div style="font-size: 13px; color: #15803D; margin-top: 4px;">
+                                    Public data only | Stores: App Store, Google Play
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-outline-sm"
+                                        style="background: white; border-color: #FCA5A5; color: #DC2626;"
+                                        onclick="disconnectAppReviews()">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label class="form-label">Feedback Coverage</label>
+                <select class="select-input" style="max-width: 240px;">
+                    <option value="since_last" selected>Since last analysis</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="all">All available feedback</option>
+                    <option value="custom">Custom range</option>
+                </select>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;">
+                    For scheduled runs, "Since last analysis" ensures no data overlap.
+                </div>
+            </div>
+
+            <!-- Analysis Focus -->
+            <div class="form-section">
+                <label class="form-label">Analysis Focus</label>
+                <div class="radio-pills">
+                    <label>
+                        <input type="radio" name="focus" class="radio-pill-input" checked>
+                        <span class="radio-pill-label">Customer Themes</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="focus" class="radio-pill-input">
+                        <span class="radio-pill-label">Defect-Focused Analysis</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Frequency -->
+            <div class="form-section">
+                <label class="form-label">Frequency</label>
+                <div class="checkbox-group">
+                    <label class="list-option"
+                        style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px;">
+                        <input type="radio" name="freq" checked>
+                        <strong>Weekly</strong> (Every Monday)
+                    </label>
+                    <label class="list-option"
+                        style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px;">
+                        <input type="radio" name="freq">
+                        <strong>Monthly</strong> (1st of month)
+                    </label>
+                    <label class="list-option"
+                        style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                        <input type="radio" name="freq">
+                        <strong>Custom</strong>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-section" style="border-top: 1px solid var(--border-color); padding-top: 24px;">
+                <label class="form-label">Notifications</label>
+                <div class="checkbox-group">
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Save results automatically
+                    </label>
+                    <label style="display: flex; gap: 8px;">
+                        <input type="checkbox" checked> Show summary on dashboard
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 32px;">
+                <button type="button" class="btn btn-outline full-width"
+                    onclick="window.location.href='discovery-hub.html'">Cancel</button>
+                <button id="save-btn" type="submit" class="btn btn-primary full-width" disabled
+                    style="opacity: 0.5; cursor: not-allowed;" title="Please resolve data source permissions">Save
+                    Schedule</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Permission Gate Modal -->
+    <div id="auth-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+        <div
+            style="background: white; width: 600px; border-radius: var(--radius-lg); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+            <div
+                style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 16px;">
+                Authorize Qualtrics Access
+            </div>
+            <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+                <div style="margin-bottom: 24px;">
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">What Product studio
+                        is requesting</strong>
+                    <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Product Studio would
+                        like read-only access to:</p>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px;">
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Survey
+                            questions</label>
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Open-ended
+                            responses</label>
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Response
+                            timestamps</label>
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Behavioral
+                            signals (rage clicks/retries/session flags)</label>
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+                        <label style="display: flex; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+                            <input type="checkbox"> Respondent PII (emails/names)
+                        </label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Select
+                        surveys</strong>
+                    <div
+                        style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
+                                type="checkbox" checked> NPS Q1</label>
+                        <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox" checked>
+                            Checkout UX</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Time Range</strong>
+                    <select class="select-input">
+                        <option selected>Last 90 days</option>
+                        <option>Last 30 days</option>
+                        <option>All time</option>
+                    </select>
+                </div>
+
+                <div style="padding: 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
+                    <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #1E3A8A;">
+                        <input type="checkbox" id="modal-auth-check" onchange="checkModalAuth()">
+                        <span>I authorize Product Studio to read selected Qualtrics data (read-only)</span>
+                    </label>
+                </div>
+            </div>
+            <div
+                style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
+                <button class="btn btn-outline" onclick="closeAuthModal()">Cancel</button>
+                <button id="modal-confirm-btn" class="btn btn-primary" disabled style="opacity: 0.5;"
+                    onclick="confirmAuth()">Authorize Access</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Review Modal -->
+    <div id="app-auth-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+        <div
+            style="background: white; width: 600px; border-radius: var(--radius-lg); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+            <div
+                style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 16px;">
+                Authorize App Review Access
+            </div>
+            <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+                <div style="margin-bottom: 24px;">
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Product Studio will
+                        read public app reviews only:</strong>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px; margin-top: 8px;">
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Review
+                            text</label>
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Rating</label>
+                        <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Date</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">App stores</strong>
+                    <div
+                        style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
+                                type="checkbox" checked> App Store</label>
+                        <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox" checked> Google
+                            Play</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Coverage</strong>
+                    <select class="select-input">
+                        <option selected>Since last analysis</option>
+                        <option>Last 30 days</option>
+                        <option>All time</option>
+                    </select>
+                </div>
+
+                <div style="padding: 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
+                    <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #1E3A8A;">
+                        <input type="checkbox" id="app-modal-auth-check" onchange="checkAppModalAuth()">
+                        <span>I authorize Product Studio to fetch app reviews (public data only)</span>
+                    </label>
+                </div>
+            </div>
+            <div
+                style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
+                <button class="btn btn-outline" onclick="closeAppAuthModal()">Cancel</button>
+                <button id="app-modal-confirm-btn" class="btn btn-primary" disabled style="opacity: 0.5;"
+                    onclick="confirmAppAuth()">Authorize Access</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let isAuthorized = false; // Qualtrics
+        let isAppReviewsAuthorized = false;
+
+        function checkSaveButton() {
+            const saveBtn = document.getElementById('save-btn');
+
+            const qChecked = document.getElementById('qualtrics-check').checked;
+            const aChecked = document.getElementById('app-reviews-check').checked;
+
+            let disabled = false;
+
+            if (qChecked && !isAuthorized) disabled = true;
+            if (aChecked && !isAppReviewsAuthorized) disabled = true;
+
+            // Require at least one source?
+            // For now, if both toggleable ones are unchecked or authorized, we are good.
+            // The Jira checkbox is always checked and doesn't have an ID for interaction in this context.
+
+            if (disabled) {
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+                saveBtn.style.cursor = 'not-allowed';
+                saveBtn.title = "Please resolve data source permissions";
+            } else {
+                saveBtn.disabled = false;
+                saveBtn.style.opacity = '1';
+                saveBtn.style.cursor = 'pointer';
+                saveBtn.title = "";
+            }
+        }
+
+        function updateQualtricsState() {
+            const checked = document.getElementById('qualtrics-check').checked;
+            const unauthBlock = document.getElementById('qualtrics-unauth');
+            const authBlock = document.getElementById('qualtrics-auth');
+
+            if (!checked) {
+                unauthBlock.style.display = 'none';
+                authBlock.style.display = 'none';
+            } else {
+                if (!isAuthorized) {
+                    unauthBlock.style.display = 'block';
+                    authBlock.style.display = 'none';
+                } else {
+                    unauthBlock.style.display = 'none';
+                    authBlock.style.display = 'block';
+                }
+            }
+            checkSaveButton();
+        }
+
+        function updateAppReviewsState() {
+            const checked = document.getElementById('app-reviews-check').checked;
+            const unauthBlock = document.getElementById('app-reviews-unauth');
+            const authBlock = document.getElementById('app-reviews-auth');
+
+            if (!checked) {
+                unauthBlock.style.display = 'none';
+                authBlock.style.display = 'none';
+            } else {
+                if (!isAppReviewsAuthorized) {
+                    unauthBlock.style.display = 'block';
+                    authBlock.style.display = 'none';
+                } else {
+                    unauthBlock.style.display = 'none';
+                    authBlock.style.display = 'block';
+                }
+            }
+            checkSaveButton();
+        }
+
+        // Qualtrics Modal
+        function openAuthModal() {
+            document.getElementById('auth-modal').style.display = 'flex';
+        }
+        function closeAuthModal() {
+            document.getElementById('auth-modal').style.display = 'none';
+        }
+        function checkModalAuth() {
+            const checked = document.getElementById('modal-auth-check').checked;
+            const btn = document.getElementById('modal-confirm-btn');
+            if (checked) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+        function confirmAuth() {
+            closeAuthModal();
+            isAuthorized = true;
+            updateQualtricsState();
+        }
+        function disconnectQualtrics() {
+            isAuthorized = false;
+            updateQualtricsState();
+        }
+
+        // App Reviews Modal
+        function openAppAuthModal() {
+            document.getElementById('app-auth-modal').style.display = 'flex';
+        }
+        function closeAppAuthModal() {
+            document.getElementById('app-auth-modal').style.display = 'none';
+        }
+        function checkAppModalAuth() {
+            const checked = document.getElementById('app-modal-auth-check').checked;
+            const btn = document.getElementById('app-modal-confirm-btn');
+            if (checked) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+        function confirmAppAuth() {
+            closeAppAuthModal();
+            isAppReviewsAuthorized = true;
+            updateAppReviewsState();
+        }
+        function disconnectAppReviews() {
+            isAppReviewsAuthorized = false;
+            updateAppReviewsState();
+        }
+
+        function saveSchedule(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-btn');
+            if (btn.disabled) return;
+
+            btn.textContent = 'Saving...';
+            setTimeout(() => {
+                window.location.href = 'discovery-hub.html';
+            }, 1000);
+        }
+
+        // Initial check
+        window.addEventListener('DOMContentLoaded', () => {
+            updateQualtricsState();
+            updateAppReviewsState();
+        });
+    </script>
+</body>
+
+</html>

@@ -15,17 +15,23 @@
 </head>
 
 <body>
-    <!-- Back to Home Button -->
-    <a href="landing.html" class="back-to-home-btn" title="Back to Home">
-        <i class="ph ph-house"></i>
-        <span>Back to Home</span>
-    </a>
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="workflow-index.html" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="landing.html" class="back-to-home-btn" title="Back to Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
 
     <div class="app-container">
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb">
+            <!-- Breadcrumb Navigation (only show in complete workflow mode) -->
+            <nav id="workflow-breadcrumb" class="breadcrumb" style="display: none;">
                 <a href="landing.html" style="text-decoration: none; color: inherit; opacity: 0.7;">
                     <i class="ph ph-house"></i> Home
                 </a>
@@ -50,6 +56,9 @@
                 <p class="subtitle">These goals were generated based on your inputs: strategy, role, and customer
                     problems. You can edit anything.</p>
             </header>
+
+            <!-- Workflow Banner (shows if continuing previous workflow) -->
+            <div id="workflow-banner-container"></div>
 
             <!-- Context Input Form (Initially Visible) -->
             <section id="input-section" class="summary-card" style="display: block;">
@@ -216,13 +225,25 @@
                 <button class="btn btn-outline-sm full-width">Override Priorities</button>
             </div>
 
-            <div class="sidebar-card next-step-card">
+            <div id="next-step-card" class="sidebar-card next-step-card" style="display: none;">
                 <div class="card-header">
                     <h2><i class="ph ph-link"></i> Next Step</h2>
                 </div>
                 <a href="okr-generator.html" class="btn btn-primary full-width"
-                    style="text-decoration: none; display: flex; box-sizing: border-box;">Generate OKRs <i
+                    style="text-decoration: none; display: flex; box-sizing: border-box;">Continue to OKR Generator <i
                         class="ph ph-arrow-right"></i></a>
+            </div>
+
+            <div id="standalone-actions" class="sidebar-card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="ph ph-check-circle"></i> Goals Generated</h2>
+                </div>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Your goals have been generated. You can export them or return to the home page.
+                </p>
+                <button class="btn btn-outline full-width" onclick="window.location.href='landing.html'">
+                    <i class="ph ph-house"></i> Back to Home
+                </button>
             </div>
         </aside>
     </div>
@@ -308,9 +329,106 @@
             </div>
         </div>
     </div>
+    <script src="workflow-data.js"></script>
     <script src="notification-system.js"></script>
     <script src="workflow-progress.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Load previous workflow data if available
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            // Show/hide breadcrumb based on workflow mode
+            if (isCompleteWorkflow) {
+                document.getElementById('workflow-breadcrumb').style.display = 'flex';
+                WorkflowData.showWorkflowBanner();
+            } else {
+                document.getElementById('workflow-breadcrumb').style.display = 'none';
+            }
+
+            // Load previous context data if available
+            const context = WorkflowData.getContext();
+            if (context && isCompleteWorkflow) {
+                // Pre-populate form fields only in complete workflow mode
+                document.getElementById('input-domain').value = context.domain || '';
+                document.getElementById('input-strategy').value = context.strategy || '';
+                document.getElementById('input-charter').value = context.charter || '';
+                document.getElementById('input-problems').value = context.problems || '';
+                document.getElementById('input-baseline').value = context.baseline || '';
+            }
+
+            // Show goals section if we already have goals data
+            const goals = WorkflowData.getGoals();
+            if (goals && isCompleteWorkflow) {
+                document.getElementById('input-section').style.display = 'none';
+                document.getElementById('goals-results-section').style.display = 'block';
+                // Show appropriate next step based on mode
+                showNextStepActions();
+            }
+        });
+
+        // Update generateGoals to save data
+        function generateGoals() {
+            // Get form data
+            const contextData = {
+                domain: document.getElementById('input-domain').value,
+                strategy: document.getElementById('input-strategy').value,
+                charter: document.getElementById('input-charter').value,
+                problems: document.getElementById('input-problems').value,
+                baseline: document.getElementById('input-baseline').value
+            };
+
+            // Save to workflow data
+            WorkflowData.saveContext(contextData);
+
+            // Show loading state
+            document.getElementById('generate-btn').disabled = true;
+            document.getElementById('loading-state').style.display = 'block';
+
+            // Simulate generation (replace with actual logic)
+            setTimeout(() => {
+                document.getElementById('input-section').style.display = 'none';
+                document.getElementById('goals-results-section').style.display = 'block';
+                document.getElementById('generate-btn').disabled = false;
+                document.getElementById('loading-state').style.display = 'none';
+
+                // Save sample goals data
+                const goals = [
+                    {
+                        id: 1,
+                        title: 'Increase login success rate from 87% → 95% by end of Q2',
+                        description: 'Improve authentication flow, reduce password-reset errors, and optimize error messaging.',
+                        tags: ['High-Impact', 'User-Facing']
+                    }
+                ];
+                WorkflowData.saveGoals(goals);
+
+                // Show appropriate next step actions
+                showNextStepActions();
+            }, 1500);
+        }
+
+        // Show next step actions based on workflow mode
+        function showNextStepActions() {
+            const isCompleteWorkflow = WorkflowData.isCompleteWorkflow();
+
+            if (isCompleteWorkflow) {
+                // Show "Continue to OKR Generator" button
+                document.getElementById('next-step-card').style.display = 'block';
+                document.getElementById('standalone-actions').style.display = 'none';
+            } else {
+                // Show "Back to Home" button
+                document.getElementById('next-step-card').style.display = 'none';
+                document.getElementById('standalone-actions').style.display = 'block';
+            }
+        }
+
+        // Allow editing inputs
+        function editInputs() {
+            document.getElementById('goals-results-section').style.display = 'none';
+            document.getElementById('input-section').style.display = 'block';
+        }
+    </script>
 </body>
 
 </html>
