@@ -171,7 +171,8 @@ JSON SCHEMA (respond with ONLY this structure, filled with real content):
     def generate(self, session: Session, request: Dict[str, Any], user_id: Optional[int] = None) -> GeneratedArtifact:
         start_time = time.time()
         from app.core.config import settings
-        model = settings.OPENROUTER_MODEL
+        from app.services.ai_config_service import ai_config_service
+        model = ai_config_service.get_active_model(session)
 
         # Get KB context
         kb_ids = request.get("knowledgeBaseIds", [])

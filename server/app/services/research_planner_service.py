@@ -456,7 +456,7 @@ class ResearchPlannerService:
         full_context = "\n\n---\n\n".join(context_sections) if context_sections else ""
         return full_context, context_summary
 
-    def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.3, max_tokens: int = 3000, context: str = "LLM") -> Dict[str, Any]:
+    def _call_llm(self, messages: List[Dict[str, str]], model: str, temperature: float = 0.3, max_tokens: int = 3000, context: str = "LLM") -> Dict[str, Any]:
         """Call LLM with retry logic."""
         max_retries = 3
         last_error = None
@@ -466,7 +466,7 @@ class ResearchPlannerService:
                 use_json_mode = attempt < (max_retries - 1)
 
                 kwargs = {
-                    "model": self.model,
+                    "model": model,
                     "messages": messages,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
@@ -936,11 +936,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences."""
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
+            model=model_name,
             temperature=0.3,
             max_tokens=2500,
             context="Method Recommendation"
@@ -1066,11 +1070,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences."""
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
+            model=model_name,
             temperature=0.4,
             max_tokens=4000,
             context="Interview Guide Generation"
@@ -1216,11 +1224,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences."""
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
+            model=model_name,
             temperature=0.4,
             max_tokens=4000,
             context="Survey Generation"
@@ -1304,11 +1316,15 @@ CRITICAL REQUIREMENTS:
 
 Return ONLY valid JSON. No markdown, no explanations."""
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API that creates UX research recruiting plans. You MUST return complete JSON with ALL required fields filled in. Never return empty arrays or missing fields."},
                 {"role": "user", "content": prompt}
             ],
+            model=model_name,
             temperature=0.4,
             max_tokens=4000,
             context="Recruiting Plan Generation"

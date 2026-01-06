@@ -189,6 +189,7 @@ class BusinessCaseService:
         self,
         prompt: str,
         context: str,
+        model: str,
         max_retries: int = 2
     ) -> Dict[str, Any]:
         """Call LLM with retry logic for JSON parsing failures."""
@@ -206,7 +207,7 @@ class BusinessCaseService:
                     )
 
                 response = self.client.chat.completions.create(
-                    model=self.model,
+                    model=model,
                     messages=[
                         {"role": "system", "content": system_msg},
                         {"role": "user", "content": prompt}
@@ -797,7 +798,10 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences."""
 
-        data = self._call_llm_with_retry(prompt, "Context Agent")
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
+        data = self._call_llm_with_retry(prompt, "Context Agent", model_name)
 
         # Save assumptions
         for idx, assumption_data in enumerate(data.get("key_assumptions", [])):
@@ -961,7 +965,10 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY valid JSON."""
 
-            data = self._call_llm_with_retry(prompt, "Development Cost Agent")
+            from app.services.ai_config_service import ai_config_service
+            model_name = ai_config_service.get_active_model(db)
+
+            data = self._call_llm_with_retry(prompt, "Development Cost Agent", model_name)
 
             for idx, item in enumerate(data.get("development_costs", [])):
                 cost = CostItem(
@@ -1023,7 +1030,10 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY valid JSON. No explanations."""
 
-        data = self._call_llm_with_retry(prompt, "Operational Cost Agent")
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
+        data = self._call_llm_with_retry(prompt, "Operational Cost Agent", model_name)
 
         # Get existing cost count for display order
         existing_count = len(list(db.exec(
@@ -1094,7 +1104,10 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY valid JSON. For qualitative benefits, set amounts to null."""
 
-        data = self._call_llm_with_retry(prompt, "Benefit Agent")
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
+        data = self._call_llm_with_retry(prompt, "Benefit Agent", model_name)
 
         for idx, item in enumerate(data.get("benefits", [])):
             benefit = BenefitItem(
@@ -1505,7 +1518,10 @@ Return EXACTLY this JSON:
 
 IMPORTANT: Return ONLY valid JSON."""
 
-        data = self._call_llm_with_retry(prompt, "Executive Summary")
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
+        data = self._call_llm_with_retry(prompt, "Executive Summary", model_name)
 
         session_obj.executive_summary = data.get("executive_summary", "Analysis complete.")
         session_obj.recommendation = recommendation

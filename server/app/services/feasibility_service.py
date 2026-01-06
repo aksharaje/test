@@ -510,7 +510,7 @@ class FeasibilityService:
 
     # --- Agent 1: Decomposition ---
 
-    def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.3, max_tokens: int = 3000, context: str = "LLM") -> Dict[str, Any]:
+    def _call_llm(self, messages: List[Dict[str, str]], model: str, temperature: float = 0.3, max_tokens: int = 3000, context: str = "LLM") -> Dict[str, Any]:
         """
         Call LLM with retry logic for empty responses or API errors.
         """
@@ -524,7 +524,7 @@ class FeasibilityService:
                 use_json_mode = attempt == 0
                 
                 kwargs = {
-                    "model": self.model,
+                    "model": model,
                     "messages": messages,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
@@ -608,11 +608,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
+            model=model_name,
             temperature=0.3,
             max_tokens=10000,
             context="Decomposition Agent"
@@ -686,11 +690,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
+            from app.services.ai_config_service import ai_config_service
+            model_name = ai_config_service.get_active_model(db)
+
             data = self._call_llm(
                 messages=[
                     {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                     {"role": "user", "content": prompt}
                 ],
+                model=model_name,
                 temperature=0.2,
                 max_tokens=800,
                 context=f"Effort Estimation Agent (Component {component.id})"
@@ -773,11 +781,15 @@ Return EXACTLY this JSON structure:
 
 IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences. Start your response with {{ and end with }}."""
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         data = self._call_llm(
             messages=[
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
                 {"role": "user", "content": prompt}
             ],
+            model=model_name,
             temperature=0.2,
             max_tokens=10000,
             context="Timeline Agent"

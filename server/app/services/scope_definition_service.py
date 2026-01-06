@@ -236,8 +236,11 @@ class ScopeDefinitionService:
 
             prompt = self._build_scope_prompt(session, kb_context)
 
+            from app.services.ai_config_service import ai_config_service
+            model_name = ai_config_service.get_active_model(db)
+
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=model_name,
                 messages=[
                     {
                         "role": "system",

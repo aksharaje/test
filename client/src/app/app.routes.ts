@@ -51,6 +51,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/profile-settings.component').then(m => m.ProfileSettingsComponent)
       },
       {
+        path: 'settings/ai',
+        title: 'AI Model Settings | Product Studio',
+        loadComponent: () => import('./features/settings/ai-model-settings.component').then(m => m.AiModelSettingsComponent)
+      },
+      {
         path: 'dashboard',
         title: 'Dashboard | Product Studio',
         loadComponent: () =>

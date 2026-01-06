@@ -287,7 +287,7 @@ class IdeationService:
 
             # Step 1: Parse Input
             self._update_progress(session, session_id, "parsing", 1, "Analyzing problem statement...")
-            structured_problem = self._parse_input(ideation_session)
+            structured_problem = self._parse_input(session, ideation_session)
             ideation_session.structured_problem = structured_problem
             session.add(ideation_session)
             session.commit()
@@ -388,7 +388,7 @@ class IdeationService:
 
     # --- Agent Implementations ---
 
-    def _parse_input(self, ideation_session: IdeationSession) -> Dict[str, Any]:
+    def _parse_input(self, session: Session, ideation_session: IdeationSession) -> Dict[str, Any]:
         """Extract structured problem from user input"""
         system_prompt = """You are a problem analysis expert. Extract structured information from the user's problem statement.
 
@@ -434,8 +434,11 @@ EXAMPLE OUTPUT:
         if ideation_session.research_insights:
             user_content += f"Research Insights: {ideation_session.research_insights}\n\n"
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(session)
+
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
@@ -543,8 +546,11 @@ Goals: {', '.join(structured_problem.get('goals_parsed', []))}"""
         if kb_context:
             user_content += f"\n\nRelevant Knowledge Base Context:\n{kb_context}"
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(session)
+
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
@@ -705,8 +711,10 @@ Impact Estimate: {idea.impact_estimate}
 Generate specific, actionable enrichment for this idea."""
 
             try:
+                from app.services.ai_config_service import ai_config_service
+                model_name = ai_config_service.get_active_model(session)
                 response = self.client.chat.completions.create(
-                    model=self.model,
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
@@ -841,8 +849,10 @@ Implementation Notes:
 Score this idea objectively across all 5 criteria."""
 
             try:
+                from app.services.ai_config_service import ai_config_service
+                model_name = ai_config_service.get_active_model(session)
                 response = self.client.chat.completions.create(
-                    model=self.model,
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}

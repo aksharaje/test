@@ -16,7 +16,7 @@ import { AuthService } from '../../core/auth/auth.service';
     <app-authenticated-layout
       [user]="currentUser()"
       [navItems]="navItems"
-      [bottomNavItems]="bottomNavItems"
+      [bottomNavItems]="bottomNavItems()"
       brandName="My App"
       (onProfile)="handleProfile()"
       (onSettings)="handleSettings()"
@@ -156,27 +156,36 @@ export class AuthenticatedShellComponent {
     { label: 'Stakeholder Mgmt', path: '/stakeholder-mgmt', children: [] },
   ];
 
-  bottomNavItems: NavItem[] = [
-    {
-      label: 'Resources',
-      path: '/resources-section',
-      icon: 'lucideLayers',
-      children: [
-        { label: 'Knowledge Bases', path: '/knowledge-bases' },
-        { label: 'Library', path: '/library' },
-        { label: 'Optimize', path: '/optimize' },
-        { label: 'Code Chat', path: '/code-chat' },
-      ],
-    },
-    {
-      label: 'Settings',
-      path: '/settings',
-      icon: 'lucideSettings',
-      children: [
-        { label: 'Integrations', path: '/settings/integrations' },
-      ],
-    },
-  ];
+  bottomNavItems = computed<NavItem[]>(() => {
+    const user = this.authService.currentUser();
+    const isAdmin = user?.role === 'admin';
+
+    return [
+      {
+        label: 'Resources',
+        path: '/resources-section',
+        icon: 'lucideLayers',
+        children: [
+          { label: 'Knowledge Bases', path: '/knowledge-bases' },
+          { label: 'Library', path: '/library' },
+          { label: 'Optimize', path: '/optimize' },
+          { label: 'Code Chat', path: '/code-chat' },
+        ],
+      },
+      {
+        label: 'Settings',
+        path: '/settings',
+        icon: 'lucideSettings',
+        children: [
+          { label: 'Integrations', path: '/settings/integrations' },
+          ...(isAdmin ? [
+            { label: 'Team', path: '/settings/team' },
+            { label: 'AI Models', path: '/settings/ai' }
+          ] : []),
+        ],
+      },
+    ];
+  });
 
   handleProfile(): void {
     this.router.navigate(['/profile']);

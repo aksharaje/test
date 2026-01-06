@@ -139,7 +139,7 @@ class ExperienceGapAnalyzerService:
         print(f"ERROR: {context} - Failed to parse JSON. Content: {content[:500]}")
         raise ValueError(f"{context}: LLM returned invalid JSON")
 
-    def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.3, max_tokens: int = 4000, context: str = "LLM") -> Dict[str, Any]:
+    def _call_llm(self, messages: List[Dict[str, str]], model: str, temperature: float = 0.3, max_tokens: int = 4000, context: str = "LLM") -> Dict[str, Any]:
         """Call LLM with retry logic."""
         max_retries = 3
         last_error = None
@@ -149,7 +149,7 @@ class ExperienceGapAnalyzerService:
                 use_json_mode = attempt < (max_retries - 1)
 
                 kwargs = {
-                    "model": self.model,
+                    "model": model,
                     "messages": messages,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
@@ -438,6 +438,9 @@ class ExperienceGapAnalyzerService:
         """Main pipeline for generating gap analysis. Runs in background task."""
         start_time = time.time()
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         try:
             session_obj = self.get_session(db, session_id)
             if not session_obj:
@@ -468,7 +471,7 @@ class ExperienceGapAnalyzerService:
             self._update_progress(db, session_id, "analyzing", 2, "Aligning journey stages...")
 
             # Step 1: Align stages between journeys
-            self._generate_stage_alignments(db, session_id, your_journey, comparison_journey)
+            self._generate_stage_alignments(db, session_id, your_journey, comparison_journey, model_name)
 
             self._update_progress(db, session_id, "analyzing", 3, "Identifying experience gaps...")
 
@@ -476,13 +479,14 @@ class ExperienceGapAnalyzerService:
             self._generate_gaps(
                 db, session_id, your_journey, comparison_journey,
                 your_pain_points, comparison_pain_points,
-                session_obj.analysis_type
+                session_obj.analysis_type,
+                model_name
             )
 
             self._update_progress(db, session_id, "analyzing", 4, "Building capability matrix...")
 
             # Step 3: Generate capability matrix
-            self._generate_capability_matrix(db, session_id, your_journey, comparison_journey)
+            self._generate_capability_matrix(db, session_id, your_journey, comparison_journey, model_name)
 
             self._update_progress(db, session_id, "generating_roadmap", 5, "Creating prioritized roadmap...")
 
@@ -511,7 +515,8 @@ class ExperienceGapAnalyzerService:
         db: Session,
         session_id: int,
         your_journey: JourneyMapSession,
-        comparison_journey: Optional[JourneyMapSession]
+        comparison_journey: Optional[JourneyMapSession],
+        model: str
     ):
         """Align stages between your journey and comparison journey."""
         your_stages = your_journey.stages or []
@@ -567,6 +572,7 @@ IMPORTANT: Return ONLY valid JSON."""
                 {"role": "system", "content": "You are a JSON-only API. Return valid JSON only."},
                 {"role": "user", "content": prompt}
             ],
+            model=model,
             temperature=0.2,
             max_tokens=2000,
             context="Stage Alignment"
@@ -597,7 +603,8 @@ IMPORTANT: Return ONLY valid JSON."""
         comparison_journey: Optional[JourneyMapSession],
         your_pain_points: List[JourneyPainPoint],
         comparison_pain_points: List[JourneyPainPoint],
-        analysis_type: str
+        analysis_type: str,
+        model: str
     ):
         """Identify gaps between journeys using LLM analysis."""
         your_stages = your_journey.stages or []
@@ -683,6 +690,7 @@ IMPORTANT: Return ONLY valid JSON."""
                 {"role": "system", "content": "You are a JSON-only API. Return valid JSON only."},
                 {"role": "user", "content": prompt}
             ],
+            model=model,
             temperature=0.3,
             max_tokens=6000,
             context="Gap Identification"
@@ -730,7 +738,8 @@ IMPORTANT: Return ONLY valid JSON."""
         db: Session,
         session_id: int,
         your_journey: JourneyMapSession,
-        comparison_journey: Optional[JourneyMapSession]
+        comparison_journey: Optional[JourneyMapSession],
+        model: str
     ):
         """Generate capability comparison matrix."""
         your_stages = your_journey.stages or []
@@ -784,6 +793,7 @@ IMPORTANT: Return ONLY valid JSON."""
                 {"role": "system", "content": "You are a JSON-only API. Return valid JSON only."},
                 {"role": "user", "content": prompt}
             ],
+            model=model,
             temperature=0.3,
             max_tokens=4000,
             context="Capability Matrix"

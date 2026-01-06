@@ -205,8 +205,8 @@ You will receive relevant code snippets from the selected knowledge bases. Use t
         history.append({"role": "user", "content": f"{user_message}{context_text}"})
         
         # Call LLM
-        from app.core.config import settings
-        model = settings.OPENROUTER_MODEL
+        from app.services.ai_config_service import ai_config_service
+        model = ai_config_service.get_active_model(session)
         response = self.client.chat.completions.create(
             model=model,
             messages=history,

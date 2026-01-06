@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = "openai/gpt-oss-120b"
 
+    # Security
+    AUTH_ENABLED: str = "true"
+    
     # Jira
     JIRA_CLIENT_ID: str = ""
     JIRA_CLIENT_SECRET: str = ""

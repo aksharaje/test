@@ -187,8 +187,11 @@ class KpiAssignmentService:
             # Build prompt
             prompt = self._build_kpi_prompt(goals)
 
+            from app.services.ai_config_service import ai_config_service
+            model_name = ai_config_service.get_active_model(db)
+
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=model_name,
                 messages=[
                     {
                         "role": "system",

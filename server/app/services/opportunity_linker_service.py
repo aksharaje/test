@@ -23,12 +23,13 @@ class OpportunityLinkerService:
 
     def __init__(self):
         self.openrouter_api_key = settings.OPENROUTER_API_KEY
-        self.model = settings.OPENROUTER_MODEL  # Should be "openai/gpt-oss-120b"
+        self.openrouter_api_key = settings.OPENROUTER_API_KEY
+        self.base_url = "https://openrouter.ai/api/v1/chat/completions"
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
         self.batch_size = 5  # Process 5 ideas concurrently
         self.executor = ThreadPoolExecutor(max_workers=5)
 
-    def _call_llm(self, prompt: str, system_prompt: str = "", retry_count: int = 1) -> Dict[str, Any]:
+    def _call_llm(self, prompt: str, model: str, system_prompt: str = "", retry_count: int = 1) -> Dict[str, Any]:
         """
         Call OpenRouter LLM with retry logic and strict JSON formatting.
 
@@ -46,7 +47,7 @@ class OpportunityLinkerService:
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": self.model,
+            "model": model,
             "messages": messages,
             "response_format": {"type": "json_object"},  # Enforce JSON output
         }
@@ -99,7 +100,8 @@ class OpportunityLinkerService:
     def _agent_7_opportunity_mapping(
         self,
         idea: GeneratedIdea,
-        problem_statement: str
+        problem_statement: str,
+        model: str
     ) -> Dict[str, Any]:
         """
         Agent 7: Opportunity Mapping
@@ -146,7 +148,8 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no code blocks, no explanat
         self,
         idea: GeneratedIdea,
         problem_statement: str,
-        structured_problem: Optional[Dict[str, Any]]
+        structured_problem: Optional[Dict[str, Any]],
+        model: str
     ) -> Dict[str, Any]:
         """
         Agent 8: Strategic Fit Scoring
@@ -186,13 +189,14 @@ Return a JSON object with this EXACT structure:
 
 IMPORTANT: Return ONLY the JSON object. No markdown, no code blocks, no explanations."""
 
-        return self._call_llm(prompt, system_prompt, retry_count=2)
+        return self._call_llm(prompt, model, system_prompt, retry_count=2)
 
     def _agent_9_size_estimation(
         self,
         idea: GeneratedIdea,
         problem_statement: str,
-        structured_problem: Optional[Dict[str, Any]]
+        structured_problem: Optional[Dict[str, Any]],
+        model: str
     ) -> Dict[str, Any]:
         """
         Agent 9: Size Estimation
@@ -293,7 +297,8 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no code blocks, no explanat
         idea: GeneratedIdea,
         session: PrioritizationSession,
         ideation_session: IdeationSession,
-        idx: int
+        idx: int,
+        model: str
     ) -> Dict[str, Any]:
         """
         Process a single idea through all agents.
@@ -303,21 +308,24 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no code blocks, no explanat
         # Agent 7: Opportunity Mapping
         opp_data = self._agent_7_opportunity_mapping(
             idea,
-            ideation_session.problem_statement
+            ideation_session.problem_statement,
+            model
         )
 
         # Agent 8: Strategic Fit
         fit_data = self._agent_8_strategic_fit(
             idea,
             ideation_session.problem_statement,
-            ideation_session.structured_problem
+            ideation_session.structured_problem,
+            model
         )
 
         # Agent 9: Size Estimation
         size_data = self._agent_9_size_estimation(
             idea,
             ideation_session.problem_statement,
-            ideation_session.structured_problem
+            ideation_session.structured_problem,
+            model
         )
 
         # Agent 10: Prioritization
@@ -437,6 +445,9 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no code blocks, no explanat
             db.commit()
 
             # Process in batches using ThreadPoolExecutor
+            from app.services.ai_config_service import ai_config_service
+            model_name = ai_config_service.get_active_model(db)
+
             for batch_start in range(0, total_ideas, self.batch_size):
                 batch_end = min(batch_start + self.batch_size, total_ideas)
                 batch_ideas = list(enumerate(ideas))[batch_start:batch_end]
@@ -455,7 +466,8 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no code blocks, no explanat
                         idea,
                         session,
                         ideation_session,
-                        idx
+                        idx,
+                        model_name
                     )
                     futures.append((idea, future))
 

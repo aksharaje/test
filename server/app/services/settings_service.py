@@ -43,4 +43,12 @@ class SettingsService:
             print(f"Error decrypting setting {key}: {e}")
             return None
 
+    def delete_setting(self, session: Session, key: str) -> bool:
+        setting = session.exec(select(SystemSetting).where(SystemSetting.key == key)).first()
+        if setting:
+            session.delete(setting)
+            session.commit()
+            return True
+        return False
+
 settings_service = SettingsService()

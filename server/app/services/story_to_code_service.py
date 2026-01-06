@@ -268,8 +268,11 @@ Include proper file structure, implementation files, tests, and configuration.""
             # Step 3: Call LLM
             self._update_progress(db, session_id, "generating", 3, "AI is generating code...")
 
+            from app.services.ai_config_service import ai_config_service
+            model_name = ai_config_service.get_active_model(db)
+
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=model_name,
                 messages=messages,
                 max_tokens=16000,  # Larger for code generation
                 temperature=0.2,  # Lower temperature for code stability
@@ -316,7 +319,7 @@ Include proper file structure, implementation files, tests, and configuration.""
             session.progress_message = f"Complete! Generated {len(files_map)} files."
             session.completed_at = datetime.utcnow()
             session.generation_metadata = {
-                "model": self.model,
+                "model": model_name,
                 "promptTokens": response.usage.prompt_tokens if response.usage else 0,
                 "completionTokens": response.usage.completion_tokens if response.usage else 0,
                 "generationTimeMs": generation_time_ms,

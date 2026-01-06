@@ -4,6 +4,7 @@ from app.api import deps
 from app.models.user import User, UserRole, UserCreate, UserLogin, DevUserRegister
 from app.models.account import Account
 from app.core import security
+from app.core.config import settings
 from datetime import datetime
 import os
 
@@ -15,7 +16,7 @@ ALLOWED_DOMAINS = ["@ascendion.com", "@moodysnwc.com", "@nitorinfotech.com"]
 
 def is_dev_mode() -> bool:
     """Check if running in dev mode (AUTH_ENABLED=false). Defaults to production (true) if not set."""
-    return os.getenv("AUTH_ENABLED", "true").lower() != "true"
+    return settings.AUTH_ENABLED.lower() != "true"
 
 
 def is_allowed_domain(email_address: str) -> bool:

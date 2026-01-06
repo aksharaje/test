@@ -151,7 +151,7 @@ class JourneyMapperService:
         text = re.sub(r'\b\d{13,16}\b', '[CARD]', text)
         return text
 
-    def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.3, max_tokens: int = 4000, context: str = "LLM") -> Dict[str, Any]:
+    def _call_llm(self, messages: List[Dict[str, str]], model: str, temperature: float = 0.3, max_tokens: int = 4000, context: str = "LLM") -> Dict[str, Any]:
         """Call LLM with retry logic."""
         max_retries = 3
         last_error = None
@@ -161,7 +161,7 @@ class JourneyMapperService:
                 use_json_mode = attempt < (max_retries - 1)
 
                 kwargs = {
-                    "model": self.model,
+                    "model": model,
                     "messages": messages,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
@@ -647,6 +647,9 @@ class JourneyMapperService:
         """Main pipeline for generating journey maps. Runs in background task."""
         start_time = time.time()
 
+        from app.services.ai_config_service import ai_config_service
+        model_name = ai_config_service.get_active_model(db)
+
         try:
             session_obj = self.get_session(db, session_id)
             if not session_obj:
@@ -660,11 +663,11 @@ class JourneyMapperService:
             context = self._build_journey_context(db, session_obj)
 
             if mode == "standard":
-                self._generate_standard_journey(db, session_id, context)
+                self._generate_standard_journey(db, session_id, context, model_name)
             elif mode == "multi_persona":
-                self._generate_multi_persona_journey(db, session_id, context)
+                self._generate_multi_persona_journey(db, session_id, context, model_name)
             elif mode == "competitive":
-                self._generate_competitive_journey(db, session_id, context)
+                self._generate_competitive_journey(db, session_id, context, model_name)
 
             # Mark completed
             session_obj = self.get_session(db, session_id)
@@ -706,7 +709,7 @@ class JourneyMapperService:
 
         return "\n\n---\n\n".join(context_parts) if context_parts else ""
 
-    def _generate_standard_journey(self, db: Session, session_id: int, context: str):
+    def _generate_standard_journey(self, db: Session, session_id: int, context: str, model: str):
         """Generate a standard (single persona) journey map."""
         session_obj = self.get_session(db, session_id)
         masked_description = self._mask_pii(session_obj.journey_description)
@@ -835,6 +838,7 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanations."""
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }. Every value must be properly typed - arrays must contain objects, not strings."},
                 {"role": "user", "content": prompt}
             ],
+            model=model,
             temperature=0.3,
             max_tokens=6000,
             context="Standard Journey Generation"
@@ -892,7 +896,7 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanations."""
 
         db.commit()
 
-    def _generate_multi_persona_journey(self, db: Session, session_id: int, context: str):
+    def _generate_multi_persona_journey(self, db: Session, session_id: int, context: str, model: str):
         """Generate journey maps for multiple personas with divergence analysis."""
         session_obj = self.get_session(db, session_id)
         masked_description = self._mask_pii(session_obj.journey_description)
@@ -988,6 +992,7 @@ IMPORTANT: Return ONLY valid JSON."""
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }. Every value must be properly typed - arrays must contain objects, not strings."},
                 {"role": "user", "content": prompt}
             ],
+            model=model,
             temperature=0.3,
             max_tokens=8000,
             context="Multi-Persona Journey Generation"
@@ -1067,7 +1072,7 @@ IMPORTANT: Return ONLY valid JSON."""
 
         db.commit()
 
-    def _generate_competitive_journey(self, db: Session, session_id: int, context: str):
+    def _generate_competitive_journey(self, db: Session, session_id: int, context: str, model: str):
         """Generate a competitive journey map from user observations."""
         session_obj = self.get_session(db, session_id)
         masked_description = self._mask_pii(session_obj.journey_description)
@@ -1202,6 +1207,7 @@ IMPORTANT: Return ONLY valid JSON. Include real stage IDs, names, descriptions, 
                 {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }. Every value must be properly typed - arrays must contain objects, not strings."},
                 {"role": "user", "content": prompt}
             ],
+            model=model,
             temperature=0.3,
             max_tokens=5000,
             context="Competitive Journey Generation"

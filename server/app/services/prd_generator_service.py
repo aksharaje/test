@@ -290,7 +290,8 @@ class PrdGeneratorService:
         try:
             start_time = time.time()
             from app.core.config import settings
-            model = settings.OPENROUTER_MODEL
+            from app.services.ai_config_service import ai_config_service
+            model = ai_config_service.get_active_model(session)
             
             prd = self.get_prd(session, prd_id)
             if not prd:
@@ -411,7 +412,8 @@ class PrdGeneratorService:
             
         start_time = time.time()
         from app.core.config import settings
-        model = settings.OPENROUTER_MODEL
+        from app.services.ai_config_service import ai_config_service
+        model = ai_config_service.get_active_model(session)
         
         # Get template
         template = None
