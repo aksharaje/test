@@ -271,9 +271,9 @@ import {
         <div class="border-b bg-background p-4">
           <div class="flex items-center gap-2">
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
-            <h2 class="font-semibold">Session History</h2>
+            <h2 class="font-semibold">Recommendation History</h2>
           </div>
-          <p class="mt-1 text-sm text-muted-foreground">
+          <p class="text-xs text-muted-foreground mt-1 ml-7">
             View and manage your past recommendation sessions
           </p>
         </div>

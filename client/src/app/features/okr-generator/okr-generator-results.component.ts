@@ -65,6 +65,30 @@ import { HlmButtonDirective } from '../../ui/button';
         }
 
         @if (session()?.status === 'completed') {
+          <!-- Context & Inputs -->
+          @if (session()?.goalDescription || session()?.timeframe) {
+            <div class="rounded-lg border bg-muted/30 p-4 mb-6">
+              <h2 class="font-semibold mb-3 flex items-center gap-2">
+                <ng-icon name="lucideFileText" class="h-4 w-4" />
+                Context & Inputs
+              </h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @if (session()?.goalDescription) {
+                  <div>
+                    <h3 class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Goal Description</h3>
+                    <p class="text-sm bg-background border rounded-md p-3">{{ session()?.goalDescription }}</p>
+                  </div>
+                }
+                @if (session()?.timeframe) {
+                  <div>
+                    <h3 class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Timeframe</h3>
+                    <p class="text-sm bg-background border rounded-md p-3">{{ session()?.timeframe }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
           @if (session()?.executiveSummary) {
             <div class="rounded-lg border bg-primary/5 p-4 mb-6">
               <h2 class="font-semibold mb-2">Executive Summary</h2>

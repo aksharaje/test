@@ -649,14 +649,12 @@ import {
       <!-- Right Panel: Session History -->
       <div class="w-1/2 flex flex-col bg-muted/30">
         <!-- History Header -->
-        <div class="p-6 border-b border-border">
-          <div class="flex items-center gap-3">
+        <div class="border-b bg-background p-4">
+          <div class="flex items-center gap-2">
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
-            <div>
-              <h2 class="text-lg font-semibold text-foreground">Research History</h2>
-              <p class="text-sm text-muted-foreground">View and continue past research plans</p>
-            </div>
+             <h2 class="font-semibold">Research History</h2>
           </div>
+          <p class="text-xs text-muted-foreground mt-1 ml-7">View and continue past research plans</p>
         </div>
 
         <!-- History Content -->

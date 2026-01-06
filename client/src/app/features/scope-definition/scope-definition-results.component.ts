@@ -51,6 +51,20 @@ import { FormsModule } from '@angular/forms';
         }
 
         @if (session()?.status === 'completed') {
+          <!-- Context & Inputs -->
+          @if (session()?.productVision) {
+            <div class="rounded-lg border bg-muted/30 p-4 mb-6">
+              <h2 class="font-semibold mb-3 flex items-center gap-2">
+                 <ng-icon name="lucideFileText" class="h-4 w-4" />
+                 Context & Inputs
+              </h2>
+              <div>
+                <h3 class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Product Vision</h3>
+                <p class="text-sm bg-background border rounded-md p-3">{{ session()?.productVision }}</p>
+              </div>
+            </div>
+          }
+
           @if (session()?.scopeStatement) {
             <div class="rounded-lg border bg-primary/5 p-4 mb-6">
               <h2 class="font-semibold mb-2">Scope Statement</h2>

@@ -362,7 +362,7 @@ import type { AvailableStory, ManualStory, ReleasePrepSession } from './release-
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
             <h2 class="font-semibold">Release Prep History</h2>
           </div>
-          <p class="mt-1 text-sm text-muted-foreground">
+          <p class="text-xs text-muted-foreground mt-1 ml-7">
             View and manage your past release prep sessions
           </p>
         </div>

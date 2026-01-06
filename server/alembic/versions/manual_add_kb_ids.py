@@ -18,8 +18,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('release_prep_sessions',
-                  sa.Column('knowledge_base_ids', postgresql.JSON(astext_type=sa.Text()), nullable=True))
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('release_prep_sessions')]
+    if 'knowledge_base_ids' not in columns:
+        op.add_column('release_prep_sessions',
+                      sa.Column('knowledge_base_ids', postgresql.JSON(astext_type=sa.Text()), nullable=True))
 
 
 def downgrade() -> None:

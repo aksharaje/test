@@ -283,7 +283,11 @@ type SourceType = 'goal-session' | 'okr-session' | 'kpi-session' | 'custom';
 
       <div class="w-1/2 flex flex-col bg-muted/30">
         <div class="border-b bg-background p-4">
-          <div class="flex items-center gap-2"><ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" /><h2 class="font-semibold">Session History</h2></div>
+          <div class="flex items-center gap-2">
+            <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
+            <h2 class="font-semibold">Measurement History</h2>
+          </div>
+          <p class="text-xs text-muted-foreground mt-1 ml-7">View and manage your past frameworks</p>
         </div>
         <div class="flex-1 overflow-y-auto">
           @if (service.sessions().length === 0) {

@@ -233,7 +233,7 @@ type SourceType = 'goal-session' | 'custom';
             <ng-icon name="lucideHistory" class="h-5 w-5 text-muted-foreground" />
             <h2 class="font-semibold">KPI Assignment History</h2>
           </div>
-          <p class="mt-1 text-sm text-muted-foreground">
+          <p class="text-xs text-muted-foreground mt-1 ml-7">
             View and manage your past KPI assignments
           </p>
         </div>
@@ -269,10 +269,10 @@ type SourceType = 'goal-session' | 'custom';
                         </span>
                         <span class="text-xs text-muted-foreground">{{ session.createdAt | slice:0:10 }}</span>
                       </div>
-                      <p class="mt-1 text-sm font-medium">Session #{{ session.id }}</p>
-                      @if (session.executiveSummary) {
-                        <p class="text-xs text-muted-foreground line-clamp-1">{{ session.executiveSummary }}</p>
-                      }
+                      <p class="mt-1 text-sm font-medium line-clamp-2">
+                        {{ session.executiveSummary || 'KPI Assignment Session' }}
+                      </p>
+                      <p class="text-xs text-muted-foreground mt-1">Session #{{ session.id }}</p>
                     </div>
                     <div class="flex items-center gap-1 ml-2">
                       @if (session.status === 'failed') {
