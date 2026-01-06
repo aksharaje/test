@@ -15,7 +15,6 @@ import {
   lucideAlertCircle,
   lucideChevronDown,
   lucideChevronUp,
-  lucideDownload,
   lucideEdit2,
   lucideUsers,
   lucideClipboardList,
@@ -54,7 +53,6 @@ import {
       lucideAlertCircle,
       lucideChevronDown,
       lucideChevronUp,
-      lucideDownload,
       lucideEdit2,
       lucideUsers,
       lucideClipboardList,
@@ -267,7 +265,7 @@ import {
                 </p>
               </div>
               <button
-                (click)="currentStep.set(1)"
+                (click)="goBackToMethodSelection()"
                 class="text-sm text-primary hover:underline"
               >
                 Back to method selection
@@ -284,13 +282,17 @@ import {
                 <p class="text-sm text-muted-foreground mb-4">Help us prepare questions for your conversations with users.</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Who will you be talking to?</label>
+                    <label class="block text-sm font-medium text-foreground">Who will you be talking to? <span class="text-destructive">*</span></label>
                     <input
                       type="text"
                       [(ngModel)]="interviewConfig.participantType"
                       placeholder="Click a suggestion or type your own"
+                      [class.border-destructive]="hasAttemptedSubmit() && !interviewConfig.participantType.trim()"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
+                    @if (hasAttemptedSubmit() && !interviewConfig.participantType.trim()) {
+                      <p class="mt-1 text-xs text-destructive">Please specify who you'll be talking to</p>
+                    }
                     <div class="mt-1.5 flex flex-wrap gap-1.5">
                       @for (participant of suggestedParticipants(); track participant) {
                         <button
@@ -352,13 +354,17 @@ import {
                 <p class="text-sm text-muted-foreground mb-4">We'll create a questionnaire to collect feedback at scale.</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Who should answer this?</label>
+                    <label class="block text-sm font-medium text-foreground">Who should answer this? <span class="text-destructive">*</span></label>
                     <input
                       type="text"
                       [(ngModel)]="surveyConfig.targetAudience"
                       placeholder="e.g., Current customers"
+                      [class.border-destructive]="hasAttemptedSubmit() && !surveyConfig.targetAudience.trim()"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
+                    @if (hasAttemptedSubmit() && !surveyConfig.targetAudience.trim()) {
+                      <p class="mt-1 text-xs text-destructive">Please specify who should answer</p>
+                    }
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-foreground">How long should it be?</label>
@@ -387,13 +393,17 @@ import {
               @if (!isB2C()) {
                 <div class="grid gap-4 sm:grid-cols-2 mb-4">
                   <div>
-                    <label class="block text-sm font-medium text-foreground">What's their job title or role?</label>
+                    <label class="block text-sm font-medium text-foreground">What's their job title or role? <span class="text-destructive">*</span></label>
                     <input
                       type="text"
                       [(ngModel)]="recruitingConfig.role"
                       placeholder="Click a suggestion or type your own"
+                      [class.border-destructive]="hasAttemptedSubmit() && !recruitingConfig.role.trim()"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
+                    @if (hasAttemptedSubmit() && !recruitingConfig.role.trim()) {
+                      <p class="mt-1 text-xs text-destructive">Please specify the job title or role</p>
+                    }
                     <div class="mt-1.5 flex flex-wrap gap-1.5">
                       @for (segment of suggestedSegments(); track segment) {
                         <button
@@ -435,13 +445,17 @@ import {
               @if (isB2C()) {
                 <div class="grid gap-4 sm:grid-cols-2 mb-4">
                   <div>
-                    <label class="block text-sm font-medium text-foreground">Who are you looking for?</label>
+                    <label class="block text-sm font-medium text-foreground">Who are you looking for? <span class="text-destructive">*</span></label>
                     <input
                       type="text"
                       [(ngModel)]="recruitingConfig.role"
                       placeholder="Describe your target segment"
+                      [class.border-destructive]="hasAttemptedSubmit() && !recruitingConfig.role.trim()"
                       class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
+                    @if (hasAttemptedSubmit() && !recruitingConfig.role.trim()) {
+                      <p class="mt-1 text-xs text-destructive">Please describe your target segment</p>
+                    }
                     <div class="mt-1.5 flex flex-wrap gap-1.5">
                       @for (segment of suggestedSegments(); track segment) {
                         <button
@@ -495,7 +509,7 @@ import {
             <!-- Generate Button -->
             <div class="flex justify-end gap-4 pt-4">
               <button
-                (click)="currentStep.set(1)"
+                (click)="goBackToMethodSelection()"
                 class="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
               >
                 Back
@@ -571,17 +585,8 @@ import {
             <!-- Interview Guide Tab -->
             @if (activeTab() === 'interview' && sessionDetail()!.interviewGuides[0]) {
               <div class="rounded-lg border border-border bg-card">
-                <div class="flex items-center justify-between border-b border-border p-4">
+                <div class="border-b border-border p-4">
                   <h3 class="font-medium text-foreground">Conversation Guide</h3>
-                  <div class="flex gap-2">
-                    <button
-                      (click)="downloadMarkdown(sessionDetail()!.interviewGuides[0])"
-                      class="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent"
-                    >
-                      <ng-icon name="lucideDownload" size="14" />
-                      Download
-                    </button>
-                  </div>
                 </div>
                 <div class="p-4">
                   <markdown
@@ -646,9 +651,9 @@ import {
                 <!-- Criteria -->
                 <div class="rounded-lg border border-border bg-card p-4">
                   <h4 class="mb-3 font-medium text-foreground">Who You're Looking For</h4>
-                  @if (sessionDetail()!.recruitingPlans[0].detailedCriteria) {
+                  @if (sessionDetail()!.recruitingPlans[0].detailedCriteria?.mustHave?.length || sessionDetail()!.recruitingPlans[0].detailedCriteria?.niceToHave?.length) {
                     <div class="space-y-2 text-sm">
-                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria!.mustHave.length) {
+                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria?.mustHave?.length) {
                         <div>
                           <span class="font-medium text-foreground">Must have:</span>
                           <ul class="mt-1 list-inside list-disc text-muted-foreground">
@@ -658,7 +663,7 @@ import {
                           </ul>
                         </div>
                       }
-                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria!.niceToHave.length) {
+                      @if (sessionDetail()!.recruitingPlans[0].detailedCriteria?.niceToHave?.length) {
                         <div>
                           <span class="font-medium text-foreground">Nice to have:</span>
                           <ul class="mt-1 list-inside list-disc text-muted-foreground">
@@ -669,6 +674,8 @@ import {
                         </div>
                       }
                     </div>
+                  } @else {
+                    <p class="text-sm text-muted-foreground">Based on your inputs, we'll help you find participants that match your target audience.</p>
                   }
                 </div>
 
@@ -700,7 +707,7 @@ import {
                     <p class="text-sm text-muted-foreground">Expected to Say Yes</p>
                   </div>
                   <div class="rounded-lg border border-border bg-card p-4 text-center">
-                    <p class="text-lg font-bold text-foreground">{{ sessionDetail()!.recruitingPlans[0].incentiveRecommendation }}</p>
+                    <p class="text-lg font-bold text-foreground">{{ sessionDetail()!.recruitingPlans[0].incentiveRecommendation || 'Not specified' }}</p>
                     <p class="text-sm text-muted-foreground">Thank You Gift</p>
                   </div>
                 </div>
@@ -795,6 +802,33 @@ export class ResearchPlannerResultsComponent implements OnInit {
   });
 
   isB2C = computed(() => this.researchContext() === 'b2c');
+
+  // Track if user has attempted to submit (for showing validation errors)
+  hasAttemptedSubmit = signal(false);
+
+  // Validation methods
+  isInterviewConfigValid(): boolean {
+    if (!this.selectedMethods().includes('user_interviews')) return true;
+    return !!this.interviewConfig.participantType.trim();
+  }
+
+  isSurveyConfigValid(): boolean {
+    if (!this.selectedMethods().includes('surveys')) return true;
+    return !!this.surveyConfig.targetAudience.trim();
+  }
+
+  isRecruitingConfigValid(): boolean {
+    return !!this.recruitingConfig.role.trim() && this.recruitingConfig.participantCount > 0;
+  }
+
+  isConfigValid(): boolean {
+    return this.isInterviewConfigValid() && this.isSurveyConfigValid() && this.isRecruitingConfigValid();
+  }
+
+  goBackToMethodSelection(): void {
+    this.hasAttemptedSubmit.set(false);
+    this.currentStep.set(1);
+  }
 
   suggestedTopics = computed(() => {
     const metadata = this.sessionDetail()?.session?.generationMetadata;
@@ -930,6 +964,14 @@ export class ResearchPlannerResultsComponent implements OnInit {
   async generateInstruments(): Promise<void> {
     if (!this.sessionId) return;
 
+    // Trigger validation display
+    this.hasAttemptedSubmit.set(true);
+
+    // Check if config is valid
+    if (!this.isConfigValid()) {
+      return;
+    }
+
     this.isGenerating.set(true);
     this.error.set(null);
 
@@ -1034,17 +1076,6 @@ export class ResearchPlannerResultsComponent implements OnInit {
 
   getGuideContent(guide: InterviewGuide): string {
     return guide.userEditedContent || guide.contentMarkdown;
-  }
-
-  downloadMarkdown(guide: InterviewGuide): void {
-    const content = this.getGuideContent(guide);
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'conversation-guide.md';
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   exportToPdf(): void {

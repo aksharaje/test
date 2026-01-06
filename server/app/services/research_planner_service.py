@@ -957,9 +957,43 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
         }
         db.add(session_obj)
 
+        # Get recommended methods from LLM response
+        recommended_methods_data = data.get("recommended_methods", [])
+
+        # Log what we received for debugging
+        print(f"Method Recommendation: LLM returned {len(recommended_methods_data)} methods")
+        if not recommended_methods_data:
+            print(f"Method Recommendation: Full LLM response keys: {list(data.keys())}")
+
+        # If LLM returned no methods, provide sensible defaults based on objective
+        if not recommended_methods_data:
+            print("Method Recommendation: No methods returned, using fallback defaults")
+            recommended_methods_data = [
+                {
+                    "method_name": "user_interviews",
+                    "method_label": "User Interviews",
+                    "rationale": f"In-depth interviews will help understand user needs and pain points related to: {masked_objective[:100]}",
+                    "effort": "medium",
+                    "cost_estimate": "$1,500-3,000",
+                    "timeline": "2-3 weeks",
+                    "participant_count": "8-12 participants",
+                    "confidence_score": 0.85
+                },
+                {
+                    "method_name": "surveys",
+                    "method_label": "Surveys",
+                    "rationale": "Quantitative surveys can validate findings from interviews and gather broader feedback.",
+                    "effort": "low",
+                    "cost_estimate": "$500-1,000",
+                    "timeline": "1-2 weeks",
+                    "participant_count": "50-100 respondents",
+                    "confidence_score": 0.80
+                }
+            ]
+
         # Create recommended methods
         methods = []
-        for idx, method_data in enumerate(data.get("recommended_methods", [])):
+        for idx, method_data in enumerate(recommended_methods_data):
             method = RecommendedMethod(
                 session_id=session_id,
                 method_name=method_data.get("method_name", f"method_{idx}"),
@@ -976,6 +1010,7 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
             methods.append(method)
 
         db.commit()
+        print(f"Method Recommendation: Saved {len(methods)} methods to database")
         return methods
 
     def _generate_interview_guide(self, db: Session, session_id: int, config: Dict[str, Any]) -> InterviewGuide:
@@ -1218,57 +1253,60 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
         participant_count = config.get("participant_count", 12)
         segmentation = config.get("segmentation")
 
+        # Build context about participant criteria for better prompting
+        role_context = participant_criteria.get("role", "target users")
+        company_context = participant_criteria.get("companySize", "")
+
         prompt = f"""You are an expert UX researcher creating a recruiting strategy.
 
-Research objective: {masked_objective}
-Selected methods: {', '.join(selected_methods)}
-Participant criteria: {json.dumps(participant_criteria)}
-Participants needed: {participant_count}
-Segmentation requirements: {json.dumps(segmentation) if segmentation else 'None'}
+RESEARCH CONTEXT:
+- Objective: {masked_objective}
+- Methods: {', '.join(selected_methods) if selected_methods else 'user interviews'}
+- Target participants: {role_context}{f' at {company_context} companies' if company_context else ''}
+- Number needed: {participant_count}
 
-Create a comprehensive recruiting plan with:
-1. Detailed participant criteria
-2. Screener questions (5-8 questions to qualify participants)
-3. Recruiting sources (CRM, support tickets, user base, third-party panels)
-4. Outreach email templates
-5. Incentive recommendations
-6. Expected response rates
-7. Contact volume needed (accounting for response rate)
+YOUR TASK: Create a comprehensive recruiting plan. You MUST include ALL fields below with real, specific content.
 
-Return EXACTLY this JSON structure:
+REQUIRED JSON RESPONSE (fill in ALL fields with specific, relevant content):
 {{
   "detailed_criteria": {{
-    "must_have": ["Criteria 1", "Criteria 2"],
-    "nice_to_have": ["Criteria 3"],
-    "exclusions": ["Exclusion 1"]
+    "must_have": ["At least 2-3 specific criteria based on the research objective"],
+    "nice_to_have": ["At least 1-2 preferred but not required criteria"],
+    "exclusions": ["At least 1 exclusion criteria"]
   }},
   "screener_questions": [
     {{
-      "question": "Question text...",
-      "type": "multiple_choice|yes_no|open_ended",
-      "options": ["Option 1", "Option 2"],
-      "qualifying_answer": "Option that qualifies participant"
+      "question": "A specific screening question",
+      "type": "multiple_choice",
+      "options": ["Option A", "Option B", "Option C"],
+      "qualifying_answer": "The answer that qualifies someone"
     }}
   ],
-  "recruiting_sources": ["CRM", "support_tickets", "user_base", "third_party_panel"],
+  "recruiting_sources": ["user_base", "CRM", "support_tickets"],
   "email_templates": [
     {{
       "type": "initial_outreach",
-      "subject": "Subject line...",
-      "body": "Email body with {{{{name}}}} placeholder..."
+      "subject": "A compelling subject line",
+      "body": "Hi {{{{name}}}},\\n\\nEmail body..."
     }}
   ],
-  "incentive_recommendation": "$50-75 gift card for 45-minute interview",
+  "incentive_recommendation": "Specific incentive like '$50 Amazon gift card' or '$75 for 60-minute session'",
   "expected_response_rate": 0.15,
-  "contacts_needed": 80,
-  "timeline_estimate": "1-2 weeks for recruiting"
+  "contacts_needed": {int(participant_count / 0.15)},
+  "timeline_estimate": "1-2 weeks"
 }}
 
-IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no code fences."""
+CRITICAL REQUIREMENTS:
+1. detailed_criteria.must_have MUST have at least 2 specific criteria
+2. detailed_criteria.nice_to_have MUST have at least 1 criterion
+3. incentive_recommendation MUST be a specific dollar amount recommendation
+4. screener_questions MUST have at least 3 questions
+
+Return ONLY valid JSON. No markdown, no explanations."""
 
         data = self._call_llm(
             messages=[
-                {"role": "system", "content": "You are a JSON-only API. You must respond with valid JSON only. No markdown, no explanations, no code fences. Start with { and end with }."},
+                {"role": "system", "content": "You are a JSON-only API that creates UX research recruiting plans. You MUST return complete JSON with ALL required fields filled in. Never return empty arrays or missing fields."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.4,
@@ -1276,19 +1314,41 @@ IMPORTANT: Return ONLY a valid JSON object. No explanations, no markdown, no cod
             context="Recruiting Plan Generation"
         )
 
+        # Validate and provide sensible defaults for critical fields
+        detailed_criteria = data.get("detailed_criteria", {})
+        if not detailed_criteria.get("must_have"):
+            detailed_criteria["must_have"] = [
+                f"Experience with {masked_objective[:50]}..." if len(masked_objective) > 50 else f"Relevant experience with the research topic",
+                f"Matches target profile: {role_context}"
+            ]
+        if not detailed_criteria.get("nice_to_have"):
+            detailed_criteria["nice_to_have"] = ["Previous research participation experience"]
+        if not detailed_criteria.get("exclusions"):
+            detailed_criteria["exclusions"] = ["Employees of competing companies"]
+
+        incentive = data.get("incentive_recommendation", "")
+        if not incentive:
+            # Calculate sensible default based on methods
+            if "user_interviews" in selected_methods:
+                incentive = "$50-75 gift card for 45-60 minute interview"
+            elif "surveys" in selected_methods:
+                incentive = "$10-25 gift card for survey completion"
+            else:
+                incentive = "$50 gift card for participation"
+
         plan = RecruitingPlan(
             session_id=session_id,
             participant_criteria=participant_criteria,
             participant_count=participant_count,
             segmentation=segmentation,
-            detailed_criteria=data.get("detailed_criteria", {}),
+            detailed_criteria=detailed_criteria,
             screener_questions=data.get("screener_questions", []),
-            recruiting_sources=data.get("recruiting_sources", []),
+            recruiting_sources=data.get("recruiting_sources", ["user_base", "CRM"]),
             email_templates=data.get("email_templates", []),
-            incentive_recommendation=data.get("incentive_recommendation", ""),
+            incentive_recommendation=incentive,
             expected_response_rate=data.get("expected_response_rate", 0.15),
-            contacts_needed=data.get("contacts_needed", 100),
-            timeline_estimate=data.get("timeline_estimate", "")
+            contacts_needed=data.get("contacts_needed", max(100, int(participant_count / 0.15))),
+            timeline_estimate=data.get("timeline_estimate", "1-2 weeks for recruiting")
         )
         db.add(plan)
         db.commit()
