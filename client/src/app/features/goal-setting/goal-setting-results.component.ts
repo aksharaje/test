@@ -351,36 +351,6 @@ interface EditFormData {
           </div>
 
           <!-- Next Steps CTAs -->
-          <div class="mt-8 pt-6 border-t">
-            <h3 class="text-lg font-semibold mb-4">Continue Your Workflow</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                hlmBtn
-                class="w-full justify-start"
-                (click)="continueToOkrGenerator()"
-              >
-                <ng-icon name="lucideTarget" class="mr-3 h-5 w-5" />
-                <div class="text-left">
-                  <div class="font-medium">Generate OKRs</div>
-                  <div class="text-xs text-muted-foreground">Create Objectives & Key Results from these goals</div>
-                </div>
-                <ng-icon name="lucideChevronRight" class="ml-auto h-5 w-5" />
-              </button>
-              <button
-                hlmBtn
-                variant="outline"
-                class="w-full justify-start"
-                (click)="continueToKpiAssignment()"
-              >
-                <ng-icon name="lucideTarget" class="mr-3 h-5 w-5" />
-                <div class="text-left">
-                  <div class="font-medium">Assign KPIs</div>
-                  <div class="text-xs text-muted-foreground">Assign KPIs directly to these goals</div>
-                </div>
-                <ng-icon name="lucideChevronRight" class="ml-auto h-5 w-5" />
-              </button>
-            </div>
-          </div>
         }
       </div>
     </div>

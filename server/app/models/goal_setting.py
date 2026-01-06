@@ -88,6 +88,10 @@ class Goal(SQLModel, table=True):
 # Pydantic models for API requests/responses
 class GoalSettingSessionCreate(SQLModel):
     """Request model for creating a new session"""
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
     domain: str  # PM Role / Domain
     strategy: Optional[str] = None  # Company Strategy (optional)
     team_charter: Optional[str] = None
