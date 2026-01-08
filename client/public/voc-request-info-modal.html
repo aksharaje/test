@@ -1,0 +1,45 @@
+<!-- Request Additional Info Modal -->
+<div id="request-info-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: white; width: 500px; max-width: 90%; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 18px;">Request Additional Info</h3>
+            <button onclick="document.getElementById('request-info-modal').style.display='none'"
+                style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-secondary);"><i
+                    class="ph ph-x"></i></button>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Clarification
+                Note</label>
+            <textarea rows="3" placeholder="What specific information do you need?"
+                style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit;"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Owner</label>
+                <select style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <option>Me</option>
+                    <option>Product Team</option>
+                    <option>Research Team</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Priority</label>
+                <select style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <option>High</option>
+                    <option>Medium</option>
+                    <option>Low</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button class="btn btn-outline"
+                onclick="document.getElementById('request-info-modal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="saveRequestInfo()">Save Request</button>
+        </div>
+    </div>
+</div>

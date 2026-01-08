@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - VoC Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .insight-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .theme-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .theme-table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: #F8FAFC;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .theme-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .confidence-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .conf-high {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .conf-med {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-red {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .badge-yellow {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC;">
+
+    <div class="app-container" style="display: block; max-width: 1200px; margin: 0 auto;">
+        <!-- Header -->
+        <header style="background: white; border-bottom: 1px solid var(--border-color); padding: 16px 32px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <a href="discovery-hub.html"
+                    style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 12px;">
+                    <i class="ph ph-arrow-left"></i> Back to Dashboard
+                </a>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1 style="margin: 0; font-size: 24px;">VoC Analysis — Weekly · Defect-Focused (<span
+                                id="analysis-date">Mar 4</span>)</h1>
+                        <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+                            <div><strong style="color: var(--text-primary);">Sources analyzed:</strong> Qualtrics</div>
+                            <div><strong style="color: var(--text-primary);">Sources not included:</strong> App Reviews
+                            </div>
+                            <div style="margin-top: 4px; display: flex; gap: 4px;">
+                                <strong style="color: var(--text-primary);">Coverage:</strong>
+                                <span style="display: flex; flex-direction: column;">
+                                    <span>• Qualtrics: Since <span id="coverage-date">Mar 3</span> (14 responses)</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline"><i class="ph ph-export"></i> Export Report</button>
+                </div>
+            </div>
+        </header>
+
+        <main style="max-width: 1200px; margin: 32px auto; padding: 0 32px;">
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('overview')">Overview</div>
+                <div class="tab" onclick="switchTab('compare')">Compare Runs</div>
+            </div>
+
+            <!-- Overview View -->
+            <div id="overview-content">
+                <div class="insight-card">
+                    <h2 style="font-size: 18px; margin-bottom: 16px;">Top Customer Problems</h2>
+                    <table class="theme-table">
+                        <thead>
+                            <tr>
+                                <th>Theme</th>
+                                <th>Sentiment</th>
+                                <th>Mentions</th>
+                                <th>Trend</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Theme 1 -->
+                            <tr style="cursor: pointer;" onclick="window.location.href='voc-theme-detail.html'">
+                                <td style="font-weight: 600; color: #1E293B;">Checkout feels slow & confusing</td>
+                                <td><span class="badge badge-red">Negative</span></td>
+                                <!-- badge-red assumed/inline style if needed -->
+                                <td>42</td>
+                                <td style="color: #DC2626;">↑ Rising</td>
+                                <td><span class="confidence-badge conf-med">Medium</span></td>
+                            </tr>
+                            <!-- Theme 2 -->
+                            <tr style="cursor: pointer;" onclick="window.location.href='voc-theme-detail.html'">
+                                <td style="font-weight: 600; color: #1E293B;">Login fails intermittently</td>
+                                <td><span class="badge badge-red">Negative</span></td>
+                                <td>21</td>
+                                <td style="color: #64748B;">→ Stable</td>
+                                <td><span class="confidence-badge conf-high">High</span></td>
+                            </tr>
+                            <!-- Theme 3 -->
+                            <tr style="cursor: pointer;" onclick="window.location.href='voc-theme-detail.html'">
+                                <td style="font-weight: 600; color: #1E293B;">Payment confirmation unclear</td>
+                                <td><span class="badge badge-yellow">Mixed</span></td> <!-- badge-yellow assumed -->
+                                <td>18</td>
+                                <td style="color: #DC2626;">↑ Rising</td>
+                                <td><span class="confidence-badge conf-med">Medium</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+
+
+                <div class="insight-card">
+                    <h2 style="font-size: 18px; margin-bottom: 16px;">Problem Themes</h2>
+                    <table class="theme-table">
+                        <thead>
+                            <tr>
+                                <th>Theme Name</th>
+                                <th>Confidence</th>
+                                <th>Evidence Count</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr onclick="window.location.href='voc-theme-detail.html'">
+                                <td>
+                                    <strong style="color: var(--primary-color); cursor: pointer;">Login issues</strong>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Auth, Mobile</div>
+                                </td>
+                                <td><span class="confidence-badge conf-high">High</span></td>
+                                <td>43 items</td>
+                                <td><i class="ph ph-caret-right"></i></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Password reset confusion</strong>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Auth, Email</div>
+                                </td>
+                                <td><span class="confidence-badge conf-med">Medium</span></td>
+                                <td>18 items</td>
+                                <td><i class="ph ph-caret-right"></i></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Checkout performance</strong>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Payments</div>
+                                </td>
+                                <td><span class="confidence-badge conf-med">Medium</span></td>
+                                <td>15 items</td>
+                                <td><i class="ph ph-caret-right"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Comparison View (Hidden by default) -->
+            <div id="compare-content" style="display: none;">
+                <div class="insight-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-size: 18px; margin: 0;">Compare VoC Runs</h2>
+                        <div style="background: #F1F5F9; padding: 8px 16px; border-radius: 8px; font-size: 14px;">
+                            <strong>Weekly Run (Mar 1)</strong> vs <span>Weekly Run (Feb 22)</span>
+                        </div>
+                    </div>
+
+                    <table class="theme-table">
+                        <thead>
+                            <tr>
+                                <th>Theme</th>
+                                <th>Change Status</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Login issues</strong></td>
+                                <td>
+                                    <span style="color: #EF4444; font-weight: 600;">🔺 +30% Volume</span>
+                                </td>
+                                <td>Increasing</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Password reset</strong></td>
+                                <td>
+                                    <span style="color: #3B82F6; font-weight: 600;">🆕 New Theme</span>
+                                </td>
+                                <td>New</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Checkout performance</strong></td>
+                                <td>
+                                    <span style="color: var(--text-secondary);">➖ No change</span>
+                                </td>
+                                <td>Stable</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('[id$="-content"]'); // simplistic content hider if divs exist, or just active class logic
+
+            tabs.forEach(t => t.classList.remove('active'));
+            // Find clicked tab logic would go here. 
+            // Since this is a mock results page, we just toggle styles for demo if needed.
+            // For now, let's just highlight the clicked one.
+            const clickedTab = Array.from(tabs).find(t => t.textContent.toLowerCase().includes(tabName));
+            if (clickedTab) clickedTab.classList.add('active');
+
+            // Toggle content
+            if (tabName === 'overview') {
+                document.getElementById('overview-content').style.display = 'block';
+                document.getElementById('compare-content').style.display = 'none';
+            } else {
+                document.getElementById('overview-content').style.display = 'none';
+                document.getElementById('compare-content').style.display = 'block';
+            }
+        }
+
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set dynamic date (Today)
+            const dateSpan = document.getElementById('analysis-date');
+            const options = { month: 'short', day: 'numeric' };
+            const today = new Date();
+
+            if (dateSpan) {
+                dateSpan.textContent = today.toLocaleDateString('en-US', options);
+            }
+
+            // Set coverage date (Yesterday)
+            const coverageSpan = document.getElementById('coverage-date');
+            if (coverageSpan) {
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                coverageSpan.textContent = yesterday.toLocaleDateString('en-US', options);
+            }
+        });
+    </script>
+</body>
+
+</html>

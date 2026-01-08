@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Insights - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Page Specific Styles */
+        .repository-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 32px;
+            margin-top: 24px;
+        }
+
+        .filter-section {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            height: fit-content;
+        }
+
+        .filter-group {
+            margin-bottom: 24px;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+        }
+
+        .insight-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            /* For menu positioning */
+        }
+
+        .insight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-color);
+        }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .thread-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .thread-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .meta-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .impact-high {
+            color: #DC2626;
+            background: #FEE2E2;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .impact-med {
+            color: #D97706;
+            background: #FEF3C7;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .owner-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .owner-avatar {
+            width: 24px;
+            height: 24px;
+            background: #E0E7FF;
+            color: #4F46E5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        /* Tooltip Styles */
+        .info-icon {
+            color: var(--text-secondary);
+            cursor: help;
+            font-size: 14px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #334155;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 12px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            font-size: 12px;
+            line-height: 1.4;
+            font-weight: 400;
+            text-transform: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Card Menu Styles */
+        .card-menu-btn {
+            background: transparent;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            border-radius: 4px;
+            position: relative;
+            z-index: 2;
+            /* Above card click */
+        }
+
+        .card-menu-btn:hover {
+            background: #F1F5F9;
+        }
+
+        .card-menu-dropdown {
+            position: absolute;
+            top: 30px;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            width: 160px;
+            display: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .menu-item:hover {
+            background: #F8FAFC;
+        }
+
+        .menu-item.danger {
+            color: #EF4444;
+        }
+    </style>
+</head>
+
+<body style="background: #F8FAFC;">
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="javascript:history.back()" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="http://localhost:4200/research/voice-of-customer" class="back-to-home-btn" title="Back to VOC Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
+
+    <div class="app-container" style="display: block; max-width: 1200px;">
+        <!-- Header Nav -->
+        <div style="margin-bottom: 24px;">
+            <a href="discovery-hub.html" class="btn btn-outline"
+                style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                <i class="ph ph-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div>
+                <h1 style="margin: 0; font-size: 24px;">Problem Repository</h1>
+                <p style="color: var(--text-secondary); margin-top: 4px;">Validated themes and ongoing
+                    investigations.
+                </p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <div style="position: relative;">
+                    <i class="ph ph-magnifying-glass"
+                        style="position: absolute; left: 12px; top: 10px; color: var(--text-secondary);"></i>
+                    <input type="text" placeholder="Search insights..."
+                        style="padding: 10px 12px 10px 36px; border-radius: 8px; border: 1px solid var(--border-color); width: 280px; background: white;">
+                </div>
+                <button class="btn btn-primary"><i class="ph ph-plus"></i> New Thread</button>
+            </div>
+        </div>
+
+        <div class="repository-layout">
+            <!-- Sidebar Filters -->
+            <aside class="filter-section">
+                <div class="filter-group">
+                    <div class="filter-title">Status</div>
+                    <div class="checkbox-group" style="flex-direction: column; gap: 8px;">
+                        <label class="checkbox-pill checked">
+                            <i class="ph ph-check-circle"></i> Validated (12)
+                        </label>
+                        <label class="checkbox-pill">
+                            <i class="ph ph-eye"></i> Monitoring (5)
+                        </label>
+                        <label class="checkbox-pill">
+                            <i class="ph ph-archive"></i> Archived (34)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-title">Department</div>
+                    <div class="checkbox-group" style="flex-direction: column; gap: 8px;">
+                        <label class="checkbox-pill">Mobile App</label>
+                        <label class="checkbox-pill">Checkout</label>
+                        <label class="checkbox-pill">Account Mgmt</label>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-title">
+                        Impact
+                        <div class="tooltip">
+                            <i class="ph ph-info info-icon"></i>
+                            <span class="tooltip-text">
+                                <strong>Impact Score Logic:</strong><br>
+                                • <span style="color: #F87171">High</span>: >50 evidence items or revenue blocking.<br>
+                                • <span style="color: #FBBF24">Med</span>: 10-50 items or usability friction.<br>
+                                • <span style="color: #94A3B8">Low</span>: <10 items or cosmetic. </span>
+                        </div>
+                    </div>
+                    <div class="checkbox-group" style="flex-direction: column; gap: 8px;">
+                        <label class="checkbox-pill"><span style="color: #DC2626;">●</span> High Priority</label>
+                        <label class="checkbox-pill"><span style="color: #D97706;">●</span> Medium Priority</label>
+                        <label class="checkbox-pill"><span style="color: #94A3B8;">●</span> Low Priority</label>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Card Grid -->
+            <div class="insight-grid">
+
+                <!-- Card 1 -->
+                <div class="insight-card" onclick="window.location.href='voc-theme-detail.html'">
+                    <div class="card-header-row">
+                        <div class="status-badge" style="background: #DCFCE7; color: #166534;">Validated</div>
+                        <div style="position: relative;">
+                            <button class="card-menu-btn" onclick="toggleMenu(event, 'menu1')">
+                                <i class="ph ph-dots-three" style="font-size: 20px; color: var(--text-secondary);"></i>
+                            </button>
+                            <div id="menu1" class="card-menu-dropdown">
+                                <div class="menu-item" onclick="updateStatus(event, 'Resolved')"><i
+                                        class="ph ph-check-circle"></i> Mark Resolved</div>
+                                <div class="menu-item" onclick="updateStatus(event, 'Archived')"><i
+                                        class="ph ph-archive"></i> Archive</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="thread-title">Mobile Login Timeout</h3>
+                    <!-- ... content ... -->
+                </div>
+
+                <!-- Replace other cards with same structure for the menu button -->
+
+                <!-- Card 2 -->
+                <div class="insight-card" onclick="window.location.href='voc-theme-detail.html'">
+                    <div class="card-header-row">
+                        <div class="status-badge" style="background: #FEF3C7; color: #9A3412;">Investigating</div>
+                        <div style="position: relative;">
+                            <button class="card-menu-btn" onclick="toggleMenu(event, 'menu2')">
+                                <i class="ph ph-dots-three" style="font-size: 20px; color: var(--text-secondary);"></i>
+                            </button>
+                            <div id="menu2" class="card-menu-dropdown">
+                                <div class="menu-item" onclick="updateStatus(event, 'Resolved')"><i
+                                        class="ph ph-check-circle"></i> Mark Resolved</div>
+                                <div class="menu-item" onclick="updateStatus(event, 'Archived')"><i
+                                        class="ph ph-archive"></i> Archive</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="thread-title">Password Reset Confusion</h3>
+                    <!-- ... content ... -->
+                </div>
+
+                <!-- Card 3 -->
+                <div class="insight-card" onclick="window.location.href='voc-theme-detail.html'">
+                    <div class="card-header-row">
+                        <div class="status-badge" style="background: #F1F5F9; color: #475569;">Monitoring</div>
+                        <div style="position: relative;">
+                            <button class="card-menu-btn" onclick="toggleMenu(event, 'menu3')">
+                                <i class="ph ph-dots-three" style="font-size: 20px; color: var(--text-secondary);"></i>
+                            </button>
+                            <div id="menu3" class="card-menu-dropdown">
+                                <div class="menu-item" onclick="updateStatus(event, 'Resolved')"><i
+                                        class="ph ph-check-circle"></i> Mark Resolved</div>
+                                <div class="menu-item" onclick="updateStatus(event, 'Archived')"><i
+                                        class="ph ph-archive"></i> Archive</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="thread-title">Dashboard Loading Speed</h3>
+                    <!-- ... content ... -->
+                </div>
+
+                <!-- Card 4 -->
+                <div class="insight-card" onclick="window.location.href='voc-theme-detail.html'">
+                    <div class="card-header-row">
+                        <div class="status-badge" style="background: #DCFCE7; color: #166534;">Validated</div>
+                        <div style="position: relative;">
+                            <button class="card-menu-btn" onclick="toggleMenu(event, 'menu4')">
+                                <i class="ph ph-dots-three" style="font-size: 20px; color: var(--text-secondary);"></i>
+                            </button>
+                            <div id="menu4" class="card-menu-dropdown">
+                                <div class="menu-item" onclick="updateStatus(event, 'Resolved')"><i
+                                        class="ph ph-check-circle"></i> Mark Resolved</div>
+                                <div class="menu-item" onclick="updateStatus(event, 'Archived')"><i
+                                        class="ph ph-archive"></i> Archive</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="thread-title">Export Feature Gap</h3>
+                    <!-- ... content ... -->
+                </div>
+
+                <!-- Card 5 -->
+                <div class="insight-card" onclick="window.location.href='voc-theme-detail.html'">
+                    <div class="card-header-row">
+                        <div class="status-badge" style="background: #DCFCE7; color: #166534;">Validated</div>
+                        <div style="position: relative;">
+                            <button class="card-menu-btn" onclick="toggleMenu(event, 'menu5')">
+                                <i class="ph ph-dots-three" style="font-size: 20px; color: var(--text-secondary);"></i>
+                            </button>
+                            <div id="menu5" class="card-menu-dropdown">
+                                <div class="menu-item" onclick="updateStatus(event, 'Resolved')"><i
+                                        class="ph ph-check-circle"></i> Mark Resolved</div>
+                                <div class="menu-item" onclick="updateStatus(event, 'Archived')"><i
+                                        class="ph ph-archive"></i> Archive</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="thread-title">Payment Gateway Error</h3>
+                    <!-- ... content ... -->
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu(event, menuId) {
+            event.stopPropagation();
+            // Close all other menus
+            document.querySelectorAll('.card-menu-dropdown').forEach(el => {
+                if (el.id !== menuId) el.style.display = 'none';
+            });
+
+            const menu = document.getElementById(menuId);
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'block';
+            }
+        }
+
+        function updateStatus(event, status) {
+            event.stopPropagation();
+            alert(`Moved thread to ${status}`);
+            // In a real app, this would update the database and UI
+            document.querySelectorAll('.card-menu-dropdown').forEach(el => el.style.display = 'none');
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.card-menu-btn')) {
+                document.querySelectorAll('.card-menu-dropdown').forEach(el => el.style.display = 'none');
+            }
+        });
+    </script>
+</body>
+
+</html>

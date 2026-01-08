@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice of Customer - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Specific Dashboard Styles */
+        .hero-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 32px;
+        }
+
+        .action-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            background: white;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 160px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary-color);
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: #EFF6FF;
+            color: var(--primary-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .recent-runs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .recent-runs-table th {
+            text-align: left;
+            padding: 16px 24px;
+            background: #F8FAFC;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .recent-runs-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .recent-runs-table tr:hover {
+            background-color: #f8fafc;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-ready {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .status-processing {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="javascript:history.back()" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="http://localhost:4200/research/voice-of-customer" class="back-to-home-btn" title="Back to VOC Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
+
+    <div class="app-container" style="display: block;">
+        <!-- Sidebar -->
+        <aside class="sidebar-nav" style="margin-bottom: 24px;">
+            <div class="nav-item">
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <i class="ph ph-arrow-left"></i> Back to Strategy
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="max-width: 1200px; margin: 0 auto; padding: 32px;">
+            <!-- Hero -->
+            <div class="hero-banner">
+                <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Voice of Customer</h1>
+                <p style="margin: 8px 0 0; opacity: 0.9;">Discover recurring customer problems using evidence from your
+                    connected sources.</p>
+            </div>
+
+            <!-- Primary Actions -->
+            <h2 style="font-size: 18px; margin-bottom: 16px;">Primary Actions</h2>
+            <div class="action-cards">
+                <a href="voc-run-analysis.html" class="action-card">
+                    <div class="action-icon">
+                        <i class="ph ph-lightning"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">Run New Analysis</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Trigger a fresh investigation
+                    </p>
+                </a>
+
+                <a href="voc-schedule.html" class="action-card">
+                    <div class="action-icon">
+                        <i class="ph ph-calendar-check"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">Schedule Analysis</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Set up automated weekly runs
+                    </p>
+                </a>
+
+                <a href="voc-manage-sources.html" class="action-card">
+                    <div class="action-icon">
+                        <i class="ph ph-plugs"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 16px;">Manage Sources</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Connect App Reviews, Qualtrics,
+                        etc.
+                    </p>
+                </a>
+            </div>
+
+            <!-- Recent Runs -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 18px; margin: 0;">Recent Analyses</h2>
+                <a href="voc-saved-insights.html" class="text-link" style="font-size: 14px;">View Saved Insights →</a>
+            </div>
+
+            <table class="recent-runs-table">
+                <thead>
+                    <tr>
+                        <th>Run Name</th>
+                        <th>Date</th>
+                        <th>Sources</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr onclick="window.location.href='voc-results.html?id=weekly-mar1'">
+                        <td>
+                            <div style="font-weight: 600;">Weekly Run</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">Mar 1</td>
+                        <td style="color: var(--text-secondary);">Jira, Surveys</td>
+                        <td>
+                            <span class="status-badge status-ready">
+                                <i class="ph ph-check"></i> Ready
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <i class="ph ph-caret-right" style="color: var(--gray-400);"></i>
+                        </td>
+                    </tr>
+                    <tr onclick="window.location.href='voc-results.html?id=adhoc-feb25'">
+                        <td>
+                            <div style="font-weight: 600;">Ad-hoc Investigation</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">Feb 25</td>
+                        <td style="color: var(--text-secondary);">Jira</td>
+                        <td>
+                            <span class="status-badge status-ready">
+                                <i class="ph ph-check"></i> Ready
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <i class="ph ph-caret-right" style="color: var(--gray-400);"></i>
+                        </td>
+                    </tr>
+                    <tr onclick="window.location.href='voc-results.html?id=monthly-feb'">
+                        <td>
+                            <div style="font-weight: 600;">Monthly Run</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">Feb 1</td>
+                        <td style="color: var(--text-secondary);">Jira, Reviews</td>
+                        <td>
+                            <span class="status-badge status-ready">
+                                <i class="ph ph-check"></i> Ready
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <i class="ph ph-caret-right" style="color: var(--gray-400);"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+</body>
+
+</html>

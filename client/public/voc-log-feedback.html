@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Feedback - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="javascript:history.back()" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="http://localhost:4200/research/voice-of-customer" class="back-to-home-btn" title="Back to VOC Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
+
+    <div style="max-width: 600px; margin: 40px auto 0; padding: 0 40px;">
+        <a href="discovery-hub.html" class="btn btn-outline"
+            style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border: none; padding-left: 0; background: transparent;">
+            <i class="ph ph-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="form-container">
+        <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 600;">Log Feedback</h1>
+        <p style="margin: 0 0 32px; color: var(--text-secondary); font-size: 14px;">Turn real feedback into clear, validated problems</p>
+
+        <div class="form-section">
+            <label class="form-label">Feedback Source</label>
+            <div class="radio-card-group">
+                <label class="radio-card selected">
+                    <input type="radio" name="source" checked>
+                    <span><i class="ph ph-users"></i> Client conversation</span>
+                </label>
+                <label class="radio-card">
+                    <input type="radio" name="source">
+                    <span><i class="ph ph-briefcase"></i> Sales / CS note</span>
+                </label>
+                <label class="radio-card">
+                    <input type="radio" name="source">
+                    <span><i class="ph ph-ticket"></i> Support ticket (Jira)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <label class="form-label">Context</label>
+            <select>
+                <option>Client call (General)</option>
+                <option>Onboarding Sync</option>
+                <option>QBR</option>
+            </select>
+        </div>
+
+        <div class="form-section">
+            <label class="form-label">Raw Feedback</label>
+            <textarea rows="4"
+                placeholder="Paste what the client said...">'Client says users keep retrying login because the error message doesn't explain what went wrong.'</textarea>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">No forced structure.
+                Raw language preserved.</div>
+        </div>
+
+        <div class="form-section">
+            <label class="form-label">Link to Problem Thread</label>
+            <div class="radio-card-group">
+                <div>
+                    <label class="radio-card" onclick="toggleNewProblem(true)">
+                        <input type="radio" name="thread" value="new">
+                        <span><i class="ph ph-plus-circle"></i> Create new problem</span>
+                    </label>
+                    <div id="new-problem-input"
+                        style="display: none; margin-top: 12px; margin-left: 0; padding-left: 4px;">
+                        <label
+                            style="font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; display: block;">New
+                            Problem Name</label>
+                        <input type="text" placeholder="e.g., Mobile app crash on startup..."
+                            id="new-problem-name">
+                    </div>
+                </div>
+
+                <label class="radio-card selected" onclick="toggleNewProblem(false)">
+                    <input type="radio" name="thread" value="existing" checked>
+                    <span><i class="ph ph-hash"></i> Login error confusion</span>
+                </label>
+            </div>
+        </div>
+
+        <button class="btn btn-primary full-width" onclick="saveFeedback()">Save Feedback</button>
+    </div>
+
+    <script>
+        function toggleNewProblem(show) {
+            const input = document.getElementById('new-problem-input');
+            const field = document.getElementById('new-problem-name');
+            if (show) {
+                input.style.display = 'block';
+                field.focus();
+            } else {
+                input.style.display = 'none';
+            }
+        }
+
+        function saveFeedback() {
+            // Get data
+            const rawText = document.querySelector('textarea').value;
+            const threadType = document.querySelector('input[name="thread"]:checked').value;
+
+            if (!rawText) {
+                alert("Please enter some feedback first.");
+                return;
+            }
+
+            if (threadType === 'new') {
+                // Create new problem thread
+                const title = document.getElementById('new-problem-name').value || "Untitled Problem";
+                const newId = 'new_' + Date.now();
+
+                const newThread = {
+                    id: newId,
+                    title: title,
+                    statement: rawText, // Use feedback as initial statement
+                    status: "Observed",
+                    confidence: "Low",
+                    confClass: "conf-low",
+                    forceColor: "#F59E0B", // Orange/Yellow
+                    counts: { client: 1, sales: 0, support: 0, analytics: 0 },
+                    feedback: [rawText],
+                    confReasons: ["Initial signal observed"],
+                    questions: ["Is this an isolated incident?"]
+                };
+
+                // Save thread definition
+                const threads = JSON.parse(localStorage.getItem('voc_threads') || '[]');
+                threads.push(newThread);
+                localStorage.setItem('voc_threads', JSON.stringify(threads));
+
+            } else if (threadType === 'existing') {
+                // Existing logic
+                const updates = JSON.parse(localStorage.getItem('voc_updates') || '{}');
+                if (!updates['login']) updates['login'] = [];
+                updates['login'].push({
+                    text: rawText,
+                    source: 'Client conversation',
+                    isNew: true
+                });
+                localStorage.setItem('voc_updates', JSON.stringify(updates));
+            }
+
+            // Mock visualization of saving
+            const btn = document.querySelector('.btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Saving...';
+            btn.style.opacity = '0.8';
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="ph ph-check"></i> Saved';
+                btn.style.background = '#10B981';
+                setTimeout(() => {
+                    window.location.href = 'discovery-hub.html';
+                }, 800);
+            }, 600);
+        }
+
+        // Simple radio selection visual logic
+        document.querySelectorAll('.radio-card').forEach(card => {
+            card.addEventListener('click', function (e) {
+                // Find all radios in this group
+                const groupName = this.querySelector('input').name;
+                document.querySelectorAll(`input[name="${groupName}"]`).forEach(input => {
+                    input.closest('.radio-card').classList.remove('selected');
+                });
+
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+    </script>
+</body>
+
+</html>

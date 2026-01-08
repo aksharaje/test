@@ -81,6 +81,7 @@ export class AuthenticatedShellComponent {
       children: [
         { label: 'Competitive Analysis', path: '/research/competitive-analysis' },
         { label: 'Market Research', path: '/research/market-research' },
+        { label: 'Voice of Customer', path: '/research/voice-of-customer' },
       ],
     },
     {

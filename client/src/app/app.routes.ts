@@ -696,6 +696,14 @@ export const routes: Routes = [
                 (m) => m.MarketResearchResultsComponent
               ),
           },
+          {
+            path: 'voice-of-customer',
+            title: 'Voice of Customer | Product Studio',
+            loadComponent: () =>
+              import('./features/voc/voc.component').then(
+                (m) => m.VocComponent
+              ),
+          },
         ],
       },
       // Testing Section

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run Analysis - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .wizard-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 40px;
+        }
+
+        .step-section {
+            margin-bottom: 32px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .step-section:last-child {
+            border-bottom: none;
+        }
+
+        .step-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: #E0E7FF;
+            color: #4F46E5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* Tooltip Styles */
+        .tooltip-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .tooltip-icon {
+            color: #94A3B8;
+            cursor: help;
+            margin-left: 6px;
+            font-size: 16px;
+        }
+
+        .tooltip-icon:hover {
+            color: #4F46E5;
+        }
+
+        .tooltip-box {
+            display: none;
+            position: absolute;
+            left: 24px;
+            /* Offset from icon */
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1E293B;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            width: 280px;
+            z-index: 1000;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-size: 13px;
+            line-height: 1.4;
+            pointer-events: none;
+            /* Prevent flickering */
+        }
+
+        .tooltip-box h4 {
+            margin: 0 0 4px 0;
+            font-size: 13px;
+            color: #E2E8F0;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 4px;
+        }
+
+        .tooltip-container:hover .tooltip-box {
+            display: block;
+        }
+
+        .tooltip-signals {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #334155;
+            font-size: 12px;
+            color: #CBD5E1;
+        }
+
+        .tooltip-signals div {
+            margin-bottom: 2px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .list-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .list-option:hover {
+            background: #F8FAFC;
+        }
+
+        .list-option input[type="checkbox"],
+        .list-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+
+        .select-input,
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+        }
+    </style>
+</head>
+
+<body style="background: #F1F5F9;">
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="javascript:history.back()" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="http://localhost:4200/research/voice-of-customer" class="back-to-home-btn" title="Back to VOC Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
+
+    <div class="wizard-container">
+        <div style="margin-bottom: 32px;">
+            <a href="discovery-hub.html"
+                style="text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 4px; margin-bottom: 16px;">
+                <i class="ph ph-arrow-left"></i> Back to Dashboard
+            </a>
+            <h1 style="margin: 0;">Run Voice of Customer Analysis</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Trigger a new investigation across your data
+                sources.</p>
+        </div>
+
+        <!-- Step 1: Sources -->
+        <div class="step-section">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                Data source to analyse
+            </div>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Select the data you want to
+                analyze. Choose only the sources relevant to this investigation.</p>
+
+            <div class="checkbox-group">
+                <label class="list-option" onclick="togglePermissionBox()" id="jira-option">
+                    <input type="checkbox" id="jira-check" onchange="togglePermissionBox()">
+                    <span><strong>Jira tickets & defects</strong></span>
+                </label>
+
+                <!-- Permission Prompt -->
+                <div id="jira-permission"
+                    style="display: none; background: #FFF7ED; border: 1px solid #FFEDD5; padding: 16px; border-radius: 8px; margin-left: 32px;">
+                    <strong style="color: #9A3412; font-size: 13px; display: block; margin-bottom: 8px;">Jira —
+                        Permission Required</strong>
+                    <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px;">
+                        <input type="checkbox" id="jira-auth" onchange="checkRunButton()">
+                        <span>I authorize Product Studio to read selected Jira data<br>
+                            <span style="color: var(--text-secondary);">(read-only access, scoped to chosen
+                                projects)</span>
+                        </span>
+                    </label>
+                    <a href="#"
+                        style="font-size: 12px; color: var(--primary-color); margin-top: 8px; display: inline-block;">[
+                        View data access details ]</a>
+                </div>
+
+                <!-- Qualtrics Source -->
+                <div style="margin-top: 12px;">
+                    <label class="list-option" style="margin-bottom: 4px;">
+                        <input type="checkbox" id="qualtrics-check" checked onchange="updateQualtricsState()">
+                        <span><strong>Qualtrics surveys & behavioral signals</strong></span>
+                    </label>
+
+                    <!-- Qualtrics: Unauthorized State -->
+                    <div id="qualtrics-unauth"
+                        style="display: block; margin-left: 32px; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-warning"
+                                style="color: #F59E0B; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #DC2626; font-weight: 500;">Access not authorized
+                                </div>
+                                <div style="font-size: 13px; color: #9A3412; margin-top: 2px;">You must authorize access
+                                    to include this source.</div>
+                                <button type="button" class="btn btn-outline-sm"
+                                    style="margin-top: 8px; background: white; border-color: #FDBA74; color: #C2410C;"
+                                    onclick="openAuthModal()">Manage Qualtrics Access</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Qualtrics: Authorized State -->
+                    <div id="qualtrics-auth"
+                        style="display: none; margin-left: 32px; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-check-circle"
+                                style="color: #16A34A; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <span style="font-weight: 600; color: #166534;">Connected</span>
+                                </div>
+                                <div style="font-size: 13px; color: #15803D; margin-top: 4px;">
+                                    Access: Read-only | Surveys: NPS Q1, Checkout UX
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-outline-sm"
+                                        style="background: white; border-color: #FCA5A5; color: #DC2626;"
+                                        onclick="disconnectQualtrics()">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Reviews Source -->
+                <div style="margin-top: 12px;">
+                    <label class="list-option" style="margin-bottom: 4px;">
+                        <input type="checkbox" id="app-reviews-check" onchange="updateAppReviewsState()">
+                        <span><strong>App store reviews</strong></span>
+                    </label>
+
+                    <!-- App Reviews: Unauthorized State -->
+                    <div id="app-reviews-unauth"
+                        style="display: none; margin-left: 32px; padding: 12px; border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-warning"
+                                style="color: #F59E0B; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #DC2626; font-weight: 500;">Access not authorized
+                                </div>
+                                <div style="font-size: 13px; color: #9A3412; margin-top: 2px;">Product Studio needs
+                                    permission to fetch public reviews.</div>
+                                <button type="button" class="btn btn-outline-sm"
+                                    style="margin-top: 8px; background: white; border-color: #FDBA74; color: #C2410C;"
+                                    onclick="openAppAuthModal()">Manage Access</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Reviews: Authorized State -->
+                    <div id="app-reviews-auth"
+                        style="display: none; margin-left: 32px; padding: 12px; border: 1px solid #BBF7D0; background: #F0FDF4; border-radius: 8px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <i class="ph ph-check-circle"
+                                style="color: #16A34A; font-size: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <span style="font-weight: 600; color: #166534;">Connected</span>
+                                </div>
+                                <div style="font-size: 13px; color: #15803D; margin-top: 4px;">
+                                    Public data only | Stores: App Store, Google Play
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-outline-sm"
+                                        style="background: white; border-color: #FCA5A5; color: #DC2626;"
+                                        onclick="disconnectAppReviews()">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Scope -->
+            <div class="step-section">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    Scope and Time
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div>
+                        <label class="form-label">Product / Area</label>
+                        <select class="select-input">
+                            <option>Mobile App</option>
+                            <option>Web Dashboard</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Functional Areas</label>
+                        <select class="select-input">
+                            <option>Login, Payments, Checkout</option>
+                            <option>Onboarding</option>
+                            <option>Profile Management</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 16px;">
+                    <label class="form-label">Feedback Coverage</label>
+                    <select id="feedback-coverage" class="select-input" style="max-width: 240px;">
+                        <option value="all">All available feedback</option>
+                        <option value="since_last">Since last analysis</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                        <option value="custom">Custom range</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Step 3: Focus -->
+            <div class="step-section">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    Analysis Focus
+                </div>
+                <div class="checkbox-group">
+                    <label class="list-option">
+                        <input type="radio" name="focus" checked>
+                        <span><strong>Customer Themes</strong></span>
+                    </label>
+                    <label class="list-option">
+                        <input type="radio" name="focus">
+                        <span><strong>Defect-Focused Analysis</strong></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Step 4: Classification -->
+            <div class="step-section">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    Classification Goals
+                </div>
+                <p
+                    style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center;">
+                    Help VoC evaluate issues as:
+                    <span class="tooltip-container">
+                        <i class="ph ph-info tooltip-icon"></i>
+                        <div class="tooltip-box" style="top: 100%; transform: translateY(4px); left: 0;">
+                            Select the categories that best fit your analysis goals. VoC will tag sessions based on
+                            these patterns.
+                        </div>
+                    </span>
+                </p>
+                <div class="checkbox-group">
+                    <!-- UX / Design Friction (Checked) -->
+                    <label style="display: flex; gap: 8px; align-items: center;">
+                        <input type="checkbox" checked>
+                        <span>Likely UX / Design Friction</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>UX / Design Friction</h4>
+                                Select this if users might be struggling due to unclear flows, missing feedback, or
+                                confusing interactions — even if the feature technically works.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• "Nothing happens when I click"</div>
+                                    <div>• Repeated retries or rage clicks</div>
+                                    <div>• Confusion about whether an action succeeded</div>
+                                    <div>• Long hesitation or drop-offs</div>
+                                </div>
+                            </div>
+                        </span>
+                    </label>
+
+                    <!-- User Misunderstanding (Checked) -->
+                    <label style="display: flex; gap: 8px; align-items: center;">
+                        <input type="checkbox" checked>
+                        <span>Likely User Misunderstanding</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>User Misunderstanding</h4>
+                                Select this if users may not understand how the feature is supposed to work or what is
+                                expected of them.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• Users skip required steps</div>
+                                    <div>• Confusion about next steps</div>
+                                    <div>• Feedback like "I thought it would…"</div>
+                                    <div>• Questions rather than complaints</div>
+                                </div>
+                            </div>
+                        </span>
+                    </label>
+
+                    <!-- System / Technical Failure (Unchecked) -->
+                    <label style="display: flex; gap: 8px; align-items: center;">
+                        <input type="checkbox">
+                        <span>Likely System Failure</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>System / Technical Failure</h4>
+                                Select this if users may be encountering real errors, crashes, timeouts, or broken
+                                functionality.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• App crashes or freezes</div>
+                                    <div>• Explicit error messages</div>
+                                    <div>• "It doesn’t work" or "fails every time"</div>
+                                    <div>• Failed submissions or loading issues</div>
+                                </div>
+                            </div>
+                        </span>
+                    </label>
+
+                    <!-- Configuration / Edge Case (Unchecked) -->
+                    <label style="display: flex; gap: 8px; align-items: center;">
+                        <input type="checkbox">
+                        <span>Likely Configuration / Edge Case</span>
+                        <span class="tooltip-container">
+                            <i class="ph ph-info tooltip-icon"></i>
+                            <div class="tooltip-box">
+                                <h4>Configuration / Edge Case</h4>
+                                Select this if issues may only happen under specific conditions, devices, accounts, or
+                                environments.
+                                <div class="tooltip-signals">
+                                    <div style="font-weight: 600; margin-bottom: 4px; color: #94A3B8;">Common signals:
+                                    </div>
+                                    <div>• Only on certain devices or OS versions</div>
+                                    <div>• Happens inconsistently</div>
+                                    <div>• Affects specific users or regions</div>
+                                    <div>• Hard to reproduce issues</div>
+                                </div>
+                            </div>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Step 5: Comparison -->
+            <div class="step-section">
+                <div class="step-header">
+                    <span class="step-number">5</span>
+                    Comparison
+                </div>
+                <div class="checkbox-group">
+                    <label style="display: flex; gap: 8px; align-items: center;">
+                        <input type="checkbox" checked> Compare with <strong>Last weekly run</strong>
+                    </label>
+                    <label style="display: flex; gap: 8px; align-items: center;">
+                        <input type="checkbox"> Compare with <strong>Last defect-focused run</strong>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px;">
+                <button class="btn btn-outline" onclick="window.location.href='discovery-hub.html'">Cancel</button>
+                <button id="run-btn" class="btn btn-primary" onclick="startAnalysis()">
+                    <i class="ph ph-lightning"></i> Run Analysis
+                </button>
+            </div>
+        </div>
+
+        <!-- Permission Gate Modal (Qualtrics) -->
+        <div id="auth-modal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+            <div
+                style="background: white; width: 600px; border-radius: var(--radius-lg); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                <div
+                    style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 16px;">
+                    Authorize Qualtrics Access
+                </div>
+                <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">What Product
+                            studio
+                            is requesting</strong>
+                        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Product Studio
+                            would
+                            like read-only access to:</p>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px;">
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Survey
+                                questions</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Open-ended
+                                responses</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Response
+                                timestamps</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Behavioral
+                                signals (rage clicks/retries/session flags)</label>
+                        </div>
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+                            <label style="display: flex; gap: 8px; font-size: 14px; color: var(--text-secondary);">
+                                <input type="checkbox"> Respondent PII (emails/names)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Select
+                            surveys</strong>
+                        <div
+                            style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
+                                    type="checkbox" checked> NPS Q1</label>
+                            <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox" checked>
+                                Checkout UX</label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Time
+                            Range</strong>
+                        <select class="select-input">
+                            <option selected>Last 90 days</option>
+                            <option>Last 30 days</option>
+                            <option>All time</option>
+                        </select>
+                    </div>
+
+                    <div style="padding: 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
+                        <label
+                            style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #1E3A8A;">
+                            <input type="checkbox" id="modal-auth-check" onchange="checkModalAuth()">
+                            <span>I authorize Product Studio to read selected Qualtrics data (read-only)</span>
+                        </label>
+                    </div>
+                </div>
+                <div
+                    style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
+                    <button class="btn btn-outline" onclick="closeAuthModal()">Cancel</button>
+                    <button id="modal-confirm-btn" class="btn btn-primary" disabled style="opacity: 0.5;"
+                        onclick="confirmAuth()">Authorize Access</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Review Modal -->
+        <div id="app-auth-modal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+            <div
+                style="background: white; width: 600px; border-radius: var(--radius-lg); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                <div
+                    style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 16px;">
+                    Authorize App Review Access
+                </div>
+                <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">Product Studio
+                            will read public app reviews only:</strong>
+                        <div
+                            style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px; margin-top: 8px;">
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled> Review
+                                text</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled>
+                                Rating</label>
+                            <label style="display: flex; gap: 8px;"><input type="checkbox" checked disabled>
+                                Date</label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">App
+                            stores</strong>
+                        <div
+                            style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <label style="display: flex; gap: 8px; margin-bottom: 8px; font-size: 14px;"><input
+                                    type="checkbox" checked> App Store</label>
+                            <label style="display: flex; gap: 8px; font-size: 14px;"><input type="checkbox" checked>
+                                Google Play</label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <strong
+                            style="display: block; margin-bottom: 8px; color: var(--text-primary);">Coverage</strong>
+                        <select class="select-input">
+                            <option selected>Since last analysis</option>
+                            <option>Last 30 days</option>
+                            <option>All time</option>
+                        </select>
+                    </div>
+
+                    <div style="padding: 16px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px;">
+                        <label
+                            style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #1E3A8A;">
+                            <input type="checkbox" id="app-modal-auth-check" onchange="checkAppModalAuth()">
+                            <span>I authorize Product Studio to fetch app reviews (public data only)</span>
+                        </label>
+                    </div>
+                </div>
+                <div
+                    style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
+                    <button class="btn btn-outline" onclick="closeAppAuthModal()">Cancel</button>
+                    <button id="app-modal-confirm-btn" class="btn btn-primary" disabled style="opacity: 0.5;"
+                        onclick="confirmAppAuth()">Authorize Access</button>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            let isQualtricsAuthorized = false;
+            let isAppReviewsAuthorized = false;
+
+            function togglePermissionBox() {
+                // Give slight delay to allow checkbox state to update
+                setTimeout(() => {
+                    const jiraChecked = document.getElementById('jira-check').checked;
+                    const permBox = document.getElementById('jira-permission');
+
+                    if (jiraChecked) {
+                        permBox.style.display = 'block';
+                    } else {
+                        permBox.style.display = 'none';
+                    }
+                    checkRunButton();
+                }, 0);
+            }
+
+            function updateQualtricsState() {
+                const checked = document.getElementById('qualtrics-check').checked;
+                const unauthBlock = document.getElementById('qualtrics-unauth');
+                const authBlock = document.getElementById('qualtrics-auth');
+
+                if (!checked) {
+                    unauthBlock.style.display = 'none';
+                    authBlock.style.display = 'none';
+                } else {
+                    if (!isQualtricsAuthorized) {
+                        unauthBlock.style.display = 'block';
+                        authBlock.style.display = 'none';
+                    } else {
+                        unauthBlock.style.display = 'none';
+                        authBlock.style.display = 'block';
+                    }
+                }
+                checkRunButton();
+            }
+
+            function updateAppReviewsState() {
+                const checked = document.getElementById('app-reviews-check').checked;
+                const unauthBlock = document.getElementById('app-reviews-unauth');
+                const authBlock = document.getElementById('app-reviews-auth');
+
+                if (!checked) {
+                    unauthBlock.style.display = 'none';
+                    authBlock.style.display = 'none';
+                } else {
+                    if (!isAppReviewsAuthorized) {
+                        unauthBlock.style.display = 'block';
+                        authBlock.style.display = 'none';
+                    } else {
+                        unauthBlock.style.display = 'none';
+                        authBlock.style.display = 'block';
+                    }
+                }
+                checkRunButton();
+            }
+
+            function checkRunButton() {
+                const jiraChecked = document.getElementById('jira-check').checked;
+                const jiraAuthChecked = document.getElementById('jira-auth').checked;
+
+                const qualtricsChecked = document.getElementById('qualtrics-check').checked;
+
+                const appReviewsChecked = document.getElementById('app-reviews-check').checked;
+
+                const btn = document.getElementById('run-btn');
+
+                let disabled = false;
+
+                // Rule 1: Jira
+                if (jiraChecked && !jiraAuthChecked) {
+                    disabled = true;
+                }
+
+                // Rule 2: Qualtrics
+                if (qualtricsChecked && !isQualtricsAuthorized) {
+                    disabled = true;
+                }
+
+                // Rule 3: Must select at least one source? (Optional but good UX)
+                if (!jiraChecked && !qualtricsChecked && !document.querySelector('.list-option input[type="checkbox"]:checked')) {
+                    // Assuming app store reviews logic is simpler or not blocking
+                }
+
+                if (disabled) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.title = "Please authorize data access to proceed";
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btn.title = "";
+                }
+            }
+
+            // Modal Functions
+            function openAuthModal() {
+                document.getElementById('auth-modal').style.display = 'flex';
+            }
+
+            function closeAuthModal() {
+                document.getElementById('auth-modal').style.display = 'none';
+            }
+
+            function checkModalAuth() {
+                const checked = document.getElementById('modal-auth-check').checked;
+                const btn = document.getElementById('modal-confirm-btn');
+                if (checked) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                } else {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                }
+            }
+
+            function confirmAuth() {
+                closeAuthModal();
+                isQualtricsAuthorized = true;
+                updateQualtricsState();
+            }
+
+            function disconnectQualtrics() {
+                isQualtricsAuthorized = false;
+                updateQualtricsState();
+            }
+
+            function startAnalysis() {
+                const btn = document.getElementById('run-btn');
+                if (btn.disabled) return;
+
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Running...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    window.location.href = 'voc-results.html?id=new';
+                }, 1500);
+            }
+
+            // Initial check
+            window.addEventListener('DOMContentLoaded', () => {
+                // Uncheck Jira by default
+                document.getElementById('jira-check').checked = false;
+
+                // Updates
+                updateQualtricsState();
+                updateAppReviewsState();
+
+                // Feedback Coverage Default Logic
+                const coverageSelect = document.getElementById('feedback-coverage');
+                const hasRunBefore = localStorage.getItem('voc_has_run_before');
+
+                if (hasRunBefore) {
+                    // Subsequent run -> Default: Since last analysis
+                    // Find option with value 'since_last' and set selected
+                    for (let i = 0; i < coverageSelect.options.length; i++) {
+                        if (coverageSelect.options[i].value === 'since_last') {
+                            coverageSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                } else {
+                    // First run -> Default: All available feedback
+                    // (Already first option, but explicit is good)
+                    coverageSelect.value = 'all';
+                }
+
+                // Mock setting 'has_run_before' on click of Run
+                // (handled in startAnalysis mainly, but here we just read it)
+            });
+        </script>
+</body>
+
+</html>

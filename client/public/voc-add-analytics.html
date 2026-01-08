@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Analytics - Voice of Customer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .container-centered {
+            max-width: 600px;
+            margin: 0 auto;
+            display: block !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Fixed Navigation Buttons -->
+    <div class="fixed-nav-buttons">
+        <a href="javascript:history.back()" class="back-to-modules-btn" title="Back to Modules">
+            <i class="ph ph-grid-four"></i>
+            <span>Modules</span>
+        </a>
+        <a href="http://localhost:4200/research/voice-of-customer" class="back-to-home-btn" title="Back to Home">
+            <i class="ph ph-house"></i>
+            <span>Home</span>
+        </a>
+    </div>
+
+    <div class="app-container container-centered">
+        <header class="app-header">
+            <h1>Voice of Customer - Add Analytics Signal</h1>
+            <p class="subtitle">Track quantitative signals and metrics</p>
+        </header>
+
+        <main>
+            <div class="summary-card" style="padding: 24px;">
+
+                <div class="form-row" style="margin-bottom: 24px;">
+                    <div class="form-group">
+                        <label>Metric Name</label>
+                        <input type="text" value="Login failure rate">
+                    </div>
+                    <div class="form-group">
+                        <label>Value</label>
+                        <input type="text" value="35%">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Source</label>
+                    <select>
+                        <option>Google Analytics</option>
+                        <option>Mixpanel</option>
+                        <option>Database Query</option>
+                        <option>Client Screenshot</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Evidence Type</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-pill"><input type="checkbox"> Client screenshot</label>
+                        <label class="checkbox-pill"><input type="checkbox"> CSV export</label>
+                        <label class="checkbox-pill"><input type="checkbox"> Verbal confirmation</label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Context / Notes</label>
+                    <textarea rows="3"
+                        placeholder="Explain the context...">'Client shared GA screenshot showing higher failure on mobile.'</textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label>Link to Problem Thread</label>
+                    <select>
+                        <option>Login error confusion</option>
+                        <option>Onboarding takes too long</option>
+                        <option>Password reset delays</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary full-width" onclick="saveSignal()">Save Analytics Signal</button>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function saveSignal() {
+            const btn = document.querySelector('.btn-primary');
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Saving...';
+            btn.style.opacity = '0.8';
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="ph ph-check"></i> Saved';
+                btn.style.background = '#10B981';
+                setTimeout(() => {
+                    window.location.href = 'discovery-hub.html';
+                }, 800);
+            }, 600);
+        }
+
+        // Simple checkbox visual logic
+        document.querySelectorAll('.checkbox-pill').forEach(pill => {
+            pill.addEventListener('click', function (e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const input = this.querySelector('input');
+                    input.checked = !input.checked;
+                }
+                const input = this.querySelector('input');
+                if (input.checked) {
+                    this.classList.add('checked');
+                } else {
+                    this.classList.remove('checked');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
